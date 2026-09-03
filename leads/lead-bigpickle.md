@@ -51,3 +51,4 @@ testability: PASSIVE
 [LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with /health endpoint. API enumeration needed.
 [RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP is comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found yet. Account creation restricted per scope.yml.
 ## 2026-09-03 18:52:16 UTC [target] (model bigpickle)
+## 2026-09-03 21:33:26 UTC [target] (model bigpickle)
