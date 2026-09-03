@@ -25,3 +25,15 @@ https://spc.n26.com/v1/tokens -> 200 len=43
 https://spc.n26.com/docs -> HTTP 404
 https://spc.n26.com/status -> HTTP 404
 https://app.n26.com/build/js/client.*.js -> HTTP 404
+
+## 2026-09-03 18:56:42 UTC
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://app.n26.com/graphql?query={__schema{types{name -> ERR The read operation timed out
+https://app.n26.com/build/js/client.*.js -> HTTP 404
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+https://spc.n26.com/health -> HTTP 404
+https://spc.n26.com/api -> HTTP 404
+https://spc.n26.com/api/v1 -> 200 len=43
+https://spc.n26.com/internal -> HTTP 404
+https://spc.n26.com/private -> HTTP 404
+https://app.n26.com -> 200 len=319045
