@@ -52,3 +52,41 @@ testability: PASSIVE
 [RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP is comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found yet. Account creation restricted per scope.yml.
 ## 2026-09-03 18:52:16 UTC [target] (model bigpickle)
 ## 2026-09-03 21:33:26 UTC [target] (model bigpickle)
+## 2026-09-03 23:31:11 UTC [target] (model bigpickle)
+[HYP] GraphQL WAF bypass via GET query param smuggling
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 70
+reasoning: GraphQL confirmed via cookie + 403 responses (not 404). WAF blocks POST. GET with `?query={__typename}` returned HTTP 000 (connection-reset), suggesting WAF inspected body but GET param bypassed inspection layer. Express+Envoy stack may allow query param injection.
+evidence_needed: Any non-403/404 response from GraphQL endpoint, introspection data, or error message leak
+verify_steps: (1) GET https://app.n26.com/graphql?query={__typename} with no cookies, (2) GET https://app.n26.com/graphql?query=query{__typename} with cookies, (3) POST https://app.n26.com/graphql with Content-Type: application/x-www-form-urlencoded and query=blob, (4) POST with empty body to trigger different error path
+impact: GraphQL schema disclosure → mutations for account takeover, payment manipulation, PII access. Severity: HIGH
+testability: PASSIVE
+[HYP] Feature flag SDK key extraction from app bundle
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 58
+reasoning: Statsig service confirmed (x-statsig-region: gke-us-west1). /v1/initialize returns 403 (RBAC). Client-side Statsig SDK keys are embedded in frontend bundles for client-side flag evaluation. Key pattern: `client_key` or `sdk_key` in JS files.
+evidence_needed: Statsig client SDK key or any flag configuration data
+verify_steps: (1) Fetch https://app.n26.com and extract JS bundle URLs, (2) Search bundles for Statsig/client_key patterns, (3) GET https://flags.n26.com/v1/get_configs with extracted key, (4) POST https://flags.n26.com/v1/log_event with minimal body
+impact: Feature flag disclosure → hidden features, admin functionality, A/B test groups. Severity: MEDIUM
+testability: PASSIVE
+[HYP] Payment API path enumeration on spc.n26.com
+class: MISCONFIG
+asset: spc.n26.com
+confidence: 48
+reasoning: /health returns "OK". CSP connect-src allows app.n26.com to reach this service. /api returns 404. Payment services typically use /v1/payments, /v1/tokens, /v1/transactions patterns.
+evidence_needed: Any API endpoint returning data or documentation
+verify_steps: (1) GET https://spc.n26.com/v1/transactions, (2) GET https://spc.n26.com/v1/payments, (3) GET https://spc.n26.com/v1/tokens, (4) GET https://spc.n26.com/docs
+impact: Payment API exposure → unauthorized transaction data, card token access. Severity: CRITICAL
+testability: PASSIVE
+[FINAL] GraphQL WAF bypass via GET query param smuggling (confidence: 70, rank: 1) — Survives: class AUTH in-scope, confidence>40, verify_steps present, high business value
+[FINAL] Feature flag SDK key extraction (confidence: 58, rank: 2) — Survives: class MISCONFIG in-scope, confidence>40, verify_steps present, moderate impact
+[FINAL] Payment API enumeration (confidence: 48, rank: 3) — Survives: class MISCONFIG in-scope, confidence>40, but lowest confidence due to no confirmed API surface
+[PARKED] Subdomain takeover my.n26.com — 301 redirect via Envoy, not dangling CNAME. No takeover vector.
+[NEXT] PROBE: Fetch app.n26.com main page, extract all JS bundle URLs, search for Statsig SDK key (`client_key`, `sdk_key`, `statsig` patterns), then use extracted key to query flags.n26.com/v1/get_configs
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses. WAF actively blocks POST. Bypass exploration warranted.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. Client-side SDK key extraction is viable path.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with /health endpoint. API enumeration needed.
+[RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP is comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found. Account creation restricted per scope.yml.

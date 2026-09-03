@@ -681,3 +681,79 @@ This is very informative. Key new fact from probe-results.md line 22-24: **spc.n
 Let me investigate this. The /v1/* endpoints returning 200 len=43 is a real new discovery. Let me probe more to understand the response body and whether it's actual data or a generic catch-all.
 
 Let me run some read-only probes to characterize spc.n26.com's /v1 API. This is the highest-value lead.
+===== ANALYST bigpickle 2026-09-03 23:34:58 UTC =====
+[0m
+> build · big-pickle
+[0m
+## STEP 1 — DELTA
+
+NO_DELTA — Inventory and knowledge base unchanged from last session. No new assets discovered. Current leads remain: app.n26.com (GraphQL), flags.n26.com (Statsig), spc.n26.com (payment service), support.n26.com (same backend).
+
+## STEP 2 — PRIORITIZE
+
+| Asset | Score | Axes |
+|-------|-------|------|
+| app.n26.com/graphql | 8.7 | a=9,b=10,t=8,g=5,c=5,f=10 |
+| flags.n26.com | 7.1 | a=7,b=7,t=7,g=8,c=7,f=10 |
+| spc.n26.com | 6.4 | a=6,b=8,t=5,g=7,c=5,f=10 |
+
+## STEP 3 — HYPOTHESES
+
+[HYP] GraphQL WAF bypass via GET query param smuggling
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 70
+reasoning: GraphQL confirmed via cookie + 403 responses (not 404). WAF blocks POST. GET with `?query={__typename}` returned HTTP 000 (connection-reset), suggesting WAF inspected body but GET param bypassed inspection layer. Express+Envoy stack may allow query param injection.
+evidence_needed: Any non-403/404 response from GraphQL endpoint, introspection data, or error message leak
+verify_steps: (1) GET https://app.n26.com/graphql?query={__typename} with no cookies, (2) GET https://app.n26.com/graphql?query=query{__typename} with cookies, (3) POST https://app.n26.com/graphql with Content-Type: application/x-www-form-urlencoded and query=blob, (4) POST with empty body to trigger different error path
+impact: GraphQL schema disclosure → mutations for account takeover, payment manipulation, PII access. Severity: HIGH
+testability: PASSIVE
+
+[HYP] Feature flag SDK key extraction from app bundle
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 58
+reasoning: Statsig service confirmed (x-statsig-region: gke-us-west1). /v1/initialize returns 403 (RBAC). Client-side Statsig SDK keys are embedded in frontend bundles for client-side flag evaluation. Key pattern: `client_key` or `sdk_key` in JS files.
+evidence_needed: Statsig client SDK key or any flag configuration data
+verify_steps: (1) Fetch https://app.n26.com and extract JS bundle URLs, (2) Search bundles for Statsig/client_key patterns, (3) GET https://flags.n26.com/v1/get_configs with extracted key, (4) POST https://flags.n26.com/v1/log_event with minimal body
+impact: Feature flag disclosure → hidden features, admin functionality, A/B test groups. Severity: MEDIUM
+testability: PASSIVE
+
+[HYP] Payment API path enumeration on spc.n26.com
+class: MISCONFIG
+asset: spc.n26.com
+confidence: 48
+reasoning: /health returns "OK". CSP connect-src allows app.n26.com to reach this service. /api returns 404. Payment services typically use /v1/payments, /v1/tokens, /v1/transactions patterns.
+evidence_needed: Any API endpoint returning data or documentation
+verify_steps: (1) GET https://spc.n26.com/v1/transactions, (2) GET https://spc.n26.com/v1/payments, (3) GET https://spc.n26.com/v1/tokens, (4) GET https://spc.n26.com/docs
+impact: Payment API exposure → unauthorized transaction data, card token access. Severity: CRITICAL
+testability: PASSIVE
+
+## STEP 4 — SELF-CRITIQUE
+
+[FINAL] GraphQL WAF bypass via GET query param smuggling (confidence: 70, rank: 1) — Survives: class AUTH in-scope, confidence>40, verify_steps present, high business value
+
+[FINAL] Feature flag SDK key extraction (confidence: 58, rank: 2) — Survives: class MISCONFIG in-scope, confidence>40, verify_steps present, moderate impact
+
+[FINAL] Payment API enumeration (confidence: 48, rank: 3) — Survives: class MISCONFIG in-scope, confidence>40, but lowest confidence due to no confirmed API surface
+
+[PARKED] Subdomain takeover my.n26.com — 301 redirect via Envoy, not dangling CNAME. No takeover vector.
+
+## STEP 5 — NEXT ACTION
+
+[NEXT] PROBE: Fetch app.n26.com main page, extract all JS bundle URLs, search for Statsig SDK key (`client_key`, `sdk_key`, `statsig` patterns), then use extracted key to query flags.n26.com/v1/get_configs
+
+## STEP 6 — LEARNING
+
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses. WAF actively blocks POST. Bypass exploration warranted.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. Client-side SDK key extraction is viable path.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with /health endpoint. API enumeration needed.
+
+## STEP 7 — RISK
+
+[RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP is comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found. Account creation restricted per scope.yml.
+
+---
+
+**RECOMMENDATION**: The next agent should execute the NEXT probe — fetch app.n26.com, extract JS bundles, search for Statsig SDK key, then attempt to enumerate flags.n26.com. This is the lowest-risk, highest-information-gain action available. The GraphQL WAF bypass remains top priority but requires more creative bypass attempts (GET param, Content-Type manipulation, header injection).
