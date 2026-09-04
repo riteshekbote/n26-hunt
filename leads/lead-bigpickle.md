@@ -133,3 +133,4 @@ testability: PASSIVE
 [RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found. Account creation restricted per scope.yml. Financial data exposure during testing explicitly called out as program note.
 ## 2026-09-04 15:08:20 UTC [target] (model bigpickle)
 ## 2026-09-04 18:30:55 UTC [target] (model bigpickle)
+## 2026-09-04 21:03:47 UTC [target] (model bigpickle)
