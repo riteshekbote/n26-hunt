@@ -87,3 +87,14 @@
 - LEARN: ACCEPTED IDOR @ spc.n26.com: Versioned payment API endpoints confirmed (HTTP 200). CSP allows cross-origin access from app.n26.com. Financial endpoints are high
 - LEARN: ACCEPTED AUTH @ app.n26.com: GraphQL WAF blocks POST application/json. Alternative Content-Type or HTTP method may bypass WAF rules.
 - LEARN: ACCEPTED MISCONFIG @ flags.n26.com: Statsig service with RBAC. Client-side SDK key extraction from actual bundle paths (not assumed) is viable path.
+
+## RANKED HYPOTHESES 2026-09-04 18:31:05 UTC
+- [80] spc.n26.com: Payment service BOLA/IDOR on versioned financial endpoints (from art/lead_nemotron3.txt)
+- NEXT(hypotheses-nemotron3.txt): PROBE: POST https://app.n26.com/graphql with `Content-Type: application/x-www-form-urlencoded`, body `query={__typename}`, cookies `n26.csrf`, `num26UniqueDevic
+- LEARN: ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All /v1/* endpoints return 403/401. Client-side SDK key path (client.*.js
+- LEARN: REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+- LEARN: ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with confirmed versioned API endpoints (/api/v1, /v1/transactions, /v1/payments, /v1/tokens all HTTP 200)
+- LEARN: ACCEPTED IDOR @ spc.n26.com: Versioned payment API endpoints confirmed (HTTP 200). CSP allows cross-origin access from app.n26.com. Financial endpoints are high
+- LEARN: ACCEPTED AUTH @ app.n26.com: GraphQL WAF blocks POST application/json. Alternative Content-Type or HTTP method may bypass WAF rules
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: Statsig service with RBAC. Client-side SDK key extraction from actual bundle paths (not assumed) is viable path

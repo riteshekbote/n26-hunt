@@ -1217,3 +1217,1065 @@ x-envoy-upstream-service-time: 13
 [93m[1m! [0mpermission requested: external_directory (/tmp/*); auto-rejecting
 [0m✗ [0mcat /tmp/app_html.txt failed
 [91m[1mError: [0mThe user rejected permission to use this specific tool call.
+===== ANALYST bigpickle 2026-09-04 18:31:05 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mdate -u +"%Y-%m-%d %H:%M:%S UTC"
+2026-09-04 18:28:01 UTC
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/ 2>/dev/null; echo "---"; ls -la /home/runner/work/n26-hunt/n26-hunt/art/ 2>/dev/null
+total 132
+drwxr-xr-x 12 runner runner  4096 Sep  4 18:27 .
+drwxr-xr-x  3 runner runner  4096 Sep  4 18:27 ..
+drwxr-xr-x  7 runner runner  4096 Sep  4 18:27 .git
+drwxr-xr-x  3 runner runner  4096 Sep  4 18:27 .github
+-rw-r--r--  1 runner runner  1844 Sep  4 18:27 README.md
+-rw-r--r--  1 runner runner   104 Sep  4 18:28 analyst-out.txt
+-rw-r--r--  1 runner runner 21773 Sep  4 18:27 analyst-prompt.txt
+-rw-r--r--  1 runner runner 17903 Sep  4 18:27 ctx.txt
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 inventory
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 knowledge
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 leads
+-rw-r--r--  1 runner runner  3898 Sep  4 18:27 probe-results.md
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 recon-notes
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 reports
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 reposcan-raw
+-rw-r--r--  1 runner runner  3283 Sep  4 18:27 scope.yml
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 scripts
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_bigpickle.json
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_laguna.json
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_ling3.json
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_longcat.json
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_mimo.json
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_nemotron3.json
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 triage
+---
+[0m
+Let me review the state and run my analysis.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && cat scope.yml; echo "===PROBE==="; cat probe-results.md; echo "===OUT==="; cat analyst-out.txt
+programs:
+  n26:
+    name: N26 Bank AG Bug Bounty
+    disclosure_policy: via bugs.olivermaicher.eu (Oliver Maicher private program) - report + PoC + contact + payment
+    assets:
+      - name: "All company-owned infrastructure, online banking platforms, mobile applications, APIs, customer portals, authentication systems, internal banking services, websites, and domains operated by N26 Bank AG and its subsidiaries"
+        priority: In
+    out_of_scope:
+- "Network level Denial of Service attacks"
+      - "Application Denial of Service by locking user accounts"
+      - "Descriptive error messages or headers (e.g. Stack Traces, banner grabbing)"
+      - "Disclosure of known public files or directories (e.g. robots.txt)"
+      - "Outdated software / library versions"
+      - "OPTIONS / TRACE HTTP method enabled"
+      - "CSRF on logout"
+      - "CSRF on forms that are available to anonymous users"
+      - "Cookies that lack HTTP Only or Secure settings for non-sensitive data"
+      - "Self-XSS and issues exploitable only through Self-XSS"
+      - "Reports resulting from automated scanning utilities without additional details or a POC demonstrating a specific exploit"
+      - "Attacks requiring physical access to a user's device"
+      - "Attacks dependent upon social engineering of employees or vendors"
+      - "Username enumeration based on login or forgot password pages"
+      - "Enforcement policies for brute force, rate limiting, or account lockout"
+      - "SSL/TLS best practices"
+      - "SSL attacks such as BEAST, BREACH, Renegotiation attack"
+      - "Clickjacking, without additional details demonstrating a specific exploit"
+      - "Mail configuration issues including SPF, DKIM, DMARC settings"
+      - "Use of a known-vulnerable library without a description of an exploit specific to our implementation"
+      - "Password and account recovery policies"
+      - "Presence of autocomplete functionality in form fields"
+      - "Publicly accessible login panels"
+      - "Lack of email address verification during account registration or account invitation"
+      - "Lack of email address verification password restore"
+      - "Session control during email/password changes"
+      - "Social engineering, physical attacks, and DoS/DDoS testing (per program notes)"
+      - "Exposure of customer/employee/financial/authentication data during testing (per program notes)"
+    github_orgs:
+      - none-configured
+
+rules:
+  passive_first: false          # deep-hunt agent: active probes allowed when scoped
+  max_requests_per_second: 1    # never hammer live infra
+  no_doom: true                 # no DoS/DDoS, no account-lockout attacks
+  account_creation: restricted  # only on test/sandbox assets, never live customer data
+  no_data_modification: true    # no writes/deletes on live customer data
+  no_pre_disclosure: true       # never disclose before program response
+  poc_required: true            # scanner output alone is REJECTED
+  redact_secrets_in_commits: true
+
+models:
+  - { id: opencode/big-pickle, name: bigpickle }
+  - { id: opencode/nemotron-3-ultra-free, name: nemotron3 }
+  - { id: opencode/longcat-2.0-free, name: longcat }
+  - { id: opencode/ling-3.0-flash-free, name: ling3 }
+  - { id: opencode/laguna-s-2.1-free, name: laguna }
+===PROBE===
+
+## 2026-09-02 21:37:48 UTC
+
+
+## 2026-09-02 23:32:55 UTC
+
+
+## 2026-09-03 01:25:44 UTC
+
+
+## 2026-09-03 06:35:49 UTC
+
+
+## 2026-09-03 11:42:06 UTC
+
+
+## 2026-09-03 15:57:40 UTC
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://flags.n26.com/v1/get_configs -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+https://flags.n26.com/v1/log_event -> HTTP 403
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://spc.n26.com/v1/payments -> 200 len=43
+https://spc.n26.com/v1/tokens -> 200 len=43
+https://spc.n26.com/docs -> HTTP 404
+https://spc.n26.com/status -> HTTP 404
+https://app.n26.com/build/js/client.*.js -> HTTP 404
+
+## 2026-09-03 18:56:42 UTC
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://app.n26.com/graphql?query={__schema{types{name -> ERR The read operation timed out
+https://app.n26.com/build/js/client.*.js -> HTTP 404
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+https://spc.n26.com/health -> HTTP 404
+https://spc.n26.com/api -> HTTP 404
+https://spc.n26.com/api/v1 -> 200 len=43
+https://spc.n26.com/internal -> HTTP 404
+https://spc.n26.com/private -> HTTP 404
+https://app.n26.com -> 200 len=319045
+
+## 2026-09-03 21:34:43 UTC
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://app.n26.com/graphql?query={__schema{types{name -> ERR The read operation timed out
+https://app.n26.com/build/js/client.*.js -> HTTP 404
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+https://spc.n26.com/health -> HTTP 404
+https://spc.n26.com/api -> HTTP 404
+https://spc.n26.com/api/v1 -> 200 len=43
+https://spc.n26.com/internal -> HTTP 404
+https://spc.n26.com/private -> HTTP 404
+https://app.n26.com -> 200 len=319045
+
+## 2026-09-03 23:36:03 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com -> 200 len=319045
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://app.n26.com/graphql?query={__schema{types{name -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
+https://app.n26.com/graphql?query=query{__typename -> ERR The read operation timed out
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/get_configs -> HTTP 403
+https://flags.n26.com/v1/log_event -> HTTP 403
+https://spc.n26.com/v1/payments -> 200 len=43
+
+## 2026-09-04 01:25:59 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319045
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+
+## 2026-09-04 06:06:17 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319045
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+
+## 2026-09-04 11:26:09 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://spc.n26.com/v1/payments -> 200 len=43
+https://spc.n26.com/v1/tokens -> 200 len=43
+https://spc.n26.com/api/v1/transactions/1 -> HTTP 404
+https://spc.n26.com/api/v1/users/1 -> HTTP 404
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
+
+## 2026-09-04 15:15:55 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+===OUT===
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mdate -u +"%Y-%m-%d %H:%M:%S UTC"
+2026-09-04 18:28:01 UTC
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/ 2>/dev/null; echo "---"; ls -la /home/runner/work/n26-hunt/n26-hunt/art/ 2>/dev/null
+total 132
+drwxr-xr-x 12 runner runner  4096 Sep  4 18:27 .
+drwxr-xr-x  3 runner runner  4096 Sep  4 18:27 ..
+drwxr-xr-x  7 runner runner  4096 Sep  4 18:27 .git
+drwxr-xr-x  3 runner runner  4096 Sep  4 18:27 .github
+-rw-r--r--  1 runner runner  1844 Sep  4 18:27 README.md
+-rw-r--r--  1 runner runner   104 Sep  4 18:28 analyst-out.txt
+-rw-r--r--  1 runner runner 21773 Sep  4 18:27 analyst-prompt.txt
+-rw-r--r--  1 runner runner 17903 Sep  4 18:27 ctx.txt
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 inventory
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 knowledge
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 leads
+-rw-r--r--  1 runner runner  3898 Sep  4 18:27 probe-results.md
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 recon-notes
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 reports
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 reposcan-raw
+-rw-r--r--  1 runner runner  3283 Sep  4 18:27 scope.yml
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 scripts
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_bigpickle.json
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_laguna.json
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_ling3.json
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_longcat.json
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_mimo.json
+-rw-r--r--  1 runner runner    33 Sep  4 18:27 state_nemotron3.json
+drwxr-xr-x  2 runner runner  4096 Sep  4 18:27 triage
+---
+[0m
+Let me review the state and run my analysis.
+[0m
+Let me look at the key evidence. The spc.n26.com endpoints return `200 len=43` — that's a short response body for what should be financial endpoints. Let me examine the actual body of these endpoints to understand what a 200 with len=43 really contains. This is a critical fact that hasn't been examined — the "200" on /v1/transactions, /v1/payments, /v1/tokens may just be a generic catch-all response, NOT actual API data. Let me probe the actual body content.
+
+Let me check the leads and knowledge directories for more context.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && ls leads/ && echo "===KNOWLEDGE===" && ls knowledge/ && echo "===LEADS TAIL===" && for f in leads/*.txt; do echo "--- $f ---"; tail -20 "$f"; done
+lead-bigpickle.md
+lead-laguna.md
+lead-ling3.md
+lead-longcat.md
+lead-mimo.md
+lead-nemotron3.md
+reposcan-n26.md
+===KNOWLEDGE===
+index.md
+===LEADS TAIL===
+--- leads/*.txt ---
+tail: cannot open 'leads/*.txt' for reading: No such file or directory
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && for f in leads/*.md; do echo "--- $f ---"; cat "$f"; echo; done
+...output truncated...
+
+Full output saved to: /home/runner/.local/share/opencode/tool-output/tool_06dada093001piU0q10AfVZLTy
+
+[NEXT] PROBE: GET https://app.n26.com/build/js/client.*.js (extract Statsig SDK key from JS bundle to unlock flags.n26.com testing), then GET https://flags.n26.com/v1/evaluate with extracted key
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses (not 404). WAF actively blocks POST. Bypass exploration warranted.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. Client-side SDK key extraction from app bundle is viable path.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with /health endpoint. API enumeration needed.
+[RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP is comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found yet. Account creation restricted per scope.yml.
+## 2026-09-03 18:52:16 UTC [target] (model bigpickle)
+## 2026-09-03 21:33:26 UTC [target] (model bigpickle)
+## 2026-09-03 23:31:11 UTC [target] (model bigpickle)
+[HYP] GraphQL WAF bypass via GET query param smuggling
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 70
+reasoning: GraphQL confirmed via cookie + 403 responses (not 404). WAF blocks POST. GET with `?query={__typename}` returned HTTP 000 (connection-reset), suggesting WAF inspected body but GET param bypassed inspection layer. Express+Envoy stack may allow query param injection.
+evidence_needed: Any non-403/404 response from GraphQL endpoint, introspection data, or error message leak
+verify_steps: (1) GET https://app.n26.com/graphql?query={__typename} with no cookies, (2) GET https://app.n26.com/graphql?query=query{__typename} with cookies, (3) POST https://app.n26.com/graphql with Content-Type: application/x-www-form-urlencoded and query=blob, (4) POST with empty body to trigger different error path
+impact: GraphQL schema disclosure → mutations for account takeover, payment manipulation, PII access. Severity: HIGH
+testability: PASSIVE
+[HYP] Feature flag SDK key extraction from app bundle
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 58
+reasoning: Statsig service confirmed (x-statsig-region: gke-us-west1). /v1/initialize returns 403 (RBAC). Client-side Statsig SDK keys are embedded in frontend bundles for client-side flag evaluation. Key pattern: `client_key` or `sdk_key` in JS files.
+evidence_needed: Statsig client SDK key or any flag configuration data
+verify_steps: (1) Fetch https://app.n26.com and extract JS bundle URLs, (2) Search bundles for Statsig/client_key patterns, (3) GET https://flags.n26.com/v1/get_configs with extracted key, (4) POST https://flags.n26.com/v1/log_event with minimal body
+impact: Feature flag disclosure → hidden features, admin functionality, A/B test groups. Severity: MEDIUM
+testability: PASSIVE
+[HYP] Payment API path enumeration on spc.n26.com
+class: MISCONFIG
+asset: spc.n26.com
+confidence: 48
+reasoning: /health returns "OK". CSP connect-src allows app.n26.com to reach this service. /api returns 404. Payment services typically use /v1/payments, /v1/tokens, /v1/transactions patterns.
+evidence_needed: Any API endpoint returning data or documentation
+verify_steps: (1) GET https://spc.n26.com/v1/transactions, (2) GET https://spc.n26.com/v1/payments, (3) GET https://spc.n26.com/v1/tokens, (4) GET https://spc.n26.com/docs
+impact: Payment API exposure → unauthorized transaction data, card token access. Severity: CRITICAL
+testability: PASSIVE
+[FINAL] GraphQL WAF bypass via GET query param smuggling (confidence: 70, rank: 1) — Survives: class AUTH in-scope, confidence>40, verify_steps present, high business value
+[FINAL] Feature flag SDK key extraction (confidence: 58, rank: 2) — Survives: class MISCONFIG in-scope, confidence>40, verify_steps present, moderate impact
+[FINAL] Payment API enumeration (confidence: 48, rank: 3) — Survives: class MISCONFIG in-scope, confidence>40, but lowest confidence due to no confirmed API surface
+[PARKED] Subdomain takeover my.n26.com — 301 redirect via Envoy, not dangling CNAME. No takeover vector.
+[NEXT] PROBE: Fetch app.n26.com main page, extract all JS bundle URLs, search for Statsig SDK key (`client_key`, `sdk_key`, `statsig` patterns), then use extracted key to query flags.n26.com/v1/get_configs
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses. WAF actively blocks POST. Bypass exploration warranted.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. Client-side SDK key extraction is viable path.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with /health endpoint. API enumeration needed.
+[RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP is comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found. Account creation restricted per scope.yml.
+## 2026-09-04 01:24:12 UTC [target] (model bigpickle)
+## 2026-09-04 06:01:54 UTC [target] (model bigpickle)
+## 2026-09-04 11:24:19 UTC [target] (model bigpickle)
+[PRIO] spc.n26.com, 9.25, attack_surface:9 business_value:10 tech_exposure:9 gate_ease:8 cloud_surface:9 freshness:9
+[PRIO] app.n26.com/graphql, 8.0, attack_surface:8 business_value:9 tech_exposure:9 gate_ease:5 cloud_surface:7 freshness:9
+[PRIO] flags.n26.com, 7.5, attack_surface:7 business_value:7 tech_exposure:8 gate_ease:6 cloud_surface:8 freshness:9
+[HYP] Payment service BOLA/IDOR on spc.n26.com versioned endpoints
+class: IDOR
+asset: spc.n26.com/v1/transactions
+confidence: 82
+reasoning: spc.n26.com confirmed live with versioned API endpoints (/api/v1, /v1/transactions, /v1/payments, /v1/tokens all HTTP 200). CSP connect-src allows app.n26.com to reach this service. Payment services with financial endpoints are high-value IDOR targets — user_id/account_id parameters in transaction queries likely lack cross-tenant authorization checks.
+evidence_needed: Any response containing transaction data, error messages indicating authorization logic, or parameter reflection
+verify_steps: (1) GET https://spc.n26.com/v1/transactions with Referer: https://app.n26.com, (2) GET https://spc.n26.com/v1/payments with same headers, (3) GET https://spc.n26.com/v1/tokens, (4) GET https://spc.n26.com/api/v1/transactions/1, (5) GET https://spc.n26.com/api/v1/users/1
+impact: Unauthorized access to financial transaction data, card tokens, payment records. Severity: CRITICAL
+testability: PASSIVE
+[HYP] GraphQL introspection bypass via Content-Type manipulation
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 72
+reasoning: GraphQL confirmed via cookie + 403 responses. WAF blocks POST application/json. Previous GET query param returned connection reset. Express+Envoy stack may allow introspection via alternative Content-Type (application/graphql, text/plain) or different HTTP method (PUT/PATCH) that bypasses WAF rules targeting POST application/json specifically.
+evidence_needed: Any non-403/404 response, introspection data, or error message leak
+verify_steps: (1) POST https://app.n26.com/graphql with Content-Type: text/plain and body query={__typename}, (2) POST with Content-Type: application/x-www-form-urlencoded and body query={__typename}, (3) PUT https://app.n26.com/graphql with JSON body, (4) PATCH https://app.n26.com/graphql with JSON body
+impact: GraphQL schema disclosure → mutations for account takeover, payment manipulation, PII access. Severity: HIGH
+testability: PASSIVE
+[HYP] Statsig SDK key extraction from app bundle via alternate paths
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 60
+reasoning: Statsig service confirmed (x-statsig-region: gke-us-west1). /v1/initialize returns 403 (RBAC). Previous attempt to find client.*.js returned 404. Client-side Statsig SDK keys are embedded in frontend bundles — need to extract actual JS bundle URLs from app.n26.com HTML response, not assumed paths.
+evidence_needed: Statsig client SDK key or any flag configuration data
+verify_steps: (1) GET https://app.n26.com and extract all script src URLs, (2) Search extracted bundles for "client_key", "sdk_key", "statsig", "feature_gate" patterns, (3) GET https://flags.n26.com/v1/initialize with extracted key
+impact: Feature flag disclosure → hidden features, admin functionality, A/B test groups. Severity: MEDIUM
+testability: PASSIVE
+[FINAL] Payment service BOLA/IDOR on spc.n26.com (confidence: 82, rank: 1) — Survives: class IDOR in-scope, confidence>40, verify_steps present, critical business value (financial data)
+[FINAL] GraphQL introspection bypass via Content-Type (confidence: 72, rank: 2) — Survives: class AUTH in-scope, confidence>40, verify_steps present, high business value
+[FINAL] Statsig SDK key extraction (confidence: 60, rank: 3) — Survives: class MISCONFIG in-scope, confidence>40, verify_steps present, moderate impact
+[NEXT] PROBE: GET https://spc.n26.com/v1/transactions with headers `Referer: https://app.n26.com` and `Origin: https://app.n26.com` — check for transaction data, error messages, or authorization logic indicators
+[LEARN] ACCEPTED IDOR @ spc.n26.com: Versioned payment API endpoints confirmed (HTTP 200). CSP allows cross-origin access from app.n26.com. Financial endpoints are high-value IDOR targets.
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL WAF blocks POST application/json. Alternative Content-Type or HTTP method may bypass WAF rules.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig service with RBAC. Client-side SDK key extraction from actual bundle paths (not assumed) is viable path.
+[RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found. Account creation restricted per scope.yml. Financial data exposure during testing explicitly called out as program note.
+## 2026-09-04 15:08:20 UTC [target] (model bigpickle)
+
+--- leads/lead-laguna.md ---
+## 2026-09-03 15:37:02 UTC [target] (model laguna)
+## 2026-09-03 18:51:49 UTC [target] (model laguna)
+## 2026-09-03 21:32:37 UTC [target] (model laguna)
+## 2026-09-03 23:30:58 UTC [target] (model laguna)
+## 2026-09-04 01:20:03 UTC [target] (model laguna)
+## 2026-09-04 06:01:24 UTC [target] (model laguna)
+## 2026-09-04 11:23:19 UTC [target] (model laguna)
+## 2026-09-04 15:05:31 UTC [target] (model laguna)
+
+--- leads/lead-ling3.md ---
+## 2026-09-03 15:37:02 UTC [target] (model ling3)
+## 2026-09-03 18:51:52 UTC [target] (model ling3)
+## 2026-09-03 21:32:39 UTC [target] (model ling3)
+## 2026-09-03 23:30:58 UTC [target] (model ling3)
+## 2026-09-04 01:20:05 UTC [target] (model ling3)
+## 2026-09-04 06:01:27 UTC [target] (model ling3)
+## 2026-09-04 11:23:19 UTC [target] (model ling3)
+## 2026-09-04 15:05:21 UTC [target] (model ling3)
+
+--- leads/lead-longcat.md ---
+## 2026-09-03 15:37:02 UTC [target] (model longcat)
+## 2026-09-03 18:51:55 UTC [target] (model longcat)
+## 2026-09-03 21:32:37 UTC [target] (model longcat)
+## 2026-09-03 23:30:58 UTC [target] (model longcat)
+## 2026-09-04 01:20:06 UTC [target] (model longcat)
+## 2026-09-04 06:01:36 UTC [target] (model longcat)
+## 2026-09-04 11:23:33 UTC [target] (model longcat)
+## 2026-09-04 15:05:21 UTC [target] (model longcat)
+
+--- leads/lead-mimo.md ---
+# Lead log (seed)
+
+--- leads/lead-nemotron3.md ---
+## 2026-09-03 15:57:08 UTC [target] (model nemotron3)
+## 2026-09-03 18:55:55 UTC [target] (model nemotron3)
+[PRIO] app.n26.com/graphql,8.5,attack_surface=10,business_value=9,tech_exposure=10,gate_ease=3,cloud_surface=8,freshness=10
+[PRIO] flags.n26.com,7.8,attack_surface=8,business_value=7,tech_exposure=9,gate_ease=4,cloud_surface=9,freshness=10
+[PRIO] spc.n26.com,7.2,attack_surface=7,business_value=8,tech_exposure=6,gate_ease=6,cloud_surface=7,freshness=10
+[PRIO] authentication-service.eks.core-production.keyless.technology,6.5,attack_surface=6,business_value=9,tech_exposure=8,gate_ease=2,cloud_surface=10,freshness=8
+[PRIO] support.n26.com,5.8,attack_surface=6,business_value=6,tech_exposure=7,gate_ease=5,cloud_surface=5,freshness=8
+[PRIO] cdn.number26.de,4.2,attack_surface=5,business_value=4,tech_exposure=5,gate_ease=7,cloud_surface=6,freshness=8
+[PRIO] app.n26.com (CSP deps),3.8,attack_surface=4,business_value=5,tech_exposure=4,gate_ease=8,cloud_surface=4,freshness=8
+[PRIO] my.n26.com,2.1,attack_surface=3,business_value=5,tech_exposure=2,gate_ease=4,cloud_surface=3,freshness=5
+[PRIO] n26.com/www.n26.com,1.5,attack_surface=2,business_value=4,tech_exposure=1,gate_ease=9,cloud_surface=2,freshness=5
+[HYP] GraphQL WAF bypass via GET query param smuggling
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 70
+reasoning: POST /graphql and /api/graphql return 403 (WAF block); GET with query param returned HTTP 000 (connection reset) suggesting different code path; cookie-based auth confirmed (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload)
+evidence_needed: GraphQL introspection response via GET bypassing WAF; successful mutation execution
+verify_steps: GET https://app.n26.com/graphql?query={__typename} (no auth); GET https://app.n26.com/graphql?query={__schema{types{name}}} with valid cookies; test POST with Content-Type: application/json vs x-www-form-urlencoded
+impact: Full GraphQL schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical
+testability: AUTH_HELPED
+[HYP] Statsig SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 75
+reasoning: flags.n26.com is Statsig behind CloudFront+GKE; /v1/initialize returns 403/401 (RBAC); CSP connect-src on app.n26.com includes flags.n26.com; client-side SDK keys typically embedded in JS bundles for feature flag evaluation
+evidence_needed: Valid client SDK key from app.n26.com JS bundle; successful /v1/initialize call with extracted key
+verify_steps: GET https://app.n26.com/build/js/client.*.js (extract SDK key pattern); GET https://flags.n26.com/v1/initialize?client_key=<extracted>; test feature flag evaluation endpoint
+impact: Feature flag manipulation → bypass payment limits/KYC/premium features → high
+testability: PASSIVE
+[HYP] Payment service API enumeration on spc.n26.com → BOLA/IDOR on financial operations
+class: IDOR
+asset: spc.n26.com
+confidence: 60
+reasoning: Live payment service (Envoy proxy); /health returns 200; /api returns 404 (no Swagger); discovered via CSP connect-src on app.n26.com; Marqeta card issuing in CSP suggests card transaction APIs; payment services high-value for IDOR/BOLA
+evidence_needed: API endpoint list (brute /api/v1, /api/v2, /internal, /private); authenticated request showing user-scoped data access
+verify_steps: GET https://spc.n26.com/health; GET https://spc.n26.com/api; GET https://spc.n26.com/api/v1; GET https://spc.n26.com/internal; GET https://spc.n26.com/private; test with app.n26.com cookies
+impact: Cross-user transaction access, card manipulation, balance tampering → critical
+testability: AUTH_HELPED
+[PARKED] GraphQL WAF bypass via GET query param smuggling: confidence 70 but HTTP 000 on GET suggests connection reset not WAF bypass; needs confirmation GET actually reaches GraphQL engine
+[PARKED] Statsig SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass: confidence 75 but SDK key may be server-side only (Statsig supports both); client key may not grant /v1/initialize access
+[FINAL] Payment service API enumeration on spc.n26.com → BOLA/IDOR on financial operations: confidence 60, highest business_value (payment), concrete verify_steps, no REJECTED-class overlap
+[NEXT] PROBE: GET https://spc.n26.com/api/v1 (enumerate payment API versioned endpoints) with Referer: https://app.n26.com and app.n26.com cookies
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses (not 404). WAF actively blocks POST. Bypass exploration warranted.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. Client-side SDK key extraction from app bundle is viable path.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with /health endpoint. API enumeration needed.
+[RISK] N26 Bank AG: 78 — Active payment service (spc.n26.com) with unauthenticated /health, GraphQL WAF with cookie auth, Statsig feature flags controlling banking features; all three high-value targets with confirmed attack surface.
+## 2026-09-03 21:33:57 UTC [target] (model nemotron3)
+[PRIO] app.n26.com/graphql,8.5,attack_surface=10,business_value=9,tech_exposure=10,gate_ease=3,cloud_surface=8,freshness=10
+[PRIO] flags.n26.com,7.8,attack_surface=8,business_value=7,tech_exposure=9,gate_ease=4,cloud_surface=9,freshness=10
+[PRIO] spc.n26.com,7.2,attack_surface=7,business_value=8,tech_exposure=6,gate_ease=6,cloud_surface=7,freshness=10
+[PRIO] authentication-service.eks.core-production.keyless.technology,6.5,attack_surface=6,business_value=9,tech_exposure=8,gate_ease=2,cloud_surface=10,freshness=8
+[PRIO] support.n26.com,5.8,attack_surface=6,business_value=6,tech_exposure=7,gate_ease=5,cloud_surface=5,freshness=8
+[PRIO] cdn.number26.de,4.2,attack_surface=5,business_value=4,tech_exposure=5,gate_ease=7,cloud_surface=6,freshness=8
+[PRIO] app.n26.com (CSP deps),3.8,attack_surface=4,business_value=5,tech_exposure=4,gate_ease=8,cloud_surface=4,freshness=8
+[PRIO] my.n26.com,2.1,attack_surface=3,business_value=5,tech_exposure=2,gate_ease=4,cloud_surface=3,freshness=5
+[PRIO] n26.com/www.n26.com,1.5,attack_surface=2,business_value=4,tech_exposure=1,gate_ease=9,cloud_surface=2,freshness=5
+[HYP] GraphQL introspection via GET query param bypassing WAF
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 65
+reasoning: POST /graphql and /api/graphql return 403 (WAF block); GET with query param returned HTTP 000 (connection reset) suggesting different code path; cookie-based auth confirmed (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload)
+evidence_needed: GraphQL introspection response via GET bypassing WAF; successful mutation execution
+verify_steps: GET https://app.n26.com/graphql?query={__typename} (no auth); GET https://app.n26.com/graphql?query={__schema{types{name}}} with valid cookies; test POST with Content-Type: application/json vs x-www-form-urlencoded
+impact: Full GraphQL schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical
+testability: AUTH_HELPED
+[HYP] Statsig client SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 70
+reasoning: flags.n26.com is Statsig behind CloudFront+GKE; /v1/initialize returns 403/401 (RBAC); CSP connect-src on app.n26.com includes flags.n26.com; client-side SDK keys typically embedded in JS bundles for feature flag evaluation
+evidence_needed: Valid client SDK key from app.n26.com JS bundle; successful /v1/initialize call with extracted key
+verify_steps: GET https://app.n26.com/build/js/client.*.js (extract SDK key pattern); GET https://flags.n26.com/v1/initialize?client_key=<extracted>; test feature flag evaluation endpoint
+impact: Feature flag manipulation → bypass payment limits/KYC/premium features → high
+testability: PASSIVE
+[HYP] Payment service API enumeration on spc.n26.com → BOLA/IDOR on financial operations
+class: IDOR
+asset: spc.n26.com
+confidence: 60
+reasoning: Live payment service (Envoy proxy); /health returns 200; /api returns 404 (no Swagger); discovered via CSP connect-src on app.n26.com; Marqeta card issuing in CSP suggests card transaction APIs; payment services high-value for IDOR/BOLA
+evidence_needed: API endpoint list (brute /api/v1, /api/v2, /internal, /private); authenticated request showing user-scoped data access
+verify_steps: GET https://spc.n26.com/health; GET https://spc.n26.com/api; GET https://spc.n26.com/api/v1; GET https://spc.n26.com/internal; GET https://spc.n26.com/private; test with app.n26.com cookies
+impact: Cross-user transaction access, card manipulation, balance tampering → critical
+testability: AUTH_HELPED
+[PARKED] GraphQL introspection via GET query param bypassing WAF: confidence 65 but HTTP 000 on GET suggests connection reset not WAF bypass; needs confirmation GET actually reaches GraphQL engine
+[PARKED] Statsig client SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass: confidence 70 but SDK key may be server-side only (Statsig supports both); client key may not grant /v1/initialize access
+[FINAL] Payment service API enumeration on spc.n26.com → BOLA/IDOR on financial operations: confidence 60, highest business_value (payment), concrete verify_steps, no REJECTED-class overlap
+[NEXT] PROBE: GET https://spc.n26.com/api/v1 (enumerate payment API versioned endpoints) with Referer: https://app.n26.com and app.n26.com cookies
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses (not 404). WAF actively blocks POST. Bypass exploration warranted.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. Client-side SDK key extraction from app bundle is viable path.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with /health endpoint. API enumeration needed.
+[RISK] N26 Bank AG: 78 — Active payment service (spc.n26.com) with unauthenticated /health, GraphQL WAF with cookie auth, Statsig feature flags controlling banking features; all three high-value targets with confirmed attack surface.
+## 2026-09-03 23:33:49 UTC [target] (model nemotron3)
+[HYP] Payment service versioned API (spc.n26.com/api/v1) exposes BOLA/IDOR on financial operations
+class: IDOR
+asset: spc.n26.com
+confidence: 75
+reasoning: spc.n26.com/api/v1 returns HTTP 200 (len=43); /v1/transactions, /v1/payments, /v1/tokens all return 200; CSP connect-src on app.n26.com permits this origin; Marqeta card issuing in CSP confirms payment context; Envoy proxy suggests microservice routing; no authentication tested yet on these endpoints
+evidence_needed: Authenticated request showing user-scoped transaction data; cross-user IDOR via user_id/account_id parameter manipulation
+verify_steps: GET https://spc.n26.com/api/v1 with app.n26.com cookies (n26.csrf, num26UniqueDeviceToken); GET https://spc.n26.com/v1/transactions with Referer: https://app.n26.com and cookies; test user_id parameter manipulation if endpoints accept query params
+impact: Cross-user transaction access, card token manipulation, payment initiation → critical
+testability: AUTH_HELPED
+[HYP] GraphQL introspection via GET query param bypassing WAF on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 55
+reasoning: POST /graphql and /api/graphql return 403 (WAF block); GET with query param returns connection reset (timeout) not 403 — different code path; cookie-based auth confirmed (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload); Express/Envoy stack may process GET differently
+evidence_needed: GraphQL introspection response (__typename or __schema) via GET; successful mutation execution
+verify_steps: GET https://app.n26.com/graphql?query={__typename} (no auth, observe timeout vs response); GET https://app.n26.com/graphql?query={__schema{types{name}}} with valid cookies; test POST with Content-Type: application/x-www-form-urlencoded
+impact: Full GraphQL schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical
+testability: AUTH_HELPED
+[HYP] Statsig client SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 60
+reasoning: flags.n26.com is Statsig behind CloudFront+GKE; /v1/initialize returns 403/401 (RBAC); CSP connect-src on app.n26.com includes flags.n26.com; client-side SDK keys typically embedded in JS bundles for feature flag evaluation; app.n26.com/build/js/client.*.js returns 404 (path changed)
+evidence_needed: Valid client SDK key from app.n26.com JS bundle (new path); successful /v1/initialize call with extracted key
+verify_steps: GET https://app.n26.com (parse HTML for JS bundle paths); GET discovered JS bundle URLs to extract Statsig client_key pattern (client- prefix); GET https://flags.n26.com/v1/initialize?client_key=<extracted>
+impact: Feature flag manipulation → bypass payment limits/KYC/premium features → high
+testability: PASSIVE
+[PARKED] GraphQL introspection via GET query param bypassing WAF on app.n26.com: confidence 55 but consistent connection reset (timeout) on GET suggests network-level termination, not WAF bypass; GET likely doesn't reach GraphQL engine; needs different bypass vector (Content-Type, headers, path variation)  
+[PARKED] Statsig client SDK key extraction from app.n26.com JS bundle: confidence 60 but client.*.js path returns 404; bundle location unknown; Statsig may use server-only keys (no client key in bundle); RBAC on /v1/initialize consistently 403/401  
+[FINAL] **Payment service versioned API (spc.n26.com/api/v1) exposes BOLA/IDOR on financial operations** — confidence 75, highest business_value (payment), confirmed live endpoints (200 on /api/v1, /v1/transactions, /v1/payments, /v1/tokens), concrete verify_steps with AUTH_HELPED testability, no REJECTED-class overlap
+[NEXT] PROBE: GET https://spc.n26.com/api/v1 with headers `Referer: https://app.n26.com` and cookies `n26.csrf`, `num26UniqueDeviceToken`, `n26.graphql_form_payload` from app.n26.com session — enumerate payment API structure and test for authenticated user-scoped data access
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses (not 404). WAF actively blocks POST. GET query param returns connection reset — not a viable bypass.  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All /v1/* endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.  
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.  
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with confirmed versioned API endpoints (/api/v1, /v1/transactions, /v1/payments, /v1/tokens all HTTP 200). /health rotated to 404. API enumeration successful — now requires auth testing for BOLA/IDOR.
+[RISK] N26 Bank AG: 82 — Confirmed live payment API (spc.n26.com/v1/*) with 200 responses, GraphQL WAF with cookie auth on primary banking app, Statsig feature flags controlling banking features behind RBAC; payment service now has verified attack surface with versioned endpoints accessible; all three high-value targets with confirmed attack surface and at least one (spc.n26.com) showing unauthenticated endpoint exposure.
+## 2026-09-04 01:25:33 UTC [target] (model nemotron3)
+[HYP] Payment service BOLA/IDOR on versioned financial endpoints  
+class: IDOR  
+asset: spc.n26.com  
+confidence: 80  
+reasoning: spc.n26.com/api/v1, /v1/transactions, /v1/payments, /v1/tokens all return HTTP 200 (len=43); CSP connect-src on app.n26.com permits this origin; Marqeta card issuing in CSP confirms payment context; Envoy proxy suggests microservice routing; no authentication tested yet on these endpoints  
+evidence_needed: Authenticated request showing user-scoped transaction data; cross-user IDOR via user_id/account_id parameter manipulation  
+verify_steps: GET https://spc.n26.com/api/v1 with Referer: https://app.n26.com and cookies n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload; GET https://spc.n26.com/v1/transactions with same headers; test query parameters (user_id, account_id, card_id) for IDOR  
+impact: Cross-user transaction access, card token manipulation, payment initiation → critical  
+testability: AUTH_HELPED  
+[HYP] GraphQL schema exposure via alternative Content-Type bypass on app.n26.com  
+class: AUTH  
+asset: app.n26.com/graphql  
+confidence: 60  
+reasoning: POST /graphql and /api/graphql return 403 (WAF blocks application/json); GET query param returns connection reset (network-level); Express/Envoy stack may process application/x-www-form-urlencoded or multipart/form-data differently; cookie-based auth confirmed (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload)  
+evidence_needed: GraphQL introspection response (__typename or __schema) via non-JSON Content-Type; successful mutation execution  
+verify_steps: POST https://app.n26.com/graphql with Content-Type: application/x-www-form-urlencoded and body `query={__typename}` with valid cookies; POST with Content-Type: multipart/form-data; test /api/graphql same vectors  
+impact: Full GraphQL schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical  
+testability: AUTH_HELPED  
+[HYP] Keyless auth service metadata exposure via SSRF on authentication-service.eks.core-production.keyless.technology  
+class: SSRF  
+asset: authentication-service.eks.core-production.keyless.technology  
+confidence: 55  
+reasoning: EKS-hosted service discovered via CSP connect-src; keyless technology suggests JWT/OIDC token exchange; internal metadata endpoint 169.254.169.254 accessible from pods; service may proxy or validate tokens from untrusted inputs  
+evidence_needed: SSRF vector accepting URL parameter; response showing instance metadata or IAM credentials  
+verify_steps: Enumerate endpoints via GET /health, /ready, /metrics, /api, /v1; test any callback/redirect/webhook parameters with http://169.254.169.254/latest/meta-data/  
+impact: Cloud metadata access → IAM roles → lateral movement in EKS cluster → critical  
+testability: PASSIVE  
+[PARKED] Keyless auth service metadata exposure via SSRF: confidence 55 but no confirmed SSRF vector yet; endpoint enumeration needed first; EKS pod metadata access requires network-level SSRF not yet identified  
+[FINAL] **Payment service BOLA/IDOR on versioned financial endpoints** — confidence 80, highest business_value (payment), confirmed live endpoints (200 on 4+ versioned paths), concrete verify_steps with AUTH_HELPED testability, no REJECTED-class overlap  
+[FINAL] **GraphQL schema exposure via alternative Content-Type bypass** — confidence 60, high business_value (core banking), WAF confirmed blocking JSON only, alternative content types untested, AUTH_HELPED testability  
+[NEXT] PROBE: POST https://app.n26.com/graphql with `Content-Type: application/x-www-form-urlencoded`, body `query={__typename}`, cookies `n26.csrf`, `num26UniqueDeviceToken`, `n26.graphql_form_payload` from app.n26.com session — test if WAF bypass via form encoding reaches GraphQL engine  
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass.  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All /v1/* endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.  
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.  
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with confirmed versioned API endpoints (/api/v1, /v1/transactions, /v1/payments, /v1/tokens all HTTP 200). /health rotated to 404. API enumeration successful — now requires auth testing for BOLA/IDOR.  
+[RISK] N26 Bank AG: 85 — Confirmed live payment API (spc.n26.com/v1/*) with 200 responses on financial endpoints, GraphQL WAF with cookie auth on primary banking app, Statsig feature flags controlling banking features behind RBAC, keyless auth service on EKS; payment service has verified attack surface with versioned endpoints accessible; all high-value targets with confirmed attack surface and at least two (spc.n26.com, app.n26.com/graphql) showing exploitable pathways.
+## 2026-09-04 06:05:46 UTC [target] (model nemotron3)
+[PRIO] spc.n26.com,8.4,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=7,cloud_surface=8,freshness=10
+[PRIO] app.n26.com/graphql,8.1,attack_surface=10,business_value=9,tech_exposure=10,gate_ease=4,cloud_surface=8,freshness=10
+[PRIO] flags.n26.com,7.1,attack_surface=7,business_value=7,tech_exposure=9,gate_ease=5,cloud_surface=9,freshness=10
+[HYP] Payment service BOLA/IDOR on versioned financial endpoints  
+class: IDOR  
+asset: spc.n26.com  
+confidence: 80  
+reasoning: spc.n26.com/api/v1, /v1/transactions, /v1/payments, /v1/tokens all return HTTP 200 (len=43) consistently across 4 probe runs; CSP connect-src on app.n26.com permits this origin; Marqeta card issuing in CSP confirms payment context; Envoy proxy suggests microservice routing; no authentication tested yet on these endpoints  
+evidence_needed: Authenticated request showing user-scoped transaction data; cross-user IDOR via user_id/account_id/card_id parameter manipulation  
+verify_steps: GET https://spc.n26.com/api/v1 with Referer: https://app.n26.com and cookies n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload; GET https://spc.n26.com/v1/transactions with same headers; test query parameters (user_id, account_id, card_id) for IDOR  
+impact: Cross-user transaction access, card token manipulation, payment initiation → critical  
+testability: AUTH_HELPED  
+[HYP] GraphQL schema exposure via alternative Content-Type bypass on app.n26.com  
+class: AUTH  
+asset: app.n26.com/graphql  
+confidence: 60  
+reasoning: POST /graphql and /api/graphql return timeout (WAF blocks application/json); GET query param returns connection reset (network-level); Express/Envoy stack may process application/x-www-form-urlencoded or multipart/form-data differently; cookie-based auth confirmed (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload)  
+evidence_needed: GraphQL introspection response (__typename or __schema) via non-JSON Content-Type; successful mutation execution  
+verify_steps: POST https://app.n26.com/graphql with Content-Type: application/x-www-form-urlencoded and body `query={__typename}` with valid cookies; POST with Content-Type: multipart/form-data; test /api/graphql same vectors  
+impact: Full GraphQL schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical  
+testability: AUTH_HELPED  
+[HYP] Statsig client SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass  
+class: MISCONFIG  
+asset: flags.n26.com  
+confidence: 55  
+reasoning: flags.n26.com is Statsig behind CloudFront+GKE; all /v1/* endpoints return 403/401 (RBAC); CSP connect-src on app.n26.com includes flags.n26.com; client-side SDK keys typically embedded in JS bundles for feature flag evaluation; app.n26.com/build/js/client.*.js returns 404 (path changed); new bundle path unknown  
+evidence_needed: Valid client SDK key from app.n26.com JS bundle (new path); successful /v1/initialize call with extracted key  
+verify_steps: GET https://app.n26.com (parse HTML for JS bundle paths); GET discovered JS bundle URLs to extract Statsig client_key pattern (client- prefix); GET https://flags.n26.com/v1/initialize?client_key=<extracted>  
+impact: Feature flag manipulation → bypass payment limits/KYC/premium features → high  
+testability: PASSIVE  
+[PARKED] Statsig client SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass: confidence 55 but client.*.js path returns 404 consistently; bundle location unknown after 4 probe runs; Statsig may use server-only keys (no client key in bundle); RBAC on /v1/initialize consistently 403/401 even with hypothetical key  
+[FINAL] **Payment service BOLA/IDOR on versioned financial endpoints** — confidence 80, highest business_value (payment), confirmed live endpoints (200 on 4+ versioned paths across 4 probe runs), concrete verify_steps with AUTH_HELPED testability, no REJECTED-class overlap  
+[FINAL] **GraphQL schema exposure via alternative Content-Type bypass** — confidence 60, high business_value (core banking), WAF confirmed blocking JSON only, alternative content types untested, AUTH_HELPED testability  
+[NEXT] PROBE: POST https://app.n26.com/graphql with `Content-Type: application/x-www-form-urlencoded`, body `query={__typename}`, cookies `n26.csrf`, `num26UniqueDeviceToken`, `n26.graphql_form_payload` from app.n26.com session — test if WAF bypass via form encoding reaches GraphQL engine
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass.  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All /v1/* endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.  
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.  
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with confirmed versioned API endpoints (/api/v1, /v1/transactions, /v1/payments, /v1/tokens all HTTP 200). /health rotated to 404. API enumeration successful — now requires auth testing for BOLA/IDOR.
+[RISK] N26 Bank AG: 85 — Confirmed live payment API (spc.n26.com/v1/*) with 200 responses on financial endpoints across 4 probe runs, GraphQL WAF with cookie auth on primary banking app, Statsig feature flags controlling banking features behind RBAC, keyless auth service on EKS; payment service has verified attack surface with versioned endpoints accessible; all high-value targets with confirmed attack surface and at least two (spc.n26.com, app.n26.com/graphql) showing exploitable pathways.
+## 2026-09-04 11:25:31 UTC [target] (model nemotron3)
+[PRIO] spc.n26.com,8.4,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=7,cloud_surface=8,freshness=10
+[PRIO] app.n26.com/graphql,8.1,attack_surface=10,business_value=9,tech_exposure=10,gate_ease=4,cloud_surface=8,freshness=10
+[PRIO] flags.n26.com,7.1,attack_surface=7,business_value=7,tech_exposure=9,gate_ease=5,cloud_surface=9,freshness=10
+[PRIO] authentication-service.eks.core-production.keyless.technology,6.8,attack_surface=8,business_value=8,tech_exposure=7,gate_ease=3,cloud_surface=10,freshness=8
+[HYP] Payment service BOLA/IDOR on versioned financial endpoints
+class: IDOR
+asset: spc.n26.com
+confidence: 80
+reasoning: spc.n26.com/api/v1, /v1/transactions, /v1/payments, /v1/tokens all return HTTP 200 (len=43) consistently across 4 probe runs; CSP connect-src on app.n26.com permits this origin; Marqeta card issuing in CSP confirms payment context; Envoy proxy suggests microservice routing; no authentication tested yet on these endpoints
+evidence_needed: Authenticated request showing user-scoped transaction data; cross-user IDOR via user_id/account_id/card_id parameter manipulation
+verify_steps: GET https://spc.n26.com/api/v1 with Referer: https://app.n26.com and cookies n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload; GET https://spc.n26.com/v1/transactions with same headers; test query parameters (user_id, account_id, card_id) for IDOR
+impact: Cross-user transaction access, card token manipulation, payment initiation → critical
+testability: AUTH_HELPED
+[HYP] GraphQL schema exposure via alternative Content-Type bypass on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 60
+reasoning: POST /graphql and /api/graphql return timeout (WAF blocks application/json); GET query param returns connection reset (network-level); Express/Envoy stack may process application/x-www-form-urlencoded or multipart/form-data differently; cookie-based auth confirmed (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload)
+evidence_needed: GraphQL introspection response (__typename or __schema) via non-JSON Content-Type; successful mutation execution
+verify_steps: POST https://app.n26.com/graphql with Content-Type: application/x-www-form-urlencoded and body `query={__typename}` with valid cookies; POST with Content-Type: multipart/form-data; test /api/graphql same vectors
+impact: Full GraphQL schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical
+testability: AUTH_HELPED
+[HYP] EKS pod metadata exposure via SSRF on keyless auth service
+class: SSRF
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 55
+reasoning: EKS-hosted service discovered via CSP connect-src; keyless technology suggests JWT/OIDC token exchange; internal metadata endpoint 169.254.169.254 accessible from pods; service may proxy or validate tokens from untrusted inputs
+evidence_needed: SSRF vector accepting URL parameter; response showing instance metadata or IAM credentials
+verify_steps: Enumerate endpoints via GET /health, /ready, /metrics, /api, /v1; test any callback/redirect/webhook parameters with http://169.254.169.254/latest/meta-data/
+impact: Cloud metadata access → IAM roles → lateral movement in EKS cluster → critical
+testability: PASSIVE
+[PARKED] EKS pod metadata exposure via SSRF on keyless auth service: confidence 55 but no confirmed SSRF vector yet; endpoint enumeration needed first; EKS pod metadata access requires network-level SSRF not yet identified
+[FINAL] **Payment service BOLA/IDOR on versioned financial endpoints** — confidence 80, highest business_value (payment), confirmed live endpoints (200 on 4+ versioned paths across 4 probe runs), concrete verify_steps with AUTH_HELPED testability, no REJECTED-class overlap
+[FINAL] **GraphQL schema exposure via alternative Content-Type bypass** — confidence 60, high business_value (core banking), WAF confirmed blocking JSON only, alternative content types untested, AUTH_HELPED testability
+[NEXT] PROBE: POST https://app.n26.com/graphql with `Content-Type: application/x-www-form-urlencoded`, body `query={__typename}`, cookies `n26.csrf`, `num26UniqueDeviceToken`, `n26.graphql_form_payload` from app.n26.com session — test if WAF bypass via form encoding reaches GraphQL engine
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All /v1/* endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with confirmed versioned API endpoints (/api/v1, /v1/transactions, /v1/payments, /v1/tokens all HTTP 200). /health rotated to 404. API enumeration successful — now requires auth testing for BOLA/IDOR.
+[RISK] N26 Bank AG: 85 — Confirmed live payment API (spc.n26.com/v1/*) with 200 responses on financial endpoints across 4 probe runs, GraphQL WAF with cookie auth on primary banking app, Statsig feature flags controlling banking features behind RBAC, keyless auth service on EKS; payment service has verified attack surface with versioned endpoints accessible; all high-value targets with confirmed attack surface and at least two (spc.n26.com, app.n26.com/graphql) showing exploitable pathways.
+## 2026-09-04 15:15:26 UTC [target] (model nemotron3)
+[PRIO] spc.n26.com,8.4,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=7,cloud_surface=8,freshness=10
+[PRIO] app.n26.com/graphql,8.1,attack_surface=10,business_value=9,tech_exposure=10,gate_ease=4,cloud_surface=8,freshness=10
+[PRIO] flags.n26.com,7.1,attack_surface=7,business_value=7,tech_exposure=9,gate_ease=5,cloud_surface=9,freshness=10
+[PRIO] authentication-service.eks.core-production.keyless.technology,6.8,attack_surface=8,business_value=8,tech_exposure=7,gate_ease=3,cloud_surface=10,freshness=8
+[HYP] Payment service BOLA/IDOR on versioned financial endpoints
+class: IDOR
+asset: spc.n26.com
+confidence: 80
+reasoning: spc.n26.com/api/v1, /v1/transactions, /v1/payments, /v1/tokens all return HTTP 200 (len=43) consistently across 5+ probe runs; CSP connect-src on app.n26.com permits this origin; Marqeta card issuing in CSP confirms payment context; Envoy proxy suggests microservice routing; no authentication tested yet on these endpoints; /api/v1/transactions/1 and /api/v1/users/1 return 404 suggesting resource-level routing exists
+evidence_needed: Authenticated request showing user-scoped transaction data; cross-user IDOR via user_id/account_id/card_id parameter manipulation; confirmation that endpoints accept query/body parameters for resource identification
+verify_steps: GET https://spc.n26.com/api/v1 with Referer: https://app.n26.com and cookies n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload; GET https://spc.n26.com/v1/transactions with same headers; test query parameters (user_id, account_id, card_id) for IDOR; test POST to /v1/payments with minimal body to check mutation surface
+impact: Cross-user transaction access, card token manipulation, payment initiation → critical
+testability: AUTH_HELPED
+[HYP] GraphQL schema exposure via alternative Content-Type bypass
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 60
+reasoning: POST /graphql and /api/graphql return timeout (WAF blocks application/json); GET query param returns connection reset (network-level termination); Express/Envoy stack may process application/x-www-form-urlencoded or multipart/form-data differently; cookie-based auth confirmed (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload); n26.graphql_form_payload cookie name suggests form-encoded payloads are expected
+evidence_needed: GraphQL introspection response (__typename or __schema) via non-JSON Content-Type; successful mutation execution; confirmation WAF rule is Content-Type specific
+verify_steps: POST https://app.n26.com/graphql with Content-Type: application/x-www-form-urlencoded and body `query={__typename}` with valid cookies; POST with Content-Type: multipart/form-data; test /api/graphql same vectors; test PUT/PATCH methods with JSON body
+impact: Full GraphQL schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical
+testability: AUTH_HELPED
+[HYP] Statsig client SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 55
+reasoning: flags.n26.com is Statsig behind CloudFront+GKE; all /v1/* endpoints return 403/401 (RBAC); CSP connect-src on app.n26.com includes flags.n26.com; client-side SDK keys typically embedded in JS bundles for feature flag evaluation; app.n26.com/build/js/client.*.js returns 404 (path changed); new bundle path unknown but must exist for client-side feature flag evaluation
+evidence_needed: Valid client SDK key from app.n26.com JS bundle (new path); successful /v1/initialize call with extracted key
+verify_steps: GET https://app.n26.com (parse HTML for JS bundle paths); GET discovered JS bundle URLs to extract Statsig client_key pattern (client- prefix); GET https://flags.n26.com/v1/initialize?client_key=<extracted>
+impact: Feature flag manipulation → bypass payment limits/KYC/premium features → high
+testability: PASSIVE
+[PARKED] Statsig client SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass: confidence 55 but client.*.js path returns 404 consistently across 5+ probe runs; bundle location unknown; Statsig may use server-only keys (no client key in bundle); RBAC on /v1/initialize consistently 403/401 even with hypothetical key; PASSIVE testability but no viable path to key extraction confirmed
+[FINAL] **Payment service BOLA/IDOR on versioned financial endpoints** — confidence 80, highest business_value (payment), confirmed live endpoints (200 on 4+ versioned paths across 5+ probe runs), concrete verify_steps with AUTH_HELPED testability, no REJECTED-class overlap
+[FINAL] **GraphQL schema exposure via alternative Content-Type bypass** — confidence 60, high business_value (core banking), WAF confirmed blocking JSON only, alternative content types untested, AUTH_HELPED testability, n26.graphql_form_payload cookie suggests form encoding is valid path
+[NEXT] PROBE: POST https://app.n26.com/graphql with `Content-Type: application/x-www-form-urlencoded`, body `query={__typename}`, cookies `n26.csrf`, `num26UniqueDeviceToken`, `n26.graphql_form_payload` from app.n26.com session — test if WAF bypass via form encoding reaches GraphQL engine
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All /v1/* endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with confirmed versioned API endpoints (/api/v1, /v1/transactions, /v1/payments, /v1/tokens all HTTP 200). /health rotated to 404. API enumeration successful — now requires auth testing for BOLA/IDOR.
+[LEARN] ACCEPTED IDOR @ spc.n26.com: Versioned payment API endpoints confirmed (HTTP 200). CSP allows cross-origin access from app.n26.com. Financial endpoints are high-value IDOR targets.
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL WAF blocks POST application/json. Alternative Content-Type or HTTP method may bypass WAF rules.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig service with RBAC. Client-side SDK key extraction from actual bundle paths (not assumed) is viable path.
+[RISK] N26 Bank AG: 85 — Confirmed live payment API (spc.n26.com/v1/*) with 200 responses on financial endpoints across 5+ probe runs, GraphQL WAF with cookie auth on primary banking app, Statsig feature flags controlling banking features behind RBAC, keyless auth service on EKS; payment service has verified attack surface with versioned endpoints accessible; all high-value targets with confirmed attack surface and at least two (spc.n26.com, app.n26.com/graphql) showing exploitable pathways.
+
+--- leads/reposcan-n26.md ---
+[0m
+I now have the full context. Let me note an important recurring observation that has NOT been critically examined: the spc.n26.com endpoints all return `200 len=43` across many runs — a constant 43-byte body. This strongly suggests these are NOT real financial API endpoints but a generic catch-all/catch-route returning a fixed stub body (likely an error message or redirect placeholder). The previous models conflated "HTTP 200" with "real API surface" without inspecting the actual 43-byte body. This is a classic false-positive trap. Let me examine the actual body content with a read-only probe.
+
+Let me probe the actual body content of these endpoints to determine if they're real API endpoints or a catch-all stub. This is a critical delta — no previous run has read the body.
+[0m$ [0mcd /tmp/opencode && curl -sS -m 20 -D - https://spc.n26.com/v1/transactions 2>&1 | head -40
+HTTP/2 200 
+date: Fri, 04 Sep 2026 18:28:13 GMT
+content-type: image/gif
+content-length: 43
+set-cookie: sp=d651625d-8808-4d08-8098-cab23c76a495; Expires=Sat, 04 Sep 2027 18:28:13 GMT; Path=/; Secure; HttpOnly; SameSite=None
+cache-control: no-cache, no-store, must-revalidate
+p3p: policyref="/w3c/p3p.xml", CP="NOI DSP COR NID PSA OUR IND COM NAV STA"
+access-control-allow-origin: *
+access-control-allow-credentials: true
+server: envoy
+x-envoy-upstream-service-time: 9
+
+GIF89a  �  ���   !�    ,       D ;
+[0m
+This is a critical finding. The `200 len=43` responses on spc.n26.com `v1/transactions`, `v1/payments`, `v1/tokens` are **NOT real API endpoints** — they return a **1x1 transparent GIF** (`GIF89a` magic bytes, content-type `image/gif`, 43 bytes). This is a **catch-all route** that serves a tracking pixel (the `sp` cookie and `p3p` header indicate an ad/tracking pixel service, likely a blank GIF placeholder for ALL unknown paths).
+
+This means the entire "Payment service BOLA/IDOR" hypothesis (confidence 80-82) is completely **invalidated** — there is no enumerated API surface at all. All the probe results across every run (200 len=43) were the same tracking GIF catch-all. The previous models (bigpickle, nemotron3) fell for this false-positive and built a high-confidence IDOR hypothesis on a phantom API.
+
+This is the critical delta for this run. The "confirmed versioned payment API endpoints" in the knowledge base are false. Let me verify a couple more paths to confirm it's a blanket catch-all GIF.
+[0m$ [0mcd /tmp/opencode && for p in / /nonexistent-path-12345 /v1/payments /api/v1 /v1/tokens /foo/bar; do echo "=== $p ==="; curl -sS -m 15 -o /tmp/opencode/body.bin -w "code=%{http_code} type=%{content_type} len=%{size_download}\n" "https://spc.n26.com$p" 2>&1; head -c 10 /tmp/opencode/body.bin | od -c | head -1; done
+=== / ===
+code=404 type=text/plain; charset=UTF-8 len=13
+0000000   4   0   4       n   o   t       f   o
+=== /nonexistent-path-12345 ===
+code=404 type=text/plain; charset=UTF-8 len=13
+0000000   4   0   4       n   o   t       f   o
+=== /v1/payments ===
+code=200 type=image/gif len=43
+0000000   G   I   F   8   9   a 001  \0 001  \0
+=== /api/v1 ===
+code=200 type=image/gif len=43
+0000000   G   I   F   8   9   a 001  \0 001  \0
+=== /v1/tokens ===
+code=200 type=image/gif len=43
+0000000   G   I   F   8   9   a 001  \0 001  \0
+=== /foo/bar ===
+code=200 type=image/gif len=43
+0000000   G   I   F   8   9   a 001  \0 001  \0
+[0m
+Confirmed. This is a definitive finding:
+
+- `/` and any path starting with nothing special: `404 not found` (text/plain, 13 bytes)
+- `/v1/transactions`, `/v1/payments`, `/v1/tokens`, `/api/v1`, AND the arbitrary `/foo/bar`, `/nonexistent-path` case — wait, `/nonexistent-path-12345` returned 404 but `/foo/bar` returned GIF 200.
+
+So there is a path-based routing rule: paths containing `/v1/` or `/api/` OR `/foo/bar`... Let me test more carefully to map the actual routing rule. Actually `/nonexistent-path-12345` → 404 but `/foo/bar` → GIF. The difference seems to be the path pattern. Let me investigate which paths return the GIF vs 404.
+[0m$ [0mcd /tmp/opencode && for p in /foo /foo/bar /bar /v1 /v1/foo /api /api/x /px /pixel /p?x /abcdef /a/b/c /tracking /sp.gif /sp; do printf "%-18s " "$p"; curl -sS -m 12 -o /tmp/opencode/b.bin -w "%{http_code} %{content_type} %{size_download}\n" "https://spc.n26.com$p" 2>&1; done
+/foo               404 text/plain; charset=UTF-8 13
+/foo/bar           200 image/gif 43
+/bar               404 text/plain; charset=UTF-8 13
+/v1                404 text/plain; charset=UTF-8 13
+/v1/foo            200 image/gif 43
+/api               404 text/plain; charset=UTF-8 13
+/api/x             200 image/gif 43
+/px                404 text/plain; charset=UTF-8 13
+/pixel             404 text/plain; charset=UTF-8 13
+/p?x               404 text/plain; charset=UTF-8 13
+/abcdef            404 text/plain; charset=UTF-8 13
+/a/b/c             404 text/plain; charset=UTF-8 13
+/tracking          404 text/plain; charset=UTF-8 13
+/sp.gif            404 text/plain; charset=UTF-8 13
+/sp                404 text/plain; charset=UTF-8 13
+[0m
+The pattern is now clear: **any path with 2+ segments** (e.g. `/foo/bar`, `/v1/foo`, `/api/x`) returns the 1x1 GIF, while single-segment or deeper 3-segment paths like `/a/b/c` return 404. Wait, `/a/b/c` (3 segments) returned 404 but `/foo/bar` (2 segments) returned 200. Let me reconsider.
+
+- `/v1` (1 seg) → 404
+- `/v1/foo` (2 seg) → 200 GIF
+- `/api` (1 seg) → 404
+- `/api/x` (2 seg) → 200 GIF
+- `/foo/bar` (2 seg) → 200 GIF
+- `/a/b/c` (3 seg) → 404
+- `/nonexistent-path-12345` (1 seg) → 404
+
+Wait, `/a/b/c` is 3 segments → 404, but `/foo/bar` 2 segments → 200. So the rule appears to be: **exactly 2 path segments → GIF, everything else → 404**. This is the classic pattern of a **tracking pixel/event-collection endpoint** where all 2-segment paths (likely `<app>/<event>` or `<namespace>/<resource>`) return a blank GIF for beacon requests.
+
+Regardless of the exact rule, the key conclusion is **firmly established**: these are NOT payment API endpoints. They serve a 1x1 GIF tracking pixel. The entire "spc.n26.com payment service BOLA/IDOR" hypothesis series is a **confirmed false positive** based on status-code-only probing that failed to read the response body.
+
+Let me verify the 2-segment rule definitively with a couple more, and confirm `spc.n26.com` is a tracking pixel host (probably the "sp" = "statistics pixel" endpoint). This is a major LEARN — it should REJECT the IDOR hypothesis.
+
+Let me also quickly check that this pixel host is what app.n26.com actually uses for tracking, and whether there's any real service behind spc.n26.com (besides pixel).
+[0m$ [0mcd /tmp/opencode && for p in /aa/bb /xx/yy/zz /1/2 /ok/ok/ok/ok; do printf "%-14s " "$p"; curl -sS -m 12 -o /tmp/opencode/b.bin -w "%{http_code} %{content_type} %{size_download}\n" "https://spc.n26.com$p" 2>&1; done
+/aa/bb         200 image/gif 43
+/xx/yy/zz      404 text/plain; charset=UTF-8 13
+/1/2           200 image/gif 43
+/ok/ok/ok/ok   404 text/plain; charset=UTF-8 13
+[0m
+Confirmed definitively: **exactly 2 path segments → 1x1 tracking GIF; all else → 404**. `spc.n26.com` is a **tracking pixel/beacon host** (the "sp" subdomain = statistics/pixel), NOT a payment service. The 2-segment paths map to tracking-beacon namespaces (`<tracker>/<event>`).
+
+This **invalidates the top-ranked hypothesis** across all models. The entire payment-API/IDOR narrative was built on a false positive from status-code-only probing. There is no financial API surface here — it's an analytics pixel endpoint.
+
+This is a major delta and a critical learning. Now let me reassess. The real remaining attack surface:
+1. **app.n26.com/graphql** — genuine GraphQL with WAF bypass attempts (Content-Type variation). This remains the top real target.
+2. **flags.n26.com** — Statsig, but client key extraction path confirmed 404; server-only keys likely.
+3. **authentication-service.eks.core-production.keyless.technology** — unexplored EKS keyless auth service (SSRF candidate).
+
+Let me quickly probe the keyless auth service since it's been listed but never probed in detail — this is a genuinely fresh target.
+[0m$ [0mcd /tmp/opencode && for p in / /health /ready /metrics /api /v1 /openapi.json /swagger /jwks /.well-known/openid-configuration; do printf "%-38s " "$p"; curl -sS -m 12 -o /tmp/opencode/b.bin -w "%{http_code} %{content_type} %{size_download}\n" "https://authentication-service.eks.core-production.keyless.technology$p" 2>&1; printf "   body: "; head -c 80 /tmp/opencode/b.bin | tr -d '\n'; echo; done
+/                                      404 application/json 74
+   body: {"code":"UNPROCESSABLE","reason":"path unused: /","stack":"api.`unused`"}
+/health                                404 application/json 80
+   body: {"code":"UNPROCESSABLE","reason":"path unused: /health","stack":"api.`unused`"}
+/ready                                 404 application/json 79
+   body: {"code":"UNPROCESSABLE","reason":"path unused: /ready","stack":"api.`unused`"}
+/metrics                               404 application/json 81
+   body: {"code":"UNPROCESSABLE","reason":"path unused: /metrics","stack":"api.`unused`"}
+/api                                   404 application/json 77
+   body: {"code":"UNPROCESSABLE","reason":"path unused: /api","stack":"api.`unused`"}
+/v1                                    404 application/json 76
+   body: {"code":"UNPROCESSABLE","reason":"path unused: /v1","stack":"api.`unused`"}
+/openapi.json                          200 application/json 16819
+   body: {"openapi": "3.1.2", "info": {"title": "Authentication Service 2", "description"
+/swagger                               404 application/json 81
+   body: {"code":"UNPROCESSABLE","reason":"path unused: /swagger","stack":"api.`unused`"}
+/jwks                                  404 application/json 78
+   body: {"code":"UNPROCESSABLE","reason":"path unused: /jwks","stack":"api.`unused`"}
+/.well-known/openid-configuration      404 application/json 106
+   body: {"code":"UNPROCESSABLE","reason":"path unused: /.well-known/openid-configuration
+[0m
+Excellent — a **major new finding**. The `authentication-service.eks.core-production.keyless.technology` host exposes an **OpenAPI 3.1.2 spec** at `/openapi.json` (16,819 bytes). This is the keyless authentication service (KYC/auth infrastructure). Let me pull the full spec — this reveals the entire API surface including potential SSRF/auth bypass vectors.
+
+This is a genuinely fresh, unexplored, high-value target. Let me fetch the full spec.
+[0m$ [0mcd /tmp/opencode && curl -sS -m 20 "https://authentication-service.eks.core-production.keyless.technology/openapi.json" -o openapi.json && wc -c openapi.json && python3 -c "import json;d=json.load(open('openapi.json'));print('paths:',list(d.get('paths',{}).keys()));print('title:',d.get('info'))"
+16819 openapi.json
+paths: ['/v1/users/{customer}/{username}', '/v1/customers/{customer}/image-encryption', '/v1/users/{customer}/{username}/import-client-state', '/v1/users/{customer}/{username}/export-client-state', '/v1/customers/{customer}/client-state-encryption']
+title: {'title': 'Authentication Service 2', 'description': 'The Keyless Client Device as a Service', 'version': '1.0.0'}
+[0m
+This is a significant discovery. The Keyless **"Client Device as a Service"** authentication service exposes 5 endpoints in its OpenAPI spec. Let me examine the full spec details — parameters (especially anything taking a URL/redirect for SSRF), auth requirements, and the `/v1/users/{customer}/{username}` path which could have IDOR on user auth data.
+[0m$ [0mcd /tmp/opencode && python3 -c "
+import json
+d=json.load(open('openapi.json'))
+for p,ops in d['paths'].items():
+    for m,op in ops.items():
+        if isinstance(op,dict) and 'operationId' in op:
+            print('='*70)
+            print(m.upper(), p, '->', op.get('operationId'))
+            print('  summary:', op.get('summary'))
+            print('  params:')
+            for pr in op.get('parameters',[]):
+                print('    -', pr.get('in'), pr.get('name'), pr.get('required',''), pr.get('schema',{}))
+            rb = op.get('requestBody')
+            if rb:
+                print('  requestBody:', json.dumps(rb.get('content',{})))
+            resp = op.get('responses',{})
+            print('  responses:', list(resp.keys()), json.dumps(resp.get('200',{}))[:200])
+"
+(no output)
+[0m
+[0m$ [0mcd /tmp/opencode && python3 -c "
+import json
+d=json.load(open('openapi.json'))
+for p,ops in d['paths'].items():
+    shown=False
+    for m,op in ops.items():
+        if not isinstance(op,dict): continue
+        print('='*70)
+        print(m.upper(), p)
+        print('  opid:', op.get('operationId'))
+        print('  summary:', op.get('summary'))
+        print('  params:', json.dumps(op.get('parameters',[])))
+        print('  requestBody:', json.dumps(op.get('requestBody')))
+        print('  responses:', json.dumps(op.get('responses'))[:500])
+        print('  security:', json.dumps(op.get('security')))
+"
+======================================================================
+POST /v1/users/{customer}/{username}
+  opid: None
+  summary: Enroll user form picture
+  params: [{"name": "Kl-Scenario", "in": "header", "required": true, "description": "The scenario for the enrollment.\n\n* `SELFIE` - Enrollment from selfie image captured by user.\n* `TRUSTED_SOURCE` - Enrollment from photo that was already verified by trusted party.\n* `DOCUMENT` - Enrollment from photo of document like passport or government id.\n", "schema": {"type": "string", "enum": ["SELFIE", "TRUSTED_SOURCE", "DOCUMENT"]}}, {"name": "Kl-Key-Id", "in": "header", "required": true, "description": "The id associated with public key used for encryption.", "schema": {"type": "string"}}, {"name": "Kl-Key-Algorithm", "in": "header", "description": "The algorithm used to encrypt the symmetric encryption key", "schema": {"$ref": "#/components/schemas/KeyEncryptionAlgorithm", "default": "RSAES-OAEP-SHA-256"}}, {"name": "Kl-Image-Key", "in": "header", "required": true, "description": "Encrypted symmetric encryption key, that is used to encrypt the user's photo.\n\nThe raw key must be at least 128 or 256 bits long. And encrypted by the public key and algorithm provided by Keyless.\n\nThe binary data is represented as hex string in the request.\n", "schema": {"type": "string", "format": "hex"}}, {"name": "Kl-Image-Algorithm", "in": "header", "required": true, "description": "Algorithm used to encrypt the image data.\n\nThe `AES-GCM-SIV` is recommended as it provides better security. Only use `AES-GCM` if `AES-GCM-SIV` is not supported by cryptographic library.\n\nNonce (IV) for GCM mode must be 12 bytes long and is prepended to the encrypted image data.\n", "schema": {"type": "string", "enum": ["AES-GCM", "AES-GCM-SIV"]}}, {"name": "Kl-Exif-Transpose", "in": "header", "description": "If true photo will be rotated according to Exif metadata (if possible).", "schema": {"type": "boolean", "default": false}}, {"name": "Kl-Transaction-Data", "in": "header", "description": "Optional data to be signed by Keyless if enrollment is successful.\n\nThe signed data are returned in the response as `transactionJwt`.\n", "schema": {"type": "string"}}, {"name": "Kl-Audience", "in": "header", "description": "Include `aud` claim in `transactionJwt` if `Kl-Transaction-Data` was provided.", "schema": {"type": "string"}}, {"name": "Kl-Seed-Entropy", "in": "header", "description": "Optionally generate person unique entropy data. The entropy data are returned in the response as `seedEntropy`.", "schema": {"type": "boolean", "default": false}}]
+  requestBody: {"description": "The encrypted image of a user", "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}}
+  responses: {"201": {"description": "User enrolled", "content": {"application/json": {"schema": {"allOf": [{"$ref": "#/components/schemas/User"}, {"type": "object", "properties": {"transactionJwt": {"type": "string", "description": "The transaction JWT signed by Keyless.\n\nOnly present if transaction data was provided in the enrollment request. The public key to verify the JWT is provided by keyless.\n"}, "seedEntropy": {"type": "string", "format": "base64", "description": "The encrypted user's seed entrop
+  security: null
+======================================================================
+GET /v1/users/{customer}/{username}
+  opid: None
+  summary: Check Keyless Client Device
+  params: []
+  requestBody: null
+  responses: {"200": {"description": "User information", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/User"}}}}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/CustomerNotFound"}, "500": {"$ref": "#/components/responses/InternalError"}}
+  security: null
+======================================================================
+DELETE /v1/users/{customer}/{username}
+  opid: None
+  summary: Delete Keyless Client Device
+  params: []
+  requestBody: null
+  responses: {"200": {"description": "Deleted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/User"}}}}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/CustomerNotFound"}, "500": {"$ref": "#/components/responses/InternalError"}}
+  security: null
+======================================================================
+GET /v1/customers/{customer}/image-encryption
+  opid: None
+  summary: Details about image encryption.
+  params: []
+  requestBody: null
+  responses: {"200": {"description": "Image encryption", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PiiEncryption"}}}}, "404": {"$ref": "#/components/responses/CustomerNotFound"}, "500": {"$ref": "#/components/responses/InternalError"}}
+  security: []
+======================================================================
+POST /v1/users/{customer}/{username}/import-client-state
+  opid: None
+  summary: Add Keyless Client Device from Client State
+  params: [{"name": "Kl-Key-Id", "in": "header", "required": true, "description": "The id associated with public key used for encryption.", "schema": {"type": "string"}}, {"name": "Kl-Key-Algorithm", "in": "header", "description": "The algorithm used to encrypt the symmetric encryption key", "schema": {"$ref": "#/components/schemas/KeyEncryptionAlgorithm", "default": "RSAES-OAEP-SHA-256"}}, {"name": "Kl-Client-State-Key", "in": "header", "required": true, "description": "Encrypted symmetric encryption key, that is used to encrypt the client state.\n\nThe raw key must be at least 128 or 256 bits long. And encrypted by the public key and algorithm provided by Keyless.\n\nThe binary data is represented as hex string in the request.\n", "schema": {"type": "string", "format": "hex"}}, {"name": "Kl-Client-State-Algorithm", "in": "header", "required": true, "description": "Algorithm used to encrypt the client state data.\n\nThe `AES-GCM-SIV` is recommended as it provides better security. Only use `AES-GCM` if `AES-GCM-SIV` is not supported by cryptographic library.\n\nNonce (IV) for GCM mode must be 12 bytes long and is prepended to the encrypted image data.\n", "schema": {"type": "string", "enum": ["AES-GCM", "AES-GCM-SIV"]}}]
+  requestBody: {"description": "The encrypted client state", "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}}
+  responses: {"200": {"description": "New device created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/User"}}}}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/CustomerNotFound"}, "409": {"description": "Request cannot be processed", "content": {"application/json": {"schema": {"type": "object", "required": ["code", "reason"], "properties": {"code": {"type": "string", "enum": ["USER_ALREADY_ENROLLED", "ENCRYPTION_ERROR"]}, "reason": 
+  security: null
+======================================================================
+POST /v1/users/{customer}/{username}/export-client-state
+  opid: None
+  summary: Create a new Client State for user
+  params: [{"name": "Kl-Client-State-Type", "in": "header", "required": false, "description": "Purpose of the client state generated.\n\n* `BACKUP` - for long term store by customer\n* `TEMPORARY_STATE` - for short temp bootstrap of another SDK\n", "schema": {"type": "string", "enum": ["BACKUP", "TEMPORARY_STATE"], "default": "BACKUP"}}, {"name": "Kl-Key-Id", "in": "header", "required": true, "description": "The id associated with public key used for encryption.", "schema": {"type": "string"}}, {"name": "Kl-Key-Algorithm", "in": "header", "description": "The algorithm used to encrypt the symmetric encryption key", "schema": {"$ref": "#/components/schemas/KeyEncryptionAlgorithm", "default": "RSAES-OAEP-SHA-256"}}, {"name": "Kl-Client-State-Key", "in": "header", "required": true, "description": "Encrypted symmetric encryption key, that is used to encrypt the client state.\n\nThe raw key must be at least 128 or 256 bits long. And encrypted by the public key and algorithm provided by Keyless.\n\nThe binary data is represented as hex string in the request.\n", "schema": {"type": "string", "format": "hex"}}, {"name": "Kl-Client-State-Algorithm", "in": "header", "required": true, "description": "Algorithm used to encrypt the client state data.\n\nThe `AES-GCM-SIV` is recommended as it provides better security. Only use `AES-GCM` if `AES-GCM-SIV` is not supported by cryptographic library.\n\nNonce (IV) for GCM mode must be 12 bytes long and is prepended to the encrypted image data.\n", "schema": {"type": "string", "enum": ["AES-GCM", "AES-GCM-SIV"]}}]
+  requestBody: null
+  responses: {"200": {"description": "The encrypted client state", "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/CustomerOrUserNotFound"}, "409": {"description": "Request cannot be processed", "content": {"application/json": {"schema": {"type": "object", "required": ["code", "reason"], "properties": {"code": {"type": "string", "enum": ["ENCRYPTION_ERROR"]}, "reason": {"
+  security: null
+======================================================================
+GET /v1/customers/{customer}/client-state-encryption
+  opid: None
+  summary: Details about client state encryption.
+  params: []
+  requestBody: null
+  responses: {"200": {"description": "Client state encryption", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PiiEncryption"}}}}, "404": {"$ref": "#/components/responses/CustomerNotFound"}, "500": {"$ref": "#/components/responses/InternalError"}}
+  security: []
+[0m
+This is a **high-value forward-leaning discovery**. The Keyless "Client Device as a Service" (authn/KYC biometric enrollment) service has a full OpenAPI spec exposed. Key observations:
+
+1. **`GET /v1/users/{customer}/{username}`** with `security: null` (no documented auth!) — "Check Keyless Client Device" returns user info. This is a **potential IDOR/BOLA**: if the service doesn't enforce auth on this GET, anyone could enumerate customer/username pairs to check if a Keyless client device exists (credential/presence disclosure for the KYC auth layer).
+
+2. **`DELETE /v1/users/{customer}/{username}`** — "Delete Keyless Client Device" — a destructive op with `security: null` in the spec. If unauthenticated, this is a **device-deletion/account-interference** vector (could lock users out of their biometric auth).
+
+3. **`POST /v1/users/{customer}/{username}`** image enrollment — sensitive.
+
+All these appear to have `security: null` (no auth) in the OpenAPI. But the earlier probe showed `/health` etc. return 404 with JSON `UNPROCESSABLE path unused` — so this is a real routing framework, and `/openapi.json` is served. Let me do **read-only** probes on the GET endpoints (non-mutating) to test auth enforcement on the user/device-check endpoints. I must be careful: the program note says no exposure of auth data, and no mutating tests. A GET to `/v1/customers/test/image-encryption` (subresource, no username, encryption-details only, `security: []`) is safer than `GET /v1/users/...`.
+
+Let me test the least-sensitive, clearly read-only endpoint first: `GET /v1/customers/{customer}/image-encryption` and `client-state-encryption`. These return encryption-details (public key info) — not customer PII. And they have `security: []`.
+
+Given rate limits (1 rps) and careful scope, let me do a minimal read-only test with a non-existent customer to observe auth behavior (expect 403 if auth enforced, 404 if not).
+[0m$ [0mcd /tmp/opencode && for p in "/v1/customers/n26/image-encryption" "/v1/customers/n26/client-state-encryption"; do printf "=== %s ===\n" "$p"; curl -sS -m 15 -D - -o /tmp/opencode/b.bin "https://authentication-service.eks.core-production.keyless.technology$p" 2>&1 | grep -iE "HTTP/|content-type|content-length|x-|access-control"; echo "body:"; head -c 300 /tmp/opencode/b.bin; echo; echo "---"; sleep 1; done
+=== /v1/customers/n26/image-encryption ===
+HTTP/2 200 
+content-type: application/json
+content-length: 578
+x-keyless-flow-id: 01a06dae-4a99-7cda-afb6-2b9489e385c5
+x-envoy-upstream-service-time: 29
+body:
+{"keyId":"alias/kl-euc-authentication-service-image-key","publicKey":"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuRJR43of8rhjHNIV3eoi\nbl6tDlfg6iS6z0rErHe8KqzmEpL+VtNKR1dMJAPMRYoAAHeF3+8D0EgRIVvFQX+x\nFfvBXxVxG2xqLF8hMHL6LY/qn5NdNI7Ea3BTEmZgGF6+VKQuKfA8jJa07YZVBjkY\n9S7R
+---
+=== /v1/customers/n26/client-state-encryption ===
+HTTP/2 200 
+content-type: application/json
+content-length: 584
+x-keyless-flow-id: 01a06dae-5060-7794-8e0c-5b44e7766163
+x-envoy-upstream-service-time: 32
+body:
+{"keyId":"alias/kl-euc-authentication-service-clientstate-key","publicKey":"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwWmcSh8mqrgKjiF2GM5k\nPX4USdoOEnTCkr1EabGRjfJdRk1EnCSZyboRxp1z4CbbwiExQyq9Kt8NrpDqenKG\nHz7FaapOarTf7wzmcGIUhXZRDqhb9jY1DonnvUeaGNsNaqsntAX+Igy4puvzAL+W
+---
+[0m
+Important findings:
+
+1. **`GET /v1/customers/{customer}/image-encryption` returns HTTP 200 WITHOUT any authentication** — for customer "n26", it discloses:
+   - The **AWS KMS key alias**: `alias/kl-euc-authentication-service-image-key` (EU-Central region, "kl" = keyless)
+   - The **full RSA public key** (2048-bit) used for PII encryption
+   - `x-keyless-flow-id` header
+
+2. Same for `client-state-encryption` → key alias `alias/kl-euc-authentication-service-clientstate-key`.
+
+This confirms the **authentication-service is completely unauthenticated for these endpoints** (no `security` in OpenAPI and no auth on the live request). These are read-only encryption-details endpoints so this specific disclosure is minor (public key + KMS alias naming convention leak, helps reconnaissance of the AWS region/KMS key structure), but it proves **the service has no auth layer** on at least these endpoints.
+
+The critical question: is `GET/DELETE /v1/users/{customer}/{username}` also unauthenticated? That would be a real IDOR. But — program note explicitly forbids exposing authentication/customer data, and `GET /v1/users/{customer}/{username}` returns "User information" (presence of keyless device = authentication data). I should be very conservative here.
+
+I've confirmed enough to establish a **concrete, high-value finding** that is safe: the **authentication-service (Keyless Client Device as a Service) exposes its OpenAPI spec publicly AND serves read-only encryption endpoints with zero authentication**, leaking KMS key aliases and encryption public keys. Combined with the OpenAPI showing `security: null` on user-management endpoints, this strongly suggests a broader **unauthenticated access / missing-auth on the device-management API** — a real auth-layer misconfiguration.
+
+Let me verify the user-check endpoint auth behavior with the safest possible probe — using a clearly non-existent/invented customer+username and observing status code (403=auth enforced, 404=not found thus reachable unauth'd). This uses an invented identifier, not real customer data — compliant.
+[0m$ [0mcd /tmp/opencode && echo "=== GET /v1/users/zz-n26-probe-000/zz-nonexistent-user-000 (invented IDs, read-only) ===" && curl -sS -m 15 -D - -o /tmp/opencode/b.bin "https://authentication-service.eks.core-production.keyless.technology/v1/users/zz-n26-probe-000/zz-nonexistent-user-000" 2>&1 | grep -iE "HTTP/|content-type|content-length|x-|access-control|www-auth"; echo "body:"; head -c 400 /tmp/opencode/b.bin; echo
+=== GET /v1/users/zz-n26-probe-000/zz-nonexistent-user-000 (invented IDs, read-only) ===
+HTTP/2 403 
+content-type: application/json
+content-length: 87
+x-keyless-flow-id: 01a06dae-6837-7f33-9895-51e97c95b69d
+x-envoy-upstream-service-time: 6
+body:
+{"code":"FORBIDDEN","reason":"no api key provided via `Kl-Api-Key` header","stack":""}
+[0m
+Critical finding. The user-check endpoint **requires a `Kl-Api-Key` header** ("no api key provided via `Kl-Api-Key` header"). So the device-management endpoints DO have an auth requirement (API key), but the encryption-details endpoints (`image-encryption`, `client-state-encryption`) do **not**. This is a tiered-access situation:
+
+- **Public (no auth):** `/v1/customers/{customer}/image-encryption`, `/v1/customers/{customer}/client-state-encryption`, `/openapi.json` — leak KMS aliases + RSA public keys, confirm customer namespace validity (200 vs 404 behavior difference to distinguish valid/invalid customers!)
+- **API-key-protected:** `/v1/users/{customer}/{username}` GET/DELETE/POST + import/export
+
+Key observations for the IDOR angle: the `{customer}` path parameter is an attacker-influenceable identifier. The public endpoints respond 200 for ANY customer value (we used "n26" and got 200 — customer namespace appears not validated or "n26" happens to be valid). Let me check whether a nonsense customer value returns 404 vs 200 to determine if these endpoints validate customer existence (which would make them an account-existence oracle, a minor finding) — and confirm the discrepancy is real.
+
+Note rate limit: I've made ~15 requests to this host. I'll keep it minimal. Let me check customer-enumeration behavior and then stop live probing.
+[0m$ [0mcd /tmp/opencode && for c in "zzdefinitelynotacustomer-123" "n26"; do printf "=== customer=%s ===\n" "$c"; curl -sS -m 12 -o /tmp/opencode/b.bin -w "code=%{http_code}\n" "https://authentication-service.eks.core-production.keyless.technology/v1/customers/$c/image-encryption"; head -c 120 /tmp/opencode/b.bin; echo; sleep 1; done
+=== customer=zzdefinitelynotacustomer-123 ===
+code=200
+{"keyId":"alias/kl-euc-authentication-service-image-key","publicKey":"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQ
+=== customer=n26 ===
+code=200
+{"keyId":"alias/kl-euc-authentication-service-image-key","publicKey":"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQ
+[0m
+[0m$ [0mcd /tmp/opencode && python3 -c "
+import json
+d=json.load(open('openapi.json'))
+print('servers:', d.get('servers'))
+print('schemes:', d.get('components',{}).get('securitySchemes'))
+print('security:', d.get('security'))
+print('User schema:', json.dumps(d['components']['schemas'].get('User')))
+print('PiiEncryption:', json.dumps(d['components']['schemas'].get('PiiEncryption'))[:400])
+print('responses:', list(d['components'].get('responses',{}).keys()))
+print('desc tail:', d.get('info',{}))
+"
+servers: None
+schemes: {'api_key': {'type': 'apiKey', 'name': 'Kl-Api-Key', 'in': 'header'}}
+security: [{'api_key': []}]
+User schema: {"type": "object", "required": ["customer", "username", "isEnrolled"], "properties": {"customer": {"type": "string"}, "username": {"type": "string"}, "isEnrolled": {"type": "boolean", "description": "If user have client device associated or not."}, "keylessId": {"type": "string", "description": "The user id in the keyless network. Omitted if user does not have client device associated."}, "updatedAt": {"type": "string", "description": "Last time the device was associated or disassociated with the user"}}}
+PiiEncryption: {"type": "object", "required": ["keyId", "publicKey", "supportedAlgorithms"], "properties": {"keyId": {"type": "string", "description": "The identifier of a public key.", "example": "alias/pii-encryption-key"}, "publicKey": {"type": "string", "description": "Public Key in PEM format.", "example": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----\n"}, "supportedAlgorithms": {"type": "array
+responses: ['Forbidden', 'CustomerNotFound', 'CustomerOrUserNotFound', 'Unprocessable', 'TooManyRequests', 'InternalError']
+desc tail: {'title': 'Authentication Service 2', 'description': 'The Keyless Client Device as a Service', 'version': '1.0.0'}
+[0m
+The customer-name check returns the same 200 for any value — so no enumeration oracle there, and the public endpoints accept any customer string. This is a fixed/public config endpoint, not a customer-specific data leak (the encryption key is tenant-global, not per-customer). So the public-disclosure aspect is: **unauthenticated access to service-level encryption metadata + OpenAPI spec**. Not per-tenant data exposure. The real risk surface is the API-key-protected user endpoints, but those require `Kl-Api-Key` — which I don't have and must not brute-force.
+
+Let me also verify whether the OpenAPI spec itself reveals components/schemas or security schemes worth noting (e.g., a default API key name, or any auth scheme), and check the full response model for User. Then wrap up.
+[0m$ [0mdate -u +"%Y-%m-%d %H:%M:%S"
+2026-09-04 18:29:30
+[0m
+I have a complete picture. The OpenAPI spec uses a global `Kl-Api-Key` security scheme, but the two encryption-detail endpoints override it with `security: []` — that's why they're unauthenticated (this is a **deliberate or accidental per-operation override**). The `GET /v1/users/{customer}/{username}` returns `isEnrolled`, `keylessId`, `updatedAt` — presence/last-seen data for biometric enrollment — that IS authentication-adjacent data, and program note forbids exposing authentication data. So I stay away from authenticated probes and from real identifiers.
+
+Final synthesis of this run's findings:
+
+1. **[CRITICAL DELTA] spc.n26.com is a tracking-pixel host, NOT a payment service** — the top-ranked IDOR hypothesis (conf 80-82) across multiple models was built on a false positive (status-code-only probes missing the 1x1 GIF body). All versioned "payment endpoints" are a catch-all that serves a tracking GIF for any 2-segment path. Hypothesis REJECTED.
+
+2. **[NEW HIGH-VALUE TOOL] authentication-service...keyless.technology exposes full OpenAPI 3.1.2 spec at /openapi.json** — revealing the keyless authn (biometric) service API. Two encryption-detail endpoints are unauthenticated (override `security: []`), leaking KMS key aliases (`alias/kl-euc-authentication-service-*`) and RSA public keys. This is a real, confirmed, minor misconfiguration — but also a forward-leaning recon asset establishing the service's surface and auth model.
+
+3. Remaining live targets: app.n26.com/graphql WAF bypass (genuine), flags.n26.com Statsig (blocked), keyless auth service (now mapped).
+
+Now, output my structured analysis.
+STEP 1 — DELTA
+[NEW] authentication-service.eks.core-production.keyless.technology serves full OpenAPI 3.1.2 at /openapi.json (5 endpoints: user enroll/check/delete, import/export client-state, encryption-details) — "Keyless Client Device as a Service" biometric authn service.
+[NEW] Same host: GET /v1/customers/{customer}/image-encryption and /client-state-encryption return HTTP 200 UNAUTHENTICATED for any customer value (security:[] override), leaking KMS aliases `alias/kl-euc-authentication-service-image-key` / `-clientstate-key` (eu-central-1) + RSA public keys.
+[CHANGED] spc.n26.com "payment endpoints" ALL return HTTP 200 `image/gif` len=43 — body `GIF89a\x01\x00...` (1x1 tracking pixel). Any EXACTLY-2-segment path returns the GIF (incl. `/foo/bar`, `/1/2`); `/v1` alone, `/api` alone, 3+ segments return `404 text/plain 13`. spc.n26.com is a **statistics/beacon pixel host**, NOT a payment service. Previous `200 len=43` "versioned API endpoints" were a false positive (status-code-only probe never read the body).
+[LEARN-OVERRIDE] Confirm: `GET /v1/users/{customer}/{username}` on keyless host requires `Kl-Api-Key` header (403 "no api key provided") — device-management endpoints DO have an auth gate; only the two encryption-detail endpoints are public.
+
+STEP 2 — PRIORITIZE
+[PRIO] authentication-service.eks.core-production.keyless.technology, 7.2, attack_surface:7 business_value:9 tech_exposure:8 gate_ease:6 cloud_surface:10 freshness:10
+[PRIO] app.n26.com/graphql, 7.0, attack_surface:8 business_value:9 tech_exposure:9 gate_ease:5 cloud_surface:7 freshness:8
+[PRIO] flags.n26.com, 6.0, attack_surface:6 business_value:7 tech_exposure:8 gate_ease:5 cloud_surface:8 freshness:7
+
+STEP 3 — HYPOTHESES
+[HYP] Keyless auth service unauthenticated OpenAPI + encryption-metadata exposure (confirmed) and missing-auth tier on device API
+class: MISCONFIG
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 78
+reasoning: /openapi.json served with no auth (200, 16,819B). Per-operation security:[] on GET /v1/customers/{customer}/image-encryption and /client-state-encryption — verified HTTP 200 with no credentials for any customer value, leaking KMS key alias + RSA public keys. Global security scheme is Kl-Api-Key apiKey header; user endpoints enforce it (403 "no api key provided via Kl-Api-Key header" verified). x-keyless-flow-id + x-envoy-upstream-service-time confirm live Envoy-routed app. Program note forbids touching auth/customer data, so user-endpoint IDOR not actively tested.
+evidence_needed: Documentation of internal KMS key naming/structure; whether encryption-detail endpoints should be public per Keyless SDK contract (they are typically SDK-fetched, so this may be intended); confirmation of which consumers legitimately need Kl-Api-Key.
+verify_steps: (1) GET https://authentication-service.eks.core-production.keyless.technology/openapi.json (DONE, 200), (2) GET /v1/customers/n26/image-encryption (DONE, 200 no auth), (3) GET /v1/customers/zz-probe/image-encryption (DONE, 200 — no customer validation), (4) GET /v1/users/zz/zz (DONE, 403 Kl-Api-Key required). Passive-only thereafter; no brute-force of Kl-Api-Key.
+impact: Service-level encryption metadata + internal AWS KMS alias/naming disclosure; recon enabler for AWS account targeting. If any user endpoint ever lacked the gate, biometric device presence (isEnrolled, keylessId, updatedAt) exposure → auth-data disclosure. Severity: MEDIUM (as verified), HIGH if IDOR confirmed with a valid key.
+testability: PASSIVE
+
+[HYP] GraphQL introspection bypass via Content-Type/method variation on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 62
+reasoning: POST application/json returns 403/timeout (WAF). GET query param returns connection-reset (network-level, not viable). Cookie trio n26.csrf + num26UniqueDeviceToken + n26.graphql_form_payload confirmed on Express/Envoy stack; the literal cookie name n26.graphql_form_payload implies form-encoded payloads are a supported/expected path. Alternative Content-Type (application/x-www-form-urlencoded, text/plain, multipart) or non-POST methods untested against the WAF rule set.
+evidence_needed: Any non-403/non-timeout GraphQL response (__typename echo, error message leak, introspection data) via alternate Content-Type or PUT/PATCH.
+verify_steps: (1) POST https://app.n26.com/graphql Content-Type: application/x-www-form-urlencoded, body query={__typename}; (2) POST with Content-Type: text/plain, same body; (3) PUT /graphql JSON body; (4) PATCH /graphql JSON body. All read-only, <=1rps, with session cookies.
+impact: Full GraphQL schema → mutation enumeration → IDOR/BOLA on banking operations. Severity: HIGH. Requires careful scoping (no destructive/unauth-account mutations).
+testability: AUTH_HELPED
+
+[HYP] Statsig client SDK key embedded in app.n26.com JS bundles for client-side flag evaluation
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 48
+reasoning: flags.n26.com confirmed Statsig (x-statsig-region: gke-us-west1), all /v1/* return 403/401 (RBAC). CSP connect-src on app.n26.com permits flags.n26.com, implying client-side calls; client.*.js path returns 404 (location changed). App HTML fetched (200, ~319KB) but bundle URLs never parsed from actual HTML — previous conclusion "bundle location unknown" was asserted, not verified.
+evidence_needed: Actual <script src> URLs parsed from app.n26.com HTML; Statsig init key (client_key / "client-..." / statsig) found in a bundle; /v1/initialize returning non-403 with that key.
+verify_steps: (1) GET https://app.n26.com, extract script src paths, (2) fetch top JS bundles, grep client_key|sdk_key|statsig|/v1/initialize, (3) only if a key is found: GET https://flags.n26.com/v1/get_client_initialize?client_key=<key>. Passive; stop if key is server-side only.
+impact: Feature-flag disclosure → hidden features/A-B groups/admin gates. Severity: MEDIUM.
+testability: PASSIVE
+
+STEP 4 — SELF-CRITIQUE
+[REJECTED] Payment service BOLA/IDOR on spc.n26.com (conf 80-82 across models) — Living proof of status-code-only false positive. All "versioned payment endpoints" return a 1x1 tracking GIF (verified body GIF89a, image/gif, len=43 for every 2-segment path incl. /foo/bar). spc.n26.com is a beacon/pixel host. No payment API surface exists. Confidence effectively 3.
+[PARKED] subdomain takeover my.n26.com — Envoy 301, not dangling CNAME. No vector.
+[PARKED] Statsig key from assumed bundle paths — client.*.js 404 asserted without parsing real HTML; downgraded to guidance pending actual bundle-URL extraction.
+[FINAL] Keyless auth service OpenAPI + unauthenticated encryption-metadata disclosure (conf 78, rank 1) — Survives: confirmed by live probes, in-scope, verify_steps done, MEDIUM confirmed impact.
+[FINAL] GraphQL WAF bypass via Content-Type/method variation (conf 62, rank 2) — Survives: genuine GraphQL backend, WAF rule set untested for form/multipart/alt-methods, high business value.
+[FINAL] Statsig SDK key from ACTUAL app.n26.com bundles (conf 48, rank 3) — Survives only with real HTML-parsed bundle paths; drops below threshold if bundles yield no key.
+
+STEP 5 — NEXT ACTION
+[NEXT] PROBE: GET https://app.n26.com and parse all <script src> URLs, fetch each bundle (read-only), grep for `client_key|statsig|sdk_key|flags.n26.com` — this resolves BOTH the Statsig key question and the GraphQL endpoint/param conventions from the actual frontend JS (which also reveals the real GraphQL Content-Type used by the app, informing hypothesis 2).
+
+STEP 6 — LEARNING
+[LEARN] REJECTED IDOR @ spc.n26.com: All versioned "payment endpoints" (/v1/transactions, /v1/payments, /v1/tokens, /api/v1) return HTTP 200 image/gif len=43 — a 1x1 tracking pixel served for ANY exactly-2-segment path. Host is an analytics beacon, not a payment service. Prior high-confidence IDOR hypothesis was a status-code-only false positive (body never inspected). This invalidates several runs of knowledge-base claims.
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Full OpenAPI 3.1.2 exposed at /openapi.json. GET /v1/customers/{customer}/image-encryption + /client-state-encryption return 200 unauthenticated (security:[] override), leaking KMS alias naming (alias/kl-euc-authentication-service-image-key, eu-central-1) and RSA pubkeys. User endpoints correctly require Kl-Api-Key (403 verified).
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL WAF blocks POST application/json; GET query-param returns connection reset — not a bypass. Form-encoded/multipart/alt-method paths untested; n26.graphql_form_payload cookie name hints form payloads are expected.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig behind RBAC, all /v1/* 403/401; client.*.js 404; conclusion "bundle location unknown" was asserted without parsing actual app HTML — pending real bundle-URL extraction.
+
+STEP 7 — RISK
+[RISK] n26: 20/100 — spc.n26.com payment-API IDOR (the top hypothesis) was a tracking-pixel false positive and is dropped, lowering effective confirmed surface to: (a) keyless authn service public OpenAPI + two unauthenticated encryption-detail endpoints (MEDIUM, confirmed, low per-tenant impact — key is tenant-global), (b) GraphQL WAF bypass path still plausible but unproven, (c) Statsig SDK key unconfirmed. WAF, CSP nonce-script-src, Envoy rate-limiting (x-ratelimit-limit: 60), restricted account creation, and explicit program ban on auth/customer-data exposure constrain exploitation. Real reported findings delta for the program remains small pending GraphQL/form bypass validation.
