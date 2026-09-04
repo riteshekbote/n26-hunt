@@ -88,3 +88,10 @@ https://spc.n26.com/api/v1/transactions/1 -> HTTP 404
 https://spc.n26.com/api/v1/users/1 -> HTTP 404
 https://flags.n26.com/v1/initialize -> HTTP 403
 https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
+
+## 2026-09-04 15:15:55 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403

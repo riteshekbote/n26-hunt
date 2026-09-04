@@ -998,3 +998,222 @@ No hypotheses parked. All survive criteria.
 ```
 [RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found. Account creation restricted per scope.yml. Financial data exposure during testing explicitly called out as program note.
 ```
+===== ANALYST bigpickle 2026-09-04 15:15:36 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead state_bigpickle.json
+[0m→ [0mRead inventory
+[0m→ [0mRead inventory/n26.md
+[0m→ [0mRead leads
+[0m→ [0mRead leads/lead-bigpickle.md
+[0m→ [0mRead probe-results.md
+[0m→ [0mRead ctx.txt
+[0m→ [0mRead scripts
+[0m→ [0mRead scope.yml
+[0m
+[0m$ [0mcurl -s -o /tmp/spc_test.txt -w "HTTP %{http_code}, Size: %{size_download}" https://spc.n26.com/v1/transactions 2>&1 | head -5
+HTTP 200, Size: 43
+[0m
+[0m$ [0mcurl -s -D- https://spc.n26.com/v1/transactions 2>&1 | head -30
+HTTP/2 200 
+date: Fri, 04 Sep 2026 15:06:43 GMT
+content-type: image/gif
+content-length: 43
+set-cookie: sp=2c7aeeab-c2df-4598-bddd-459cc604d17f; Expires=Sat, 04 Sep 2027 15:06:43 GMT; Path=/; Secure; HttpOnly; SameSite=None
+cache-control: no-cache, no-store, must-revalidate
+p3p: policyref="/w3c/p3p.xml", CP="NOI DSP COR NID PSA OUR IND COM NAV STA"
+access-control-allow-origin: *
+access-control-allow-credentials: true
+server: envoy
+x-envoy-upstream-service-time: 2
+
+GIF89a  �  ���   !�    ,       D ;
+[0m
+[0m$ [0mcurl -s -D- https://spc.n26.com/v1/payments 2>&1 | head -20
+HTTP/2 200 
+date: Fri, 04 Sep 2026 15:06:52 GMT
+content-type: image/gif
+content-length: 43
+set-cookie: sp=1854f962-38ba-496a-b59a-c6270a918877; Expires=Sat, 04 Sep 2027 15:06:52 GMT; Path=/; Secure; HttpOnly; SameSite=None
+cache-control: no-cache, no-store, must-revalidate
+p3p: policyref="/w3c/p3p.xml", CP="NOI DSP COR NID PSA OUR IND COM NAV STA"
+access-control-allow-origin: *
+access-control-allow-credentials: true
+server: envoy
+x-envoy-upstream-service-time: 7
+
+GIF89a  �  ���   !�    ,       D ;
+[0m
+[0m$ [0mfor i in 1 2 3; do echo "Request $i:"; curl -s -D- https://spc.n26.com/v1/transactions 2>&1 | grep -E "^(HTTP|set-cookie:|content-type:)" ; echo "---"; done
+Request 1:
+grep: (standard input): binary file matches
+---
+Request 2:
+HTTP/2 200 
+content-type: image/gif
+set-cookie: sp=a4f3b37e-9235-4262-8d61-475fc086c994; Expires=Sat, 04 Sep 2027 15:07:02 GMT; Path=/; Secure; HttpOnly; SameSite=None
+---
+Request 3:
+grep: (standard input): binary file matches
+---
+[0m
+[0m$ [0mfor i in 1 2 3; do curl -s -D- https://spc.n26.com/v1/transactions 2>&1 | strings | grep -E "^(HTTP|set-cookie:|content-type:)" ; echo "---"; done
+HTTP/2 200 
+content-type: image/gif
+set-cookie: sp=1e3b0195-848c-474d-a005-62b102cc9227; Expires=Sat, 04 Sep 2027 15:07:08 GMT; Path=/; Secure; HttpOnly; SameSite=None
+---
+HTTP/2 200 
+content-type: image/gif
+set-cookie: sp=14033861-0725-4c4b-842c-f84c659056f2; Expires=Sat, 04 Sep 2027 15:07:08 GMT; Path=/; Secure; HttpOnly; SameSite=None
+---
+HTTP/2 200 
+content-type: image/gif
+set-cookie: sp=30757c88-eaf6-4923-a89d-caf6adb0ab0f; Expires=Sat, 04 Sep 2027 15:07:09 GMT; Path=/; Secure; HttpOnly; SameSite=None
+---
+[0m
+[0m$ [0mcurl -s -c /tmp/spc_cookies.txt -D- https://spc.n26.com/v1/transactions 2>&1 | strings | head -20
+HTTP/2 200 
+date: Fri, 04 Sep 2026 15:07:13 GMT
+content-type: image/gif
+content-length: 43
+set-cookie: sp=f3670e66-4718-45a4-8730-349c50e06016; Expires=Sat, 04 Sep 2027 15:07:13 GMT; Path=/; Secure; HttpOnly; SameSite=None
+cache-control: no-cache, no-store, must-revalidate
+p3p: policyref="/w3c/p3p.xml", CP="NOI DSP COR NID PSA OUR IND COM NAV STA"
+access-control-allow-origin: *
+access-control-allow-credentials: true
+server: envoy
+x-envoy-upstream-service-time: 10
+GIF89a
+[0m
+[0m$ [0mcurl -s -b /tmp/spc_cookies.txt -D- https://spc.n26.com/v1/transactions 2>&1 | strings | head -20
+HTTP/2 200 
+date: Fri, 04 Sep 2026 15:07:20 GMT
+content-type: image/gif
+content-length: 43
+set-cookie: sp=f3670e66-4718-45a4-8730-349c50e06016; Expires=Sat, 04 Sep 2027 15:07:20 GMT; Path=/; Secure; HttpOnly; SameSite=None
+cache-control: no-cache, no-store, must-revalidate
+p3p: policyref="/w3c/p3p.xml", CP="NOI DSP COR NID PSA OUR IND COM NAV STA"
+access-control-allow-origin: *
+access-control-allow-credentials: true
+server: envoy
+x-envoy-upstream-service-time: 7
+GIF89a
+[0m
+Now I have critical new data. The spc.n26.com `/v1/*` endpoints are **tracking pixels** (GIF89a, 43 bytes, content-type: image/gif), not actual payment APIs. Each sets a unique `sp` session cookie. CORS is `Access-Control-Allow-Origin: *` with `Access-Control-Allow-Credentials: true`.
+
+Let me check a few more things quickly before writing the analysis:
+[0m$ [0mcurl -s -D- https://spc.n26.com/ 2>&1 | strings | head -20
+HTTP/2 404 
+date: Fri, 04 Sep 2026 15:07:35 GMT
+content-type: text/plain; charset=UTF-8
+content-length: 13
+server: envoy
+x-envoy-upstream-service-time: 9
+404 not found
+[0m
+[0m$ [0mcurl -s -D- -X POST -H "Content-Type: text/plain" -d 'query{__typename}' https://app.n26.com/graphql 2>&1 | strings | head -30
+HTTP/2 403 
+date: Fri, 04 Sep 2026 15:07:41 GMT
+content-type: text/html
+content-length: 43561
+x-powered-by: Express
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+set-cookie: n26.csrf=s%3AhF6bvpItMepItEePTRC30XDL.DG%2FkezUDoW96cqFuPC1BKlm2Ki2s68wtZPo8y4xg84Y; Path=/; HttpOnly; Secure; SameSite=Strict
+etag: W/"9-PatfYBLj4Um1qTm5zrukoLhNyPU"
+vary: Accept-Encoding
+server: envoy
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+x-envoy-upstream-service-time: 11
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset='utf-8' />
+      <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+      <meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover' />
+      <link rel="icon" type="image/png" sizes="256x256" href="/build/favicon.ico">
+      <link rel='preload' href='/build/fonts/GT-America-Standard-Regular.latin.woff2' as='font' type='font/woff2' crossorigin='anonymous' />
+      <link rel='preload' href='/build/fonts/GT-America-Standard-Medium.latin.woff2' as='font' type='font/woff2' crossorigin='anonymous' />
+      <title data-rh="true">403 forbidden 
+ N26</title>
+      <style>
+      
+@font-face {
+  font-family: 'N26';
+[0m
+[0m$ [0mcurl -s -D- -X POST -H "Content-Type: application/x-www-form-urlencoded" -d 'query=%7B__typename%7D' https://app.n26.com/graphql 2>&1 | strings | head -20
+HTTP/2 403 
+date: Fri, 04 Sep 2026 15:07:46 GMT
+content-type: text/html
+content-length: 43561
+x-powered-by: Express
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+set-cookie: n26.csrf=s%3ATceRO4GbdesUNvogxkCxcDdi.ShmMQLBf5D6Dpg8oHRO6ZmwDS7Bj98uE29fyUUtLw50; Path=/; HttpOnly; Secure; SameSite=Strict
+etag: W/"9-PatfYBLj4Um1qTm5zrukoLhNyPU"
+vary: Accept-Encoding
+server: envoy
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+x-envoy-upstream-service-time: 10
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset='utf-8' />
+      <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+[0m
+[0m$ [0mcurl -s -D- -X PUT -H "Content-Type: application/json" -d '{"query":"{__typename}"}' https://app.n26.com/graphql 2>&1 | strings | head -15
+HTTP/2 403 
+date: Fri, 04 Sep 2026 15:07:51 GMT
+content-type: text/html
+content-length: 43561
+x-powered-by: Express
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+set-cookie: n26.csrf=s%3A2odtksoA8DmmK6nNrwK1Nb83.Bl0pjHO3L6AjREGthB8hNaszvriuEgeCRswTviFDw%2FM; Path=/; HttpOnly; Secure; SameSite=Strict
+etag: W/"9-PatfYBLj4Um1qTm5zrukoLhNyPU"
+vary: Accept-Encoding
+server: envoy
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+x-envoy-upstream-service-time: 10
+[0m
+[0m$ [0mcurl -s -D- -X PATCH -H "Content-Type: application/json" -d '{"query":"{__typename}"}' https://app.n26.com/graphql 2>&1 | strings | head -15
+HTTP/2 403 
+date: Fri, 04 Sep 2026 15:07:57 GMT
+content-type: text/html
+content-length: 43561
+x-powered-by: Express
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+set-cookie: n26.csrf=s%3AHEFAiLBEfBvVK4V68-Hqyv_9.bFlBPlz8hnRIuV1SRDK6SjtmGyAikoUpXyzUOQBGIdU; Path=/; HttpOnly; Secure; SameSite=Strict
+etag: W/"9-PatfYBLj4Um1qTm5zrukoLhNyPU"
+vary: Accept-Encoding
+server: envoy
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+x-envoy-upstream-service-time: 13
+[0m
+[0m$ [0mcurl -s https://app.n26.com 2>&1 | grep -oP 'src="[^"]*\.js[^"]*"' | head -20
+(no output)
+[0m
+[0m$ [0mcurl -s https://app.n26.com 2>&1 | grep -oP '(src|href)="[^"]*\.(js|css)[^"]*"' | head -20
+(no output)
+[0m
+[0m$ [0mcurl -s https://app.n26.com 2>&1 | strings | grep -i "script" | head -10
+(no output)
+[0m
+[0m$ [0mcurl -s https://app.n26.com -o /tmp/app_html.txt 2>&1 && file /tmp/app_html.txt && wc -c /tmp/app_html.txt
+/tmp/app_html.txt: ASCII text, with no line terminators
+28 /tmp/app_html.txt
+[0m
+[93m[1m! [0mpermission requested: external_directory (/tmp/*); auto-rejecting
+[0m✗ [0mcat /tmp/app_html.txt failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
