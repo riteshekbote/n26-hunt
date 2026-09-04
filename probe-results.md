@@ -63,3 +63,9 @@ https://app.n26.com/graphql -> ERR The read operation timed out
 https://flags.n26.com/v1/get_configs -> HTTP 403
 https://flags.n26.com/v1/log_event -> HTTP 403
 https://spc.n26.com/v1/payments -> 200 len=43
+
+## 2026-09-04 01:25:59 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319045
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
