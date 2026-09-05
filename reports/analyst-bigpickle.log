@@ -3676,3 +3676,130 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 [RISK] n26: 45/100 — The single highest-ranked hypothesis (spc.n26.com IDOR) collapsed to a tracking-pixel false positive, shrinking the real attack surface. Remaining paths: (a) bundle key extraction (probabilistic), (b) GraphQL WAF variant (low odds, WAF stable 8+ runs), (c) S3 CDN misconfig (low reward). Budget ≤1 rps with ~60 req/h means bundle-with-full-parse is the fastest remaining unlock. Program scope is broad, but demonstrated WAF+RBAC+Envoy hygiene raises likelihood of a zero-finding engagement.
+===== ANALYST bigpickle 2026-09-05 05:49:45 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/ && ls -la /home/runner/work/n26-hunt/n26-hunt/inventory 2>/dev/null; ls -la /home/runner/work/n26-hunt/n26-hunt/art 2>/dev/null
+total 144
+drwxr-xr-x 12 runner runner  4096 Sep  5 05:47 .
+drwxr-xr-x  3 runner runner  4096 Sep  5 05:47 ..
+drwxr-xr-x  7 runner runner  4096 Sep  5 05:47 .git
+drwxr-xr-x  3 runner runner  4096 Sep  5 05:47 .github
+-rw-r--r--  1 runner runner  1844 Sep  5 05:47 README.md
+-rw-r--r--  1 runner runner    32 Sep  5 05:47 analyst-out.txt
+-rw-r--r--  1 runner runner 25120 Sep  5 05:47 analyst-prompt.txt
+-rw-r--r--  1 runner runner 21250 Sep  5 05:47 ctx.txt
+drwxr-xr-x  2 runner runner  4096 Sep  5 05:47 inventory
+drwxr-xr-x  2 runner runner  4096 Sep  5 05:47 knowledge
+drwxr-xr-x  2 runner runner  4096 Sep  5 05:47 leads
+-rw-r--r--  1 runner runner  4852 Sep  5 05:47 probe-results.md
+drwxr-xr-x  2 runner runner  4096 Sep  5 05:47 recon-notes
+drwxr-xr-x  2 runner runner  4096 Sep  5 05:47 reports
+drwxr-xr-x  2 runner runner  4096 Sep  5 05:47 reposcan-raw
+-rw-r--r--  1 runner runner  3283 Sep  5 05:47 scope.yml
+drwxr-xr-x  2 runner runner  4096 Sep  5 05:47 scripts
+-rw-r--r--  1 runner runner    33 Sep  5 05:47 state_bigpickle.json
+-rw-r--r--  1 runner runner    33 Sep  5 05:47 state_laguna.json
+-rw-r--r--  1 runner runner    33 Sep  5 05:47 state_ling3.json
+-rw-r--r--  1 runner runner    33 Sep  5 05:47 state_longcat.json
+-rw-r--r--  1 runner runner    33 Sep  5 05:47 state_mimo.json
+-rw-r--r--  1 runner runner    33 Sep  5 05:47 state_nemotron3.json
+drwxr-xr-x  2 runner runner  4096 Sep  5 05:47 triage
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep  5 05:47 .
+drwxr-xr-x 12 runner runner 4096 Sep  5 05:47 ..
+-rw-r--r--  1 runner runner 3965 Sep  5 05:47 n26.md
+[0m
+[0m$ [0mfind /home/runner/work/n26-hunt/n26-hunt -name "*.md" -o -name "*.txt" | head -50
+/home/runner/work/n26-hunt/n26-hunt/analyst-out.txt
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-05-04.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-02-21-44.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-14-04.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-19-53.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-03-22-24.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-09-44.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-05-00-11.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-03-08-17.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-02-23-54.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-00-26.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-03-03-32.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-17-39.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-22-12.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-03-12-53.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-05-04-39.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-03-19-43.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-03-16-58.md
+/home/runner/work/n26-hunt/n26-hunt/recon-notes/DEDICATED-DEEP.md
+/home/runner/work/n26-hunt/n26-hunt/inventory/n26.md
+/home/runner/work/n26-hunt/n26-hunt/knowledge/index.md
+/home/runner/work/n26-hunt/n26-hunt/analyst-prompt.txt
+/home/runner/work/n26-hunt/n26-hunt/probe-results.md
+/home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-ling3.txt
+/home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-bigpickle.txt
+/home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-longcat.txt
+/home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-laguna.txt
+/home/runner/work/n26-hunt/n26-hunt/reports/reposcan-findings.md
+/home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-nemotron3.txt
+/home/runner/work/n26-hunt/n26-hunt/reports/hypotheses.md
+/home/runner/work/n26-hunt/n26-hunt/reports/valid-bugs.md
+/home/runner/work/n26-hunt/n26-hunt/leads/lead-nemotron3.md
+/home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
+/home/runner/work/n26-hunt/n26-hunt/leads/lead-laguna.md
+/home/runner/work/n26-hunt/n26-hunt/leads/lead-ling3.md
+/home/runner/work/n26-hunt/n26-hunt/leads/lead-mimo.md
+/home/runner/work/n26-hunt/n26-hunt/leads/reposcan-n26.md
+/home/runner/work/n26-hunt/n26-hunt/leads/lead-longcat.md
+/home/runner/work/n26-hunt/n26-hunt/reposcan-raw/summary.txt
+/home/runner/work/n26-hunt/n26-hunt/README.md
+/home/runner/work/n26-hunt/n26-hunt/ctx.txt
+[0m
+[0m→ [0mRead inventory/n26.md
+[0m→ [0mRead probe-results.md
+[0m→ [0mRead leads/lead-bigpickle.md
+[0m→ [0mRead state_bigpickle.json
+[0m→ [0mRead triage/run-2026-09-05-04-39.md
+[0m→ [0mRead scope.yml
+[0m→ [0mRead leads/lead-mimo.md
+[0m→ [0mRead knowledge/index.md
+[0m→ [0mRead reports/valid-bugs.md
+[0m→ [0mRead reports/hypotheses.md
+[0m→ [0mRead leads/lead-nemotron3.md
+[0m→ [0mRead recon-notes/DEDICATED-DEEP.md
+[0m→ [0mRead leads/lead-nemotron3.md[90m [offset=376][0m
+[0m→ [0mRead reports/reposcan-findings.md
+[0m→ [0mRead leads/lead-longcat.md
+[0m→ [0mRead analyst-out.txt
+[0m→ [0mRead ctx.txt
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && git log --oneline -15 && git status --short
+4b78d49 triage 2026-09-05-04-39
+?? analyst-out.txt
+?? analyst-prompt.txt
+?? ctx.txt
+[0m
+[93m[1m! [0mpermission requested: external_directory (/tmp/*); auto-rejecting
+[0m✗ [0mmkdir -p /tmp/n26 && cd /tmp/n26
+echo "== app.n26.com =="
+curl -sS --max-time 25 -o app.html -w "status=%{http_code} len=%{size_download}\n" https://app.n26.com
+sleep 1
+echo "== spc.v1/transactions =="
+curl -sS --max-time 15 -o b1.txt -w "status=%{http_code} len=%{size_download}\n" https://spc.n26.com/v1/transactions
+head -c 300 b1.txt | tr -d '\n'; echo
+sleep 1
+echo "== spc.v1/payments =="
+curl -sS --max-time 15 -o b2.txt -w "status=%{http_code} len=%{size_download}\n" https://spc.n26.com/v1/payments
+head -c 300 b2.txt | tr -d '\n'; echo
+sleep 1
+echo "== spc.v1/tokens =="
+curl -sS --max-time 15 -o b3.txt -w "status=%{http_code} len=%{size_download}\n" https://spc.n26.com/v1/tokens
+head -c 300 b3.txt | tr -d '\n'; echo
+sleep 1
+echo "== spc/api/v1 =="
+curl -sS --max-time 15 -o b4.txt -w "status=%{http_code} len=%{size_download}\n" https://spc.n26.com/api/v1
+head -c 300 b4.txt | tr -d '\n'; echo
+sleep 1
+echo "== spc/api/v1/transactions/1 =="
+curl -sS --max-time 15 -o b5.txt -w "status=%{http_code} len=%{size_download}\n" https://spc.n26.com/api/v1/transactions/1
+head -c 300 b5.txt | tr -d '\n'; echo failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
