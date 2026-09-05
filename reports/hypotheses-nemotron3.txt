@@ -1,9 +1,8 @@
-## 2026-09-04 23:07:05 UTC [target] (model nemotron3)
-[NEW] No new endpoints or hosts discovered since last analysis (2026-09-04 21:04:01 UTC) — probe-results.md 2026-09-04 21:04:28 UTC shows identical surface: spc.n26.com/api/v1 (200), /v1/transactions (200), app.n26.com/graphql (timeout), flags.n26.com/v1/initialize (403)
+## 2026-09-05 01:09:32 UTC [target] (model nemotron3)
+[NEW] No new endpoints or hosts discovered since last analysis (2026-09-04 21:04:01 UTC) — probe-results.md 2026-09-04 23:08:00 UTC shows identical surface: spc.n26.com/api/v1 (200), /v1/transactions (200), app.n26.com/graphql (timeout)
 [CHANGED] flags.n26.com/v1/initialize consistently returns 403 (not 401) across 5+ probe runs — RBAC enforcement stable
 [CHANGED] spc.n26.com/health rotated from 200 to 404 — endpoint removed/hidden
 [CHANGED] app.n26.com HTML size stable at ~319KB across 5+ probe runs — consistent deployment, no new JS bundle paths
-[NEW] spc.n26.com/api/v1/transactions/1 and /api/v1/users/1 return HTTP 404 — resource-level routing confirmed (from probe-results.md 2026-09-04 11:26:09 UTC)
 [PRIO] spc.n26.com,8.4,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=7,cloud_surface=8,freshness=10
 [PRIO] app.n26.com/graphql,8.1,attack_surface=10,business_value=9,tech_exposure=10,gate_ease=4,cloud_surface=8,freshness=10
 [PRIO] flags.n26.com,7.1,attack_surface=7,business_value=7,tech_exposure=9,gate_ease=5,cloud_surface=9,freshness=10
@@ -35,10 +34,9 @@ evidence_needed: SSRF vector accepting URL parameter; response showing instance 
 verify_steps: Enumerate endpoints via GET /health, /ready, /metrics, /api, /v1; test any callback/redirect/webhook parameters with http://169.254.169.254/latest/meta-data/
 impact: Cloud metadata access → IAM roles → lateral movement in EKS cluster → critical
 testability: PASSIVE
-[PARKED] Statsig client SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass: confidence 55 but client.*.js path returns 404 consistently across 5+ probe runs; bundle location unknown; Statsig may use server-only keys (no client key in bundle); RBAC on /v1/initialize consistently 403/401 even with hypothetical key; PASSIVE testability but no viable path to key extraction confirmed
+[PARKED] EKS pod metadata exposure via SSRF on keyless auth service: confidence 55 but no confirmed SSRF vector yet; endpoint enumeration needed first; EKS pod metadata access requires network-level SSRF not yet identified; PASSIVE testability only for enumeration phase
 [FINAL] **Payment service BOLA/IDOR on versioned financial endpoints** — confidence 80, highest business_value (payment), confirmed live endpoints (200 on 4+ versioned paths across 5+ probe runs), concrete verify_steps with AUTH_HELPED testability, no REJECTED-class overlap
 [FINAL] **GraphQL schema exposure via alternative Content-Type bypass** — confidence 60, high business_value (core banking), WAF confirmed blocking JSON only, alternative content types untested, AUTH_HELPED testability, n26.graphql_form_payload cookie suggests form encoding is valid path
-[FINAL] **EKS pod metadata exposure via SSRF on keyless auth service** — confidence 55, high cloud_surface (EKS), critical impact if SSRF vector found, PASSIVE testability for enumeration phase
 [NEXT] PROBE: POST https://app.n26.com/graphql with `Content-Type: application/x-www-form-urlencoded`, body `query={__typename}`, cookies `n26.csrf`, `num26UniqueDeviceToken`, `n26.graphql_form_payload` from app.n26.com session — test if WAF bypass via form encoding reaches GraphQL engine
 [LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass.
 [LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All /v1/* endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.
