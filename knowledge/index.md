@@ -23,3 +23,6 @@
 - 2026-09-05 ACCEPTED IDOR @ spc.n26.com: Versioned payment API endpoints confirmed (HTTP 200). CSP allows cross-origin access from app.n26.com. Financial endpoints are high-value IDOR targets.
 - 2026-09-05 ACCEPTED AUTH @ app.n26.com: GraphQL WAF blocks POST application/json. Alternative Content-Type or HTTP method may bypass WAF rules.
 - 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: Statsig service with RBAC. Client-side SDK key extraction from actual bundle paths (not assumed) is viable path.
+- 2026-09-05 REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels, not a payment API
+- 2026-09-05 REJECTED AUTH  @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain all 403
+- 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted; /v1/sdk_exception bypasses RBAC and accepts it

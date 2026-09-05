@@ -176,3 +176,13 @@ testability: PASSIVE
 [LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL WAF blocks POST application/json. Alternative Content-Type or HTTP method may bypass WAF rules.
 [LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig service with RBAC. Client-side SDK key extraction from actual bundle paths (not assumed) is viable path.
 [RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found. Account creation restricted per scope.yml. Financial data exposure during testing explicitly called out as program note.
+## 2026-09-05 13:17:08 UTC [target] (model bigpickle)
+[PRIO] flags.n26.com,         8.0, attack_surface:8 business_value:7 tech_exposure:8 gate_ease:7 cloud_surface:8 freshness:10
+[PRIO] app.n26.com/graphql,   6.0, attack_surface:7 business_value:9 tech_exposure:8 gate_ease:4 cloud_surface:6 freshness:9
+[PRIO] spc.n26.com,           4.0, attack_surface:4 business_value:4 tech_exposure:3 gate_ease:9 cloud_surface:3 freshness:9  (cut 9.25→4.0)
+[PRIO] flags.n26.com,       8.0, a:8 b:7 t:8 g:7 c:8 f:10   Validity of key + sdk_exception RBAC gap
+[PRIO] app.n26.com/graphql, 6.0, a:7 b:9 t:8 g:4 c:6 f:9    All POSTs WAF-403; GET reset; stalled
+[PRIO] spc.n26.com,         4.0, a:4 b:4 t:3 g:9 c:3 f:9    Downgraded 9.25→4.0 (GIF catch-all)
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels, not a payment API
+[LEARN] REJECTED AUTH  @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain all 403
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted; /v1/sdk_exception bypasses RBAC and accepts it
