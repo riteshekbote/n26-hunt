@@ -196,3 +196,28 @@
 - LEARN: ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns 
 - LEARN: ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All `/v1/*` endpoints return 403/401. Client-side SDK key path (client.*.
 - LEARN: REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+
+## RANKED HYPOTHESES 2026-09-05 18:31:44 UTC
+- [85] flags.n26.com: Statsig feature flag enumeration via extracted client SDK key and RBAC bypass (from art/lead_bigpickle.txt)
+- [25] app.n26.com/graphql: GraphQL schema exposure via alternative transport on app.n26.com (from art/lead_nemotron3.txt)
+- NEXT(hypotheses-bigpickle.txt): PROBE: POST https://flags.n26.com/v1/get_configs with `Content-Type: application/json`, body `{"client_key":"<extracted_client_key_from_bundle>"}` — enumerate f
+- NEXT(hypotheses-nemotron3.txt): PROBE: POST https://flags.n26.com/v1/get_configs with `Content-Type: application/json`, body `{"client_key":"<extracted_client_key_from_bundle>"}` — enumerate f
+- LEARN: REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+- LEARN: REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it
+- LEARN: ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns 
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All `/v1/*` endpoints return 403/401. Client-side SDK key path (client.*.
+- LEARN: REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: POST /v1/initialize + canonical SDK payload + public client key returns 200 with full flag/config disclosure. Prior POST-401
+- LEARN: REJECTED MISCONFIG @ flags.n26.com/v1/download_config_specs: canonical POST returns 401 — key-invalid at app layer, not payload-shaped.
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary now = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403.
+- LEARN: REJECTED AUTH @ app.n26.com: GraphQL WAF-blocked across every tested transport.
+- LEARN: REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+- LEARN: REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: `/v1/download_config_specs` is a 2nd RBAC-exempt route (app-layer 401 across all GET key-delivery variants); sdk_exception r
+- LEARN: REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded in any app bundle → no s
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes (get_configs, eva
+- LEARN: REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+- LEARN: ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns 
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All `/v1/*` endpoints return 403/401. Client-side SDK key path (client.*.

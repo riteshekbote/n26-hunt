@@ -33,3 +33,8 @@
 - 2026-09-05 REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
 - 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it
 - 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All `/v1/*` endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.
+- 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: POST /v1/initialize + canonical SDK payload + public client key returns 200 with full flag/config disclosure. Prior POST-401 entry was wrong — bypass is method+payload dependent.
+- 2026-09-05 REJECTED MISCONFIG @ flags.n26.com/v1/download_config_specs: canonical POST returns 401 — key-invalid at app layer, not payload-shaped.
+- 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary now = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403.
+- 2026-09-05 REJECTED AUTH @ app.n26.com: GraphQL WAF-blocked across every tested transport.
+- 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: `/v1/download_config_specs` is a 2nd RBAC-exempt route (app-layer 401 across all GET key-delivery variants); sdk_exception remains the only route returning 200 with the public client key
