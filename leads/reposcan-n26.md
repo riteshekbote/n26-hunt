@@ -44,3 +44,40 @@ TARGET_ORG not configured for n26; skipping public-org deep scan.
 TARGET_ORG not configured for n26; skipping public-org deep scan.
 ## REPOSCAN 2026-09-05 16:08:48 UTC
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-05 18:24:32 UTC
+[HYP] Hardcoded Base64-Coded OAuth Credential in Sample Script
+class: SECRET
+asset: psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+confidence: 85
+reasoning: The script contains a hardcoded `Authorization:Basic YW5kcm9pZDpzZWNyZXQ=` header which decodes to `android:secret` — a plaintext client ID/secret pair used for MFA challenge API calls. This is a real OAuth2 Basic auth credential embedded in a public documentation sample. If the same credential is valid against the live `pisp.tech26.de` or `xs2a.tech26.de` endpoints, it could allow unauthorized MFA challenge initiation.
+impact: Medium — credential may still be valid against production/staging PISP endpoint
+verify_steps: 
+[HYP] Internal S3 Bucket Name and Staging Environment URL Leaked
+class: MISCONFIG
+asset: N26AndroidSamples/credit/src/main/res/raw/credit_drafts.json:8,30
+confidence: 75
+reasoning: Two URLs expose the internal AWS S3 bucket name `consumercredit-staging` under `eu-central-1.amazonaws.com`. This reveals: (1) the exact S3 bucket naming convention for the consumer credit service, (2) that a staging environment exists at this path. While the S3 bucket currently returns 404 (access denied or deleted), the bucket name is useful for targeted enumeration or social engineering. The hardcoded staging data also includes loan amounts, repayment schedules, and UUIDs.
+impact: Low — bucket appears non-publicly accessible (404), but internal naming convention is exposed
+verify_steps: 
+[HYP] Sandbox OAuth Client ID and IBAN Exposed in Postman Collection
+class: SECRET
+asset: psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+confidence: 70
+reasoning: The Postman environment file contains hardcoded sandbox credentials: `dedicated_aisp_client_id=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI`, `auth_code=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK`, sandbox IBAN `DE15100110012627633320`, and a sandbox `user_id`/`consent_id` UUID. The collection also references OAuth client IDs `PSDDE-BAFIN-000001` and `PSDES-BDE-3DFD12`. While labeled "sandbox," if the sandbox OAuth tokens are reusable or if the same client_id works in production, this could allow unauthorized API access.
+impact: Low — explicitly sandboxed environment, but shared sandbox credentials may be reusable
+verify_steps: 
+[HYP] Internal API Hostname Exposed in Public Documentation Script
+class: MISCONFIG
+asset: psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:8
+confidence: 65
+reasoning: The script defaults `PISP_HOST` to `pisp.tech26.de` — an internal N26 Payment Initiation Service Provider hostname. This reveals the existence and naming convention of internal banking API infrastructure. Combined with the hardcoded credential (`android:secret`), this provides a clear attack surface.
+impact: Low — hostname alone is not exploitable, but combined with the credential finding increases attack surface
+verify_steps: 
+[HYP] Slack Bot Token Passed via URL Query Parameter
+class: MISCONFIG
+asset: bob/Sources/Bob/Core/Slack/SlackClient.swift:31
+confidence: 55
+reasoning: The bob bot passes the Slack API token as a URL query parameter (`token=...`) to `https://slack.com/api/rtm.start`. While this is the deprecated Slack RTM API pattern (now superseded by Socket Mode), tokens in URL query strings can appear in server logs, proxy logs, and browser history. The token is stored as a `private let` in memory, so it's not hardcoded — but the传输 pattern is insecure.
+impact: Low — token is not hardcoded (loaded from config), but URL-based transmission is an insecure pattern
+verify_steps: 
+TARGET_ORG not configured for n26; skipping public-org deep scan.
