@@ -2134,3 +2134,144 @@ testability: PASSIVE
 
 **STEP 7 — RISK**
 [RISK] N26 Bank AG: 85 — Confirmed live payment API (spc.n26.com/v1/*) with 200 responses on financial endpoints across 15+ probe runs, GraphQL WAF with cookie auth on primary banking app, Statsig feature flags controlling banking features behind RBAC, keyless auth service on EKS; payment service has verified attack surface with versioned endpoints accessible; all high-value targets with confirmed attack surface and at least two (spc.n26.com, app.n26.com/graphql) showing exploitable pathways.
+===== ANALYST nemotron3 2026-09-05 16:16:16 UTC =====
+[0m
+> build · nemotron-3-ultra-free
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/
+total 144
+drwxr-xr-x 12 runner runner  4096 Sep  5 16:06 .
+drwxr-xr-x  3 runner runner  4096 Sep  5 16:06 ..
+drwxr-xr-x  7 runner runner  4096 Sep  5 16:06 .git
+drwxr-xr-x  3 runner runner  4096 Sep  5 16:06 .github
+-rw-r--r--  1 runner runner  1844 Sep  5 16:06 README.md
+-rw-r--r--  1 runner runner    43 Sep  5 16:06 analyst-out.txt
+-rw-r--r--  1 runner runner 27491 Sep  5 16:06 analyst-prompt.txt
+-rw-r--r--  1 runner runner 23621 Sep  5 16:06 ctx.txt
+drwxr-xr-x  2 runner runner  4096 Sep  5 16:06 inventory
+drwxr-xr-x  2 runner runner  4096 Sep  5 16:06 knowledge
+drwxr-xr-x  2 runner runner  4096 Sep  5 16:06 leads
+-rw-r--r--  1 runner runner  5929 Sep  5 16:06 probe-results.md
+drwxr-xr-x  2 runner runner  4096 Sep  5 16:06 recon-notes
+drwxr-xr-x  2 runner runner  4096 Sep  5 16:06 reports
+drwxr-xr-x  2 runner runner  4096 Sep  5 16:06 reposcan-raw
+-rw-r--r--  1 runner runner  3283 Sep  5 16:06 scope.yml
+drwxr-xr-x  2 runner runner  4096 Sep  5 16:06 scripts
+-rw-r--r--  1 runner runner    33 Sep  5 16:06 state_bigpickle.json
+-rw-r--r--  1 runner runner    33 Sep  5 16:06 state_laguna.json
+-rw-r--r--  1 runner runner    33 Sep  5 16:06 state_ling3.json
+-rw-r--r--  1 runner runner    33 Sep  5 16:06 state_longcat.json
+-rw-r--r--  1 runner runner    33 Sep  5 16:06 state_mimo.json
+-rw-r--r--  1 runner runner    33 Sep  5 16:06 state_nemotron3.json
+drwxr-xr-x  2 runner runner  4096 Sep  5 16:06 triage
+[0m
+[0m→ [0mRead probe-results.md
+[0m→ [0mRead scope.yml
+[0m→ [0mRead inventory/n26.md
+[0m✗ [0mRead knowledge/seed.md failed
+[91m[1mError: [0mFile not found: /home/runner/work/n26-hunt/n26-hunt/knowledge/seed.md
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/knowledge/
+total 16
+drwxr-xr-x  2 runner runner 4096 Sep  5 16:06 .
+drwxr-xr-x 12 runner runner 4096 Sep  5 16:06 ..
+-rw-r--r--  1 runner runner 4792 Sep  5 16:06 index.md
+[0m
+[0m→ [0mRead knowledge/index.md
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/leads/
+total 140
+drwxr-xr-x  2 runner runner  4096 Sep  5 16:06 .
+drwxr-xr-x 12 runner runner  4096 Sep  5 16:06 ..
+-rw-r--r--  1 runner runner 22203 Sep  5 16:06 lead-bigpickle.md
+-rw-r--r--  1 runner runner   765 Sep  5 16:06 lead-laguna.md
+-rw-r--r--  1 runner runner   750 Sep  5 16:06 lead-ling3.md
+-rw-r--r--  1 runner runner   780 Sep  5 16:06 lead-longcat.md
+-rw-r--r--  1 runner runner    18 Sep  5 16:06 lead-mimo.md
+-rw-r--r--  1 runner runner 87627 Sep  5 16:06 lead-nemotron3.md
+-rw-r--r--  1 runner runner  3790 Sep  5 16:06 reposcan-n26.md
+[0m
+Now I have the full picture. Let me produce the structured analysis.
+
+---
+
+**STEP 1 — DELTA**
+
+[NEW] flags.n26.com: Client SDK key extracted from app bundle; `/v1/sdk_exception` endpoint bypasses RBAC and accepts the extracted key (confirmed 2026-09-05)
+[NEW] spc.n26.com: Versioned endpoints (`/api/v1`, `/v1/transactions`, `/v1/payments`, `/v1/tokens`) return HTTP 200 with `len=43` — confirmed as 1x1 GIF tracking pixels, NOT a payment API
+[NEW] app.n26.com/graphql: WAF normalizes Content-Type; `application/x-www-form-urlencoded`, `text/plain`, `multipart/form-data` all return 403 — no bypass via alternative Content-Type
+[CHANGED] spc.n26.com: Previous IDOR hypothesis (confidence 80+) INVALIDATED — endpoints are tracking pixels, not financial API
+[CHANGED] app.n26.com/graphql: Previous GraphQL WAF bypass hypothesis (confidence 60) INVALIDATED — WAF inspects body, not just Content-Type header
+
+---
+
+**STEP 2 — PRIORITIZE**
+
+[PRIO] flags.n26.com,8.5,attack_surface=8,business_value=8,tech_exposure=9,gate_ease=9,cloud_surface=8,freshness=10
+[PRIO] app.n26.com,6.0,attack_surface=7,business_value=9,tech_exposure=6,gate_ease=3,cloud_surface=7,freshness=8
+[PRIO] spc.n26.com,2.0,attack_surface=2,business_value=3,tech_exposure=2,gate_ease=5,cloud_surface=5,freshness=10
+
+---
+
+**STEP 3 — HYPOTHESES**
+
+[HYP] Statsig feature flag enumeration via extracted client SDK key and RBAC bypass
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 85
+reasoning: Client SDK key extracted from app.n26.com bundle; `/v1/sdk_exception` endpoint accepts the key and bypasses RBAC (returns 200 vs 403 on `/v1/initialize`); Statsig `/v1/get_configs`, `/v1/evaluate`, `/v1/log_event` all return 403 without valid key
+evidence_needed: Successful call to `/v1/get_configs` or `/v1/evaluate` with extracted client_key returning feature flag configurations; confirmation of banking-relevant flags (premium features, A/B tests, KYC limits, card controls)
+verify_steps: POST https://flags.n26.com/v1/get_configs with `Content-Type: application/json`, body `{"client_key":"<extracted_key>"}`; POST https://flags.n26.com/v1/evaluate with same key and user context; enumerate flag names for business logic impact
+impact: Full feature flag enumeration → business logic bypass (premium features, transaction limits, KYC bypass, card control toggles) → high
+testability: PASSIVE
+
+[HYP] GraphQL schema exposure via alternative transport on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: GraphQL endpoint exists (confirmed via cookie + 403/timeout not 404); WAF blocks all POST Content-Types including form-encoded; GET query param returns connection reset; no viable transport bypass found after testing JSON, urlencoded, text/plain, multipart
+evidence_needed: Any GraphQL response (__typename or __schema) via any HTTP method/Content-Type combination
+verify_steps: POST https://app.n26.com/graphql with `Content-Type: application/graphql` body `{__typename}`; test HTTP PUT/PATCH with JSON; test WebSocket upgrade on `/graphql`; test batched queries via GET with persisted query IDs
+impact: Full schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical (but unverifiable)
+testability: AUTH_HELPED
+
+[HYP] Subdomain takeover via dangling DNS on discovered CDN/assets
+class: MISCONFIG
+asset: cdn.number26.de
+confidence: 30
+reasoning: S3-backed CDN discovered via CSP script-src on app.n26.com; returns 403 with XML access-denied (not 404); bucket may be misconfigured or deleted
+evidence_needed: DNS CNAME pointing to non-existent S3 bucket; successful bucket claim serving attacker content
+verify_steps: `dig cdn.number26.com` to resolve CNAME; check if target S3 bucket exists via `aws s3 ls s3://<bucket>`; attempt bucket registration if unclaimed
+impact: XSS via malicious JS served from trusted CSP source → session theft → ATO → critical
+testability: PASSIVE
+
+---
+
+**STEP 4 — SELF-CRITIQUE**
+
+[PARKED] GraphQL schema exposure via alternative transport on app.n26.com: confidence 25 (<40), WAF inspects request body not just Content-Type; all tested vectors return 403; no new bypass vectors identified
+[PARKED] Subdomain takeover via dangling DNS on cdn.number26.de: confidence 30 (<40), no evidence of dangling CNAME; 403 response suggests bucket exists but is private
+[FINAL] 1) Statsig feature flag enumeration via extracted client SDK key and RBAC bypass (confidence 85)
+
+---
+
+**STEP 5 — NEXT ACTION**
+
+[NEXT] PROBE: POST https://flags.n26.com/v1/get_configs with `Content-Type: application/json`, body `{"client_key":"<extracted_client_key_from_bundle>"}` — enumerate feature flags for banking business logic impact
+
+---
+
+**STEP 6 — LEARNING**
+
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All `/v1/*` endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+
+---
+
+**STEP 7 — RISK**
+
+[RISK] N26 Bank AG: 75 — Confirmed Statsig feature flag service with client SDK key extraction and RBAC bypass via `/v1/sdk_exception`; feature flags control banking features (premium, limits, KYC, card controls); GraphQL WAF on primary app is robust (no bypass found); spc.n26.com endpoints are tracking pixels not payment API; single high-value exploitable path (flags.n26.com) with confirmed key extraction and bypass

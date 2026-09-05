@@ -186,3 +186,78 @@ testability: PASSIVE
 [LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels, not a payment API
 [LEARN] REJECTED AUTH  @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain all 403
 [LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted; /v1/sdk_exception bypasses RBAC and accepts it
+## 2026-09-05 16:13:33 UTC [target] (model bigpickle)
+[NEXT] PROBE: GET https://spc.n26.com/v1/transactions with headers `Referer: https://app.n26.com` and `Origin: https://app.n26.com` — check for transaction data, error messages, or authorization logic indicators
+[LEARN] ACCEPTED IDOR @ spc.n26.com: Versioned payment API endpoints confirmed (HTTP 200). CSP allows cross-origin access from app.n26.com. Financial endpoints are high-value IDOR targets.
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL WAF blocks POST application/json. Alternative Content-Type or HTTP method may bypass WAF rules.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig service with RBAC. Client-side SDK key extraction from actual bundle paths (not assumed) is viable path.
+[RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found. Account creation restricted per scope.yml. Financial data exposure during testing explicitly called out as program note.
+[PRIO] spc.n26.com, 9.25, attack_surface:9 business_value:10 tech_exposure:9 gate_ease:8 cloud_surface:9 freshness:9
+[PRIO] app.n26.com/graphql, 8.0, attack_surface:8 business_value:9 tech_exposure:9 gate_ease:5 cloud_surface:7 freshness:9
+[PRIO] flags.n26.com, 7.5, attack_surface:7 business_value:7 tech_exposure:8 gate_ease:6 cloud_surface:8 freshness:9
+[HYP] Payment service BOLA/IDOR on spc.n26.com versioned endpoints
+class: IDOR
+asset: spc.n26.com/v1/transactions
+confidence: 82
+reasoning: spc.n26.com confirmed live with versioned API endpoints (/api/v1, /v1/transactions, /v1/payments, /v1/tokens all HTTP 200). CSP connect-src allows app.n26.com to reach this service. Payment services with financial endpoints are high-value IDOR targets — user_id/account_id parameters in transaction queries likely lack cross-tenant authorization checks.
+evidence_needed: Any response containing transaction data, error messages indicating authorization logic, or parameter reflection
+verify_steps: (1) GET https://spc.n26.com/v1/transactions with Referer: https://app.n26.com, (2) GET https://spc.n26.com/v1/payments with same headers, (3) GET https://spc.n26.com/v1/tokens, (4) GET https://spc.n26.com/api/v1/transactions/1, (5) GET https://spc.n26.com/api/v1/users/1
+impact: Unauthorized access to financial transaction data, card tokens, payment records. Severity: CRITICAL
+testability: PASSIVE
+[HYP] GraphQL introspection bypass via Content-Type manipulation
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 72
+reasoning: GraphQL confirmed via cookie + 403 responses. WAF blocks POST application/json. Previous GET query param returned connection reset. Express+Envoy stack may allow introspection via alternative Content-Type (application/graphql, text/plain) or different HTTP method (PUT/PATCH) that bypasses WAF rules targeting POST application/json specifically.
+evidence_needed: Any non-403/404 response, introspection data, or error message leak
+verify_steps: (1) POST https://app.n26.com/graphql with Content-Type: text/plain and body query={__typename}, (2) POST with Content-Type: application/x-www-form-urlencoded and body query={__typename}, (3) PUT https://app.n26.com/graphql with JSON body, (4) PATCH https://app.n26.com/graphql with JSON body
+impact: GraphQL schema disclosure → mutations for account takeover, payment manipulation, PII access. Severity: HIGH
+testability: PASSIVE
+[HYP] Statsig SDK key extraction from app bundle via alternate paths
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 60
+reasoning: Statsig service confirmed (x-statsig-region: gke-us-west1). /v1/initialize returns 403 (RBAC). Previous attempt to find client.*.js returned 404. Client-side Statsig SDK keys are embedded in frontend bundles — need to extract actual JS bundle URLs from app.n26.com HTML response, not assumed paths.
+evidence_needed: Statsig client SDK key or any flag configuration data
+verify_steps: (1) GET https://app.n26.com and extract all script src URLs, (2) Search extracted bundles for "client_key", "sdk_key", "statsig", "feature_gate" patterns, (3) GET https://flags.n26.com/v1/initialize with extracted key
+impact: Feature flag disclosure → hidden features, admin functionality, A/B test groups. Severity: MEDIUM
+testability: PASSIVE
+[FINAL] Payment service BOLA/IDOR on spc.n26.com (confidence: 82, rank: 1) — Survives: class IDOR in-scope, confidence>40, verify_steps present, critical business value (financial data)
+[FINAL] GraphQL introspection bypass via Content-Type (confidence: 72, rank: 2) — Survives: class AUTH in-scope, confidence>40, verify_steps present, high business value
+[FINAL] Statsig SDK key extraction (confidence: 60, rank: 3) — Survives: class MISCONFIG in-scope, confidence>40, verify_steps present, moderate impact
+[NEXT] PROBE: GET https://spc.n26.com/v1/transactions with headers `Referer: https://app.n26.com` and `Origin: https://app.n26.com` — check for transaction data, error messages, or authorization logic indicators
+[LEARN] ACCEPTED IDOR @ spc.n26.com: Versioned payment API endpoints confirmed (HTTP 200). CSP allows cross-origin access from app.n26.com. Financial endpoints are high-value IDOR targets.
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL WAF blocks POST application/json. Alternative Content-Type or HTTP method may bypass WAF rules.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig service with RBAC. Client-side SDK key extraction from actual bundle paths (not assumed) is viable path.
+[RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found. Account creation restricted per scope.yml. Financial data exposure during testing explicitly called out as program note.
+[PRIO] flags.n26.com,         8.0, attack_surface:8 business_value:7 tech_exposure:8 gate_ease:7 cloud_surface:8 freshness:10
+[PRIO] app.n26.com/graphql,   6.0, attack_surface:7 business_value:9 tech_exposure:8 gate_ease:4 cloud_surface:6 freshness:9
+[PRIO] spc.n26.com,           4.0, attack_surface:4 business_value:4 tech_exposure:3 gate_ease:9 cloud_surface:3 freshness:9  (cut 9.25→4.0)
+[PRIO] flags.n26.com,       8.0, a:8 b:7 t:8 g:7 c:8 f:10   Validity of key + sdk_exception RBAC gap
+[PRIO] app.n26.com/graphql, 6.0, a:7 b:9 t:8 g:4 c:6 f:9    All POSTs WAF-403; GET reset; stalled
+[PRIO] spc.n26.com,         4.0, a:4 b:4 t:3 g:9 c:3 f:9    Downgraded 9.25→4.0 (GIF catch-all)
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels, not a payment API
+[LEARN] REJECTED AUTH  @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain all 403
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted; /v1/sdk_exception bypasses RBAC and accepts it
+[PRIO] flags.n26.com,       7.8, a:7 b:7 t:8 g:7 c:8 f:10   Two routes past RBAC; key is public-client (low ceiling)
+[PRIO] app.n26.com/graphql, 6.0, a:7 b:9 t:8 g:4 c:6 f:9    All POSTs WAF-403; GET reset; stalled 4 cycles
+[PRIO] spc.n26.com,         4.0, a:4 b:4 t:3 g:9 c:3 f:9    Dead — GIF catch-all, no API
+class: MISCONFIG
+asset: flags.n26.com/v1
+confidence: 52
+reasoning: Envoy RBAC is route-specific — sdk_exception (200 success) and download_config_specs (app-layer 401) both bypass it while get_configs/evaluate/get_id_lists return 403 RBAC. App hardcodes api:"https://flags.n26.com/v1" in 410.js. The 401 on download_config_specs is upstream rejection of GET shape, not key invalidation — a POST with SDK-canonical payload (body {hash, user, statsigMetadata}) may pass the client key.
+evidence_needed: download_config_specs POST returning flag/spec data (not 401/403); any JSON config response from a config route
+verify_steps: (1) POST /v1/download_config_specs with k=client key, STATSIG-API-KEY header, body {"hash":"djb2","user":{},"statsigMetadata":{}}, (2) POST /v1/initialize with identical canonical client payload, (3) compare x-statsig-region/app-layer responses vs sdk_exception baseline
+impact: Flag/config disclosure if a config route accepts the client key — LOW-MEDIUM (key is public-cclient by design; gain would be hidden-feature/A-B metadata only, no PII or funds)
+testability: PASSIVE
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 40
+reasoning: WAF blocks all POST Content-Types and GET query param (connection-reset). No variant attempted yet: (a) POST with application/json but query split across multiple params, (b) batch array payload (GraphQL supports [{}]), (c) Content-Type application/graphql+json. n26.graphql_form_payload cookie name hints form-style payloads are routed differently.
+evidence_needed: any non-403/non-reset response from /graphql or /api/graphql
+verify_steps: (1) POST /graphql body '[{"query":"{__typename}"}]' application/json, (2) POST /api/graphql same, (3) POST /graphql application/graphql+json
+impact: schema disclosure → mutation enumeration → banking-operations abuse if reached — HIGH
+testability: PASSIVE
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: /v1/download_config_specs is a 2nd RBAC-exempt route (app-layer 401 across all GET key-delivery variants); sdk_exception remains the only route returning 200 with the public client key
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded in any app bundle → no server-key escalation
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes (get_configs, evaluate, get_id_lists, diagnostics, feature_gates, initialize-GET) return 403 RBAC

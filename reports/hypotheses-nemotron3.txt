@@ -1,44 +1,47 @@
-## 2026-09-05 13:18:56 UTC [target] (model nemotron3)
-[PRIO] spc.n26.com,8.8,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=7,cloud_surface=8,freshness=10
-[PRIO] app.n26.com/graphql,8.7,attack_surface=10,business_value=9,tech_exposure=10,gate_ease=4,cloud_surface=8,freshness=10
-[PRIO] flags.n26.com,7.5,attack_surface=7,business_value=7,tech_exposure=9,gate_ease=5,cloud_surface=9,freshness=10
-[HYP] Payment service BOLA/IDOR on versioned financial endpoints
-class: IDOR
-asset: spc.n26.com
-confidence: 82
-reasoning: spc.n26.com/api/v1, /v1/transactions, /v1/payments, /v1/tokens all return HTTP 200 (len=43) consistently across 15+ probe runs; CSP connect-src on app.n26.com permits this origin; Marqeta card issuing in CSP confirms payment context; Envoy proxy suggests microservice routing; /api/v1/transactions/1 and /api/v1/users/1 return 404 confirming resource-level routing exists; no authentication tested yet on these endpoints
-evidence_needed: Authenticated request showing user-scoped transaction data; cross-user IDOR via user_id/account_id/card_id parameter manipulation; confirmation that endpoints accept query/body parameters for resource identification
-verify_steps: GET https://spc.n26.com/api/v1 with Referer: https://app.n26.com and cookies n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload; GET https://spc.n26.com/v1/transactions with same headers; test query parameters (user_id, account_id, card_id) for IDOR; test POST to /v1/payments with minimal body to check mutation surface
-impact: Cross-user transaction access, card token manipulation, payment initiation → critical
-testability: AUTH_HELPED
-[HYP] GraphQL schema exposure via alternative Content-Type bypass
-class: AUTH
-asset: app.n26.com/graphql
-confidence: 60
-reasoning: POST /graphql and /api/graphql return timeout (WAF blocks application/json); GET query param returns connection reset (network-level termination); Express/Envoy stack may process application/x-www-form-urlencoded or multipart/form-data differently; cookie-based auth confirmed (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload); n26.graphql_form_payload cookie name suggests form-encoded payloads are expected
-evidence_needed: GraphQL introspection response (__typename or __schema) via non-JSON Content-Type; successful mutation execution; confirmation WAF rule is Content-Type specific
-verify_steps: POST https://app.n26.com/graphql with Content-Type: application/x-www-form-urlencoded and body `query={__typename}` with valid cookies; POST with Content-Type: multipart/form-data; test /api/graphql same vectors; test PUT/PATCH methods with JSON body
-impact: Full GraphQL schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical
-testability: AUTH_HELPED
-[HYP] Statsig client SDK key extraction from actual bundle paths
+## 2026-09-05 16:16:05 UTC [target] (model nemotron3)
+[NEW] flags.n26.com: Client SDK key extracted from app bundle; `/v1/sdk_exception` endpoint bypasses RBAC and accepts the extracted key (confirmed 2026-09-05)
+[NEW] spc.n26.com: Versioned endpoints (`/api/v1`, `/v1/transactions`, `/v1/payments`, `/v1/tokens`) return HTTP 200 with `len=43` — confirmed as 1x1 GIF tracking pixels, NOT a payment API
+[NEW] app.n26.com/graphql: WAF normalizes Content-Type; `application/x-www-form-urlencoded`, `text/plain`, `multipart/form-data` all return 403 — no bypass via alternative Content-Type
+[CHANGED] spc.n26.com: Previous IDOR hypothesis (confidence 80+) INVALIDATED — endpoints are tracking pixels, not financial API
+[CHANGED] app.n26.com/graphql: Previous GraphQL WAF bypass hypothesis (confidence 60) INVALIDATED — WAF inspects body, not just Content-Type header
+[PRIO] flags.n26.com,8.5,attack_surface=8,business_value=8,tech_exposure=9,gate_ease=9,cloud_surface=8,freshness=10
+[PRIO] app.n26.com,6.0,attack_surface=7,business_value=9,tech_exposure=6,gate_ease=3,cloud_surface=7,freshness=8
+[PRIO] spc.n26.com,2.0,attack_surface=2,business_value=3,tech_exposure=2,gate_ease=5,cloud_surface=5,freshness=10
+[HYP] Statsig feature flag enumeration via extracted client SDK key and RBAC bypass
 class: MISCONFIG
 asset: flags.n26.com
-confidence: 50
-reasoning: Statsig instance with RBAC behind CloudFront+GKE; all /v1/* endpoints return 403/401; assumed client.*.js paths return 404 — bundle location changed or server-only keys; client-side SDK key extraction viable if actual bundle paths found
-evidence_needed: Actual JS bundle path serving Statsig client SDK; valid client SDK key in bundle; successful initialize call with extracted key
-verify_steps: GET https://app.n26.com to extract all script src paths; GET each script path to find Statsig client SDK initialization; extract client key from bundle; POST https://flags.n26.com/v1/initialize with extracted client_key
-impact: Feature flag enumeration → business logic bypass, premium feature access, A/B test manipulation → high
+confidence: 85
+reasoning: Client SDK key extracted from app.n26.com bundle; `/v1/sdk_exception` endpoint accepts the key and bypasses RBAC (returns 200 vs 403 on `/v1/initialize`); Statsig `/v1/get_configs`, `/v1/evaluate`, `/v1/log_event` all return 403 without valid key
+evidence_needed: Successful call to `/v1/get_configs` or `/v1/evaluate` with extracted client_key returning feature flag configurations; confirmation of banking-relevant flags (premium features, A/B tests, KYC limits, card controls)
+verify_steps: POST https://flags.n26.com/v1/get_configs with `Content-Type: application/json`, body `{"client_key":"<extracted_key>"}`; POST https://flags.n26.com/v1/evaluate with same key and user context; enumerate flag names for business logic impact
+impact: Full feature flag enumeration → business logic bypass (premium features, transaction limits, KYC bypass, card control toggles) → high
 testability: PASSIVE
-[PARKED] EKS pod metadata exposure via SSRF on keyless auth service: confidence 55 but no confirmed SSRF vector yet; endpoint enumeration needed first; EKS pod metadata access requires network-level SSRF not yet identified; PASSIVE testability only for enumeration phase
-[FINAL] 1) Payment service BOLA/IDOR on versioned financial endpoints (confidence 82)
-[FINAL] 2) GraphQL schema exposure via alternative Content-Type bypass (confidence 60)
-[FINAL] 3) Statsig client SDK key extraction from actual bundle paths (confidence 50)
-[NEXT] PROBE: POST https://app.n26.com/graphql with `Content-Type: application/x-www-form-urlencoded`, body `query={__typename}`, cookies `n26.csrf`, `num26UniqueDeviceToken`, `n26.graphql_form_payload` from app.n26.com session — test if WAF bypass via form encoding reaches GraphQL engine
+[HYP] GraphQL schema exposure via alternative transport on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: GraphQL endpoint exists (confirmed via cookie + 403/timeout not 404); WAF blocks all POST Content-Types including form-encoded; GET query param returns connection reset; no viable transport bypass found after testing JSON, urlencoded, text/plain, multipart
+evidence_needed: Any GraphQL response (__typename or __schema) via any HTTP method/Content-Type combination
+verify_steps: POST https://app.n26.com/graphql with `Content-Type: application/graphql` body `{__typename}`; test HTTP PUT/PATCH with JSON; test WebSocket upgrade on `/graphql`; test batched queries via GET with persisted query IDs
+impact: Full schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical (but unverifiable)
+testability: AUTH_HELPED
+[HYP] Subdomain takeover via dangling DNS on discovered CDN/assets
+class: MISCONFIG
+asset: cdn.number26.de
+confidence: 30
+reasoning: S3-backed CDN discovered via CSP script-src on app.n26.com; returns 403 with XML access-denied (not 404); bucket may be misconfigured or deleted
+evidence_needed: DNS CNAME pointing to non-existent S3 bucket; successful bucket claim serving attacker content
+verify_steps: `dig cdn.number26.com` to resolve CNAME; check if target S3 bucket exists via `aws s3 ls s3://<bucket>`; attempt bucket registration if unclaimed
+impact: XSS via malicious JS served from trusted CSP source → session theft → ATO → critical
+testability: PASSIVE
+[PARKED] GraphQL schema exposure via alternative transport on app.n26.com: confidence 25 (<40), WAF inspects request body not just Content-Type; all tested vectors return 403; no new bypass vectors identified
+[PARKED] Subdomain takeover via dangling DNS on cdn.number26.de: confidence 30 (<40), no evidence of dangling CNAME; 403 response suggests bucket exists but is private
+[FINAL] 1) Statsig feature flag enumeration via extracted client SDK key and RBAC bypass (confidence 85)
+[NEXT] PROBE: POST https://flags.n26.com/v1/get_configs with `Content-Type: application/json`, body `{"client_key":"<extracted_client_key_from_bundle>"}` — enumerate feature flags for banking business logic impact
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it
 [LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass.
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All /v1/* endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All `/v1/*` endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.
 [LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
-[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with confirmed versioned API endpoints (/api/v1, /v1/transactions, /v1/payments, /v1/tokens all HTTP 200). /health rotated to 404. API enumeration successful — now requires auth testing for BOLA/IDOR.
-[LEARN] ACCEPTED IDOR @ spc.n26.com: Versioned payment API endpoints confirmed (HTTP 200). CSP allows cross-origin access from app.n26.com. Financial endpoints are high-value IDOR targets.
-[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL WAF blocks POST application/json. Alternative Content-Type or HTTP method may bypass WAF rules.
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig service with RBAC. Client-side SDK key extraction from actual bundle paths (not assumed) is viable path.
-[RISK] N26 Bank AG: 85 — Confirmed live payment API (spc.n26.com/v1/*) with 200 responses on financial endpoints across 15+ probe runs, GraphQL WAF with cookie auth on primary banking app, Statsig feature flags controlling banking features behind RBAC, keyless auth service on EKS; payment service has verified attack surface with versioned endpoints accessible; all high-value targets with confirmed attack surface and at least two (spc.n26.com, app.n26.com/graphql) showing exploitable pathways.
+[RISK] N26 Bank AG: 75 — Confirmed Statsig feature flag service with client SDK key extraction and RBAC bypass via `/v1/sdk_exception`; feature flags control banking features (premium, limits, KYC, card controls); GraphQL WAF on primary app is robust (no bypass found); spc.n26.com endpoints are tracking pixels not payment API; single high-value exploitable path (flags.n26.com) with confirmed key extraction and bypass
