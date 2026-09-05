@@ -42,3 +42,6 @@
 - 2026-09-05 REJECTED MISCONFIG @ app.n26.com: numeric Statsig IDs (3526595..4173610755) absent from all 11 bundles — IDs server-assigned, name↔ID mapping not passively recoverable; retires evidence_needed from prior cycle
 - 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC is method+shape dependent (GET initialize 403 vs POST 200), but the 401 on download_config_specs proves app-layer route filtering persists — bounded, not generic
 - 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure. Prior POST-401 entry was wrong — bypass is method+payload dependent
+- 2026-09-05 REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204 (not 403) looked like alternate WAF boundary, but bare-GET stalls identically on app+support (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed on both hostnames.
+- 2026-09-05 REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3 origin behind CloudFront) — private bucket, object-only; no listing/misconfig.
+- 2026-09-05 ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard script-src/connect-src/img-src; `cookie.n26.com` surfaced as new 404 leaf — hosts low-logic static content, INFO ceiling only.
