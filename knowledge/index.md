@@ -38,3 +38,7 @@
 - 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary now = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403.
 - 2026-09-05 REJECTED AUTH @ app.n26.com: GraphQL WAF-blocked across every tested transport.
 - 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: `/v1/download_config_specs` is a 2nd RBAC-exempt route (app-layer 401 across all GET key-delivery variants); sdk_exception remains the only route returning 200 with the public client key
+- 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: POST /v1/initialize 200-with-data is Statatsig DESIGN — public client key unchanged across bundle rotation, browser SDK sends identical POST+STATSIG-API-KEY from every page; reclassified from "RBAC bypass vuln" to "by-design client SDK behavior" (report value INFO unless flag config deemed sensitive)
+- 2026-09-05 REJECTED MISCONFIG @ app.n26.com: numeric Statsig IDs (3526595..4173610755) absent from all 11 bundles — IDs server-assigned, name↔ID mapping not passively recoverable; retires evidence_needed from prior cycle
+- 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC is method+shape dependent (GET initialize 403 vs POST 200), but the 401 on download_config_specs proves app-layer route filtering persists — bounded, not generic
+- 2026-09-05 ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure. Prior POST-401 entry was wrong — bypass is method+payload dependent

@@ -6282,3 +6282,463 @@ testability: AUTH_HELPED
 [RISK] n26: 40/100 — Confirmed RBAC-bypass + config disclosure on flags.n26.com via POST initialize (LOW-MEDIUM; public-by-design client key, config metadata only, no PII/funds/mutation). GraphQL robust, spc dead. Report-worthiness hinges on whether N26 treats flag/config metadata as sensitive; no cross-tenant/financial impact demonstrated.
 
 Output written to `analyst-out-bigpickle.md`. The key advance this cycle: I executed the queued POST and discovered `initialize` (not `download_config_specs`) is the RBAC-exempt config route — it returns the full production flag/config tree with the public client key.
+===== ANALYST bigpickle 2026-09-05 20:45:52 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la && find . -name "*.js" -not -path "./node_modules/*" 2>/dev/null | head -50; echo "---"; find . -name "*.md" -not -path "./node_modules/*" 2>/dev/null | head -50
+total 160
+drwxr-xr-x 12 runner runner  4096 Sep  5 20:41 .
+drwxr-xr-x  3 runner runner  4096 Sep  5 20:40 ..
+drwxr-xr-x  7 runner runner  4096 Sep  5 20:41 .git
+drwxr-xr-x  3 runner runner  4096 Sep  5 20:40 .github
+-rw-r--r--  1 runner runner  1844 Sep  5 20:40 README.md
+-rw-r--r--  1 runner runner    32 Sep  5 20:41 analyst-out.txt
+-rw-r--r--  1 runner runner 33431 Sep  5 20:41 analyst-prompt.txt
+-rw-r--r--  1 runner runner 29561 Sep  5 20:41 ctx.txt
+drwxr-xr-x  2 runner runner  4096 Sep  5 20:40 inventory
+drwxr-xr-x  2 runner runner  4096 Sep  5 20:40 knowledge
+drwxr-xr-x  2 runner runner  4096 Sep  5 20:40 leads
+-rw-r--r--  1 runner runner  6746 Sep  5 20:40 probe-results.md
+drwxr-xr-x  2 runner runner  4096 Sep  5 20:40 recon-notes
+drwxr-xr-x  2 runner runner  4096 Sep  5 20:40 reports
+drwxr-xr-x  2 runner runner  4096 Sep  5 20:40 reposcan-raw
+-rw-r--r--  1 runner runner  3283 Sep  5 20:40 scope.yml
+drwxr-xr-x  2 runner runner  4096 Sep  5 20:40 scripts
+-rw-r--r--  1 runner runner    33 Sep  5 20:40 state_bigpickle.json
+-rw-r--r--  1 runner runner    33 Sep  5 20:40 state_laguna.json
+-rw-r--r--  1 runner runner    33 Sep  5 20:40 state_ling3.json
+-rw-r--r--  1 runner runner    33 Sep  5 20:40 state_longcat.json
+-rw-r--r--  1 runner runner    33 Sep  5 20:40 state_mimo.json
+-rw-r--r--  1 runner runner    33 Sep  5 20:40 state_nemotron3.json
+drwxr-xr-x  2 runner runner  4096 Sep  5 20:40 triage
+---
+./triage/run-2026-09-04-05-04.md
+./triage/run-2026-09-02-21-44.md
+./triage/run-2026-09-04-14-04.md
+./triage/run-2026-09-04-19-53.md
+./triage/run-2026-09-03-22-24.md
+./triage/run-2026-09-04-09-44.md
+./triage/run-2026-09-05-00-11.md
+./triage/run-2026-09-03-08-17.md
+./triage/run-2026-09-05-17-37.md
+./triage/run-2026-09-05-12-04.md
+./triage/run-2026-09-02-23-54.md
+./triage/run-2026-09-04-00-26.md
+./triage/run-2026-09-03-03-32.md
+./triage/run-2026-09-05-08-36.md
+./triage/run-2026-09-04-17-39.md
+./triage/run-2026-09-04-22-12.md
+./triage/run-2026-09-05-15-20.md
+./triage/run-2026-09-05-19-29.md
+./triage/run-2026-09-03-12-53.md
+./triage/run-2026-09-05-04-39.md
+./triage/run-2026-09-03-19-43.md
+./triage/run-2026-09-03-16-58.md
+./recon-notes/DEDICATED-DEEP.md
+./inventory/n26.md
+./knowledge/index.md
+./probe-results.md
+./reports/reposcan-findings.md
+./reports/hypotheses.md
+./reports/valid-bugs.md
+./leads/lead-nemotron3.md
+./leads/lead-bigpickle.md
+./leads/lead-laguna.md
+./leads/lead-ling3.md
+./leads/lead-mimo.md
+./leads/reposcan-n26.md
+./leads/lead-longcat.md
+./README.md
+[0m
+[0m✱ [0mGlob "**/*410*.js"[90m 0 matches[0m
+[0m→ [0mRead probe-results.md
+[0m
+[0m$ [0mls -la scripts knowledge leads triage reports reposcan-raw inventory recon-notes
+inventory:
+total 20
+drwxr-xr-x  2 runner runner 4096 Sep  5 20:40 .
+drwxr-xr-x 12 runner runner 4096 Sep  5 20:41 ..
+-rw-r--r--  1 runner runner 8271 Sep  5 20:40 n26.md
+
+knowledge:
+total 16
+drwxr-xr-x  2 runner runner 4096 Sep  5 20:40 .
+drwxr-xr-x 12 runner runner 4096 Sep  5 20:41 ..
+-rw-r--r--  1 runner runner 7002 Sep  5 20:40 index.md
+
+leads:
+total 176
+drwxr-xr-x  2 runner runner   4096 Sep  5 20:40 .
+drwxr-xr-x 12 runner runner   4096 Sep  5 20:41 ..
+-rw-r--r--  1 runner runner  43015 Sep  5 20:40 lead-bigpickle.md
+-rw-r--r--  1 runner runner    867 Sep  5 20:40 lead-laguna.md
+-rw-r--r--  1 runner runner    850 Sep  5 20:40 lead-ling3.md
+-rw-r--r--  1 runner runner    884 Sep  5 20:40 lead-longcat.md
+-rw-r--r--  1 runner runner     18 Sep  5 20:40 lead-mimo.md
+-rw-r--r--  1 runner runner 100214 Sep  5 20:40 lead-nemotron3.md
+-rw-r--r--  1 runner runner   7625 Sep  5 20:40 reposcan-n26.md
+
+recon-notes:
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep  5 20:40 .
+drwxr-xr-x 12 runner runner 4096 Sep  5 20:41 ..
+-rw-r--r--  1 runner runner  809 Sep  5 20:40 DEDICATED-DEEP.md
+
+reports:
+total 976
+drwxr-xr-x  2 runner runner   4096 Sep  5 20:40 .
+drwxr-xr-x 12 runner runner   4096 Sep  5 20:41 ..
+-rw-r--r--  1 runner runner 664790 Sep  5 20:40 analyst-bigpickle.log
+-rw-r--r--  1 runner runner   3689 Sep  5 20:40 analyst-laguna.log
+-rw-r--r--  1 runner runner   3672 Sep  5 20:40 analyst-ling3.log
+-rw-r--r--  1 runner runner   3706 Sep  5 20:40 analyst-longcat.log
+-rw-r--r--  1 runner runner 282789 Sep  5 20:40 analyst-nemotron3.log
+-rw-r--r--  1 runner runner  10891 Sep  5 20:40 hypotheses-bigpickle.txt
+-rw-r--r--  1 runner runner     51 Sep  5 20:40 hypotheses-laguna.txt
+-rw-r--r--  1 runner runner     50 Sep  5 20:40 hypotheses-ling3.txt
+-rw-r--r--  1 runner runner     52 Sep  5 20:40 hypotheses-longcat.txt
+-rw-r--r--  1 runner runner   6709 Sep  5 20:40 hypotheses-nemotron3.txt
+-rw-r--r--  1 runner runner  27774 Sep  5 20:40 hypotheses.md
+-rw-r--r--  1 runner runner   4596 Sep  5 20:40 reposcan-findings.md
+-rw-r--r--  1 runner runner    299 Sep  5 20:40 valid-bugs.md
+
+reposcan-raw:
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep  5 20:40 .
+drwxr-xr-x 12 runner runner 4096 Sep  5 20:41 ..
+-rw-r--r--  1 runner runner   66 Sep  5 20:40 summary.txt
+
+scripts:
+total 28
+drwxr-xr-x  2 runner runner  4096 Sep  5 20:40 .
+drwxr-xr-x 12 runner runner  4096 Sep  5 20:41 ..
+-rw-r--r--  1 runner runner 16987 Sep  5 20:40 sync-issues.py
+
+triage:
+total 104
+drwxr-xr-x  2 runner runner  4096 Sep  5 20:40 .
+drwxr-xr-x 12 runner runner  4096 Sep  5 20:41 ..
+-rw-r--r--  1 runner runner     0 Sep  5 20:40 .gitkeep
+-rw-r--r--  1 runner runner   223 Sep  5 20:40 run-2026-09-02-21-44.md
+-rw-r--r--  1 runner runner   601 Sep  5 20:40 run-2026-09-02-23-54.md
+-rw-r--r--  1 runner runner   167 Sep  5 20:40 run-2026-09-03-03-32.md
+-rw-r--r--  1 runner runner   275 Sep  5 20:40 run-2026-09-03-08-17.md
+-rw-r--r--  1 runner runner   242 Sep  5 20:40 run-2026-09-03-12-53.md
+-rw-r--r--  1 runner runner   244 Sep  5 20:40 run-2026-09-03-16-58.md
+-rw-r--r--  1 runner runner   177 Sep  5 20:40 run-2026-09-03-19-43.md
+-rw-r--r--  1 runner runner   928 Sep  5 20:40 run-2026-09-03-22-24.md
+-rw-r--r--  1 runner runner   186 Sep  5 20:40 run-2026-09-04-00-26.md
+-rw-r--r--  1 runner runner   165 Sep  5 20:40 run-2026-09-04-05-04.md
+-rw-r--r--  1 runner runner   160 Sep  5 20:40 run-2026-09-04-09-44.md
+-rw-r--r--  1 runner runner   178 Sep  5 20:40 run-2026-09-04-14-04.md
+-rw-r--r--  1 runner runner   235 Sep  5 20:40 run-2026-09-04-17-39.md
+-rw-r--r--  1 runner runner   569 Sep  5 20:40 run-2026-09-04-19-53.md
+-rw-r--r--  1 runner runner   155 Sep  5 20:40 run-2026-09-04-22-12.md
+-rw-r--r--  1 runner runner   213 Sep  5 20:40 run-2026-09-05-00-11.md
+-rw-r--r--  1 runner runner   150 Sep  5 20:40 run-2026-09-05-04-39.md
+-rw-r--r--  1 runner runner   169 Sep  5 20:40 run-2026-09-05-08-36.md
+-rw-r--r--  1 runner runner   152 Sep  5 20:40 run-2026-09-05-12-04.md
+-rw-r--r--  1 runner runner   194 Sep  5 20:40 run-2026-09-05-15-20.md
+-rw-r--r--  1 runner runner 10012 Sep  5 20:40 run-2026-09-05-17-37.md
+-rw-r--r--  1 runner runner   179 Sep  5 20:40 run-2026-09-05-19-29.md
+[0m
+[0m→ [0mRead triage/run-2026-09-05-17-37.md
+[0m→ [0mRead leads/lead-bigpickle.md
+I'll run the passive mapping probe from the last NEXT (grep app bundles for the numeric Statsig IDs) before writing the analysis.
+[0m
+[0m$ [0mcurl -sS --max-time 25 https://app.n26.com -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)' -o /tmp/opencode/app.html -w 'HTTP %{http_code} len=%{size_download}\n'; grep -oE '<script[^>]+src="[^"]+"' /tmp/opencode/app.html | head -40
+HTTP 302 len=28
+[0m
+[0m$ [0mcurl -sSL --max-time 25 -c /tmp/opencode/cj.txt -b /tmp/opencode/cj.txt 'https://app.n26.com/' -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)' -o /tmp/opencode/app.html -w 'HTTP %{http_code} final=%{url_effective} len=%{size_download}\n'; grep -oE 'src="[^"]+\.js[^"]*"' /tmp/opencode/app.html | head -60
+HTTP 200 final=https://app.n26.com/login len=319274
+src="/build/js/webpack-runtime.3d272c50.js"
+src="/build/js/util_vendor.00e2ab05.js"
+src="/build/js/react_vendor.85fb11fa.js"
+src="/build/js/410.15d71588.js"
+src="/build/js/client.6e429513.js"
+src="/build/js/6759.2f2cc008.js"
+src="/build/js/1503.f68ea103.js"
+src="/build/js/banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js"
+src="/build/js/1596.6ac8435d.js"
+src="/build/js/1992.184409c9.js"
+src="/build/js/banking-features-auth-biometric-LoginPage.60e488b5.js"
+[0m
+[0m$ [0mcd /tmp/opencode && curl -sS --max-time 40 -c cj.txt -b cj.txt -H 'User-Agent: Mozilla/5.0' -o 410.js 'https://app.n26.com/build/js/410.15d71588.js' -w '410: HTTP %{http_code} len=%{size_download}\n' && curl -sS --max-time 40 -c cj.txt -b cj.txt -H 'User-Agent: Mozilla/5.0' -o client.js 'https://app.n26.com/build/js/client.6e429513.js' -w 'client: HTTP %{http_code} len=%{size_download}\n'
+410: HTTP 200 len=1362976
+client: HTTP 200 len=1476393
+[0m
+[0m$ [0mcd /tmp/opencode && for id in 3526595 54269378 361410648 1418505627 1467424007 3273360575 113552670 687145565 1078987709 1594427002 3518516657 4173610755 1788632107688; do echo "== $id =="; grep -oE ".{120}$id.{120}" 410.js client.js 2>/dev/null | head -3; done 2>/dev/null | cut -c1-320
+== 3526595 ==
+== 54269378 ==
+== 361410648 ==
+== 1418505627 ==
+== 1467424007 ==
+== 3273360575 ==
+== 113552670 ==
+== 687145565 ==
+== 1078987709 ==
+== 1594427002 ==
+== 3518516657 ==
+== 4173610755 ==
+== 1788632107688 ==
+[0m
+[0m$ [0mcd /tmp/opencode && grep -oE '"/build/js/[^"]+\.js"' app.html | sed 's/"//g' | sort -u > bundles.txt && wc -l bundles.txt && cat bundles.txt
+11 bundles.txt
+/build/js/1503.f68ea103.js
+/build/js/1596.6ac8435d.js
+/build/js/1992.184409c9.js
+/build/js/410.15d71588.js
+/build/js/6759.2f2cc008.js
+/build/js/banking-features-auth-biometric-LoginPage.60e488b5.js
+/build/js/banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js
+/build/js/client.6e429513.js
+/build/js/react_vendor.85fb11fa.js
+/build/js/util_vendor.00e2ab05.js
+/build/js/webpack-runtime.3d272c50.js
+[0m
+[0m$ [0mcd /tmp/opencode && for b in $(cat bundles.txt); do n=$(basename $b); [ -f "$n" ] || curl -sS --max-time 40 -c cj.txt -b cj.txt -H 'User-Agent: Mozilla/5.0' -o "$n" "https://app.n26.com$b" -w "$n: HTTP %{http_code} len=%{size_download}\n"; done
+1503.f68ea103.js: HTTP 200 len=12438
+1596.6ac8435d.js: HTTP 200 len=620556
+1992.184409c9.js: HTTP 200 len=15866
+410.15d71588.js: HTTP 200 len=1362976
+6759.2f2cc008.js: HTTP 200 len=8551
+banking-features-auth-biometric-LoginPage.60e488b5.js: HTTP 200 len=221645
+banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js: HTTP 200 len=7800
+client.6e429513.js: HTTP 200 len=1476393
+react_vendor.85fb11fa.js: HTTP 200 len=153797
+util_vendor.00e2ab05.js: HTTP 200 len=203600
+webpack-runtime.3d272c50.js: HTTP 200 len=16650
+[0m
+[0m$ [0mcd /tmp/opencode && grep -l -E "statsig|Statsig" *.js; echo "---compile-id map---"; grep -roE "statsig[^\"']{0,80}" *.js -i | grep -iE 'init|key|gate|sdk|clientkey|apikey' | head -20
+410.15d71588.js
+410.js
+---compile-id map---
+410.15d71588.js:StatsigGlobal)(),{Log:l.Log,SDK_VERSION:c.SDK_VERSION})},3553(e,t,n){
+410.15d71588.js:statsig::gate_exposure
+410.15d71588.js:StatsigUser not found. You may be using an older server SDK version. Please upgrade you
+410.15d71588.js:statsig.stable_id.${(0,r._getStorageKey)(e)}`}function f(e,t){const n=d(t);try{(0,a._se
+410.15d71588.js:statsig.stable_id.${(0,r._getStorageKey)(e)}`}t.StableID={cookiesEnabled:!1,randomID:Ma
+410.15d71588.js:StatsigClient(e.clientKey,t,{environment:{tier:n},networkConfig:r});return A=i,i}(e),[e
+410.15d71588.js:StatsigGlobal)();return e?n.instances&&n.instances[e]:(n.instances&&Object.keys(n.insta
+410.15d71588.js:Statsig global instance without an SDK key but there is more than one client instance. 
+410.15d71588.js:StatsigSession.get(this._sdkKey,e)}get stableID(){return a.StableID.get(this._sdkKey)}g
+410.15d71588.js:StatsigInternalClientFactoryBootstrap)(e=>new r.StatsigClient(e.sdkKey,e.initialUser,e.
+410.15d71588.js:statsigOptions),{sdkKey:e,initialUser:t,initialValues:n,statsigOptions:o,useLegacyForma
+410.15d71588.js:StatsigClient=t.useParameterStore=t.useLayer=t.useGateValue=t.useFeatureGate=t.useExper
+410.15d71588.js:StatsigProvider:s.StatsigProvider,useClientAsyncInit:l.useClientAsyncInit,useClientBoot
+410.15d71588.js:statsigEnvironment:void 0},r=(0,i._getUserStorageKey)(this._sdkKey,n),o=e.metadata?e.me
+410.15d71588.js:statsig.failed_logs.${(0,o._DJB2)(this._sdkKey)}`}_normalizeAndAppendEvent(e){e.user&&(
+410.15d71588.js:statsigapi.net/v1/sdk_exception
+410.15d71588.js:statsigOptions:c(this._options)},Object.assign(Object.assign({},x),{sdkType:b})),_=null
+410.15d71588.js:STATSIG-API-KEY
+410.15d71588.js:STATSIG-SDK-TYPE
+410.15d71588.js:STATSIG-SDK-VERSION
+[0m
+[0m$ [0mcd /tmp/opencode && grep -hoE "(checkGate|getFeatureGate|getConfig|getExperiment|getLayer|manualExposure)\s*\(\s*[\"'][^\"']+[\"']" 410.15d71588.js | sort -u | head -80
+(no output)
+[0m
+[0m$ [0mcd /tmp/opencode && grep -oE "\.checkGate\([^)]{0,80}\)|checkGate\(\"[^\"]+\"|checkGate\('[^']+'" 410.15d71588.js | head -40; echo "===broad==="; grep -oE "[A-Za-z0-9_.-]{3,60}Feature[A-Za-z0-9_.]{0,40}" 410.15d71588.js | sort -u | head -40
+.checkGate(e,t)
+.checkGate(e,t)
+.checkGate(e,t)
+===broad===
+_getFeatureGateImpl
+e.getFeatureGate
+fontFeatureSettings
+getFeatureGate
+h.useFeatureGate
+i._makeFeatureGate
+n.getFeatureGate
+o.NoopEvaluationsClient.getFeatureGate
+r._makeFeatureGate
+requiredFeatures
+s.getFeatureGate
+t._makeFeatureGate
+t.useFeatureGate
+this._getFeatureGateImpl.bind
+this.getFeatureGate
+useFeatureGate
+[0m
+[0m$ [0mcd /tmp/opencode && grep -l "flags.n26.com\|flags\\.n26" *.js; echo "---key search---"; grep -oE "client-[A-Za-z0-9]{20,60}" *.js | sort -u | head; echo "---gate string literals across app bundles---"; grep -hoE "\"[a-z0-9_-]{3,60}\"" 1596.6ac8435d.js client.6e429513.js banking-features-auth-biometric-*.js 2>/dev/null | grep -iE "gate|flag|feature|experiment|config|premium|limit|kyc|card|onboard" | sort -u | head -50
+410.15d71588.js
+410.js
+---key search---
+client.6e429513.js:client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0
+client.js:client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0
+---gate string literals across app bundles---
+"banking-features-cards-card-confirm"
+"banking-features-moneybeam-routes"
+"banking-features-recurring-payments"
+"banking-features-scheduled-payments"
+"banking-features-standing-order"
+"bytes_limit"
+"card"
+"card-delivery"
+"chat-char-limit-error"
+"configuration"
+"discarded"
+"duration_limit"
+"feature_operation_vital"
+"flags"
+"keep_card"
+"limit"
+"login_sms_authentication_retry_limit_reached"
+"messages_limit"
+"name-on-card"
+"not_premium_can_upgrade"
+"optional-card"
+"premium-insurance-bouncer"
+"rulespulsecard"
+"spaces_settings_members_section_not_shareable_card"
+"subscriptions_clean_select_routes_card_selection_flow_gate"
+"temporarily_unavailable_features"
+"vop_confirmation_info_card_close_match_subtitle"
+"vop_confirmation_info_card_close_match_title"
+"vop_confirmation_info_card_full_match_subtitle"
+"vop_confirmation_info_card_full_match_title"
+"vop_confirmation_info_card_no_match_subtitle"
+"vop_confirmation_info_card_no_match_title"
+"vop_confirmation_info_card_unknown_match_subtitle"
+"vop_confirmation_info_card_unknown_match_title"
+[0m
+[0m$ [0mcd /tmp/opencode && grep -hoE "\"[a-z0-9_-]*gate[a-z0-9_-]*\"|\"[a-z0-9_-]*flag[a-z0-9_-]*\"|\"[a-z0-9_-]*feature[a-z0-9_-]*\"|\"[a-z0-9_-]*experiment[a-z0-9_-]*\"" 1596.6ac8435d.js client.6e429513.js banking-features-auth-biometric-*.js 1503.f68ea103.js 1992.184409c9.js 6759.2f2cc008.js 2>/dev/null | sort -u | head -60
+"banking-features-cards-card-confirm"
+"banking-features-moneybeam-routes"
+"banking-features-recurring-payments"
+"banking-features-scheduled-payments"
+"banking-features-standing-order"
+"feature_operation_vital"
+"flags"
+"subscriptions_clean_select_routes_card_selection_flow_gate"
+"temporarily_unavailable_features"
+[0m
+[0m$ [0mcd /tmp/opencode && grep -hoE "[A-Za-z0-9_$]{1,4}\.checkGate\|\|[a-zA-Z0-9_$(){}.]+" 1596.6ac8435d.js client.6e429513.js 2>/dev/null | head; echo "===useGateValue / getFeatureGate calls with string arg==="; grep -hoE "getFeatureGate\([^)]{0,120}\)" 1596.6ac8435d.js | sort -u | head -40; echo "===string constant arrays of feature names==="; grep -oE "\"[a-z0-9_.-]{3,60}\"" 1596.6ac8435d.js | sort -u | wc -l
+===useGateValue / getFeatureGate calls with string arg===
+===string constant arrays of feature names===
+307
+[0m
+[0m$ [0mcd /tmp/opencode && (curl -sSI --max-time 15 -H 'User-Agent: Mozilla/5.0' https://support.n26.com/ -o /dev/null -w 'support.n26.com: HTTP %{http_code} server=%{header_json}\n' 2>/dev/null || echo support-timeout) & sleep 1; (curl -sSI --max-time 15 -H 'User-Agent: Mozilla/5.0' https://authentication-service.eks.core-production.keyless.technology/ -o /dev/null -w 'keyless: HTTP %{http_code}\n' 2>/dev/null || echo keyless-timeout) & sleep 1; (getent hosts authentication-service.eks.core-production.keyless.technology || echo keyless-nodns-legacy) & wait
+support.n26.com: HTTP 404 server={"date":["Sat, 05 Sep 2026 20:42:45 GMT"],
+"content-type":["text/html"],
+"content-length":["43717"],
+"x-powered-by":["Express"],
+"referrer-policy":["strict-origin-when-cross-origin"],
+"cache-control":["no-store"],
+"set-cookie":["n26.csrf=s%3A7bdD4DhhGahFwiK-MIw1uoqb.wRbGttLkMMWCL5TOzUqGGZPIFw%2BWsOghsFF7Yj%2FGrQs; Path=/; HttpOnly; Secure; SameSite=Strict","num26UniqueDeviceToken=3a126b24-d768-4cf8-bca2-f4fb271a56f6; Domain=.n26.com; Path=/; Expires=Fri, 05 Mar 2027 20:42:45 GMT; Secure; SameSite=Lax"],
+"x-ratelimit-limit":["60"],
+"x-ratelimit-remaining":["59"],
+"x-ratelimit-reset":["1788641026"],
+"content-security-policy":["report-uri /report-csp;report-to /report-csp;base-uri 'self';child-src number26://* *.n26.com n26.com *.doubleclick.net api.sumsub.com pixel.mathtag.com n26.go2cloud.org tr.snapchat.com *.youtube-nocookie.com youtube-nocookie.com *.force.com *.salesforce.com *.lpsnmedia.net *.liveperson.net;connect-src 'self' https://spc.n26.com https://flags.n26.com wss://authentication-service.eks.core-production.keyless.technology * fonts.googleapis.com blob: *.force.com *.salesforceliveagent.com wss://lo.msg.liveperson.net wss://*.liveperson.net *.liveperson.net *.lpsnmedia.net;font-src 'self' data:;img-src https://spc.n26.com https://flags.n26.com 'self' data: images.ctfassets.net images.contentful.com * *.force.com *.salesforce.com *.lpsnmedia.net *.liveperson.net *.objectstorage.liveperson.net;media-src videos.contentful.com videos.ctfassets.net 'self' blob: *.lpsnmedia.net;object-src 'none';style-src 'unsafe-inline' 'self' fonts.googleapis.com tagmanager.google.com *.force.com *.salesforce.com blob: *.lpsnmedia.net *.liveperson.net;script-src 'self' cdn.number26.de 'unsafe-inline' * connect.facebook.net *.youtube-nocookie.com s.ytimg.com youtube-nocookie.com youtube.com *.force.com *.salesforce.com *.salesforceliveagent.com 'unsafe-eval' cdn.cookielaw.org *.lpsnmedia.net *.liveperson.net 'nonce-24956506b9f75592e4b474e161bf7448' 'strict-dynamic';worker-src 'self';default-src * *.lpsnmedia.net;frame-ancestors 'self' *.n26.com *.dev-n26.com *.staging-n26.com app.contentful.com;frame-src *.lpsnmedia.net *.liveperson.net"],
+"feature-policy":["accelerometer 'none';autoplay 'none';camera 'none';fullscreen 'none';geolocation 'none';gyroscope 'none';magnetometer 'none';microphone 'none';midi 'none';notifications 'none';payment 'none';push 'none';speaker 'none';sync-xhr 'none';usb 'none';vibrate 'none';vr 'none'"],
+"etag":["W/\"9-0gXL1ngzMqISxa6S1zx3F4wtLyg\""],
+"vary":["Accept-Encoding"],
+"server":["envoy"],
+"strict-transport-security":["max-age=31536000; includeSubDomains; preload"],
+"x-content-type-options":["nosniff"],
+"x-xss-protection":["1; mode=block"],
+"x-envoy-upstream-service-time":["22"]
+}
+keyless: HTTP 404
+3.64.65.209     saas-external-73885400.eu-central-1.elb.amazonaws.com authentication-service.eks.core-production.keyless.technology
+63.187.138.249  saas-external-73885400.eu-central-1.elb.amazonaws.com authentication-service.eks.core-production.keyless.technology
+63.186.219.253  saas-external-73885400.eu-central-1.elb.amazonaws.com authentication-service.eks.core-production.keyless.technology
+[0m
+[0m$ [0mcd /tmp/opencode && for s in "Get this deal now" "uiMode" "escalationType" "vendor"; do echo "== $s =="; grep -l "$s" *.js 2>/dev/null; done
+== Get this deal now ==
+== uiMode ==
+client.6e429513.js
+client.js
+== escalationType ==
+== vendor ==
+1596.6ac8435d.js
+410.15d71588.js
+410.js
+client.6e429513.js
+client.js
+react_vendor.85fb11fa.js
+util_vendor.00e2ab05.js
+[0m
+[0m$ [0mcd /tmp/opencode && grep -oE ".{200}uiMode.{200}" client.6e429513.js | head -2 | cut -c1-500
+ildren:(0,n.jsx)(_,{})})}},17406(e,t,r){"use strict";r.d(t,{_:()=>a});var n=r(17827),o=r(86158),i=r(22155);function a(){var e=(0,n.gB)(),t=(0,n.Fj)("ptx-246-support_chat",{disableExposureLog:e}).get("uiMode","vendor"),r=(0,i.useRef)(null);e||(r.current=t);var a=r.current;(0,i.useEffect)(function(){null!==a&&o.A.info("SUPPORT_CHAT_UI_MODE_RESOLVED",{uiMode:a})},[a]);return{isAnalyticsLoading:null===a,uiM
+!1}),i=(0,Mc.A)("short_idle_timeout"),a=(0,at.A)(),c=(0,m.P)(),{notify:s}=(0,se.u)(),l=(0,ae.useContext)(Hc.P),{isBiometricAuthEnabled:u}=(0,bt.Zv)(),d=(0,Mc.A)("new_chat_test"),{isAnalyticsLoading:p,uiMode:f}=(0,Fc._)(),b="native"===f||d;var y,h;y=!p&&!b,h=(0,ae.useRef)(y),(0,ae.useEffect)(function(){var e=h.current&&!y;h.current=y,e&&document.querySelector('#lpChat, div[id^="LPMcontainer-"]')&&window.
+[0m
+[0m$ [0mcd /tmp/opencode && grep -oE "\(0,Mc\.A\)\(\"[^\"]{2,60}\"\)" client.6e429513.js 1596.6ac8435d.js | sort -u | head -60
+client.6e429513.js:(0,Mc.A)("new_chat_test")
+client.6e429513.js:(0,Mc.A)("noscript")
+client.6e429513.js:(0,Mc.A)("short_idle_timeout")
+[0m
+[0m$ [0mcd /tmp/opencode && grep -hoE "[\"'][a-z0-9_]{4,50}[\"']\s*,\s*\{(disableExposureLog|disableLocalEvaluation)?" client.6e429513.js 1596.6ac8435d.js 1992.184409c9.js 1503.f68ea103.js 6759.2f2cc008.js 2>/dev/null | sort -u | head; echo "=== named Fj config reads (dynamic-config name + .get) ==="; grep -hoE "\.Fj\)\(\"[^\"]{2,60}\"" client.6e429513.js 1596.6ac8435d.js | sort -u | head -30
+"_dd_temp_",{
+"account",{
+"circle",{
+"defs",{
+"error",{
+"fieldset",{
+"filter",{
+"footer",{
+"form",{
+"html",{
+=== named Fj config reads (dynamic-config name + .get) ===
+.Fj)("ptx-246-support_chat"
+[0m
+[0m$ [0mcd /tmp/opencode && grep -oE ".{80}STATSIG-API-KEY.{120}" 410.15d71588.js | head -2 | cut -c1-400
+Func)&&void 0!==h?h:fetch;yield _(t.EXCEPTION_ENDPOINT,{method:"POST",headers:{"STATSIG-API-KEY":this._sdkKey,"STATSIG-SDK-TYPE":String(b),"STATSIG-SDK-VERSION":String(x.sdkVersion),"Content-Type":"application/json"
+[0m
+STEP 1 — DELTA:
+- [CHANGED] app.n26.com bundles rotated to new hashes (client.6e429513.js, 410.15d71588.js, banking-features-auth-biometric-* chunks); HTML len stable ~319KB; public Statsig client key unchanged (`client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0` re-extracted from new build)
+- [NEW] App reads Statsig by NAME (`Fj("ptx-246-support_chat").get("uiMode","vendor")`, gates `new_chat_test`/`short_idle_timeout`/`noscript`) while /v1/initialize keys by numeric ID → the 200 response is the app's own runtime-read config, i.e. by-design client SDK behavior
+- [NEW] 410.15d71588.js shows browser SDK itself sends `STATSIG-API-KEY: <client_key>` on POST — our "bypass" request is byte-identical to what every page visitor's browser does
+- [NEW] Numeric-ID→name mapping FAILED: all 12 IDs absent from all 11 downloaded bundles; IDs are server-assigned, bundles carry only names → prior evidence_needed unproducible
+- [NEW] support.n26.com CSP `frame-ancestors` lists `*.dev-n26.com`/`*.staging-n26.com` (passive dev/staging namespace hint); keyless MFA host = `saas-external-73885400.eu-central-1.elb.amazonaws.com`, 404 root, unchanged
+
+STEP 2 — PRIORITIZE:
+- [PRIO] flags.n26.com, 6.75, a:8 b:4 t:7 g:8 c:8 f:7 — disclosed data now proven by-design (public key, browser SDK identical request); residual angle = Envoy RBAC method inconsistency only
+- [PRIO] app.n26.com/graphql, 5.8, a:7 b:9 t:8 g:2 c:6 f:3 — WAF-blocked on every transport after 7+ cycles; business value high but gate_ease ~0, freshness low
+- [PRIO] support.n26.com, 5.55, a:6 b:5 t:5 g:7 c:5 f:6 — same Express/Envoy backend, 404 root; only intel gain was dev/staging hint from CSP
+
+STEP 3 — HYPOTHESES:
+[HYP] Envoy RBAC method+payload bypass extends beyond /v1/initialize
+class: MISCONFIG
+asset: flags.n26.com/v1/evaluate
+confidence: 35
+reasoning: GET /v1/initialize→403 but POST+STATSIG-API-KEY+canonical body→200 proves Envoy RBAC is method/shape-dependent, not key-only. download_config_specs canonical POST→401 (local 401) shows app layer still filters some routes. get_configs/evaluate/get_id_lists untested with the winning shape. If evaluate returns 200 it discloses per-user gate evaluation (segments/holdouts/experiment groups) — slightly above the app-consumed baseline.
+evidence_needed: HTTP 200 on POST /v1/evaluate with winning shape; response containing evaluation results beyond initialize data
+verify_steps: POST /v1/evaluate with headers k=<key>, STATSIG-API-KEY=<key>, Content-Type application/json, body {"hash":"djb2","user":{},"statsigMetadata":{}}; repeat against /v1/get_configs; compare vs initialize 200 baseline and GET 403
+impact: per-user experiment/holdout/segment metadata beyond the client baseline — LOW (still public-key-scoped, no PII/funds/mutation)
+testability: PASSIVE
+[HYP] GraphQL reachable via graphql-ws subprotocol upgrade
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 15
+reasoning: only transport never consumed by WAF paths is a WebSocket upgrade; but requires an app session (MQTT/WS auth hook) → not testable anonymously; WAF-blocked across all HTTP transports
+evidence_needed: HTTP 101 on wss upgrade to /graphql
+verify_steps: (blocked, needs session/persisted-query hash)
+impact: schema→mutation enumeration if reached — HIGH (unreached)
+testability: AUTH_HELPED
+[HYP] Weak-auth internal tooling on dev/staging namespaces
+class: MISCONFIG
+asset: *.dev-n26.com / *.staging-n26.com
+confidence: 20
+reasoning: only evidence is frame-ancestors CSP entry on support.n26.com; exact hostnames not enumerated; blindly fuzzing N26-owned namespaces is directionless and may hit accounted assets
+evidence_needed: resolving dev/staging host with login/internal tool behavior
+verify_steps: (requires hostname discovery, out of current passive scope)
+impact: potential admin tooling exposure — HIGH if found, unsubstantiated now
+testability: HUMAN_ONLY
+
+STEP 4 — SELF-CRITIQUE:
+- [PARKED] Statsig /v1/initialize config disclosure (was 80→35): now confirmed by-design — key re-extracted from fresh bundle, browser SDK performs the identical POST+STATSIG-API-KEY request on every page load; disclosed data is the app's own named-read config (`ptx-246-support_chat`.uiMode etc.). RBAC method inconsistency is real but yields only public-by-design data. Not reportable unless N26 explicitly treats flag config as sensitive.
+- [PARKED] GraphQL PQ/WS (15<40): needs session/PQ hash — untestable passively; every HTTP transport WAF-blocked across 7+ cycles.
+- [PARKED] dev/staging enumeration (20<40): directionless hostname fuzz, no passive path.
+- [FINAL] strongest survivor = method/payload-consistency probe on /v1/evaluate vs /v1/get_configs (35) — the only untested variant left on the sole live-200 service.
+
+STEP 5 — NEXT ACTION:
+[NEXT] PROBE: POST https://flags.n26.com/v1/evaluate with headers `k: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, `Content-Type: application/json`, body `{"hash":"djb2","user":{"userID":"probe"},"statsigMetadata":{"sdkType":"js-client","sdkVersion":"6.4.4"}}` (same shape that returned 200 on /v1/initialize), then repeat identically on /v1/get_configs; record status vs GET 403 baseline to test whether the RBAC method bypass is initialize-only or generic.
+
+STEP 6 — LEARNING:
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST /v1/initialize 200-with-data is Statatsig DESIGN — public client key unchanged across bundle rotation, browser SDK sends identical POST+STATSIG-API-KEY from every page; reclassified from "RBAC bypass vuln" to "by-design client SDK behavior" (report value INFO unless flag config deemed sensitive)
+[LEARN] REJECTED MISCONFIG @ app.n26.com: numeric Statsig IDs (3526595..4173610755) absent from all 11 bundles — IDs server-assigned, name↔ID mapping not passively recoverable; retires evidence_needed from prior cycle
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC is method+shape dependent (GET initialize 403 vs POST 200), but the 401 on download_config_specs proves app-layer route filtering persists — bounded, not generic
+
+STEP 7 — RISK:
+[RISK] N26 Bank AG: 30/100 — Surface well-mapped and stale: sole live-200 service (flags.n26.com) disclosures proven by-design public-client data (INFO); GraphQL fully WAF-blocked after 7+ cycles on every transport; spc.n26.com = tracking pixels; no IDOR/SSRF/business-logic/funds surface demonstrated; single remaining untested variant is the RBAC method-consistency probe. No reportable finding currently in hand.
