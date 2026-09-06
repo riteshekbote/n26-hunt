@@ -1,7 +1,8 @@
-## 2026-09-06 09:11:32 UTC [target] (model nemotron3)
-[NEW] flags.n26.com/v1/initialize: POST with canonical Statsig SDK payload + public client key returns 200 with full flag/config tree (35 feature_gates, 9 dynamic_configs, layer_configs, company_lcut) — confirmed 2026-09-05/06; reclassified from "RBAC bypass vuln" to "by-design client SDK behavior" (report value INFO unless flag config deemed sensitive)
-[NEW] flags.n26.com: Full bundle sweep (11 bundles) found ONE key (public client key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`); no server/secret keys embedded → no server-key escalation
-[NEW] flags.n26.com: Envoy RBAC route map fully enumerated — only `sdk_exception` (202) and `download_config_specs` (401) bypass GET-layer RBAC; all config routes (get_configs, evaluate, get_id_lists, diagnostics, feature_gates, initialize-GET) return 403
+## 2026-09-06 13:02:06 UTC [target] (model nemotron3)
+[NEW] flags.n26.com/v1/initialize POST with canonical Statsig SDK payload (`{"hash":"djb2","user":{},"statsigMetadata":{}}`) + public client key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0` returns **200** with full flag/config tree (35 feature_gates, 9 dynamic_configs, layer_configs, company_lcut) — confirmed 2026-09-05/06; reclassified from "RBAC bypass" to "by-design client SDK behavior"
+[NEW] flags.n26.com/v1/download_config_specs canonical POST returns **401** — app-layer key rejection, not payload-shaped; closes that sub-route
+[NEW] flags.n26.com: Full bundle sweep (11 bundles) found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+[NEW] flags.n26.com: Envoy RBAC route map fully enumerated — only `sdk_exception` (202) and `download_config_specs` (401) bypass GET-layer RBAC; all config routes (get_configs, evaluate, get_id_lists, diagnostics, feature_gates, initialize-GET) return 403 RBAC
 [NEW] spc.n26.com: Versioned endpoints (`/api/v1`, `/v1/transactions`, `/v1/payments`, `/v1/tokens`) confirmed as 1x1 GIF tracking pixels (len=43) — NOT a payment API; IDOR hypothesis INVALIDATED
 [NEW] app.n26.com/graphql: WAF normalizes Content-Type; `application/x-www-form-urlencoded`, `text/plain`, `multipart/form-data` all return 403 — WAF inspects body structure; GraphQL bypass hypothesis INVALIDATED
 [NEW] support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed on both hostnames
@@ -44,7 +45,7 @@ evidence_needed: Any non-403/non-reset response from /graphql or /api/graphql
 verify_steps: OPTIONS https://app.n26.com/graphql with `Upgrade: websocket`, `Connection: Upgrade`, `Sec-WebSocket-Protocol: graphql-ws`; GET https://app.n26.com/graphql?extensions={"persistedQuery":{"version":1,"sha256Hash":"<app-captured-hash>"}} with valid cookies
 impact: Full schema exposure → mutation enumeration → IDOR/BOLA on banking operations → CRITICAL (but unverifiable without auth)
 testability: AUTH_HELPED
-[PARKED] Envoy RBAC method+payload bypass extends to /v1/evaluate: confidence 40 (<40 threshold borderline), impact is LOW (public-key-scoped, no PII/funds/mutation); precondition (initialize POST 200) holds; cheapest remaining check
+[PARKED] Envoy RBAC method+payload bypass extends to `/v1/evaluate`: confidence 40 (<40 threshold borderline), impact is LOW (public-key-scoped, no PII/funds/mutation); precondition (initialize POST 200) holds; cheapest remaining check
 [PARKED] GraphQL schema exposure via persisted-query/WebSocket on app.n26.com: confidence 25 (<40), WAF inspects request body not just Content-Type; all tested HTTP transports return 403/connection-reset; no new bypass vectors identified; requires auth for PQ/WS testability (AUTH_HELPED)
 [FINAL] 1) Statsig feature flag/config disclosure via method-dependent RBAC bypass on `/v1/initialize` (confidence 85)
 [NEXT] PROBE: POST https://flags.n26.com/v1/initialize with `Content-Type: application/json`, headers `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, body `{"hash":"djb2","user":{},"statsigMetadata":{}}` — confirm 200 with full config tree; then grep app.n26.com bundles (410.js + chunks) to map numeric Statsig IDs to named banking features before deciding report-worthiness

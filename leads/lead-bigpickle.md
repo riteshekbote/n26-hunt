@@ -525,3 +525,52 @@ impact: potential admin tooling exposure — HIGH if found, unsubstantiated now
 testability: HUMAN_ONLY
 [NEXT] PROBE: no new untested live route remains after evaluate/get_configs POST both returned 403 this cycle (initialize 200 is by-design public-client data; GraphQL = closed on every anonymous transport). Best next action is HUMAN coordinator escalation: request from program/coordinator a scoped test account or LivePerson/app-session to enable the AUTH_HELPED GraphQL WS/APQ path (the only remaining HIGH-impact reach), OR accept the surface as fully cornered at INFO.
 [RISK] N26 Bank AG: 20/100 — Surface mature and now fully cornered: the sole untested live route (evaluate/get_configs POST with the winning shape) returned RBAC-403 for both this cycle, empirically proving the /v1/initialize disclosure is a bounded, by-design public-client SDK path (INFO). GraphQL is tarpit/WAF-closed on every anonymous HTTP transport (app+support, all CT/methods), spc.n26.com = tracking GIFs, cdn private, marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth surface demonstrated anywhere after 8+ cycles. Remaining upside requires a live app session (WS/APQ GraphQL) conceding this as otherwise dead-ended. No reportable finding in hand.
+## 2026-09-06 12:54:57 UTC [target] (model bigpickle)
+[PRIO] flags.n26.com/v1/initialize, 5.0, a:5 b:4 t:5 g:6 c:5 f:6 — sole 200 route, by-design public-client SDK data, INFO ceiling; no remaining 403-RBAC bypass candidates
+[PRIO] app.n26.com/graphql, 5.4, a:7 b:9 t:8 g:1 c:6 f:2 — highest potential impact but gate_ease=1, tarpit-closed on every anonymous transport; untestable without auth
+[PRIO] cookie.n26.com, 4.2, a:3 b:4 t:4 g:6 c:3 f:5 — static leaf, INFO ceiling, no inject vector
+[HYP] Statsig feature flag/config disclosure on /v1/initialize is by-design client SDK behavior, not reportable RBAC bypass
+class: MISCONFIG
+asset: flags.n26.com/v1/initialize
+confidence: 85
+reasoning: POST + canonical SDK payload + PUBLIC client key (extracted from app bundle, unchanged across rotation) → 200 with 35 feature_gates/9 dynamic_configs. Browser SDK sends identical POST+STATSIG-API-KEY from every page. Every other config route returns 403/401 — boundary bounded. Key is same data every banking app consumer already receives client-side.
+evidence_needed: confirmation whether N26 treats flag/config metadata as sensitive (report-worthiness decision only)
+verify_steps: (done) POST /v1/initialize with canonical body+key → 200 full tree; GET/POST evaluate/get_configs → 403; download_config_specs POST → 401
+impact: INFO — public-key-scoped feature-flag/config metadata every end user's browser already receives; no PII/funds/mutation
+testability: PASSIVE
+[HYP] GraphQL schema via WebSocket/persisted-query upgrade on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: all HTTP transports stall/403 (GET query reset, all POST CT 403, support tarpit identical); only untested org front-doors are WS upgrade and APQ hash — both require live app session/auth hook
+evidence_needed: non-40x/non-stall /graphql response
+verify_steps: OPTIONS /graphql with Upgrade:websocket, Sec-WebSocket-Protocol:graphql-ws (requires LivePerson/WS session hook — AUTH_HELPED)
+impact: schema→mutation enumeration→banking-op abuse — HIGH if reached (unreached anonymously)
+testability: AUTH_HELPED
+[HYP] Weak-auth internal tooling on dev/staging namespaces
+class: MISCONFIG
+asset: *.dev-n26.com / *.staging-n26.com
+confidence: 20
+reasoning: only evidence is frame-ancestors CSP entry on support.n26.com; exact hostnames not enumerated; directionless
+evidence_needed: resolving dev/staging host with internal tool/login behavior
+verify_steps: (requires hostname discovery, out of current scope)
+impact: potential admin tooling exposure — HIGH if found, unsubstantiated now
+testability: HUMAN_ONLY
+[PARKED] GraphQL schema via WS/APQ: confidence 25 (<40), all tested HTTP transports return 403/connection-reset, no new bypass vectors; requires auth session for WS testability (AUTH_HELPED)
+[PARKED] Weak-auth dev/staging namespaces: confidence 20 (<40), no hostnames, directionless; HUMAN_ONLY
+[FINAL] 1) Statsig flag/config disclosure via method-dependent RBAC bypass on /v1/initialize (confidence 85) — by-design public-client data, INFO ceiling, no reportable impact demonstrated
+[NEXT] HUMAN: escalate to program coordinator — request scoped test account or LivePerson/app session to enable AUTH_HELPED GraphQL WS/APQ testing (the only remaining HIGH-impact reach); otherwise accept surface as fully cornered at INFO with no reportable finding in hand
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO)
+[LEARN] REJECTED MISCONFIG @ flags.n26.com/v1/download_config_specs: canonical POST returns 401 — key-invalid at app layer, not payload-shaped
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses; WAF blocks all POST Content-Types; GET query param connection reset
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
+[RISK] N26 Bank AG: 20/100 — Surface mature and fully cornered: sole verified non-INFO route (flags.n26.com initialize POST 200) is by-design public-client SDK data (INFO); GraphQL tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth surface demonstrated after 8+ cycles. Remaining HIGH-impact path (GraphQL WS/APQ) requires live app session unavailable to anonymous tester. No reportable finding in hand.
