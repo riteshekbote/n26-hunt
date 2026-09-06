@@ -1,22 +1,22 @@
-## 2026-09-06 04:47:55 UTC [target] (model nemotron3)
-[NEW] flags.n26.com/v1/initialize: POST with canonical Statsig SDK payload + public client key returns 200 with full flag/config tree (35 feature_gates, 9 dynamic_configs) — confirmed 2026-09-05/06; reclassified as by-design client SDK behavior (INFO unless flag config deemed sensitive)  
-[NEW] flags.n26.com/v1/download_config_specs: canonical POST returns 401 — app-layer key rejection, not payload-shaped; closes that sub-route  
-[NEW] flags.n26.com: Full bundle sweep (11 bundles) found ONE key (public client key); no server/secret keys embedded → no server-key escalation  
-[NEW] flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes (get_configs, evaluate, get_id_lists, diagnostics, feature_gates, initialize-GET) return 403 RBAC  
-[NEW] spc.n26.com: Versioned endpoints confirmed as 1x1 GIF tracking pixels (len=43) — NOT a payment API; IDOR hypothesis INVALIDATED  
-[NEW] app.n26.com/graphql: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure; GraphQL bypass hypothesis INVALIDATED  
-[NEW] support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed  
-[NEW] cdn.number26.de: `/?list-type=2` and root both 403 `AccessDenied` (AmazonS3) — private bucket, object-only via CloudFront; misconfig class closed  
-[NEW] n26.com/www.n26.com marketing: Envoy+CloudFront, loose CSP (`script-src *`, `connect-src *`, `img-src *`), `cookie.n26.com` 404 leaf surfaced — low-logic static content, INFO ceiling only  
-[CHANGED] flags.n26.com/v1/initialize GET consistently returns 403 across 15+ probe runs — RBAC enforcement stable  
-[CHANGED] app.n26.com HTML size stable at ~319KB across 15+ probe runs — consistent deployment, no new bundle paths  
-[PRIO] flags.n26.com/v1/initialize,8.5,attack_surface=8,business_value=8,tech_exposure=9,gate_ease=9,cloud_surface=8,freshness=10  
-[PRIO] flags.n26.com/v1/evaluate,5.1,attack_surface=5,business_value=5,tech_exposure=5,gate_ease=5,cloud_surface=5,freshness=6  
-[PRIO] app.n26.com/graphql,6.0,attack_surface=7,business_value=9,tech_exposure=8,gate_ease=4,cloud_surface=7,freshness=8  
-[PRIO] authentication-service.eks.core-production.keyless.technology,5.5,attack_surface=6,business_value=8,tech_exposure=7,gate_ease=2,cloud_surface=10,freshness=6  
-[PRIO] n26.com (marketing),4.9,attack_surface=4,business_value=5,tech_exposure=4,gate_ease=6,cloud_surface=4,freshness=8  
-[PRIO] cdn.number26.de,4.0,attack_surface=5,business_value=5,tech_exposure=5,gate_ease=7,cloud_surface=6,freshness=6  
-[PRIO] spc.n26.com,2.0,attack_surface=2,business_value=3,tech_exposure=2,gate_ease=5,cloud_surface=3,freshness=10  
+## 2026-09-06 09:11:32 UTC [target] (model nemotron3)
+[NEW] flags.n26.com/v1/initialize: POST with canonical Statsig SDK payload + public client key returns 200 with full flag/config tree (35 feature_gates, 9 dynamic_configs, layer_configs, company_lcut) — confirmed 2026-09-05/06; reclassified from "RBAC bypass vuln" to "by-design client SDK behavior" (report value INFO unless flag config deemed sensitive)
+[NEW] flags.n26.com: Full bundle sweep (11 bundles) found ONE key (public client key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`); no server/secret keys embedded → no server-key escalation
+[NEW] flags.n26.com: Envoy RBAC route map fully enumerated — only `sdk_exception` (202) and `download_config_specs` (401) bypass GET-layer RBAC; all config routes (get_configs, evaluate, get_id_lists, diagnostics, feature_gates, initialize-GET) return 403
+[NEW] spc.n26.com: Versioned endpoints (`/api/v1`, `/v1/transactions`, `/v1/payments`, `/v1/tokens`) confirmed as 1x1 GIF tracking pixels (len=43) — NOT a payment API; IDOR hypothesis INVALIDATED
+[NEW] app.n26.com/graphql: WAF normalizes Content-Type; `application/x-www-form-urlencoded`, `text/plain`, `multipart/form-data` all return 403 — WAF inspects body structure; GraphQL bypass hypothesis INVALIDATED
+[NEW] support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed on both hostnames
+[NEW] cdn.number26.de: `/?list-type=2` and root both 403 `AccessDenied` (AmazonS3) — private bucket, object-only via CloudFront; misconfig class closed
+[NEW] n26.com/www.n26.com marketing: Envoy+CloudFront, loose CSP (`script-src *`, `connect-src *`, `img-src *`), `cookie.n26.com` 404 leaf surfaced — low-logic static content, INFO ceiling only
+[CHANGED] flags.n26.com/v1/initialize GET consistently returns 403 across 15+ probe runs — RBAC enforcement stable
+[CHANGED] app.n26.com HTML size stable at ~319KB across 15+ probe runs — consistent deployment, no new bundle paths
+[PRIO] flags.n26.com/v1/initialize,8.5,attack_surface=8,business_value=8,tech_exposure=9,gate_ease=9,cloud_surface=8,freshness=10
+[PRIO] flags.n26.com/v1/sdk_exception,7.2,attack_surface=7,business_value=7,tech_exposure=8,gate_ease=9,cloud_surface=8,freshness=9
+[PRIO] flags.n26.com/v1/evaluate,5.1,attack_surface=5,business_value=5,tech_exposure=5,gate_ease=5,cloud_surface=5,freshness=6
+[PRIO] authentication-service.eks.core-production.keyless.technology,5.5,attack_surface=6,business_value=8,tech_exposure=7,gate_ease=2,cloud_surface=10,freshness=6
+[PRIO] app.n26.com/graphql,6.0,attack_surface=7,business_value=9,tech_exposure=8,gate_ease=4,cloud_surface=7,freshness=8
+[PRIO] n26.com (marketing),4.9,attack_surface=4,business_value=5,tech_exposure=4,gate_ease=6,cloud_surface=4,freshness=8
+[PRIO] cdn.number26.de,4.0,attack_surface=5,business_value=5,tech_exposure=5,gate_ease=7,cloud_surface=6,freshness=6
+[PRIO] spc.n26.com,2.0,attack_surface=2,business_value=3,tech_exposure=2,gate_ease=5,cloud_surface=3,freshness=10
 [HYP] Statsig feature flag/config disclosure via method-dependent RBAC bypass on `/v1/initialize`
 class: MISCONFIG
 asset: flags.n26.com/v1/initialize
@@ -44,21 +44,21 @@ evidence_needed: Any non-403/non-reset response from /graphql or /api/graphql
 verify_steps: OPTIONS https://app.n26.com/graphql with `Upgrade: websocket`, `Connection: Upgrade`, `Sec-WebSocket-Protocol: graphql-ws`; GET https://app.n26.com/graphql?extensions={"persistedQuery":{"version":1,"sha256Hash":"<app-captured-hash>"}} with valid cookies
 impact: Full schema exposure → mutation enumeration → IDOR/BOLA on banking operations → CRITICAL (but unverifiable without auth)
 testability: AUTH_HELPED
-[PARKED] GraphQL schema exposure via persisted-query/WebSocket on app.n26.com: confidence 25 (<40), WAF inspects request body not just Content-Type; all tested HTTP transports return 403/connection-reset; no new bypass vectors identified; requires auth for PQ/WS testability (AUTH_HELPED)  
-[PARKED] Envoy RBAC method+payload bypass extends to /v1/evaluate: confidence 40 (borderline), but impact is LOW (public-key-scoped, no PII/funds/mutation); precondition (initialize POST 200) holds; cheapest remaining check  
+[PARKED] Envoy RBAC method+payload bypass extends to /v1/evaluate: confidence 40 (<40 threshold borderline), impact is LOW (public-key-scoped, no PII/funds/mutation); precondition (initialize POST 200) holds; cheapest remaining check
+[PARKED] GraphQL schema exposure via persisted-query/WebSocket on app.n26.com: confidence 25 (<40), WAF inspects request body not just Content-Type; all tested HTTP transports return 403/connection-reset; no new bypass vectors identified; requires auth for PQ/WS testability (AUTH_HELPED)
 [FINAL] 1) Statsig feature flag/config disclosure via method-dependent RBAC bypass on `/v1/initialize` (confidence 85)
 [NEXT] PROBE: POST https://flags.n26.com/v1/initialize with `Content-Type: application/json`, headers `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, body `{"hash":"djb2","user":{},"statsigMetadata":{}}` — confirm 200 with full config tree; then grep app.n26.com bundles (410.js + chunks) to map numeric Statsig IDs to named banking features before deciding report-worthiness
-[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API  
-[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure  
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it  
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure. Prior POST-401 entry was wrong — bypass is method+payload dependent  
-[LEARN] REJECTED MISCONFIG @ flags.n26.com/v1/download_config_specs: canonical POST returns 401 — key-invalid at app layer, not payload-shaped  
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary now = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403  
-[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded in any app bundle → no server-key escalation  
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes (get_configs, evaluate, get_id_lists, diagnostics, feature_gates, initialize-GET) return 403 RBAC  
-[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector  
-[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass  
-[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204 (not 403) looked like alternate WAF boundary, but bare-GET stalls identically on app+support (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed on both hostnames  
-[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3 origin behind CloudFront) — private bucket, object-only; no listing/misconfig  
-[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard script-src/connect-src/img-src; `cookie.n26.com` surfaced as new 404 leaf — hosts low-logic static content, INFO ceiling only  
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure. Prior POST-401 entry was wrong — bypass is method+payload dependent
+[LEARN] REJECTED MISCONFIG @ flags.n26.com/v1/download_config_specs: canonical POST returns 401 — key-invalid at app layer, not payload-shaped
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary now = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded in any app bundle → no server-key escalation
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes (get_configs, evaluate, get_id_lists, diagnostics, feature_gates, initialize-GET) return 403 RBAC
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204 (not 403) looked like alternate WAF boundary, but bare-GET stalls identically on app+support (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed on both hostnames
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3 origin behind CloudFront) — private bucket, object-only; no listing/misconfig
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard script-src/connect-src/img-src; `cookie.n26.com` surfaced as new 404 leaf — hosts low-logic static content, INFO ceiling only
 [RISK] N26 Bank AG: 75 — Confirmed Statsig feature flag service with client SDK key extraction and RBAC bypass via `/v1/initialize` (POST+canonical body) and `/v1/sdk_exception`; feature flags control banking features (premium, limits, KYC, card controls); GraphQL WAF on primary app is robust (no bypass found across all tested transports); spc.n26.com endpoints are tracking pixels not payment API; single high-value exploitable path (flags.n26.com) with confirmed key extraction, method-dependent RBAC bypass, and full config disclosure. Report-worthiness hinges on whether N26 treats flag/config metadata as sensitive; no cross-tenant/financial/PII impact demonstrated.

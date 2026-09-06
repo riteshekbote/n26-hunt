@@ -1,1 +1,113 @@
-## 2026-09-06 04:44:31 UTC [target] (model bigpickle)
+## 2026-09-06 09:06:46 UTC [target] (model bigpickle)
+evidence_needed: Correlation of numeric Statsig gate/config IDs to named banking features in 410.js to demonstrate business-logic reach (premium/limits/KYC/card-control); confirmation whether N26 treats flag/config metadata as sensitive
+verify_steps: POST https://flags.n26.com/v1/initialize with `Content-Type: application/json`, headers `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, body `{"hash":"djb2","user":{},"statsigMetadata":{}}` — confirm 200 response with full config tree; extract numeric IDs and grep 410.js for feature names
+impact: Feature-flag/experiment config disclosure of live banking app (hidden features, A/B groups, promo config, escalation policy). No PII/funds/mutation. Severity: LOW-MEDIUM, reportable as RBAC-bypass/config disclosure if flag data deemed sensitive
+testability: PASSIVE
+[HYP] Envoy RBAC method+payload bypass extends to `/v1/evaluate` and `/v1/get_configs`
+class: MISCONFIG
+asset: flags.n26.com/v1/evaluate
+confidence: 40
+reasoning: POST `/v1/initialize` with canonical SDK payload returns 200 (proving Envoy RBAC is method/shape-dependent, not key-only); `/v1/download_config_specs` canonical POST returns 401 (proving app-layer route filtering still bounds it); `/v1/evaluate` and `/v1/get_configs` never probed with the winning POST+canonical-body shape; if they return 200 they disclose per-user gate evaluation (segments/holdouts/experiment groups) marginally beyond the app-consumed baseline
+evidence_needed: HTTP 200 on POST `/v1/evaluate` (or `/v1/get_configs`) with winning shape; response containing evaluation results not present in/derivable from initialize
+verify_steps: POST https://flags.n26.com/v1/evaluate with headers `k: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, `Content-Type: application/json`, body `{"hash":"djb2","user":{"userID":"probe"},"statsigMetadata":{"sdkType":"js-client","sdkVersion":"6.4.4"}}`; repeat identically on `/v1/get_configs`; compare vs initialize-200 baseline and GET-403
+impact: Per-user experiment/holdout/segment metadata beyond client baseline — LOW (public-key-scoped, no PII/funds/mutation)
+testability: PASSIVE
+[HYP] GraphQL schema exposure via persisted-query hash or WebSocket upgrade on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: GraphQL endpoint confirmed via cookie + 403/timeout responses (not 404); WAF blocks all POST Content-Types (application/json, application/x-www-form-urlencoded, text/plain, multipart/form-data → all 403); GET query param returns connection reset; only untested transports are persisted-query GET (requires valid APQ hash from live session) and WebSocket upgrade (requires session/auth hook) — both require valid session/PQ hash
+evidence_needed: Any non-403/non-reset response from /graphql or /api/graphql
+verify_steps: OPTIONS https://app.n26.com/graphql with `Upgrade: websocket`, `Connection: Upgrade`, `Sec-WebSocket-Protocol: graphql-ws`; GET https://app.n26.com/graphql?extensions={"persistedQuery":{"version":1,"sha256Hash":"<app-captured-hash>"}} with valid cookies
+impact: Full schema exposure → mutation enumeration → IDOR/BOLA on banking operations → CRITICAL (but unverifiable without auth)
+testability: AUTH_HELPED
+[PARKED] GraphQL schema exposure via persisted-query/WebSocket on app.n26.com: confidence 25 (<40), WAF inspects request body not just Content-Type; all tested HTTP transports return 403/connection-reset; no new bypass vectors identified; requires auth for PQ/WS testability (AUTH_HELPED)  
+[PARKED] Envoy RBAC method+payload bypass extends to /v1/evaluate: confidence 40 (borderline), but impact is LOW (public-key-scoped, no PII/funds/mutation); precondition (initialize POST 200) holds; cheapest remaining check  
+[FINAL] 1) Statsig feature flag/config disclosure via method-dependent RBAC bypass on `/v1/initialize` (confidence 85)
+[NEXT] PROBE: POST https://flags.n26.com/v1/initialize with `Content-Type: application/json`, headers `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, body `{"hash":"djb2","user":{},"statsigMetadata":{}}` — confirm 200 with full config tree; then grep app.n26.com bundles (410.js + chunks) to map numeric Statsig IDs to named banking features before deciding report-worthiness
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API  
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure. Prior POST-401 entry was wrong — bypass is method+payload dependent  
+[LEARN] REJECTED MISCONFIG @ flags.n26.com/v1/download_config_specs: canonical POST returns 401 — key-invalid at app layer, not payload-shaped  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary now = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403  
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded in any app bundle → no server-key escalation  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes (get_configs, evaluate, get_id_lists, diagnostics, feature_gates, initialize-GET) return 403 RBAC  
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector  
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass  
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204 (not 403) looked like alternate WAF boundary, but bare-GET stalls identically on app+support (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed on both hostnames  
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3 origin behind CloudFront) — private bucket, object-only; no listing/misconfig  
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard script-src/connect-src/img-src; `cookie.n26.com` surfaced as new 404 leaf — hosts low-logic static content, INFO ceiling only  
+[RISK] N26 Bank AG: 75 — Confirmed Statsig feature flag service with client SDK key extraction and RBAC bypass via `/v1/initialize` (POST+canonical body) and `/v1/sdk_exception`; feature flags control banking features (premium, limits, KYC, card controls); GraphQL WAF on primary app is robust (no bypass found across all tested transports); spc.n26.com endpoints are tracking pixels not payment API; single high-value exploitable path (flags.n26.com) with confirmed key extraction, method-dependent RBAC bypass, and full config disclosure. Report-worthiness hinges on whether N26 treats flag/config metadata as sensitive; no cross-tenant/financial/PII impact demonstrated.
+evidence_needed: Correlation of numeric Statsig gate/config IDs to named banking features in 410.js to demonstrate business-logic reach (premium/limits/KYC/card-control); confirmation whether N26 treats flag/config metadata as sensitive
+verify_steps: POST https://flags.n26.com/v1/initialize with `Content-Type: application/json`, headers `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, body `{"hash":"djb2","user":{},"statsigMetadata":{}}` — confirm 200 response with full config tree; extract numeric IDs and grep 410.js for feature names
+impact: Feature-flag/experiment config disclosure of live banking app (hidden features, A/B groups, promo config, escalation policy). No PII/funds/mutation. Severity: LOW-MEDIUM, reportable as RBAC-bypass/config disclosure if flag data deemed sensitive
+testability: PASSIVE
+[HYP] Envoy RBAC method+payload bypass extends to `/v1/evaluate` and `/v1/get_configs`
+class: MISCONFIG
+asset: flags.n26.com/v1/evaluate
+confidence: 40
+reasoning: POST `/v1/initialize` with canonical SDK payload returns 200 (proving Envoy RBAC is method/shape-dependent, not key-only); `/v1/download_config_specs` canonical POST returns 401 (proving app-layer route filtering still bounds it); `/v1/evaluate` and `/v1/get_configs` never probed with the winning POST+canonical-body shape; if they return 200 they disclose per-user gate evaluation (segments/holdouts/experiment groups) marginally beyond the app-consumed baseline
+evidence_needed: HTTP 200 on POST `/v1/evaluate` (or `/v1/get_configs`) with winning shape; response containing evaluation results not present in/derivable from initialize
+verify_steps: POST https://flags.n26.com/v1/evaluate with headers `k: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, `Content-Type: application/json`, body `{"hash":"djb2","user":{"userID":"probe"},"statsigMetadata":{"sdkType":"js-client","sdkVersion":"6.4.4"}}`; repeat identically on `/v1/get_configs`; compare vs initialize-200 baseline and GET-403
+impact: Per-user experiment/holdout/segment metadata beyond client baseline — LOW (public-key-scoped, no PII/funds/mutation)
+testability: PASSIVE
+[HYP] GraphQL schema exposure via persisted-query hash or WebSocket upgrade on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: GraphQL endpoint confirmed via cookie + 403/timeout responses (not 404); WAF blocks all POST Content-Types (application/json, application/x-www-form-urlencoded, text/plain, multipart/form-data → all 403); GET query param returns connection reset; only untested transports are persisted-query GET (requires valid APQ hash from live session) and WebSocket upgrade (requires session/auth hook) — both require valid session/PQ hash
+evidence_needed: Any non-403/non-reset response from /graphql or /api/graphql
+verify_steps: OPTIONS https://app.n26.com/graphql with `Upgrade: websocket`, `Connection: Upgrade`, `Sec-WebSocket-Protocol: graphql-ws`; GET https://app.n26.com/graphql?extensions={"persistedQuery":{"version":1,"sha256Hash":"<app-captured-hash>"}} with valid cookies
+impact: Full schema exposure → mutation enumeration → IDOR/BOLA on banking operations → CRITICAL (but unverifiable without auth)
+testability: AUTH_HELPED
+[PARKED] GraphQL schema exposure via persisted-query/WebSocket on app.n26.com: confidence 25 (<40), WAF inspects request body not just Content-Type; all tested HTTP transports return 403/connection-reset; no new bypass vectors identified; requires auth for PQ/WS testability (AUTH_HELPED)  
+[PARKED] Envoy RBAC method+payload bypass extends to /v1/evaluate: confidence 40 (borderline), but impact is LOW (public-key-scoped, no PII/funds/mutation); precondition (initialize POST 200) holds; cheapest remaining check  
+[FINAL] 1) Statsig feature flag/config disclosure via method-dependent RBAC bypass on `/v1/initialize` (confidence 85)
+[NEXT] PROBE: POST https://flags.n26.com/v1/initialize with `Content-Type: application/json`, headers `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, body `{"hash":"djb2","user":{},"statsigMetadata":{}}` — confirm 200 with full config tree; then grep app.n26.com bundles (410.js + chunks) to map numeric Statsig IDs to named banking features before deciding report-worthiness
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API  
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure. Prior POST-401 entry was wrong — bypass is method+payload dependent  
+[LEARN] REJECTED MISCONFIG @ flags.n26.com/v1/download_config_specs: canonical POST returns 401 — key-invalid at app layer, not payload-shaped  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary now = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403  
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded in any app bundle → no server-key escalation  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes (get_configs, evaluate, get_id_lists, diagnostics, feature_gates, initialize-GET) return 403 RBAC  
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector  
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses (not 404). WAF actively blocks POST application/json. GET query param returns connection reset — not a viable bypass  
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204 (not 403) looked like alternate WAF boundary, but bare-GET stalls identically on app+support (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed on both hostnames  
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3 origin behind CloudFront) — private bucket, object-only; no listing/misconfig  
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard script-src/connect-src/img-src; `cookie.n26.com` surfaced as new 404 leaf — hosts low-logic static content, INFO ceiling only  
+[RISK] N26 Bank AG: 75 — Confirmed Statsig feature flag service with client SDK key extraction and RBAC bypass via `/v1/initialize` (POST+canonical body) and `/v1/sdk_exception`; feature flags control banking features (premium, limits, KYC, card controls); GraphQL WAF on primary app is robust (no bypass found across all tested transports); spc.n26.com endpoints are tracking pixels not payment API; single high-value exploitable path (flags.n26.com) with confirmed key extraction, method-dependent RBAC bypass, and full config disclosure. Report-worthiness hinges on whether N26 treats flag/config metadata as sensitive; no cross-tenant/financial/PII impact demonstrated.
+[PRIO] flags.n26.com/v1/initialize, 5.0, a:5 b:4 t:5 g:6 c:5 f:6 — last untested RBAC variant (POST evaluate/get_configs) just closed at 403; initialize remains sole 200, but as by-design public-client SDK behavior (INFO ceiling)
+[PRIO] app.n26.com/graphql, 5.4, a:7 b:9 t:8 g:1 c:6 f:2 — tops score but gate_ease=1, tarpit-closed on every transport incl. WS-only-unverifiable (AUTH_HELPED); not actionable
+[PRIO] cookie.n26.com / n26.com (marketing), 4.2, a:3 b:4 t:4 g:6 c:3 f:5 — wildcard CSP, static Contentful content, INFO ceiling, no inject vector
+[HYP] Statsig flag/config disclosure on /v1/initialize is by-design client SDK behavior, not a reportable RBAC bypass
+class: MISCONFIG
+asset: flags.n26.com/v1/initialize
+confidence: 85
+reasoning: POST + canonical SDK payload + PUBLIC client key (extracted from app bundle, unchanged across rotation) → 200 with 35 feature_gates/9 dynamic_configs. Browser SDK sends identical POST+STATSIG-API-KEY from every page. Every other config route (evaluate, get_configs GET+POST, download_config_specs) returns 403/401 — boundary bounded. Key is public client key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, same data every consumer of the banking app receives.
+evidence_needed: confirmation whether N26 treats flag/config metadata as sensitive (report-worthiness decision only)
+verify_steps: (done) POST https://flags.n26.com/v1/initialize with headers k+STATSIG-API-KEY = above key, CT application/json, body {"hash":"djb2","user":{},"statsigMetadata":{}} → 200 full tree; differential GET/POST on evaluate/get_configs → 403 closed
+impact: INFO — public-key-scoped feature-flag/config metadata every end user's browser already receives; no PII/funds/mutation.
+testability: PASSIVE
+[HYP] GraphQL schema via WebSocket/persisted-query upgrade on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: all HTTP transports stall/403 (GET +?query reset, all POST CT 403, support tarpit identical); only org front-doors untested are WS upgrade and APQ hash — both require live app session/auth hook.
+evidence_needed: non-40x/non-stall /graphql response.
+verify_steps: OPTIONS /graphql with Upgrade:websocket, Sec-WebSocket-Protocol:graphql-ws (requires LivePerson/WS session hook — AUTH_HELPED)
+impact: schema→mutation enumeration→banking-op abuse if reached — HIGH (unreached/unverifiable anonymously)
+testability: AUTH_HELPED
+[HYP] Weak-auth internal tooling on dev/staging namespaces (*.dev-n26.com / *.staging-n26.com)
+class: MISCONFIG
+asset: *.dev-n26.com / *.staging-n26.com
+confidence: 20
+reasoning: only evidence is frame-ancestors CSP entry on support.n26.com; exact hostnames not enumerated; blindly fuzzing N26-owned namespaces is directionless and may hit accounted assets.
+evidence_needed: resolving dev/staging host with internal tool/login behavior
+verify_steps: (requires hostname discovery, out of current scope)
+impact: potential admin tooling exposure — HIGH if found, unsubstantiated now
+testability: HUMAN_ONLY
+[NEXT] PROBE: no new untested live route remains after evaluate/get_configs POST both returned 403 this cycle (initialize 200 is by-design public-client data; GraphQL = closed on every anonymous transport). Best next action is HUMAN coordinator escalation: request from program/coordinator a scoped test account or LivePerson/app-session to enable the AUTH_HELPED GraphQL WS/APQ path (the only remaining HIGH-impact reach), OR accept the surface as fully cornered at INFO.
+[RISK] N26 Bank AG: 20/100 — Surface mature and now fully cornered: the sole untested live route (evaluate/get_configs POST with the winning shape) returned RBAC-403 for both this cycle, empirically proving the /v1/initialize disclosure is a bounded, by-design public-client SDK path (INFO). GraphQL is tarpit/WAF-closed on every anonymous HTTP transport (app+support, all CT/methods), spc.n26.com = tracking GIFs, cdn private, marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth surface demonstrated anywhere after 8+ cycles. Remaining upside requires a live app session (WS/APQ GraphQL) conceding this as otherwise dead-ended. No reportable finding in hand.
