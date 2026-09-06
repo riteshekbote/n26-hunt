@@ -209,3 +209,7 @@ https://flags.n26.com/v1/evaluate -> HTTP 403
 ## 2026-09-06 18:03:30 UTC
 https://flags.n26.com/v1/sdk_exception -> HTTP 403
 https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+
+## 2026-09-06 20:22:43 UTC
+https://flags.n26.com/v1/sdk_exception -> HTTP 403
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out

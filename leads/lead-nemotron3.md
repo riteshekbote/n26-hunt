@@ -1184,3 +1184,47 @@ testability: PASSIVE (WS/APQ probes), AUTH_HELPED (authenticated mutations)
 [LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses; WAF blocks all POST Content-Types; GET query param connection reset
 [LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
 [RISK] N26 Bank AG: 75 — Confirmed Statsig feature flag service with client SDK key extraction and RBAC bypass via `/v1/initialize` (POST+canonical body) and `/v1/sdk_exception`; feature flags control banking features (premium, limits, KYC, card controls); GraphQL WAF on primary app is robust (no POST bypass found); spc.n26.com endpoints are tracking pixels not payment API; authentication-service.eks.core-production.keyless.technology unprobed but high-value (EKS metadata exposure risk); single exploitable path (flags.n26.com) with confirmed key extraction, method-dependent RBAC bypass, and full config disclosure. Report-worthiness hinges on whether N26 treats flag/config metadata as sensitive; no cross-tenant/financial/PII impact demonstrated.
+## 2026-09-06 20:22:17 UTC [target] (model nemotron3)
+[HYP] Statsig SDK exception endpoint accepts public client key without RBAC
+class: MISCONFIG
+asset: flags.n26.com/v1/sdk_exception
+confidence: 75
+reasoning: Public client key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0` extracted from app.n26.com bundle (client.64629020.js); POST `/v1/sdk_exception` returns 202 accepting same key while all GET config routes return 403 RBAC; endpoint purpose is client-side error reporting but accepts unauthenticated key
+evidence_needed: Confirm 202 response with public key; verify no sensitive data in response; confirm rate limiting absent
+verify_steps: POST https://flags.n26.com/v1/sdk_exception with `Content-Type: application/json`, headers `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, body `{"error":"probe","stack":"test"}` — confirm 202; repeat without key — expect 401/403
+impact: Unauthenticated error ingestion endpoint accepting public client key — LOW (no data disclosure, no mutation, potential noise injection)
+testability: PASSIVE
+[HYP] Keyless authentication service exposes EKS metadata or unauthenticated endpoints
+class: SSRF
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 35
+reasoning: Discovered via CSP connect-src on app.n26.com; EKS-hosted in core-production cluster; "keyless" suggests passwordless/WebAuthn flow; cloud_surface=10 (metadata at 169.254.169.254 reachable if SSRF exists); never actively probed; gate_ease=2 (likely requires auth for meaningful endpoints)
+evidence_needed: Live HTTP response from service; API surface enumeration; auth mechanism identification; SSRF vector to metadata endpoint
+verify_steps: HEAD https://authentication-service.eks.core-production.keyless.technology/; GET https://authentication-service.eks.core-production.keyless.technology/; GET /.well-known/openid-configuration; GET /health; GET /api/swagger.json; OPTIONS / for allowed methods; probe for SSRF via any user-supplied URL parameters
+impact: Auth bypass, credential theft, session hijacking, EKS credential access via metadata — CRITICAL if exploitable
+testability: PASSIVE (initial enumeration), AUTH_HELPED (deep auth testing)
+[HYP] GraphQL WebSocket/APQ transport bypasses POST WAF on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 45
+reasoning: POST application/json blocked by WAF (403) across all Content-Types; GET query param returns connection reset; OPTIONS returns 204 on both app.n26.com and support.n26.com; GraphQL over WebSocket (graphql-ws protocol) or Automatic Persisted Queries (APQ) via GET may bypass body-inspecting WAF; support.n26.com shares identical tarpit but WS/APQ never tested
+evidence_needed: Successful GraphQL introspection via WebSocket upgrade or APQ GET; confirmation WAF does not inspect WS frames or APQ hash parameters
+verify_steps: WebSocket upgrade to wss://app.n26.com/graphql with `Sec-WebSocket-Protocol: graphql-ws` — send connection_init then introspection query; GET https://app.n26.com/graphql?extensions={"persistedQuery":{"version":1,"sha256Hash":"<introspection_hash>"}} — test APQ; repeat on support.n26.com/graphql
+impact: Full GraphQL schema disclosure, mutation access, potential BOLA/IDOR via GraphQL — HIGH if bypass works
+testability: PASSIVE (WS/APQ probes), AUTH_HELPED (authenticated mutations)
+[PARKED] Keyless authentication service exposes EKS metadata or unauthenticated endpoints: confidence 35 (<40 threshold), never probed, requires live enumeration first; gate_ease=2 means auth likely required for meaningful testing; no verify steps without initial probe response
+[PARKED] GraphQL WebSocket/APQ transport bypasses POST WAF on app.n26.com: confidence 45 but WAF inspects request body not just Content-Type; all tested HTTP transports return 403/connection-reset; support.n26.com shares identical tarpit; requires auth for PQ/WS testability (AUTH_HELPED); low probability given comprehensive WAF coverage
+[FINAL] 1) Statsig SDK exception endpoint accepts public client key without RBAC (confidence 75) — PASSIVE testable, confirmed key extraction, RBAC boundary mapped
+[NEXT] PROBE: HEAD https://authentication-service.eks.core-production.keyless.technology/ → GET / → GET /.well-known/openid-configuration → GET /health → GET /api/swagger.json → OPTIONS / — passive endpoint enumeration on unprobed EKS auth service; confirms live service, API surface, auth mechanism; cloud_surface=10 warrants first look
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO)
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses; WAF blocks all POST Content-Types; GET query param connection reset
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+[RISK] N26 Bank AG: 75 — Confirmed Statsig feature flag service with client SDK key extraction and RBAC bypass via `/v1/initialize` (POST+canonical body) and `/v1/sdk_exception`; feature flags control banking features (premium, limits, KYC, card controls); GraphQL WAF on primary app is robust (no POST bypass found); spc.n26.com endpoints are tracking pixels not payment API; authentication-service.eks.core-production.keyless.technology unprobed but high-value (EKS metadata exposure risk); single exploitable path (flags.n26.com) with confirmed key extraction, method-dependent RBAC bypass, and full config disclosure. Report-worthiness hinges on whether N26 treats flag/config metadata as sensitive; no cross-tenant/financial/PII impact demonstrated.
