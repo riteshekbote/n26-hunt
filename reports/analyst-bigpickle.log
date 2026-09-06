@@ -8279,3 +8279,279 @@ If you're conducting authorized security research:
 - Consider the impact on live customer systems
 
 For legitimate software engineering tasks on your own codebase, I'm happy to help.
+===== ANALYST bigpickle 2026-09-06 22:12:26 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mdig +short authentication-service.eks.core-production.keyless.technology A; echo "---"; dig +short authentication-service.eks.core-production.keyless.technology CNAME; echo "---done---"
+saas-external-73885400.eu-central-1.elb.amazonaws.com.
+3.64.65.209
+63.187.138.249
+63.186.219.253
+---
+saas-external-73885400.eu-central-1.elb.amazonaws.com.
+---done---
+[0m
+[0m$ [0mcurl -sS -o /dev/null -D - --head --max-time 12 https://authentication-service.eks.core-production.keyless.technology/ 2>&1; echo "===exit:$?==="
+HTTP/2 404 
+date: Sun, 06 Sep 2026 22:08:52 GMT
+content-type: application/json
+content-length: 74
+version: authentication-service-2/v26.08.27 eks-production
+x-keyless-flow-id: 01a078c4-67b9-707b-bcf4-5d2be10914e7
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+
+===exit:0===
+[0m
+Live Istio service confirmed — first non-tarpit host in the whole inventory. `version: authentication-service-2/v26.08.27 eks-production`, `x-keyless-flow-id`, JSON 404s. Probing body + well-known paths.
+[0m$ [0mcurl -sS --max-time 12 https://authentication-service.eks.core-production.keyless.technology/ 2>&1; echo; echo "===exit:$?==="
+{"code":"UNPROCESSABLE","reason":"path unused: /","stack":"api.`unused`"}
+
+===exit:0===
+[0m
+[0m$ [0mfor p in .well-known/openid-configuration health api healthz version v1/ping; do
+  echo "=== GET /$p ===";
+  curl -sS --max-time 12 -w "\n[status:%{http_code}]\n" "https://authentication-service.eks.core-production.keyless.technology/$p" 2>&1 | head -c 600;
+  echo; sleep 1;
+done
+=== GET /.well-known/openid-configuration ===
+{"code":"UNPROCESSABLE","reason":"path unused: /.well-known/openid-configuration","stack":"api.`unused`"}
+
+[status:404]
+
+=== GET /health ===
+{"code":"UNPROCESSABLE","reason":"path unused: /health","stack":"api.`unused`"}
+
+[status:404]
+
+=== GET /api ===
+{"code":"UNPROCESSABLE","reason":"path unused: /api","stack":"api.`unused`"}
+
+[status:404]
+
+=== GET /healthz ===
+{"code":"UNPROCESSABLE","reason":"path unused: /healthz","stack":"api.`unused`"}
+
+[status:404]
+
+=== GET /version ===
+{"code":"UNPROCESSABLE","reason":"path unused: /version","stack":"api.`unused`"}
+
+[status:404]
+
+=== GET /v1/ping ===
+{"code":"UNPROCESSABLE","reason":"path unused: /v1/ping","stack":"api.`unused`"}
+
+[status:404]
+[0m
+Route oracle: unknown paths echo `stack: api.unused` — real routes will produce a different router label. Sweeping common Keyless/WebAuthn route names (read-only GET, ≤1rps).
+[0m$ [0mfor p in "webauthn/register/options" "webauthn/authenticate/options" "attestation/options" "assertion/options" "register" "authenticate" "challenge" "token" "oauth/token" "authorize" "v1/webauthn/options" "register/options" "auth/options" ".well-known/webauthn" "services/authentication/origins" "api/v1/enroll"; do
+  r=$(curl -sS --max-time 10 -w "|%{http_code}" "https://authentication-service.eks.core-production.keyless.technology/$p" 2>&1 | head -c 400);
+  echo "[$p] $r";
+  sleep 1;
+done
+[webauthn/register/options] {"code":"UNPROCESSABLE","reason":"path unused: /webauthn/register/options","stack":"api.`unused`"}
+|404
+[webauthn/authenticate/options] {"code":"UNPROCESSABLE","reason":"path unused: /webauthn/authenticate/options","stack":"api.`unused`"}
+|404
+[attestation/options] {"code":"UNPROCESSABLE","reason":"path unused: /attestation/options","stack":"api.`unused`"}
+|404
+[assertion/options] {"code":"UNPROCESSABLE","reason":"path unused: /assertion/options","stack":"api.`unused`"}
+|404
+[register] {"code":"UNPROCESSABLE","reason":"path unused: /register","stack":"api.`unused`"}
+|404
+[authenticate] {"code":"UNPROCESSABLE","reason":"path unused: /authenticate","stack":"api.`unused`"}
+|404
+[challenge] {"code":"UNPROCESSABLE","reason":"path unused: /challenge","stack":"api.`unused`"}
+|404
+[token] {"code":"UNPROCESSABLE","reason":"path unused: /token","stack":"api.`unused`"}
+|404
+[oauth/token] {"code":"UNPROCESSABLE","reason":"path unused: /oauth/token","stack":"api.`unused`"}
+|404
+[authorize] {"code":"UNPROCESSABLE","reason":"path unused: /authorize","stack":"api.`unused`"}
+|404
+[v1/webauthn/options] {"code":"UNPROCESSABLE","reason":"path unused: /v1/webauthn/options","stack":"api.`unused`"}
+|404
+[register/options] {"code":"UNPROCESSABLE","reason":"path unused: /register/options","stack":"api.`unused`"}
+|404
+[auth/options] {"code":"UNPROCESSABLE","reason":"path unused: /auth/options","stack":"api.`unused`"}
+|404
+[.well-known/webauthn] {"code":"UNPROCESSABLE","reason":"path unused: /.well-known/webauthn","stack":"api.`unused`"}
+|404
+[services/authentication/origins] {"code":"UNPROCESSABLE","reason":"path unused: /services/authentication/origins","stack":"api.`unused`"}
+|404
+[api/v1/enroll] {"code":"UNPROCESSABLE","reason":"path unused: /api/v1/enroll","stack":"api.`unused`"}
+|404
+[0m
+No REST route hit among candidates — consistent with a WebSocket-only auth front door. Checking allowed-methods + WS upgrade behavior.
+[0m$ [0mecho "=== OPTIONS / ==="; curl -sS --max-time 10 -o /dev/null -D - -X OPTIONS "https://authentication-service.eks.core-production.keyless.technology/" 2>&1 | head -25; echo; sleep 1; echo "=== WS upgrade probe ==="; curl -sS --max-time 10 -o /dev/null -D - -X GET -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" "https://authentication-service.eks.core-production.keyless.technology/" 2>&1 | head -25
+=== OPTIONS / ===
+HTTP/2 404 
+date: Sun, 06 Sep 2026 22:10:06 GMT
+content-type: application/json
+content-length: 74
+version: authentication-service-2/v26.08.27 eks-production
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+
+
+=== WS upgrade probe ===
+HTTP/2 404 
+date: Sun, 06 Sep 2026 22:10:08 GMT
+content-type: application/json
+content-length: 74
+version: authentication-service-2/v26.08.27 eks-production
+x-keyless-flow-id: 01a078c5-8f50-76b5-930e-05dac90dc9a2
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+[0m
+Root path rejected the upgrade over H2. Retrying WS handshake over HTTP/1.1 to bypass HTTP/2 upgrade restrictions.
+[0m$ [0mcurl -sS --http1.1 --max-time 12 -o /dev/null -D - -X GET -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" "https://authentication-service.eks.core-production.keyless.technology/" 2>&1 | head -30
+HTTP/1.1 404 Not Found
+Date: Sun, 06 Sep 2026 22:10:14 GMT
+Content-Type: application/json
+Content-Length: 74
+Connection: keep-alive
+version: authentication-service-2/v26.08.27 eks-production
+x-keyless-flow-id: 01a078c5-a8af-7422-911d-f46e7e1dc4ff
+server: istio-envoy
+[0m
+[0m$ [0mfor p in "ws" "v1/ws" "websocket" "v1" "wss"; do
+  code=$(curl -sS --http1.1 --max-time 10 -o /dev/null -w "%{http_code}" -X GET -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" "https://authentication-service.eks.core-production.keyless.technology/$p" 2>&1);
+  echo "[$p] -> $code";
+  sleep 1;
+done
+[ws] -> 404
+[v1/ws] -> 404
+[websocket] -> 404
+[v1] -> 404
+[wss] -> 404
+[0m
+One cheap read-only unlock remaining: exact `wss://` path from app.n26.com HTML/CSP. Fetching and grepping.
+[0m$ [0mcurl -sS --max-time 20 "https://app.n26.com/" 2>&1 | grep -oE 'wss://[^"'"'"' )<>]+|keyless[^"'"'"' )<>]*' | sort -u | head -20; echo "===exit==="
+===exit===
+[0m
+[0m$ [0mcurl -sS --max-time 25 -w "\n[status:%{http_code} size:%{size_download}]\n" "https://app.n26.com/" -o /tmp/opencode/approot.html 2>&1; echo "---greps---"; grep -aoiE 'wss://[a-z0-9._-]+[a-z0-9/_]*|authentication-service[^"'"'"' )<]*|keyless\.tech[a-z0-9._/-]*' /tmp/opencode/approot.html | sort -u | head -20; echo "---done---"
+[status:302 size:28]
+---greps---
+---done---
+[0m
+[0m$ [0mcurl -sSL --max-time 25 --max-redirs 3 -w "\n[status:%{http_code} size:%{size_download}]\n" "https://app.n26.com/" -o /tmp/opencode/approot2.html 2>&1; echo "---greps---"; grep -aoiE 'wss://[a-z0-9._-]+[a-z0-9/_]*|authentication-service[^"'"'"' )<]*|keyless[^"'"'"' )<]{0,40}' /tmp/opencode/approot2.html 2>/dev/null | sort -u | head -20; echo "---done---"
+[status:200 size:319204]
+---greps---
+Keyless
+KeylessWebNewSdkEnabled
+keyless-authentication
+keyless.io\u002Fterms
+keyless_attempt_push_description
+keyless_attempt_push_title
+---done---
+[0m
+[0m$ [0mgrep -aoE 'src="[^"]+\.js[^"]*"' /tmp/opencode/approot2.html | sed 's/src="//;s/"$//' | sort -u | head -40; echo "---total---"; grep -aoE 'src="[^"]+\.js[^"]*"' /tmp/opencode/approot2.html | wc -l
+/build/js/1503.f68ea103.js
+/build/js/1596.6ac8435d.js
+/build/js/1992.184409c9.js
+/build/js/410.15d71588.js
+/build/js/6759.2f2cc008.js
+/build/js/banking-features-auth-biometric-LoginPage.60e488b5.js
+/build/js/banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js
+/build/js/client.6e429513.js
+/build/js/react_vendor.85fb11fa.js
+/build/js/util_vendor.00e2ab05.js
+/build/js/webpack-runtime.3d272c50.js
+---total---
+11
+[0m
+[0m$ [0mfor b in banking-features-auth-biometric-LoginPage.60e488b5.js banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js; do
+  curl -sS --max-time 20 "https://app.n26.com/build/js/$b" -o "/tmp/opencode/$b" 2>&1;
+  echo "=== $b ($(wc -c < /tmp/opencode/$b) bytes) ===";
+  grep -aoiE 'wss://[a-z0-9._:-]+[a-z0-9/_]*|https://[a-z0-9._:-]+keyless[a-z0-9._/-]*|keyless\.tech[a-z0-9._/-]*|authentication-service[a-z0-9._/-]*' "/tmp/opencode/$b" | sort -u | head -10;
+  sleep 1;
+done
+=== banking-features-auth-biometric-LoginPage.60e488b5.js (221645 bytes) ===
+authentication-service-image-key
+wss://authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+wss://authentication-service.eks.core-production.keyless.technology/v1/enroll/n26
+=== banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js (7800 bytes) ===
+[0m
+Found the exact WS routes in the biometric bundle: `/v1/auth/n26` and `/v1/enroll/n26` — N26 tenant slug confirmed on Keyless SaaS. Verifying route existence (GET) and WS upgrade acceptance (handshake only, no frames).
+[0m$ [0mecho "=== GET /v1/auth/n26 ==="; curl -sS --max-time 12 -w "\n[%{http_code}]\n" "https://authentication-service.eks.core-production.keyless.technology/v1/auth/n26" 2>&1 | head -c 400; echo; sleep 1; echo "=== GET /v1/enroll/n26 ==="; curl -sS --max-time 12 -w "\n[%{http_code}]\n" "https://authentication-service.eks.core-production.keyless.technology/v1/enroll/n26" 2>&1 | head -c 400; echo; sleep 1; echo "=== WS upgrade /v1/auth/n26 ==="; curl -sS --http1.1 --max-time 12 -o /dev/null -D - -X GET -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Protocol: json" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" "https://authentication-service.eks.core-production.keyless.technology/v1/auth/n26" 2>&1 | head -20
+=== GET /v1/auth/n26 ===
+{"code":"UNPROCESSABLE","reason":"path unused: /v1/auth/n26","stack":"api.`unused`"}
+
+[404]
+
+=== GET /v1/enroll/n26 ===
+{"code":"UNPROCESSABLE","reason":"path unused: /v1/enroll/n26","stack":"api.`unused`"}
+
+[404]
+
+=== WS upgrade /v1/auth/n26 ===
+HTTP/1.1 404 Not Found
+Date: Sun, 06 Sep 2026 22:11:30 GMT
+Content-Type: application/json
+Content-Length: 85
+Connection: keep-alive
+version: authentication-service-2/v26.08.27 eks-production
+x-keyless-flow-id: 01a078c6-d0a0-7b53-83c8-4844aeb0223b
+server: istio-envoy
+[0m
+Analysis complete. Fitness checks done on the untested auth asset and the exact WS routes pulled from the biometric bundles.
+
+## STEP 1 — DELTA
+- [NEW] `authentication-service.eks.core-production.keyless.technology`: "never probed" → fully characterized. Live Istio (`istio-envoy`) over AWS ALB `saas-external-73885400.eu-central-1.elb.amazonaws.com`, NO WAF/tarpit (first such host in inventory), `version: authentication-service-2/v26.08.27 eks-production`, per-request `x-keyless-flow-id`, anonymous route oracle `{"code":"UNPROCESSABLE","reason":"path unused: <path>","stack":"api.<method>`unused`"}`.
+- [NEW] app.n26.com biometric bundles disclose exact Keyless WS endpoints: `wss://…/v1/auth/n26` and `wss://…/v1/enroll/n26` — N26 tenant slug `n26` on Keyless.io SaaS (vendor-owned, multi-tenant).
+- [CHANGED] Both WS routes + 21 WebAuthn/OIDC/auth candidates → all `404 path unused` over GET AND over WS-upgrade (subprotocol `json`) at this ingress → anonymous auth/enroll front door closed; routes likely subprotocol-gated or WS-terminated downstream.
+- [CHANGED] flags/app/spc/cdn/n26/support/marketing: unchanged, boundary stable.
+
+## STEP 2 — PRIORITIZE
+- [PRIO] authentication-service.eks.core-production.keyless.technology,6.1,a:3 b:9 t:8 g:2 c:6 f:10 — sole HIGH-business-value live service, but anonymous surface swept closed; vendor-owned scope question dominates.
+- [PRIO] app.n26.com/graphql,5.4,a:7 b:9 t:8 g:1 c:6 f:2 — tarpit-closed, AUTH_HELPED only.
+- [PRIO] flags.n26.com/v1/initialize,5.0,a:5 b:4 t:5 g:6 c:5 f:6 — sole 200 route, by-design INFO.
+
+## STEP 3 — HYPOTHESES
+[HYP] WS routes subprotocol-gated on Keyless auth ingress
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 25
+reasoning: app bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26; same hostname rejects both with 404 `path unused` on GET and on WS-upgrade with subprotocol `json` — router table at this HTTP ingress lacks the routes, so either a specific sec-websocket-protocol value enables routing or WS is terminated at a different ingress tensor
+evidence_needed: 101 Upgrade or non-`unused` response on either WS route with the app's actual subprotocol
+verify_steps: capture real handshake from live app session; replay exact WS subprotocol+headers read-only on the two bundle-disclosed routes
+impact: would confirm anonymous reachability of N26 biometric auth/enroll transport — HIGH if flows accept unbound sessions, but demonstrated not to be anonymously reachable today
+testability: AUTH_HELPED
+[HYP] Statsig flag/config disclosure by design
+class: MISCONFIG
+asset: flags.n26.com/v1/initialize
+confidence: 85
+reasoning: POST+canonical payload+public client key → 200 with full flag tree; reclassified as intended public-client SDK behavior; no RBAC bypass, no server key, single public key across 11 bundles
+evidence_needed: none — by-design, INFO ceiling
+verify_steps: n/a
+impact: public marketing/config metadata only
+testability: PASSIVE
+[HYP] GraphQL via WS/APQ persisted query — needs live session
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: all anonymous transports 403/tarpit/connection-reset; only untested front doors are WS upgrade and APQ hash, both requiring app session
+evidence_needed: non-40x /graphql response
+verify_steps: OPTIONS+Upgrade with graphql-ws subprotocol from authenticated context
+impact: HIGH if reached; unreachable anonymously
+testability: AUTH_HELPED
+
+## STEP 4 — SELF-CRITIQUE
+- [PARKED] WS subprotocol-gated routes: confidence 25 (<40); 404 `path unused` across GET+WS+jSON subprotocol demonstrates closed anonymous surface; remaining test requires live handshake capture → AUTH_HELPED.
+- [PARKED] GraphQL WS/APQ: confidence 25 (<40); all anonymous transports closed, needs session → AUTH_HELPED.
+- [FINAL] Statsig `/v1/initialize` disclosure (confidence 85) — by-design public-client data, INFO ceiling, no reportable impact.
+- [FINAL] authentication-service characterization (live-ness facts 100, vuln-yield ~0): anonymous surface closed; exact WS routes known; next step not a probe but a scope decision — domain is `keyless.technology` (vendor SaaS), only N26-adjacent via CSP + tenant slug.
+
+## STEP 5 — NEXT ACTION
+[NEXT] HUMAN: ask program coordinator (a) whether vendor-in-flow assets (`keyless.technology`, N26 tenant slug `n26`, exact routes `wss://…/v1/auth/n26`, `/v1/enroll/n26`) fall within N26-operated scope, and (b) for a LivePerson/app session to capture the real WS subprotocol so the two bundle-disclosed routes can be handshake-tested read-only. Without a scope ruling, no further probes are warranted — the asset is vendor-owned and every anonymous transport is `404 path unused`.
+
+## STEP 6 — LEARNING
+- [LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: live anonymous Istio+ALB service, no WAF/tarpit (unique in inventory), leaks `version: authentication-service-2/v26.08.27 eks-production` + `x-keyless-flow-id` + route oracle — clearest supply-chain fingerprint yet, INFO (no vuln demonstrated).
+- [LEARN] ACCEPTED MISCONFIG @ app.n26.com biometric bundle: Keyless WS endpoints disclosed (`/v1/auth/n26`, `/v1/enroll/n26`, tenant slug `n26`); ingress rejects them `404 path unused` anonymously — subprotocol-gated or WS-terminated at separate layer, INFO.
+- [LEARN] REJECTED AUTH @ authentication-service.eks…keyless.technology: 21-route sweep + WS-upgrade all `404 path unused`; anonymous auth/enroll front door closed; vendor-scope question supersedes further anonymous testing.
+
+## STEP 7 — RISK
+[RISK] N26 Bank AG: 18/100 — Surface fully cornered at INFO across 9+ cycles. The only genuinely fresh intel this cycle (live Keyless auth service, exact WS routes, tenant slug) yields no anonymous exploit and sits on a vendor-owned domain (`keyless.technology`) outside N26-operated scope absent a coordinator ruling. `flags.n26.com` initialize 200 is by-design public-client SDK data. GraphQL remains tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated; remaining HIGH-value paths require an app session (AUTH_HELPED). North-star request to coordinator stands: scoped test account or LivePerson session, plus a written scope ruling on vendor-in-flow assets.

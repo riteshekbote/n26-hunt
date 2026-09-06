@@ -1,1 +1,30 @@
-## 2026-09-06 20:14:30 UTC [target] (model bigpickle)
+## 2026-09-06 22:12:17 UTC [target] (model bigpickle)
+[HYP] WS routes subprotocol-gated on Keyless auth ingress
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 25
+reasoning: app bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26; same hostname rejects both with 404 `path unused` on GET and on WS-upgrade with subprotocol `json` — router table at this HTTP ingress lacks the routes, so either a specific sec-websocket-protocol value enables routing or WS is terminated at a different ingress tensor
+evidence_needed: 101 Upgrade or non-`unused` response on either WS route with the app's actual subprotocol
+verify_steps: capture real handshake from live app session; replay exact WS subprotocol+headers read-only on the two bundle-disclosed routes
+impact: would confirm anonymous reachability of N26 biometric auth/enroll transport — HIGH if flows accept unbound sessions, but demonstrated not to be anonymously reachable today
+testability: AUTH_HELPED
+[HYP] Statsig flag/config disclosure by design
+class: MISCONFIG
+asset: flags.n26.com/v1/initialize
+confidence: 85
+reasoning: POST+canonical payload+public client key → 200 with full flag tree; reclassified as intended public-client SDK behavior; no RBAC bypass, no server key, single public key across 11 bundles
+evidence_needed: none — by-design, INFO ceiling
+verify_steps: n/a
+impact: public marketing/config metadata only
+testability: PASSIVE
+[HYP] GraphQL via WS/APQ persisted query — needs live session
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: all anonymous transports 403/tarpit/connection-reset; only untested front doors are WS upgrade and APQ hash, both requiring app session
+evidence_needed: non-40x /graphql response
+verify_steps: OPTIONS+Upgrade with graphql-ws subprotocol from authenticated context
+impact: HIGH if reached; unreachable anonymously
+testability: AUTH_HELPED
+[NEXT] HUMAN: ask program coordinator (a) whether vendor-in-flow assets (`keyless.technology`, N26 tenant slug `n26`, exact routes `wss://…/v1/auth/n26`, `/v1/enroll/n26`) fall within N26-operated scope, and (b) for a LivePerson/app session to capture the real WS subprotocol so the two bundle-disclosed routes can be handshake-tested read-only. Without a scope ruling, no further probes are warranted — the asset is vendor-owned and every anonymous transport is `404 path unused`.
+[RISK] N26 Bank AG: 18/100 — Surface fully cornered at INFO across 9+ cycles. The only genuinely fresh intel this cycle (live Keyless auth service, exact WS routes, tenant slug) yields no anonymous exploit and sits on a vendor-owned domain (`keyless.technology`) outside N26-operated scope absent a coordinator ruling. `flags.n26.com` initialize 200 is by-design public-client SDK data. GraphQL remains tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated; remaining HIGH-value paths require an app session (AUTH_HELPED). North-star request to coordinator stands: scoped test account or LivePerson session, plus a written scope ruling on vendor-in-flow assets.
