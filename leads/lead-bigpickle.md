@@ -410,3 +410,4 @@ testability: AUTH_HELPED
 [LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3 origin behind CloudFront) — private bucket, object-only; no listing/misconfig.
 [LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard script-src/connect-src/img-src; `cookie.n26.com` surfaced as new 404 leaf — hosts low-logic static content, INFO ceiling only.
 [RISK] n26: 30/100 — Surface mature and fully cornered: GraphQL closed on every host+transport (incl. support differential, confirmed this cycle); spc.n26.com = GIF pixels; cdn.number26.de private; flags.n26.com disclosure proven by-design public-client data (INFO). Sole live thread is the /v1/evaluate method-consistency probe (LOW, public-key-scoped). No reportable finding currently in hand; remaining upside requires a live app session (APQ/WS) or conceded as dead end.
+## 2026-09-06 00:11:34 UTC [target] (model bigpickle)
