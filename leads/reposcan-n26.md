@@ -91,3 +91,33 @@ TARGET_ORG not configured for n26; skipping public-org deep scan.
 TARGET_ORG not configured for n26; skipping public-org deep scan.
 ## REPOSCAN 2026-09-06 09:08:57 UTC
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-06 13:05:45 UTC
+[HYP] Hardcoded Basic Auth credentials for MFA challenge endpoint
+class: SECRET
+asset: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+confidence: 35
+reasoning: Base64-encoded "android:secret" hardcoded in Authorization:Basic header for POST to /api/mfa/challenge on pisp.tech26.de. However this lives in a sandbox/documentation repo (PSD2 TPP docs) for third-party developers and uses template variables ($CLIENT_KEY_FILE, $USER_NAME, $PASSWORD) for real credentials. The "android:secret" is a well-known OAuth2 client credential pair for Android demo clients, not a production secret.
+impact: INFO (sandbox documentation artifact, not production)
+verify_steps: 1) Confirm pisp.tech26.de is a sandbox-only host 2) Verify this credential is documented as a demo value in N26 PSD2 developer docs 3) Check if this credential grants any real access
+[HYP] Internal Artifactory registry URL exposed in public npm lockfile
+class: MISCONFIG
+asset: n26/express-simple-locale/package-lock.json:1518
+confidence: 30
+reasoning: package-lock.json contains resolved URLs pointing to internal N26 Artifactory instance at artifactory.cd-tech26.de (e.g., https://artifactory.cd-tech26.de:443/artifactory/api/npm/npm/lodash/-/lodash-4.17.21.tgz). Reveals internal artifact registry hostname. However this is a public open-source npm package repo — the Artifactory URL is a development-time dependency source, not a credential.
+impact: INFO (internal hostname disclosure via public repo)
+verify_steps: 1) Confirm artifactory.cd-tech26.de resolves 2) Check if it's publicly accessible or VPN-only 3) Assess if hostname alone is actionable
+[HYP] S3 staging bucket name disclosed in sample data
+class: MISCONFIG
+asset: n26/N26AndroidSamples/credit/src/main/res/raw/credit_drafts.json:8
+confidence: 20
+reasoning: Mock JSON data references S3 bucket "consumercredit-staging" in eu-central-1 (https://s3.eu-central-1.amazonaws.com/consumercredit-staging/...). Bucket is staging environment with only PNG images referenced. This is sample/demo data in a public Android sample app repo.
+impact: INFO (staging bucket name disclosure, images only)
+verify_steps: 1) Confirm bucket exists via HEAD request 2) Verify bucket is private (already confirmed via cdn.number26.de probes in inventory)
+[HYP] Sandbox Postman environment with placeholder tokens
+class: OTHER
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+confidence: 10
+reasoning: Postman environment file contains UUIDs used as placeholder values for access_token, device_token, consent_id, etc. All identical dummy value "f3f51978-20fb-4bd9-91d9-7cc2a1fd9618". Also contains dedicated_aisp_client_id = "w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI" (the public Statsig client key already discovered in app bundle). All are sandbox/sample values for third-party PSD2 developer documentation.
+impact: INFO (no real secrets, sandbox documentation)
+verify_steps: 1) Confirm all tokens are placeholders 2) Verify dedicated_aisp_client_id matches public Statsig key already enumerated
+TARGET_ORG not configured for n26; skipping public-org deep scan.
