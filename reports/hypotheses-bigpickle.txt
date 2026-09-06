@@ -1,8 +1,8 @@
-## 2026-09-06 12:54:57 UTC [target] (model bigpickle)
+## 2026-09-06 15:57:05 UTC [target] (model bigpickle)
 [PRIO] flags.n26.com/v1/initialize, 5.0, a:5 b:4 t:5 g:6 c:5 f:6 — sole 200 route, by-design public-client SDK data, INFO ceiling; no remaining 403-RBAC bypass candidates
 [PRIO] app.n26.com/graphql, 5.4, a:7 b:9 t:8 g:1 c:6 f:2 — highest potential impact but gate_ease=1, tarpit-closed on every anonymous transport; untestable without auth
 [PRIO] cookie.n26.com, 4.2, a:3 b:4 t:4 g:6 c:3 f:5 — static leaf, INFO ceiling, no inject vector
-[HYP] Statsig feature flag/config disclosure on /v1/initialize is by-design client SDK behavior, not reportable RBAC bypass
+[HYP] Statsig feature flag/config disclosure via method-dependent RBAC bypass on /v1/initialize
 class: MISCONFIG
 asset: flags.n26.com/v1/initialize
 confidence: 85
@@ -33,17 +33,7 @@ testability: HUMAN_ONLY
 [PARKED] Weak-auth dev/staging namespaces: confidence 20 (<40), no hostnames, directionless; HUMAN_ONLY
 [FINAL] 1) Statsig flag/config disclosure via method-dependent RBAC bypass on /v1/initialize (confidence 85) — by-design public-client data, INFO ceiling, no reportable impact demonstrated
 [NEXT] HUMAN: escalate to program coordinator — request scoped test account or LivePerson/app session to enable AUTH_HELPED GraphQL WS/APQ testing (the only remaining HIGH-impact reach); otherwise accept surface as fully cornered at INFO with no reportable finding in hand
-[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
-[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: client SDK key extracted from app bundle; `/v1/sdk_exception` bypasses RBAC and accepts it
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO)
-[LEARN] REJECTED MISCONFIG @ flags.n26.com/v1/download_config_specs: canonical POST returns 401 — key-invalid at app layer, not payload-shaped
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
-[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403
-[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
-[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses; WAF blocks all POST Content-Types; GET query param connection reset
-[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
-[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
-[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST /v1/initialize 200-with-data is Statsig DESIGN — public client key unchanged across bundle rotation, browser SDK sends identical POST+STATSIG-API-KEY from every page; reclassified from "RBAC bypass vuln" to "by-design client SDK behavior" (report value INFO unless flag config deemed sensitive)
+[LEARN] REJECTED MISCONFIG @ app.n26.com: numeric Statsig IDs (3526595..4173610755) absent from all 11 bundles — IDs server-assigned, name↔ID mapping not passively recoverable; retires evidence_needed from prior cycle
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC is method+shape dependent (GET initialize 403 vs POST 200), but the 401 on download_config_specs proves app-layer route filtering persists — bounded, not generic
 [RISK] N26 Bank AG: 20/100 — Surface mature and fully cornered: sole verified non-INFO route (flags.n26.com initialize POST 200) is by-design public-client SDK data (INFO); GraphQL tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth surface demonstrated after 8+ cycles. Remaining HIGH-impact path (GraphQL WS/APQ) requires live app session unavailable to anonymous tester. No reportable finding in hand.

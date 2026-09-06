@@ -201,3 +201,7 @@ https://flags.n26.com/v1/initialize -> HTTP 403
 https://flags.n26.com/v1/evaluate -> HTTP 403
 https://app.n26.com/graphql -> ERR The read operation timed out
 https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+
+## 2026-09-06 16:04:48 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
