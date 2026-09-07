@@ -112,3 +112,6 @@
 - 2026-09-07 REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists.
 - 2026-09-07 REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface.
 - 2026-09-07 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 25 paths + WS-upgrade (json/graphql-ws) all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED.
+- 2026-09-07 ACCEPTED AUTH @ app.n26.com/graphql: tarpit/WAF-closed unchanged across all anonymous transports (GET reset, all POST CTs 403, support identical); no differential ingress appears; GraphQL transport class closed anonymously.
+- 2026-09-07 ACCEPTED AUTH @ authentication-service.eks.core-production.keyless.technology: all 25 HTTP paths + WS-upgrade (json/graphql-ws) return `path unused` 404; sdk./api. subdomains coalesce to same ELB — anonymous route discovery proven exhausted; real subprotocol replay is AUTH_HELPED.
+- 2026-09-07 ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path.

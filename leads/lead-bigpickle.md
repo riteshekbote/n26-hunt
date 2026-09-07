@@ -944,3 +944,45 @@ testability: AUTH_HELPED
 [LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface.
 [LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 25 paths + WS-upgrade (json/graphql-ws) all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED.
 [RISK] N26 Bank AG: 15/100 — No reportable finding after 10+ cycles. This cycle fully closed the two remaining fresh leads: engagementplatform is a hardened Braze REST instance (server-only key, not web-recoverable) and the Keyless auth service has no anonymous route on any tested HTTP/WS variant. flags.n26.com initialize 200 is by-design public-client SDK data; GraphQL remains tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only; my.n26.com=301. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated. Every remaining HIGH-value path requires a coordinator-provided signed scope ruling, integration API key, or live app session (AUTH_HELPED). Without a coordinator response there is no further anonymous testable surface.
+## 2026-09-07 21:55:22 UTC [target] (model bigpickle)
+[CHANGED] No new reachable surface this cycle. probe-results.md (19:03) shows only flags.n26.com/v1/initialize → 403 (GET baseline) and engagementplatform.n26.com/segments/list → 401; both already recorded. No new host/route/endpoint discovered.
+[CHANGED] Process anomaly: the two latest triage runs (2026-09-07 18:09, 21:36) both errored with "LEADS empty / message truncated" and gated no hypotheses — coordinator/feeder pipeline dropped leads to ALL ANALYSTS this cycle, so no cross-model hypothesis delta was produced or validated. No model analysts produced new survivable hypotheses off-probe either.
+[PRIO] authentication-service.eks.core-production.keyless.technology,6.1,a=6,b=9,t=7,g=2,c=9,f=7 — live EKS auth in core-production, but ALL 25 HTTP paths + WS-upgrade `path unused`; only real subprotocol replay possible, AUTH_HELPED.
+[PRIO] app.n26.com/graphql,5.6,a=7,b=10,t=8,g=1,c=6,f=2 — highest impact, gate_ease=1, tarpit-closed on every anonymous transport; WS/APQ requires live session.
+[PRIO] engagementplatform.n26.com,6.5,a=7,b=8,t=6,g=2,c=6,f=9 — Braze REST, key-gated 401 everywhere, CORS-open but key server/mobile-only; cannot test anonymously.
+[PRIO] flags.n26.com,3.9,a=5,b=4,t=5,g=4,c=5,f=4 — initialize POST 200 by-design (INFO); all GET config 403/405; no %-remaining bypass vector.
+[HYP] Keyless auth service non-standard route discovery (survivor, scope-pending)
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: live HTTP/2 404 service, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id`; 25 HTTP paths + WS-upgrade with subprotocol json/graphql-ws on bundle-disclosed routes all return `{"code":"UNPROCESSABLE","reason":"path unused"}`; sdk./api. subdomains coalesce to same ELB; router table at this ingress has NO matching route — only unknown is the app's actual WS subprotocol+headers.
+evidence_needed: any non-`unused` HTTP response, or 101/non-`unused` WS-upgrade on either bundle-disclosed route
+verify_steps: none anonymous remain testable — the sole remaining step is to replay the exact WS subprotocol+headers captured from a live app session against wss://…/v1/auth/n26 and /v1/enroll/n26 (read-only; AUTH_HELPED). Anonymous route enumeration is exhausted.
+impact: auth/bypass/WebAuthn flaws = CRITICAL if reached; anonymous reachability NOT demonstrated and domain is vendor-owned (scope-pending)
+testability: AUTH_HELPED
+[HYP] GraphQL WS/APQ front-door (carry)
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: every anonymous HTTP transport WAF-blocked/tarpit (GET query param connection-reset, all POST Content-Types 403 incl urlencoded/text/plain/multipart, support.n26.com bare-GET stalls identically 25s/0B); only untested org front-doors are WS upgrade (Sec-WebSocket-Protocol) and APQ hash — both require a live app session/auth hook.
+evidence_needed: non-40x/non-stall /graphql response
+verify_steps: WS upgrade with `Sec-WebSocket-Protocol: graphql-ws` from an authenticated app context; APQ persisted-query hash replayed from a live session (AUTH_HELPED). No anonymous verify path exists.
+impact: schema→mutation→banking-operations abuse — HIGH if reached; unreachable anonymously
+testability: AUTH_HELPED
+[HYP] Braze REST key absent from all client assets (boundary candidate)
+class: AUTH
+asset: engagementplatform.n26.com/users/track
+confidence: 30
+reasoning: Braze REST instance (dashboard-02.braze.eu redirect hint); `/users/*`, `/catalogs`, `/messages/send` all 401 key-gated; `/events/list`, `/segments/list`, `/kpi/*`, `/content_blocks/list` 405 (route exists, GET-only); CORS preflight 200 ACAO:*; Cloudflare+CloudFront. Key absent from all 10 fetched web bundles and absent from app.n26.com CSP connect-src → server/mobile-native only, not web-extractable.
+evidence_needed: a working REST key value from a legitimate client asset (mobile binary / server config)
+verify_steps: GET https://engagementplatform.n26.com/segments/list with a blessed/dummy key (read-only) to confirm 200-vs-401 boundary; no anonymous verify exists.
+impact: full read of customer-engagement/notification data if key recoverable — MEDIUM; else INFO boundary confirmed
+testability: AUTH_HELPED
+[PARKED] GraphQL WS/APQ front-door: confidence 25 < 40; AUTH_HELPED-only; no anonymous verify path exists (tarpit proves closed on all anonymous transports).
+[PARKED] Braze REST key client-extractable: confidence 30 < 40; negative across 10 bundles + CSP; only mobile/server consumption plausible; no passive verify.
+[FINAL] Keyless auth service non-standard route discovery — confidence 50; the passive route-enumeration branch is now proven exhausted (all 25 + WS `unused`), and the only remaining step (subprotocol replay) requires a live app session = AUTH_HELPED. Anonymous surface proven exhausted.
+[NEXT] HUMAN: escalate one consolidated coordinator ask — (a) written scope ruling on the `keyless.technology` vendor-in-flow asset (tenant slug `n26`, `wss://…/v1/auth/n26`, `/v1/enroll/n26`), (b) a whitelisted/integration Braze REST key (or scoped test identity) for `engagementplatform.n26.com/users`+`/events`+`/segments/list` plus confirmation the key is server-only (if client-extractable → MEDIUM reportable), (c) an app/LivePerson session for app.n26.com GraphQL WS/APQ + Keyless WS subprotocol capture. Also flag the broken triage feeder (two consecutive empty-LEADS runs) so the coordinator pipeline resumes generating hypotheses. No anonymous PROBE remains untried: flags=by-design INFO, GraphQL=tarpit-closed, keyless=all-routes-unused, Braze=key-gated, spc=GIFs, cdn=private, marketing=INFO, my=301.
+[LEARN] ACCEPTED AUTH @ app.n26.com/graphql: tarpit/WAF-closed unchanged across all anonymous transports (GET reset, all POST CTs 403, support identical); no differential ingress appears; GraphQL transport class closed anonymously.
+[LEARN] ACCEPTED AUTH @ authentication-service.eks.core-production.keyless.technology: all 25 HTTP paths + WS-upgrade (json/graphql-ws) return `path unused` 404; sdk./api. subdomains coalesce to same ELB — anonymous route discovery proven exhausted; real subprotocol replay is AUTH_HELPED.
+[LEARN] ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary stable — initialize(POST+body)→200 by-design (INFO), sdk_exception GET→403, download_config_specs→401, all GET config→403; no new vectors this cycle.
