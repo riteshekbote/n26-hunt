@@ -1493,3 +1493,58 @@ testability: PASSIVE
 [LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 20 standard paths return "path unused" — API at custom routes.
 [LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+11 bundles → server/mobile-only; boundary confirmed, requires key to test further.
 [RISK] N26 Bank AG: 78 — Confirmed Statsig feature flag service with client SDK key extraction and method-dependent RBAC behavior (by-design); authentication-service.eks.core-production.keyless.technology LIVE but API surface at non-standard paths (high-value EKS auth target, cloud_surface=10, deployment rotated v26.09.07); GraphQL WAF on primary app robust (no POST bypass found); spc.n26.com endpoints are tracking pixels not payment API; single exploitable path (flags.n26.com) with confirmed key extraction and full config disclosure (INFO unless flags deemed sensitive); keyless auth service unprobed beyond 20 standard paths — warrants enumeration for auth bypass/WebAuthn flaws; engagementplatform.n26.com 401 boundary confirmed, token acquisition path unknown.
+## 2026-09-07 18:54:02 UTC [target] (model nemotron3)
+[NEW] authentication-service.eks.core-production.keyless.technology: Version rotated to `authentication-service-2/v26.09.07 eks-production` (was v26.08.27); all 9 probed standard paths (/api/v2, /v2, /internal, /private, /admin, /actuator/health, /metrics, /healthz, /ready) return HTTP/2 404 "path unused" with custom `x-keyless-flow-id` header
+[NEW] engagementplatform.n26.com/users: Confirmed HTTP 401 (key-gated, Cloudflare fronted, rate-limit headers present) — distinct live auth boundary, not tarpit
+[NEW] flags.n26.com/v1/initialize: POST canonical payload + public key returns 200 with 35 feature_gates + 9 dynamic_configs (numeric IDs only, no semantic names) — confirmed by-design Statsig client SDK behavior (INFO)
+[CHANGED] authentication-service.eks.core-production.keyless.technology: Deployment rotated (v26.09.07), all standard auth/infra paths still 404 — non-standard route hypothesis holds
+[CHANGED] flags.n26.com: Config disclosure stable, no sensitive gate names (payment_, kyc_, auth_, limit_, bypass_, admin_, debug_, internal_) in disclosed numeric IDs
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.6,a=9,b=10,t=8,g=2,c=10,f=3
+[PRIO] engagementplatform.n26.com,6.4,a=7,b=8,t=6,g=3,c=5,f=8
+[PRIO] flags.n26.com,5.8,a=7,b=6,t=5,g=10,c=2,f=9
+[PRIO] app.n26.com,5.4,a=6,b=10,t=5,g=1,c=3,f=2
+[HYP] Keyless auth service uses non-standard API paths requiring discovery
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 65
+reasoning: Service live (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 20 standard paths (/, /api/v1, /v1, /keyless, /auth, /api, /webauthn, /passkey, /credentials, /register, /login, /challenge, /api/v2, /v2, /internal, /private, /admin, /actuator/health, /metrics, /healthz, /ready) return "path unused" — API likely mounted at custom paths. "keyless" suggests WebAuthn/passwordless flow; EKS-hosted in core-production cluster.
+evidence_needed: Discovered API endpoint returning 200/401 (not 404); OpenAPI spec or route enumeration; auth mechanism identification (WebAuthn, OIDC, custom).
+verify_steps: GET https://authentication-service.eks.core-production.keyless.technology/api/v3 → GET /v3 → GET /api/auth → GET /auth/v1 → GET /keyless/v1 → GET /passkey/v1 → GET /webauthn/v1 → GET /credentials/v1 → GET /register/v1 → GET /login/v1 → GET /challenge/v1 → GET /api/v1/auth → GET /api/v1/keyless → GET /api/v1/webauthn — passive enumeration of versioned auth API paths on live EKS service; <=1 rps
+impact: Auth bypass, credential theft, session hijacking, WebAuthn credential enumeration, EKS metadata access via SSRF if any user-supplied URL param — CRITICAL if exploitable
+testability: PASSIVE
+[HYP] engagementplatform.n26.com /users endpoint yields cross-tenant user enumeration with valid Bearer token
+class: IDOR
+asset: engagementplatform.n26.com/users
+confidence: 55
+reasoning: /users returns 401 (key-gated) not 403/tarpit — distinct live boundary confirmed 2026-09-07. Web-side Bearer key embedding negative across app CSP + 11 bundles → server/mobile-only. If token acquired (mobile app, server logs, token leakage), /users/{id} or pagination params may allow cross-tenant PII dump.
+evidence_needed: Valid Bearer token for engagementplatform.n26.com; successful /users call returning user objects; IDOR via sequential user_id or email params.
+verify_steps: PASSIVE: monitor app.n26.com CSP/connect-src for engagementplatform endpoints; inspect mobile app (if in scope) for embedded tokens; check referral/redirect flows for token leakage. AUTH_HELPED: with valid token, GET /users?limit=100 → GET /users/{id} → test BOLA via cross-tenant id.
+impact: Cross-tenant user PII enumeration (email, phone, KYC status, engagement metrics) — HIGH if token obtained
+testability: AUTH_HELPED
+[HYP] Flags.n26.com initialize POST full config disclosure contains sensitive feature gates controlling payment/KYC/auth logic
+class: MISCONFIG
+asset: flags.n26.com/v1/initialize
+confidence: 40
+reasoning: POST /v1/initialize + canonical SDK payload + public client key returns 200 with full flag tree (35 feature_gates, 9 dynamic_configs, layer_configs). Reclassified as Statsig by-design (INFO), but flag *values* unexamined for sensitive controls (e.g., payment limits, KYC bypass, auth toggles, rollout percentages). Current disclosure shows only numeric IDs (3526595..4173610755) — no semantic names recovered.
+evidence_needed: Manual review of disclosed flag configs for security-sensitive keys (payment_, kyc_, auth_, limit_, bypass_, admin_, debug_, internal_); correlation with app.n26.com behavior changes.
+verify_steps: POST https://flags.n26.com/v1/initialize with `Content-Type: application/json`, `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, body `{"hash":"djb2","user":{},"statsigMetadata":{}}` → extract all feature_gate/dynamic_config keys → grep for sensitive patterns → assess if any gate controls security-critical logic.
+impact: If flags control payment limits/KYC/auth bypass → HIGH; otherwise INFO (by-design client SDK behavior)
+testability: PASSIVE
+[PARKED] Flags.n26.com initialize POST full config disclosure contains sensitive feature gates: confidence 40 < 40 threshold; numeric IDs only, no semantic names recoverable passively; by-design Statsig behavior (INFO)
+[FINAL] 1) Keyless auth service uses non-standard API paths requiring discovery (confidence 65) — PASSIVE testable, high-value target, live service confirmed, deployment rotated v26.09.07
+[FINAL] 2) engagementplatform.n26.com /users endpoint yields cross-tenant user enumeration with valid Bearer token (confidence 55) — AUTH_HELPED, distinct 401 boundary confirmed, Cloudflare fronted
+[NEXT] PROBE: GET https://authentication-service.eks.core-production.keyless.technology/api/v3 → GET /v3 → GET /api/auth → GET /auth/v1 → GET /keyless/v1 → GET /passkey/v1 → GET /webauthn/v1 → GET /credentials/v1 → GET /register/v1 → GET /login/v1 → GET /challenge/v1 → GET /api/v1/auth → GET /api/v1/keyless → GET /api/v1/webauthn — passive enumeration of versioned auth API paths on live EKS service; <=1 rps
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO).
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403.
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403.
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API.
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure.
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed.
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; no listing/misconfig.
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only.
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses; WAF blocks all POST Content-Types; GET query param connection reset.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 20 standard paths return "path unused" — API at custom routes.
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+11 bundles → server/mobile-only; boundary confirmed, requires key to test further.
+[RISK] N26 Bank AG: 78 — Confirmed Statsig feature flag service with client SDK key extraction and method-dependent RBAC behavior (by-design); authentication-service.eks.core-production.keyless.technology LIVE but API surface at non-standard paths (high-value EKS auth target, cloud_surface=10, deployment rotated v26.09.07); GraphQL WAF on primary app robust (no POST bypass found); spc.n26.com endpoints are tracking pixels not payment API; single exploitable path (flags.n26.com) with confirmed key extraction and full config disclosure (INFO unless flags deemed sensitive); keyless auth service unprobed beyond 20 standard paths — warrants enumeration for auth bypass/WebAuthn flaws; engagementplatform.n26.com 401 boundary confirmed, token acquisition path unknown.

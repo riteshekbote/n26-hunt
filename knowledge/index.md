@@ -105,3 +105,10 @@
 - 2026-09-07 ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary stable — initialize(POST+body)→200 by-design (INFO), sdk_exception GET→403, download_config_specs→401, all GET config→403; no new vectors this cycle.
 - 2026-09-07 ACCEPTED AUTH @ app.n26.com/graphql: tarpit/WAF-closed unchanged across all anonymous transports; no differential ingress appears.
 - 2026-09-07 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 20 standard paths return "path unused" — API at custom routes.
+- 2026-09-07 ACCEPTED MISCONFIG @ engagementplatform.n26.com: identified as Braze REST API instance (dashboard-02.braze.eu); key-gated 401 on all data routes, CORS-open but no key in any web bundle → server/mobile-only; no anonymous exploit (INFO boundary).
+- 2026-09-07 REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential returns same 401 as no-auth/garbage — demo/sandbox value, not live-valid; only /api/mfa/challenge exists.
+- 2026-09-07 REJECTED MISCONFIG @ consumercredit-staging S3: bucket does not exist (NoSuchBucket) — no enumeration surface.
+- 2026-09-07 ACCEPTED MISCONFIG @ engagementplatform.n26.com: identified as Braze REST instance (dashboard-02.braze.eu); key-gated 401 on all data routes, CORS-open but key absent from all 10 web bundles + CSP → server/mobile-only; boundary confirmed, no anonymous path.
+- 2026-09-07 REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists.
+- 2026-09-07 REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface.
+- 2026-09-07 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 25 paths + WS-upgrade (json/graphql-ws) all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED.

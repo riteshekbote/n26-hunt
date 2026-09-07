@@ -1,6 +1,6 @@
-## 2026-09-07 14:30:36 UTC [target] (model nemotron3)
-[NEW] authentication-service.eks.core-production.keyless.technology: Version updated to `authentication-service-2/v26.09.07 eks-production` (was v26.08.27); all 9 probed standard paths (/api/v2, /v2, /internal, /private, /admin, /actuator/health, /metrics, /healthz, /ready) return HTTP/2 404 "path unused" with custom `x-keyless-flow-id` header — API remains at non-standard paths
-[NEW] engagementplatform.n26.com/users: Confirmed HTTP 401 (key-gated, Cloudflare fronted, rate-limit headers) — distinct live boundary, not tarpit
+## 2026-09-07 18:54:02 UTC [target] (model nemotron3)
+[NEW] authentication-service.eks.core-production.keyless.technology: Version rotated to `authentication-service-2/v26.09.07 eks-production` (was v26.08.27); all 9 probed standard paths (/api/v2, /v2, /internal, /private, /admin, /actuator/health, /metrics, /healthz, /ready) return HTTP/2 404 "path unused" with custom `x-keyless-flow-id` header
+[NEW] engagementplatform.n26.com/users: Confirmed HTTP 401 (key-gated, Cloudflare fronted, rate-limit headers present) — distinct live auth boundary, not tarpit
 [NEW] flags.n26.com/v1/initialize: POST canonical payload + public key returns 200 with 35 feature_gates + 9 dynamic_configs (numeric IDs only, no semantic names) — confirmed by-design Statsig client SDK behavior (INFO)
 [CHANGED] authentication-service.eks.core-production.keyless.technology: Deployment rotated (v26.09.07), all standard auth/infra paths still 404 — non-standard route hypothesis holds
 [CHANGED] flags.n26.com: Config disclosure stable, no sensitive gate names (payment_, kyc_, auth_, limit_, bypass_, admin_, debug_, internal_) in disclosed numeric IDs
@@ -12,7 +12,7 @@
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology
 confidence: 65
-reasoning: Service live (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 11 standard paths (/, /api/v1, /v1, /keyless, /auth, /api, /webauthn, /passkey, /credentials, /register, /login, /challenge, /api/v2, /v2, /internal, /private, /admin, /actuator/health, /metrics, /healthz, /ready) return "path unused" — API likely mounted at custom paths. "keyless" suggests WebAuthn/passwordless flow; EKS-hosted in core-production cluster.
+reasoning: Service live (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 20 standard paths (/, /api/v1, /v1, /keyless, /auth, /api, /webauthn, /passkey, /credentials, /register, /login, /challenge, /api/v2, /v2, /internal, /private, /admin, /actuator/health, /metrics, /healthz, /ready) return "path unused" — API likely mounted at custom paths. "keyless" suggests WebAuthn/passwordless flow; EKS-hosted in core-production cluster.
 evidence_needed: Discovered API endpoint returning 200/401 (not 404); OpenAPI spec or route enumeration; auth mechanism identification (WebAuthn, OIDC, custom).
 verify_steps: GET https://authentication-service.eks.core-production.keyless.technology/api/v3 → GET /v3 → GET /api/auth → GET /auth/v1 → GET /keyless/v1 → GET /passkey/v1 → GET /webauthn/v1 → GET /credentials/v1 → GET /register/v1 → GET /login/v1 → GET /challenge/v1 → GET /api/v1/auth → GET /api/v1/keyless → GET /api/v1/webauthn — passive enumeration of versioned auth API paths on live EKS service; <=1 rps
 impact: Auth bypass, credential theft, session hijacking, WebAuthn credential enumeration, EKS metadata access via SSRF if any user-supplied URL param — CRITICAL if exploitable

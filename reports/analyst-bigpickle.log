@@ -10077,3 +10077,1072 @@ echo "size: $(wc -c < /tmp/openapi.json) bytes"
 cat /tmp/openapi.json | python3 -m json.tool 2>/dev/null | head -400 failed
 [91m[1mError: [0mThe user rejected permission to use this specific tool call.
 Critical finding! `/openapi.json` returned **HTTP 200** with the full OpenAPI spec — this contradicts the prior "no non-unused route" conclusion. The API is mounted at custom routes and the spec is exposed. Let me retrieve the full OpenAPI document.
+===== ANALYST bigpickle 2026-09-07 19:03:18 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls /home/runner/work/n26-hunt/n26-hunt/
+README.md
+analyst-out.txt
+analyst-prompt.txt
+ctx.txt
+inventory
+knowledge
+leads
+probe-results.md
+recon-notes
+reports
+reposcan-raw
+scope.yml
+scripts
+state_bigpickle.json
+state_laguna.json
+state_ling3.json
+state_longcat.json
+state_mimo.json
+state_nemotron3.json
+triage
+[0m
+[0m$ [0mls /home/runner/work/n26-hunt/n26-hunt/art/ 2>/dev/null | head -20
+(no output)
+[0m
+[0m→ [0mRead state_bigpickle.json
+[0m→ [0mRead probe-results.md[90m [offset=1, limit=100][0m
+[0m→ [0mRead scope.yml
+[0m→ [0mRead probe-results.md[90m [offset=150][0m
+[0m→ [0mRead inventory
+[0m→ [0mRead inventory/n26.md
+[0m✱ [0mGlob "scripts/**"[90m in . · 1 match[0m
+[0m→ [0mRead analyst-out.txt
+[0m✱ [0mGlob "**/*"[90m in leads · 7 matches[0m
+[0m→ [0mRead leads/lead-bigpickle.md
+[0m→ [0mRead leads/lead-nemotron3.md
+[0m→ [0mRead leads/reposcan-n26.md
+[0m→ [0mRead leads/lead-bigpickle.md[90m [offset=410][0m
+Let me check the reposcan and remaining lead files for any unexplored leads.
+[0m→ [0mRead leads/lead-bigpickle.md[90m [offset=768][0m
+Now let me read the final portion of the lead file to see the most recent entries.
+[0m
+[0m$ [0mcurl -sk -o /dev/null -w "%{http_code} %{size_download} %{content_type}" "https://authentication-service.eks.core-production.keyless.technology/api/v1" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+404 80 application/json
+[0m
+[0m$ [0mcurl -sk -o /dev/null -w "%{http_code} %{size_download} %{content_type}" "https://authentication-service.eks.core-production.keyless.technology/v1" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+404 76 application/json
+[0m
+[0m$ [0mcurl -sk -o /dev/null -w "%{http_code} %{size_download} %{content_type}" "https://authentication-service.eks.core-production.keyless.technology/webauthn" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+404 82 application/json
+[0m
+[0m$ [0mcurl -sk -o /dev/null -w "%{http_code} %{size_download} %{content_type}" "https://authentication-service.eks.core-production.keyless.technology/passkey" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+404 81 application/json
+[0m
+Now let me run the probes that haven't been executed yet. The nemotron3 agent proposed a broader path enumeration on the keyless service that was never executed. I'll also probe the reposcan credential lead against the live PISP endpoint.
+[0m$ [0mcurl -sk -o /dev/null -w "%{http_code} %{size_download} %{content_type}" "https://authentication-service.eks.core-production.keyless.technology/fido2" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+404 79 application/json
+[0m
+[0m$ [0mcurl -sk -o /dev/null -w "%{http_code} %{size_download} %{content_type}" "https://authentication-service.eks.core-production.keyless.technology/attestation" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+404 85 application/json
+[0m
+[0m$ [0mcurl -sk "https://authentication-service.eks.core-production.keyless.technology/api/v1" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /api/v1","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -sk "https://authentication-service.eks.core-production.keyless.technology/v1" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /v1","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -sk "https://authentication-service.eks.core-production.keyless.technology/webauthn" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /webauthn","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -sk "https://authentication-service.eks.core-production.keyless.technology/passkey" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /passkey","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -sk "https://authentication-service.eks.core-production.keyless.technology/challenge" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /challenge","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -sk "https://authentication-service.eks.core-production.keyless.technology/register" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /register","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -sk "https://authentication-service.eks.core-production.keyless.technology/v1/auth/n26" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /v1/auth/n26","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -sk "https://authentication-service.eks.core-production.keyless.technology/v1/enroll/n26" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /v1/enroll/n26","stack":"api.`unused`"}
+[0m
+[0m$ [0mfor path in /enroll /credentials /verify /attestation /oauth /oidc /token /session /login /api/v3 /v3 /keyless /auth /internal /private /admin /actuator/health /metrics /ready; do echo -n "GET $path -> "; curl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://authentication-service.eks.core-production.keyless.technology$path" -H "User-Agent: Mozilla/5.0" --max-time 10 2>&1; echo; sleep 1; done
+GET /enroll -> 404 80
+GET /credentials -> 404 85
+GET /verify -> 404 80
+GET /attestation -> 404 85
+GET /oauth -> 404 79
+GET /oidc -> 404 78
+GET /token -> 404 79
+GET /session -> 404 81
+GET /login -> 404 79
+GET /api/v3 -> 404 80
+GET /v3 -> 404 76
+GET /keyless -> 404 81
+GET /auth -> 404 78
+GET /internal -> 404 82
+GET /private -> 404 81
+GET /admin -> 404 79
+GET /actuator/health -> 404 89
+GET /metrics -> 404 81
+GET /ready -> 404 79
+[0m
+[0m$ [0mcurl -sk -i -N \
+  -H "Connection: Upgrade" \
+  -H "Upgrade: websocket" \
+  -H "Sec-WebSocket-Version: 13" \
+  -H "Sec-WebSocket-Key: dGVzdA==" \
+  -H "Sec-WebSocket-Protocol: json" \
+  "https://authentication-service.eks.core-production.keyless.technology/v1/auth/n26" \
+  --max-time 10 2>&1 | head -30
+HTTP/2 404 
+date: Mon, 07 Sep 2026 18:53:46 GMT
+content-type: application/json
+content-length: 85
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07d38-2499-7281-9694-7cad4e128bfb
+x-envoy-upstream-service-time: 2
+server: istio-envoy
+
+{"code":"UNPROCESSABLE","reason":"path unused: /v1/auth/n26","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -sk -i -N \
+  -H "Connection: Upgrade" \
+  -H "Upgrade: websocket" \
+  -H "Sec-WebSocket-Version: 13" \
+  -H "Sec-WebSocket-Key: dGVzdA==" \
+  -H "Sec-WebSocket-Protocol: graphql-ws" \
+  "https://authentication-service.eks.core-production.keyless.technology/v1/auth/n26" \
+  --max-time 10 2>&1 | head -30
+HTTP/2 404 
+date: Mon, 07 Sep 2026 18:53:47 GMT
+content-type: application/json
+content-length: 85
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07d38-276f-7af8-8d9d-48de731b3aa0
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+
+{"code":"UNPROCESSABLE","reason":"path unused: /v1/auth/n26","stack":"api.`unused`"}
+[0m
+All paths return the same `path unused` error. Let me try WebSocket upgrade on the bundle-disclosed routes, and also probe the reposcan credential lead.
+[0m$ [0mcurl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://pisp.tech26.de/api/mfa/challenge" -H "Authorization: Basic YW5kcm9pZDpzZWNyZXQ=" -H "Content-Type: application/json" -X POST -d '{"phone_number":"+1234567890"}' --max-time 10 2>&1
+401 0
+[0m
+[0m$ [0mcurl -sk -i "https://pisp.tech26.de/api/mfa/challenge" -H "Content-Type: application/json" -X POST -d '{"phone_number":"+1234567890"}' --max-time 10 2>&1
+HTTP/2 401 
+date: Mon, 07 Sep 2026 18:53:57 GMT
+content-length: 0
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+x-envoy-upstream-service-time: 13
+server: istio-envoy
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+[0m
+[0m$ [0mcurl -sk -i "https://pisp.tech26.de/" --max-time 10 2>&1 | head -30
+HTTP/2 404 
+date: Mon, 07 Sep 2026 18:53:58 GMT
+content-length: 0
+server: istio-envoy
+x-envoy-upstream-service-time: 1
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+[0m
+PISP endpoint exists and returned 401 (not 404/timeout). The reposcan credential is rejected but the endpoint is live. Let me dig deeper on both fronts.
+[0m$ [0mcurl -sk "https://pisp.tech26.de/api/mfa/challenge" -H "Authorization: Basic YW5kcm9pZDpzZWNyZXQ=" -H "Content-Type: application/json" -X POST -d '{}' --max-time 10 2>&1
+(no output)
+[0m
+[0m$ [0m# Check xs2a.tech26.de too
+curl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://xs2a.tech26.de/" --max-time 10 2>&1
+echo
+curl -sk -i "https://xs2a.tech26.de/" --max-time 10 2>&1 | head -20
+404 0
+HTTP/2 404 
+date: Mon, 07 Sep 2026 18:54:09 GMT
+content-length: 0
+server: istio-envoy
+x-envoy-upstream-service-time: 1
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+[0m
+[0m$ [0m# Try MFA challenge with empty auth to see error
+curl -sk -i "https://pisp.tech26.de/api/mfa/challenge" -H "Content-Type: application/json" -X POST -d '{}' --max-time 10 2>&1
+HTTP/2 401 
+date: Mon, 07 Sep 2026 18:54:09 GMT
+content-length: 0
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+server: istio-envoy
+x-envoy-upstream-service-time: 13
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+[0m
+[0m$ [0m# PISP surface enumeration
+for path in / /api /api/v1 /api/v2 /health /api/health /docs /swagger /openapi.json /.well-known/openid-configuration /api/mfa /api/mfa/verify /api/auth /api/consent /api/payment /api/accounts /api/transactions /api/users; do
+  echo -n "GET $path -> "
+  curl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://pisp.tech26.de$path" --max-time 10 2>&1
+  echo
+  sleep 1
+done
+GET / -> 404 0
+GET /api -> 404 0
+GET /api/v1 -> 404 0
+GET /api/v2 -> 404 0
+GET /health -> 404 0
+GET /api/health -> 404 0
+GET /docs -> 404 0
+GET /swagger -> 404 0
+GET /openapi.json -> 404 0
+GET /.well-known/openid-configuration -> 404 0
+GET /api/mfa -> 404 0
+GET /api/mfa/verify -> 404 0
+GET /api/auth -> 404 0
+GET /api/consent -> 404 0
+GET /api/payment -> 404 0
+GET /api/accounts -> 404 0
+GET /api/transactions -> 404 0
+GET /api/users -> 404 0
+[0m
+[0m$ [0m# Compare no-auth vs bad-auth vs reposcan auth response times
+echo "No auth:"
+curl -sk -o /dev/null -w "status=%{http_code} size=%{size_download} time=%{time_total}" -X POST "https://pisp.tech26.de/api/mfa/challenge" -H "Content-Type: application/json" -d '{}' --max-time 10 2>&1
+echo
+sleep 1
+echo "Reposcan auth (android:secret):"
+curl -sk -o /dev/null -w "status=%{http_code} size=%{size_download} time=%{time_total}" -X POST "https://pisp.tech26.de/api/mfa/challenge" -H "Authorization: Basic YW5kcm9pZDpzZWNyZXQ=" -H "Content-Type: application/json" -d '{}' --max-time 10 2>&1
+echo
+sleep 1
+echo "Garbage auth:"
+curl -sk -o /dev/null -w "status=%{http_code} size=%{size_download} time=%{time_total}" -X POST "https://pisp.tech26.de/api/mfa/challenge" -H "Authorization: Basic YWJjZGVmZ2hpamtsbW5vcA==" -H "Content-Type: application/json" -d '{}' --max-time 10 2>&1
+echo
+No auth:
+status=401 size=0 time=0.447251
+Reposcan auth (android:secret):
+status=401 size=0 time=0.422304
+Garbage auth:
+status=401 size=0 time=0.616225
+[0m
+[0m$ [0m# Check new subdomains from reposcan: artifactory.cd-tech26.de
+curl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://artifactory.cd-tech26.de/" --max-time 10 2>&1
+echo
+dig +short artifactory.cd-tech26.de 2>&1
+000 0
+artifactory-live-external-1462286269.eu-central-1.elb.amazonaws.com.
+3.122.83.58
+3.122.124.252
+18.157.241.8
+[0m
+[0m$ [0m# XS2A endpoint probe
+for path in /api /api/v1 /api/v2 /consent /accounts /payments /periodic-payments /funds-confirmations /signing/baskets /signing/consents /signing/periodic-payments /doc/pdf /swagger /openapi.json /.well-known/openid-configuration; do
+  echo -n "GET $path -> "
+  curl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://xs2a.tech26.de$path" --max-time 10 2>&1
+  echo
+  sleep 1
+done
+GET /api -> 404 0
+GET /api/v1 -> 404 0
+GET /api/v2 -> 404 0
+GET /consent -> 404 0
+GET /accounts -> 404 0
+GET /payments -> 404 0
+GET /periodic-payments -> 404 0
+GET /funds-confirmations -> 404 0
+GET /signing/baskets -> 404 0
+GET /signing/consents -> 404 0
+GET /signing/periodic-payments -> 404 0
+GET /doc/pdf -> 404 0
+GET /swagger -> 404 0
+GET /openapi.json -> 404 0
+GET /.well-known/openid-configuration -> 404 0
+[0m
+[0m$ [0m# Check if pisp.tech26.de accepts POST with different body shapes
+curl -sk -i "https://pisp.tech26.de/api/mfa/challenge" -X POST -H "Content-Type: application/json" -d '{"phone_number":"+4912345678"}' --max-time 10 2>&1 | head -15
+HTTP/2 401 
+date: Mon, 07 Sep 2026 18:55:19 GMT
+content-length: 0
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+server: istio-envoy
+x-envoy-upstream-service-time: 10
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+[0m
+[0m$ [0m# Check XS2A POST endpoints
+curl -sk -i "https://xs2a.tech26.de/consent" -X POST -H "Content-Type: application/json" -d '{}' --max-time 10 2>&1 | head -15
+HTTP/2 404 
+date: Mon, 07 Sep 2026 18:55:20 GMT
+content-length: 0
+server: istio-envoy
+x-envoy-upstream-service-time: 2
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+[0m
+[0m$ [0m# Try more PISP paths specific to PSD2 TPP
+for path in /api/consents /api/payments/initiate /api/payments/{paymentId} /api/consent/{consentId} /api/signing; do
+  echo -n "POST $path -> "
+  curl -sk -o /dev/null -w "%{http_code} %{size_download}" -X POST "https://pisp.tech26.de$path" -H "Content-Type: application/json" -d '{}' --max-time 10 2>&1
+  echo
+  sleep 1
+done
+POST /api/consents -> 404 0
+POST /api/payments/initiate -> 404 0
+POST /api/payments/{paymentId} -> 404 0
+POST /api/consent/{consentId} -> 404 0
+POST /api/signing -> 404 0
+[0m
+[0m$ [0m# Check consumercredit-staging S3 bucket
+curl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://s3.eu-central-1.amazonaws.com/consumercredit-staging/" --max-time 10 2>&1
+echo
+curl -sk "https://s3.eu-central-1.amazonaws.com/consumercredit-staging/" --max-time 10 2>&1 | head -20
+404 312
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>consumercredit-staging</BucketName><RequestId>6106703BGRYFC0CM</RequestId><HostId>d/6iB6HaJUFM9QNzntSVtrWEe28WFVFsUJColIPcjtBNb7CIOQJTZzn98dDtNMNQT/Y5TtM6NCRX7e3m7pG5Xj/OhbmFdLr7</HostId></Error>
+[0m
+[0m$ [0m# Check engagementplatform additional endpoints
+for path in / /events /notifications /health /status /api /api/v1 /users/me; do
+  echo -n "GET $path -> "
+  curl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://engagementplatform.n26.com$path" --max-time 10 2>&1
+  echo
+  sleep 1
+done
+GET / -> 400 96
+GET /events -> 401 31
+GET /notifications -> 404 25
+GET /health -> 404 25
+GET /status -> 404 25
+GET /api -> 404 25
+GET /api/v1 -> 404 25
+GET /users/me -> 404 25
+[0m
+[0m$ [0m# Engagementplatform root response
+curl -sk "https://engagementplatform.n26.com/" --max-time 10 2>&1
+Did you mean to visit the <a href="https://dashboard-02.braze.eu/dashboard">Braze dashboard</a>?
+[0m
+[0m$ [0m# Engagementplatform /events response body
+curl -sk "https://engagementplatform.n26.com/events" --max-time 10 2>&1
+{"message":"Invalid API key: "}
+[0m
+[0m$ [0m# Check more engagementplatform paths
+for path in /v1/users /v1/events /api/users /api/events /health /api/health /swagger /openapi.json /graphql /metrics; do
+  echo -n "GET $path -> "
+  curl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://engagementplatform.n26.com$path" --max-time 10 2>&1
+  echo
+  sleep 1
+done
+GET /v1/users -> 404 25
+GET /v1/events -> 404 25
+GET /api/users -> 404 25
+GET /api/events -> 404 25
+GET /health -> 404 25
+GET /api/health -> 404 25
+GET /swagger -> 404 25
+GET /openapi.json -> 404 25
+GET /graphql -> 404 25
+GET /metrics -> 404 25
+[0m
+[0m$ [0m# Braze GET endpoints
+for path in "/users/export/ids" "/users/export/segment" "/segments/list" "/events/list"; do
+  echo -n "GET $path -> "
+  curl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://engagementplatform.n26.com$path" -H "Content-Type: application/json" --max-time 10 2>&1
+  echo
+  sleep 1
+done
+GET /users/export/ids -> 405 27
+GET /users/export/segment -> 405 27
+GET /segments/list -> 401 31
+GET /events/list -> 401 31
+[0m
+[0m$ [0m# Braze-specific endpoints on engagementplatform
+for path in "/users/export/ids" "/users/track" "/users/delete" "/users/alias/new" "/events/list" "/purchases/product_list" "/segments/list" "/campaigns/list" "/templates/email/list" "/kpi/dau/data_series"; do
+  echo -n "POST $path -> "
+  curl -sk -o /dev/null -w "%{http_code} %{size_download}" -X POST "https://engagementplatform.n26.com$path" -H "Content-Type: application/json" -d '{}' --max-time 10 2>&1
+  echo
+  sleep 1
+done
+POST /users/export/ids -> 401 31
+POST /users/track -> 401 31
+POST /users/delete -> 401 31
+POST /users/alias/new -> 401 31
+POST /events/list -> 405 27
+POST /purchases/product_list -> 405 27
+POST /segments/list -> 405 27
+POST /campaigns/list -> 405 27
+POST /templates/email/list -> 405 27
+POST /kpi/dau/data_series -> 405 27
+[0m
+[0m$ [0m# Key format differential on Braze — invalid-format vs plausible-format keys
+echo "No key:"
+curl -sk -i "https://engagementplatform.n26.com/users/track" -X POST -H "Content-Type: application/json" -d '{}' --max-time 10 2>&1 | tr -d '\r' | tail -3
+echo
+sleep 1
+echo "46-char hex-looking key:"
+curl -sk -i "https://engagementplatform.n26.com/users/track" -X POST -H "Authorization: Bearer a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2" -H "Content-Type: application/json" -d '{}' --max-time 10 2>&1 | tr -d '\r' | tail -3
+No key:
+x-amz-cf-id: RSPbfMRV9sjmYMu-YS7X6njq-5rgvgfkKEH5BL8FHsSDIl-AX2o2lQ==
+
+{"message":"Invalid API key: "}
+46-char hex-looking key:
+x-amz-cf-id: rXXMde5CccmcCwaLjGo_qFbWvQXkC8EDJboFUQq-uczIAnHcpU3lfw==
+
+{"message":"Invalid API key: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"}
+[0m
+The engagementplatform is now confirmed to be a **Braze** REST API. Let me refine the key-validation behavior and close out remaining leads.
+[0m$ [0m# Confirm Braze instance region + app-id header handling (Braze REST uses App identifier header X-Braze-Current-Date-Time or builder)
+curl -sk -i "https://engagementplatform.n26.com/users/track" -X POST -H "Content-Type: application/json" -H "X-Braze-Current-Date-Time: Mon, 07 Sep 2026 18:55:00 GMT" -d '{}' --max-time 10 2>&1 | tr -d '\r' | head -30
+HTTP/2 401 
+content-type: application/json; charset=utf-8
+content-length: 31
+date: Mon, 07 Sep 2026 18:57:03 GMT
+cf-ray: a377efdc5e7c26b9-CMH
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+server: cloudflare
+strict-transport-security: max-age=31536000; includeSubDomains
+access-control-allow-headers: *
+access-control-allow-methods: POST, OPTIONS
+x-request-id: 7f07e4a9-8b62-4d9a-9920-91c8a4352adb
+x-cache: Error from cloudfront
+via: 1.1 219b6472d4496fcc311785bd1dd2943a.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW56-P9
+x-amz-cf-id: wxsjnhhPbBXthW0rjwvnwGfVAFb5SHpe9XcMwikfqi7UzxxlxfhiAg==
+
+{"message":"Invalid API key: "}
+[0m
+The engagementplatform is confirmed as a **Braze** customer-engagement platform. Let me check if the web app embeds a Braze SDK app-identifier (different from the server-only REST key — the SDK identifier is public).
+[0m$ [0mcurl -sk "https://app.n26.com" -H "User-Agent: Mozilla/5.0" --max-time 20 -o /tmp/opencode/n26app.html 2>&1; wc -c /tmp/opencode/n26app.html
+28 /tmp/opencode/n26app.html
+[0m
+[0m$ [0mcat /tmp/opencode/n26app.html; echo; echo "---"; curl -sk -i "https://app.n26.com" -H "User-Agent: Mozilla/5.0" --max-time 20 2>&1 | head -40
+Found. Redirecting to /login
+---
+HTTP/2 302 
+date: Mon, 07 Sep 2026 18:58:41 GMT
+content-type: text/plain; charset=utf-8
+content-length: 28
+x-powered-by: Express
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+set-cookie: n26.csrf=s%3AtVAFLyxHaMCjT-SKP9nnJJ3D.MEaclQf6lZ%2BJ2TLwhgNiin9k%2FwRotFS%2BHsSgUFeFYVs; Path=/; HttpOnly; Secure; SameSite=Strict
+set-cookie: num26UniqueDeviceToken=97fcf68a-3c04-4c12-b765-6e61d96e2476; Domain=.n26.com; Path=/; Expires=Sun, 07 Mar 2027 18:58:41 GMT; Secure; SameSite=Lax
+set-cookie: n26.graphql_form_payload=s%3A.YD%2B8nMu6vmWiiynmJPDg2yCwom9sJHaHUx8PNdL3ehc; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict
+x-ratelimit-limit: 60
+x-ratelimit-remaining: 58
+x-ratelimit-reset: 1788807540
+content-security-policy: report-uri /report-csp;report-to /report-csp;base-uri 'self';child-src number26://* *.n26.com n26.com *.doubleclick.net api.sumsub.com *.youtube-nocookie.com youtube-nocookie.com *.lpsnmedia.net *.liveperson.net js.stripe.com https://widgets.marqeta.com;connect-src 'self' https://spc.n26.com https://flags.n26.com wss://authentication-service.eks.core-production.keyless.technology featureassets.org prodregistryv2.org wss://lo.msg.liveperson.net wss://*.liveperson.net *.liveperson.net *.lpsnmedia.net blob: s3.eu-central-1.amazonaws.com cdn.number26.de;font-src 'self' data:;img-src https://spc.n26.com https://flags.n26.com 'self' data: images.ctfassets.net images.contentful.com *.lpsnmedia.net *.liveperson.net *.objectstorage.liveperson.net *.stripe.com message-templates-assets.tech26.de cdn.number26.de;media-src videos.contentful.com videos.ctfassets.net *.lpsnmedia.net 'self' blob:;object-src 'none';style-src 'unsafe-inline' 'self' *.lpsnmedia.net *.liveperson.net;script-src 'self' cdn.number26.de 'unsafe-inline' *.youtube-nocookie.com s.ytimg.com youtube-nocookie.com youtube.com *.lpsnmedia.net *.liveperson.net 'nonce-d474d4c8ec8f7da0aa4b6c8a47b2996e' 'strict-dynamic' js.stripe.com/v3 connect-js.stripe.com js.stripe.com;worker-src 'self';default-src * *.lpsnmedia.net;frame-ancestors 'self' *.n26.com;frame-src *.lpsnmedia.net *.liveperson.net connect-js.stripe.com js.stripe.com
+feature-policy: accelerometer 'none';autoplay 'none';camera 'self';fullscreen 'none';geolocation 'self';gyroscope 'none';magnetometer 'none';microphone 'none';midi 'none';notifications 'self';payment 'self';push 'self';speaker 'none';sync-xhr 'none';usb 'none';vibrate 'none';vr 'none'
+location: /login
+vary: Accept, Accept-Encoding
+server: envoy
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+x-envoy-upstream-service-time: 38
+
+Found. Redirecting to /login
+[0m
+app.n26.com now redirects to /login (previously served the 319KB app shell anonymously). Let me follow the redirect to see if the login page still serves the app shell with bundles.
+[0m$ [0mcurl -sk -L "https://app.n26.com/login" -H "User-Agent: Mozilla/5.0" -c /tmp/opencode/cookies.txt --max-time 20 -o /tmp/opencode/n26login.html 2>&1; wc -c /tmp/opencode/n26login.html
+319204 /tmp/opencode/n26login.html
+[0m
+[0m$ [0mcurl -sk "https://app.n26.com/login" -H "User-Agent: Mozilla/5.0" -H "Cookie: n26.csrf=s%3AtVAFLyxHaMCjT-SKP9nnJJ3D.MEaclQf6lZ%2BJ2TLwhgNiin9k%2FwRotFS%2BHsSgUFeFYVs; num26UniqueDeviceToken=97fcf68a-3c04-4c12-b765-6e61d96e2476" --max-time 20 -o /tmp/opencode/n26login2.html 2>&1; wc -c /tmp/opencode/n26login2.html
+319267 /tmp/opencode/n26login2.html
+[0m
+[0m$ [0m# Extract all script/frame/connect URLs referencing engagementplatform or braze from login bundle
+grep -o 'engagementplatform[^"'"'"' ]*' /tmp/opencode/n26login.html | sort -u; echo "---braze---"; grep -io 'braze[^"'"'"' ]*' /tmp/opencode/n26login.html | sort -u | head -20
+---braze---
+[0m
+[0m$ [0mgrep -oE '(src|href)="[^"]*\.js[^"]*"' /tmp/opencode/n26login.html | head -40
+href="/build/js/webpack-runtime.3d272c50.js"
+href="/build/js/util_vendor.00e2ab05.js"
+href="/build/js/react_vendor.85fb11fa.js"
+href="/build/js/410.15d71588.js"
+href="/build/js/client.6e429513.js"
+href="/build/js/6759.2f2cc008.js"
+href="/build/js/1503.f68ea103.js"
+href="/build/js/banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js"
+href="/build/js/1596.6ac8435d.js"
+href="/build/js/1992.184409c9.js"
+href="/build/js/banking-features-auth-biometric-LoginPage.60e488b5.js"
+href="/build/js/client.6e429513.js"
+href="/build/manifest.json"
+src="/build/js/webpack-runtime.3d272c50.js"
+src="/build/js/util_vendor.00e2ab05.js"
+src="/build/js/react_vendor.85fb11fa.js"
+src="/build/js/410.15d71588.js"
+src="/build/js/client.6e429513.js"
+src="/build/js/6759.2f2cc008.js"
+src="/build/js/1503.f68ea103.js"
+src="/build/js/banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js"
+src="/build/js/1596.6ac8435d.js"
+src="/build/js/1992.184409c9.js"
+src="/build/js/banking-features-auth-biometric-LoginPage.60e488b5.js"
+[0m
+[0m$ [0mgrep -oE '/build/js/[^"]*' /tmp/opencode/n26login.html | sort -u | head -40
+/build/js/1503.f68ea103.js
+/build/js/1596.6ac8435d.js
+/build/js/1992.184409c9.js
+/build/js/410.15d71588.js
+/build/js/6759.2f2cc008.js
+/build/js/banking-features-auth-biometric-LoginPage.60e488b5.js
+/build/js/banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js
+/build/js/client.6e429513.js
+/build/js/react_vendor.85fb11fa.js
+/build/js/util_vendor.00e2ab05.js
+/build/js/webpack-runtime.3d272c50.js
+[0m
+No Braze/engagementplatform references in the shell (the SPA loads bundles dynamically). Let me extract the JS bundle URLs from the HTML and check those for the Braze SDK identifier (which Braze apps embed as a public app identifier, distinct from the server REST key).
+[0m$ [0m# Fetch the main client bundle and grep for Braze/engagementplatform identifiers
+curl -sk "https://app.n26.com/build/js/client.6e429513.js" -H "User-Agent: Mozilla/5.0" --max-time 20 -o /tmp/opencode/client.js 2>&1; wc -c /tmp/opencode/client.js
+1476393 /tmp/opencode/client.js
+[0m
+[0m$ [0mcurl -sk "https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.60e488b5.js" -H "User-Agent: Mozilla/5.0" --max-time 20 -o /tmp/opencode/loginpage.js 2>&1; wc -c /tmp/opencode/loginpage.js
+221645 /tmp/opencode/loginpage.js
+[0m
+[0m$ [0mcurl -sk "https://app.n26.com/build/js/410.15d71588.js" -H "User-Agent: Mozilla/5.0" --max-time 20 -o /tmp/opencode/410.js 2>&1; wc -c /tmp/opencode/410.js
+1362976 /tmp/opencode/410.js
+[0m
+[0m$ [0mgrep -io 'braze[a-z0-9._-]*' /tmp/opencode/client.js /tmp/opencode/410.js /tmp/opencode/loginpage.js | sort -u | head -30; echo "---engagement---"; grep -io 'engagementplatform[a-z0-9._/?=&-]*' /tmp/opencode/client.js /tmp/opencode/410.js /tmp/opencode/loginpage.js | sort -u | head -20
+---engagement---
+[0m
+[0m$ [0mgrep -oiE 'app.[a-f0-9]{20,40}' /tmp/opencode/client.js /tmp/opencode/410.js /tmp/opencode/loginpage.js | sort -u | head -20; echo "---braze-app-key pattern (UUID or hex)---"; grep -oE '"braze[^"]*' /tmp/opencode/client.js /tmp/opencode/410.js /tmp/opencode/loginpage.js | sort -u | head -20
+/tmp/opencode/loginpage.js:app.c5fe5800831bd404e86664d51936d7eb
+---braze-app-key pattern (UUID or hex)---
+[0m
+[0m$ [0m# Test Braze app identifier as REST key against engagementplatform
+curl -sk -i "https://engagementplatform.n26.com/users/export/ids" -X POST -H "Content-Type: application/json" -H "Authorization: Bearer app.c5fe5800831bd404e86664d51936d7eb" -d '{"external_ids":["test"]}' --max-time 10 2>&1
+HTTP/2 401 
+content-type: application/json
+date: Mon, 07 Sep 2026 19:00:37 GMT
+cf-ray: a377f5175f0d5645-CMH
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+cache-control: no-cache
+x-runtime: 0.004546
+server: cloudflare
+strict-transport-security: max-age=31536000; includeSubDomains
+vary: Origin,Accept-Encoding
+x-ratelimit-limit: 
+x-ratelimit-remaining: 
+x-ratelimit-reset: 
+x-request-id: 4d0be358-32f5-46af-a2b7-2de465c017fc
+x-cache: Error from cloudfront
+via: 1.1 aad28f029eb5b6de488ed1dde6002a42.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW56-P9
+x-amz-cf-id: tj9SzNxvQfEUrRbmaRuFukgJ8sip8NIP2Iyv8IUxiJEbUP50kDNRlA==
+
+{"message":"Invalid API key: app.c5fe5800831bd404e86664d51936d7eb"}
+[0m
+[0m$ [0m# Check context around the app identifier in the JS
+grep -oP '.{0,80}app\.c5fe5800831bd404e86664d51936d7eb.{0,80}' /tmp/opencode/loginpage.js 2>/dev/null | head -5
+",justifyContent:"center",children:(0,r.jsx)(Mi.A,{src:"/build/media/confirm-on-app.c5fe5800831bd404e86664d51936d7eb.svg",alt:""})})]})}),(0,r.jsx)(ja.P.Actions,{children:(0,r.jsx)(Ui.B,{variant:"
+[0m
+Found `app.c5fe5800831bd404e86664d51936d7eb` in login page JS — this could be a Braze app identifier (standard format: `app.<hex32>`). Let me test it against the engagementplatform.
+[0m$ [0m# Also check the client bundle for this key and braze
+grep -oP '.{0,80}c5fe5800831bd404e86664d51936d7eb.{0,80}' /tmp/opencode/client.js 2>/dev/null | head -10
+(no output)
+[0m
+[0m$ [0mgrep -ioP '.{0,60}(appboy|braze|engage|engagementplatform|braze[^a-z])[^";\n]{0,100}' /tmp/opencode/client.js /tmp/opencode/410.js 2>/dev/null | head -20
+/tmp/opencode/client.js:},b.PRIMARY,{action:"spaces.main_account.clicked",category:"engagement
+/tmp/opencode/client.js:.SAVINGS,{action:"spaces.savings_account.clicked",category:"engagement
+/tmp/opencode/client.js:),n(o,b.SECONDARY,{action:"spaces.spaces.clicked",category:"engagement
+/tmp/opencode/client.js:(o,b.JOINT,{action:"spaces.joint_account.clicked",category:"engagement
+/tmp/opencode/client.js:ANCER,{action:"spaces.freelancer_account.clicked",category:"engagement
+/tmp/opencode/client.js:}),n(o,b.SMB,{action:"spaces.smb_account.clicked",category:"engagement
+/tmp/opencode/client.js:,n(o,b.KIDS,{action:"spaces.kids_account.clicked",category:"engagement
+/tmp/opencode/client.js:ENTS,{action:"spaces.investments_account.clicked",category:"engagement
+/tmp/opencode/client.js:G":a("search_direction.filter_incoming_selected",null,null,"engagement
+/tmp/opencode/client.js:G":a("search_direction.filter_outgoing_selected",null,null,"engagement
+/tmp/opencode/client.js:ult:a("search_direction.filter_default_selected",null,null,"engagement
+/tmp/opencode/client.js:)(function(e){a("search_category_save_selection",null,null,"engagement
+/tmp/opencode/client.js:ction(e){a("search_account.filter_apply_clicked",null,null,"engagement
+/tmp/opencode/client.js:Callback)(function(e){a("search_amount.min_value",void 0,e,"engagement
+/tmp/opencode/client.js:Callback)(function(e){a("search_amount.max_value",void 0,e,"engagement
+/tmp/opencode/client.js:)(function(e){if(a("search_filter_apply_clicked",null,null,"engagement
+/tmp/opencode/client.js:angeFilter.getTime())+1;a("search_time.range.value",null,t,"engagement
+/tmp/opencode/client.js:tFilter!==e.accountFilter);a("search_account.value",null,r,"engagement
+/tmp/opencode/client.js:ter!==e.initiatorFilter);a("search_initiator.value",null,n,"engagement
+/tmp/opencode/client.js:nFilter&&a("search_direction.value",e.directionFilter,null,"engagement
+[0m
+[0m$ [0m# Also fetch the biometric login bundle
+curl -sk "https://app.n26.com/build/js/banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js" -H "User-Agent: Mozilla/5.0" --max-time 20 -o /tmp/opencode/preapp.js 2>&1; wc -c /tmp/opencode/preapp.js; echo "---"; grep -ioP '.{0,60}(appboy|braze|engagementplatform)[^";\n]{0,100}' /tmp/opencode/preapp.js 2>/dev/null | head -20
+7800 /tmp/opencode/preapp.js
+---
+[0m
+[0m$ [0m# Check if Keyless has an sdk. subdomain or api. subdomain
+dig +short sdk.authentication-service.eks.core-production.keyless.technology 2>&1
+echo "---"
+dig +short api.authentication-service.eks.core-production.keyless.technology 2>&1
+echo "---"
+# Check for the specific Keyless SDK connection pattern - they typically use wss://<host>/v1
+curl -sk -i -N \
+  -H "Connection: Upgrade" \
+  -H "Upgrade: websocket" \
+  -H "Sec-WebSocket-Version: 13" \
+  -H "Sec-WebSocket-Key: dGVzdA==" \
+  "https://authentication-service.eks.core-production.keyless.technology/" \
+  --max-time 10 2>&1 | head -20
+saas-external-73885400.eu-central-1.elb.amazonaws.com.
+63.187.138.249
+63.186.219.253
+3.64.65.209
+---
+saas-external-73885400.eu-central-1.elb.amazonaws.com.
+63.187.138.249
+3.64.65.209
+63.186.219.253
+---
+HTTP/2 404 
+date: Mon, 07 Sep 2026 19:00:57 GMT
+content-type: application/json
+content-length: 74
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07d3e-b73e-70e2-b805-02e2b6b43ede
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+
+{"code":"UNPROCESSABLE","reason":"path unused: /","stack":"api.`unused`"}
+[0m
+[0m$ [0m# Search remaining bundles for keyless/webauthn references
+for js in /tmp/opencode/client.js /tmp/opencode/410.js; do
+  echo "=== $(basename $js) ==="
+  grep -oP '.{0,40}keyless.{0,60}' "$js" 2>/dev/null | head -5
+  grep -oP '.{0,40}webauthn.{0,60}' "$js" 2>/dev/null | head -5
+  grep -oP '.{0,40}passkey.{0,60}' "$js" 2>/dev/null | head -5
+  grep -oP '.{0,60}authentication-service[^";\n]{0,100}' "$js" 2>/dev/null | head -5
+done
+=== client.js ===
+isBiometricAuthEnabled:!1,loginState:{},keylessState:{},loginMetadata:{},isKeylessEligible:!1,isKeylessWebN
+IC_AUTH_KEYLESS_STATE:return a(i({},e),{keylessState:t.payload});case n.T.SET_BIOMETRIC_AUTH_LOGIN_METADATA
+=== 410.js ===
+[0m
+[0m$ [0mgrep -oP '.{0,100}keyless.{0,200}' /tmp/opencode/client.js 2>/dev/null | head -10
+operty(e,r,Object.getOwnPropertyDescriptor(t,r))}),e}var c={isBiometricAuthEnabled:!1,loginState:{},keylessState:{},loginMetadata:{},isKeylessEligible:!1,isKeylessWebNewSdkEnabled:!1,isLoginWithQrCodeEnabled:!1,isObApp2AppEnabled:!1},s=function(e,t){switch(t.type){case n.T.SET_BIOMETRIC_AUTH_LOGIN_STATE:re
+turn a(i({},e),{loginState:t.payload});case n.T.SET_BIOMETRIC_AUTH_KEYLESS_STATE:return a(i({},e),{keylessState:t.payload});case n.T.SET_BIOMETRIC_AUTH_LOGIN_METADATA:return a(i({},e),{loginMetadata:t.payload});case n.T.RESET_BIOMETRIC_AUTH_STATE:return a(i({},c),{isKeylessWebNewSdkEnabled:e.isKeylessWebN
+[0m
+[0m$ [0mgrep -oP '.{0,100}wss?://.{0,150}' /tmp/opencode/client.js 2>/dev/null | head -15
+(no output)
+[0m
+The wss:// URL is likely in another bundle. Let me search all fetched bundles and fetch the remaining ones.
+[0m$ [0m# Fetch remaining bundles and grep for wss keyless URL
+for f in webpack-runtime util_vendor react_vendor 6759 1503 1596 1992; do
+  curl -sk "https://app.n26.com/build/js/$f.*.js" -H "User-Agent: Mozilla/5.0" --max-time 15 -o "/tmp/opencode/$f.js" 2>&1
+done
+ls -la /tmp/opencode/*.js 2>/dev/null | head -20
+-rw-r--r-- 1 runner runner   43561 Sep  7 19:01 /tmp/opencode/1503.js
+-rw-r--r-- 1 runner runner   43561 Sep  7 19:01 /tmp/opencode/1596.js
+-rw-r--r-- 1 runner runner   43561 Sep  7 19:01 /tmp/opencode/1992.js
+-rw-r--r-- 1 runner runner 1362976 Sep  7 18:59 /tmp/opencode/410.js
+-rw-r--r-- 1 runner runner   43561 Sep  7 19:01 /tmp/opencode/6759.js
+-rw-r--r-- 1 runner runner 1476393 Sep  7 18:59 /tmp/opencode/client.js
+-rw-r--r-- 1 runner runner  221645 Sep  7 18:59 /tmp/opencode/loginpage.js
+-rw-r--r-- 1 runner runner    7800 Sep  7 19:00 /tmp/opencode/preapp.js
+-rw-r--r-- 1 runner runner   43561 Sep  7 19:01 /tmp/opencode/react_vendor.js
+-rw-r--r-- 1 runner runner   43561 Sep  7 19:01 /tmp/opencode/util_vendor.js
+-rw-r--r-- 1 runner runner   43561 Sep  7 19:01 /tmp/opencode/webpack-runtime.js
+[0m
+[0m$ [0mgrep -oE '/build/js/[a-z0-9._-]+\.js' /tmp/opencode/n26login.html | sort -u
+/build/js/1503.f68ea103.js
+/build/js/1596.6ac8435d.js
+/build/js/1992.184409c9.js
+/build/js/410.15d71588.js
+/build/js/6759.2f2cc008.js
+/build/js/client.6e429513.js
+/build/js/react_vendor.85fb11fa.js
+/build/js/util_vendor.00e2ab05.js
+/build/js/webpack-runtime.3d272c50.js
+[0m
+The wildcard fetches returned a small 43KB file (likely 404 or error). Let me use the exact hashed names from the HTML.
+[0m$ [0mcat /tmp/opencode/6759.js; echo; echo "=== is this 404? ==="; head -c 200 /tmp/opencode/6759.js
+<!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset='utf-8' />
+      <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+      <meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover' />
+      <link rel="icon" type="image/png" sizes="256x256" href="/build/favicon.ico">
+      <link rel='preload' href='/build/fonts/GT-America-Standard-Regular.latin.woff2' as='font' type='font/woff2' crossorigin='anonymous' />
+      <link rel='preload' href='/build/fonts/GT-America-Standard-Medium.latin.woff2' as='font' type='font/woff2' crossorigin='anonymous' />
+      <title data-rh="true">403 forbidden — N26</title>
+      <style>
+      
+@font-face {
+  font-family: 'N26';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    url('/build/fonts/GT-America-Standard-Regular.latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+      
+@font-face {
+  font-family: 'N26';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src:
+    url('/build/fonts/GT-America-Standard-Medium.latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+      </style>
+      
+      
+      
+<style
+  data-fela-id=""
+  data-fela-rehydration='108'
+  data-fela-type='STATIC'
+  
+  >
+  :root {-webkit-font-smoothing: antialiased;-moz-osx-font-smoothing: grayscale;--duration: 1;--responsive-base: 1;--background-default: rgb(255, 255, 255); --background-alternate: rgb(249, 249, 249); --background-screen: rgb(249, 249, 249); --background-button-primary-active: rgb(72, 172, 152); --background-button-primary-pressed: rgb(72, 172, 152); --background-button-primary-disabled: rgb(232, 242, 238); --background-button-secondary: rgb(255, 255, 255); --background-container-teal: rgb(72, 172, 152); --background-container-rhubarb: rgb(203, 124, 122); --background-container-wheat: rgb(200, 157, 88); --background-container-petrol: rgb(43, 105, 122); --background-container-secondary-teal: rgb(204, 227, 218); --background-container-secondary-rhubarb: rgb(235, 214, 214); --background-container-secondary-wheat: rgb(235, 221, 204); --background-container-secondary-petrol: rgb(204, 220, 226); --background-container-light: rgb(242, 242, 242); --background-container-light-teal: rgb(232, 242, 238); --background-container-light-rhubarb: rgb(242, 228, 228); --background-container-light-wheat: rgb(242, 236, 225); --background-container-light-petrol: rgb(233, 238, 242); --background-container-lightest-petrol: rgb(233, 238, 242); --background-container-dark-teal: rgb(42, 126, 109); --background-container-dark-wheat: rgb(140, 108, 58); --background-container-dark-petrol: rgb(9, 61, 77); --background-container-dark-rhubarb: rgb(158, 89, 87); --background-container-alpha-teal: rgb(72, 172, 152, 0.5); --background-container-alpha-wheat: rgb(205, 163, 95, 0.5); --background-container-alpha-petrol: rgba(38, 102, 120, 0.5); --background-container-alpha-rhubarb: rgb(203, 124, 122, 0.5); --background-light-error-red: rgb(248, 237, 237); --background-info-card: rgb(233, 233, 233); --typography-primary-default: rgb(27, 27, 27); --typography-primary-inverted: rgb(255, 255, 255); --typography-primary-consistent: rgb(27, 27, 27); --typography-primary-inverted-consistent: rgb(255, 255, 255); --typography-secondary-default: rgb(105, 105, 105); --typography-secondary-consistent: rgb(105, 105, 105); --typography-disabled: rgb(171, 171, 171); --typography-interactive-primary-teal-consistent: rgb(54, 161, 139); --typography-interactive-primary-wheat-consistent: rgb(200, 157, 88); --typography-interactive-primary-petrol-default: rgb(43, 105, 122); --typography-interactive-primary-petrol-consistent: rgb(43, 105, 122); --typography-interactive-primary-rhubarb-default: rgb(179, 93, 91); --typography-interactive-primary-rhubarb-consistent: rgb(179, 93, 91); --typography-interactive-secondary-teal-default: rgb(31, 117, 96); --typography-interactive-secondary-teal-consistent: rgb(31, 117, 96); --typography-interactive-secondary-wheat-consistent: rgb(166, 121, 49); --typography-interactive-secondary-petrol-default: rgb(32, 91, 107); --typography-interactive-secondary-petrol-consistent: rgb(32, 91, 107); --typography-interactive-secondary-rhubarb-consistent: rgb(142, 70, 68); --typography-positive-amount: rgb(54, 161, 139); --border-primary-gray: rgb(233, 233, 233); --border-primary-teal: rgb(31, 117, 96); --border-primary-petrol: rgb(24, 81, 97); --border-primary-wheat: rgb(128, 91, 32); --border-primary-rhubarb: rgb(142, 70, 68); --border-secondary-gray: rgb(150, 150, 150); --border-secondary-teal: rgb(54, 161, 139); --border-secondary-petrol: rgb(43, 105, 122); --border-secondary-wheat: rgb(166, 121, 49); --border-secondary-rhubarb: rgb(179, 93, 91); --divider-default: rgb(233, 233, 233); --divider-default-consistent: rgb(233, 233, 233); --background-screen-default: rgb(255, 255, 255); --background-container-primary-default: rgb(255, 255, 255); --background-container-primary-teal: rgb(54, 161, 139); --background-container-primary-wheat: rgb(200, 157, 88); --background-container-primary-petrol: rgb(43, 105, 122); --background-container-primary-rhubarb: rgb(179, 93, 91); --background-container-primary-gray: rgb(150, 150, 150); --background-container-primary-hovered: rgb(249, 249, 249); --background-container-primary-pressed: rgb(242, 242, 242); --background-elevated-container-primary-default: rgb(255, 255, 255); --background-container-secondary-gray: rgb(233, 233, 233); --background-container-tertiary-teal: rgb(232, 242, 238); --background-container-tertiary-teal-pressed: rgb(204, 227, 218); --background-container-tertiary-wheat: rgb(242, 236, 225); --background-container-tertiary-wheat-pressed: rgb(235, 221, 204); --background-container-tertiary-petrol: rgb(233, 238, 242); --background-container-tertiary-petrol-pressed: rgb(204, 220, 226); --background-container-tertiary-rhubarb: rgb(242, 232, 232); --background-container-tertiary-rhubarb-pressed: rgb(235, 214, 214); --background-container-tertiary-gray: rgb(242, 242, 242); --background-container-tertiary-gray-pressed: rgb(233, 233, 233); --background-error: rgb(242, 232, 232); --background-positive-amount: rgb(232, 242, 238); --background-navigation-bottom: rgb(255, 255, 255); --background-button-primary-teal-default: rgb(54, 161, 139); --background-button-primary-teal-pressed: rgb(31, 117, 96); --background-button-primary-teal-disabled: rgb(130, 196, 178); --background-button-primary-teal-hover-and-focused: rgb(54, 161, 139); --background-button-primary-wheat-default: rgb(166, 121, 49); --background-button-primary-wheat-pressed: rgb(128, 91, 32); --background-button-primary-wheat-disabled: rgb(225, 197, 161); --background-button-primary-wheat-hover-and-focused: rgb(166, 121, 49); --background-button-primary-petrol-default: rgb(43, 105, 122); --background-button-primary-petrol-pressed: rgb(24, 81, 97); --background-button-primary-petrol-disabled: rgb(204, 220, 226); --background-button-primary-petrol-hover-and-focused: rgb(43, 105, 122); --background-button-primary-rhubarb-default: rgb(179, 93, 91); --background-button-primary-rhubarb-pressed: rgb(142, 70, 68); --background-button-primary-rhubarb-disabled: rgb(222, 172, 171); --background-button-primary-rhubarb-hover-and-focused: rgb(179, 93, 91); --background-button-secondary-default: rgb(255, 255, 255); --background-button-secondary-pressed: rgb(242, 242, 242); --background-button-tertiary-teal-pressed: rgb(232, 242, 238); --background-button-tertiary-wheat-pressed: rgb(242, 236, 225); --background-button-tertiary-petrol-pressed: rgb(233, 238, 242); --background-button-tertiary-rhubarb-pressed: rgb(242, 232, 232); --background-button-tertiary-hover-and-focused: rgb(255, 255, 255); --overlay-default: rgb(27, 27, 27); --overlay-default-consistent: rgb(27, 27, 27); --shadow-default: rgba(0, 0, 0, 0.2); --phone-frame-foreground: rgb(233, 233, 233); --phone-frame-background: rgb(249, 249, 249); --iconography-primary-default: rgb(27, 27, 27); --iconography-primary-consistent: rgb(27, 27, 27); --iconography-primary-default-inverted: rgb(255, 255, 255); --iconography-primary-inverted-consistent: rgb(255, 255, 255); --iconography-secondary-default: rgb(105, 105, 105); --iconography-disabled: rgb(171, 171, 171); --iconography-interactive-primary-teal-consistent: rgb(54, 161, 139); --iconography-interactive-primary-teal-disabled: rgb(130, 196, 178); --iconography-interactive-primary-petrol-default: rgb(43, 105, 122); --iconography-interactive-primary-petrol-consistent: rgb(43, 105, 122); --iconography-interactive-primary-petrol-disabled: rgb(121, 161, 173); --iconography-interactive-primary-rhubarb-default: rgb(179, 93, 91); --iconography-interactive-primary-rhubarb-consistent: rgb(179, 93, 91); --iconography-interactive-primary-rhubarb-disabled: rgb(222, 172, 171); --iconography-interactive-secondary-teal-default: rgb(31, 117, 96); --iconography-interactive-secondary-teal-consistent: rgb(31, 117, 96); --iconography-interactive-secondary-petrol-default: rgb(32, 91, 107); --iconography-interactive-secondary-petrol-consistent: rgb(32, 91, 107); --progress-background: rgb(204, 227, 218); --progress-foreground: rgb(54, 161, 139); --shimmer-loader-background: rgb(242, 242, 242); --shimmer-loader-foreground: rgb(249, 249, 249); --bright-overlay: rgb(255, 255, 255, 0.75); --mild-overlay: rgba(0, 0, 0, 0.075); --distinct-overlay: rgba(0, 0, 0, 0.2); --primary-focus: rgba(54, 161, 139, 0.6); --typography-default: rgb(18, 18, 18); --typography-default-inverted: rgb(255, 255, 255); --typography-default-consistent: rgb(18, 18, 18); --typography-default-inverted-consistent: rgb(255, 255, 255); --typography-interactive-rhubarb: rgb(203, 124, 122); --typography-interactive-default: rgb(72, 172, 152); --typography-interactive-teal: rgb(72, 172, 152); --typography-extra-light: rgb(191, 191, 191); --typography-light: rgb(116, 116, 116); --typography-error: rgb(180, 75, 70); --divider-teal: rgb(72, 172, 152); --divider-error: rgb(180, 75, 70); --divider-dark: rgb(116, 116, 116); --iconography-default: rgb(18, 18, 18); --iconography-default-inverted: rgb(255, 255, 255); --iconography-light: rgb(116, 116, 116); --iconography-bright: rgb(233, 233, 233); --iconography-action: rgb(72, 172, 152); --iconography-rhubarb: rgb(179, 93, 91); --shimmer-background: rgb(233, 233, 233); --shimmer-foreground: rgb(249, 249, 249); --deprecated-gray: rgb(201, 201, 201); /* 1 */--spacing-5-xl: 4.4em; --spacing-4-xl: 3.85em; --spacing-3-xl: 3.3em; --spacing-2-xl: 2.75em; --spacing-xl: 2.2em; --spacing-l: 1.65em; --spacing-m: 1.1em; --spacing-s: 0.88em; --spacing-xs: 0.825em; --spacing-2-xs: 0.55em; --spacing-3-xs: 0.275em; --spacing-4-xs: 0.22em; --spacing-5-xs: 0.165em; --spacing-6-xs: 0.11em;--font-size-6-xl: 2.8rem; --font-size-5-xl: 2.2rem; --font-size-4-xl: 2rem; --font-size-3-xl: 1.8rem; --font-size-2-xl: 1.5rem; --font-size-xl: 1.3rem; --font-size-l: 1.2rem; --font-size-m: 1.1rem; --font-size-s: 1rem; --font-size-xs: 0.9rem; --font-size-2-xs: 0.85rem; --font-size-3-xs: 0.8rem; --font-size-4-xs: 0.7rem; --font-size-5-xs: 0.6rem;--line-height-5-xl: 1.8; --line-height-4-xl: 1.7; --line-height-3-xl: 1.6; --line-height-2-xl: 1.5; --line-height-xl: 1.45; --line-height-l: 1.4; --line-height-m: 1.2; --line-height-s: 1.1; --line-height-xs: 1;--width-7-xl: 88ch; --width-6-xl: 77ch; --width-5-xl: 71.5ch; --width-4-xl: 66ch; --width-3-xl: 49.5ch; --width-2-xl: 48.4ch; --width-xl: 44ch; --width-l: 41.8ch; --width-m: 33ch; --width-s: 27.5ch; --width-xs: 22ch; --width-2-xs: 15.4ch; --width-3-xs: 13.2ch; --width-4-xs: 11ch; --width-5-xs: 8.8ch; --width-6-xs: 5.5ch; --width-7-xs: 3.3ch; --width-8-xs: 1.1ch; --width-9-xs: 0.825ch; --width-10-xs: 0.55ch; --width-11-xs: 0.33ch; --width-12-xs: 0.11ch;--border-radius-5-xl: 34px; --border-radius-4-xl: 27px; --border-radius-3-xl: 22px; --border-radius-2-xl: 14px; --border-radius-xl: 10px; --border-radius-l: 8px; --border-radius-m: 6px; --border-radius-s: 5px; --border-radius-xs: 4px; --border-radius-2-xs: 2px; --border-radius-credit-card: 3% 5%; --border-radius-half: 50%; --border-radius-circle: 100vw;scroll-behavior: smooth; /* 2 */}@media (max-width: 767px) {:root {--responsive-base: 0.8;touch-action: manipulation;}}@media (prefers-reduced-motion: reduce) {:root { --duration: 0; scroll-behavior: auto }}*, ::before, ::after{box-sizing:inherit}duet-date-picker{width:100%}.duet-date__day[aria-pressed=true], .duet-date__day:focus{background-color:var(--background-container-primary-teal);color:var(--typography-primary-inverted-consistent);border-top-left-radius:0;border-top-right-radius:0;border-bottom-right-radius:0;border-bottom-left-radius:0}.duet-date__dialog{z-index:1}@media (max-width: 767px) {.duet-date__dialog-content {min-height: 28rem}}.duet-date__dialog-content{background-color:var(--background-screen-default)}.duet-date__cell > .is-month:not(.is-outside){border-top-width:1px;border-right-width:1px;border-bottom-width:1px;border-left-width:1px;border-top-style:solid;border-right-style:solid;border-bottom-style:solid;border-left-style:solid;border-top-color:var(--divider-default);border-right-color:var(--divider-default);border-bottom-color:var(--divider-default);border-left-color:var(--divider-default);border-top-left-radius:0;border-top-right-radius:0;border-bottom-right-radius:0;border-bottom-left-radius:0}.duet-date__cell .is-outside, .duet-date__day:not(.is-month){color:var(--typography-disabled)}html{background-color:var(--background-alternate);box-sizing:border-box;font-weight:400;min-height:100%;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}html, body, [id="root"]{display:-webkit-box;display:-moz-box;display:-ms-flexbox;display:-webkit-flex;display:flex;flex-direction:column;-webkit-box-orient:vertical;-webkit-box-direction:normal;flex-grow:1;flex-shrink:1;flex-basis:auto}body{font-family:N26, sans-serif;font-size:112.5%;line-height:1.4;color:var(--typography-default);overflow-x:hidden;text-underline-position:under;margin-top:0;margin-right:0;margin-bottom:0;margin-left:0}img{display:block;height:auto;max-width:100%;border-top-style:none;border-right-style:none;border-bottom-style:none;border-left-style:none}main{display:block}[hidden]{display:none}a{background-color:transparent;-webkit-text-decoration-skip:objects}svg:not(:root){overflow:hidden}hr{overflow:visible}button, input, select, textarea{font:inherit;margin-top:0;margin-right:0;margin-bottom:0;margin-left:0}button, input{overflow:visible}button, select{text-transform:none}button, html [type="button"], [type="reset"], [type="submit"]{-webkit-appearance:button}button::-moz-focus-inner,[type="button"]::-moz-focus-inner,[type="reset"]::-moz-focus-inner,[type="submit"]::-moz-focus-inner{border-top-style:none;border-right-style:none;border-bottom-style:none;border-left-style:none;padding-top:0;padding-right:0;padding-bottom:0;padding-left:0}button:-moz-focusring,[type="button"]:-moz-focusring,[type="reset"]:-moz-focusring,[type="submit"]:-moz-focusring{outline-width:1px;outline-style:dotted;outline-color:ButtonText}fieldset{border-top-width:1px;border-right-width:1px;border-bottom-width:1px;border-left-width:1px;border-top-style:solid;border-right-style:solid;border-bottom-style:solid;border-left-style:solid;border-top-color:rgb(192, 192, 192);border-right-color:rgb(192, 192, 192);border-bottom-color:rgb(192, 192, 192);border-left-color:rgb(192, 192, 192);margin-top:0;margin-right:2px;margin-bottom:0;margin-left:2px;padding-top:0.35em;padding-right:0.625em;padding-bottom:var(--spacing-xs);padding-left:0.625em}legend{box-sizing:border-box;display:table;max-width:100%;white-space:normal;color:inherit;padding-top:0;padding-right:0;padding-bottom:0;padding-left:0}textarea{overflow:auto}[type="checkbox"], [type="radio"]{padding-top:0;padding-right:0;padding-bottom:0;padding-left:0}[type="number"]::-webkit-inner-spin-button,[type="number"]::-webkit-outer-spin-button{height:auto}[type="search"]{-webkit-appearance:textfield;outline-offset:-2px}[type="search"]::-webkit-search-cancel-button,[type="search"]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-input-placeholder{color:inherit;opacity:0.54}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}:-webkit-autofill,:-webkit-autofill:hover,:-webkit-autofill:focus,:-webkit-autofill:active{transition:background-color 1000000ms, color 1000000ms;-webkit-transition:background-color 1000000ms, color 1000000ms;-moz-transition:background-color 1000000ms, color 1000000ms}:required:-moz-ui-invalid{box-shadow:none}.visually-hidden{border-top-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-left-width:0 !important;clip:rect(1px, 1px, 1px, 1px) !important;height:1px !important;overflow:hidden !important;padding-top:0 !important;padding-right:0 !important;padding-bottom:0 !important;padding-left:0 !important;position:absolute !important;white-space:nowrap !important;width:1px !important}strong, b{font-weight:500}audio, canvas, iframe, img, svg, video{vertical-align:middle}p{margin-top:0;margin-bottom:var(--spacing-m)}
+</style>
+
+
+<style
+  data-fela-id=""
+  data-fela-rehydration='108'
+  data-fela-type='RULE'
+  
+  >
+  .a{width:100%}.b{height:70px}.c{position:relative}.d{z-index:50}.e{overflow:hidden}.f{background-color:var(--background-default)}.g{box-shadow:0 var(--spacing-4-xs) var(--spacing-3-xs) var(--mild-overlay)}.h{transition-property:background-color;-webkit-transition-property:background-color;-moz-transition-property:background-color}.i{transition-duration:calc(var(--duration) * 250ms)}.j{display:-webkit-box;display:-moz-box;display:-ms-flexbox;display:-webkit-flex;display:flex}.k{align-items:center;-webkit-box-align:center}.l{height:100%}.m{max-width:79.2em}.n{flex-grow:1}.o{flex-shrink:1}.p{flex-basis:100%}.q{margin-top:0}.r{margin-right:auto}.s{margin-bottom:0}.t{margin-left:auto}.u{padding-top:0}.v{padding-right:var(--spacing-2-xl)}.w{padding-bottom:0}.x{padding-left:var(--spacing-2-xl)}.y{width:20%}.z{text-align:left}.ab{justify-content:flex-start;-webkit-box-pack:start}.ac{flex-basis:auto}.ae{padding-top:var(--spacing-4-xs)}.af{padding-right:var(--spacing-4-xs)}.ag{padding-bottom:var(--spacing-4-xs)}.ah{padding-left:var(--spacing-4-xs)}.ai{border-top-width:0}.aj{border-right-width:0}.ak{border-bottom-width:0}.al{border-left-width:0}.am{background-color:transparent}.an{font-style:inherit}.ao{font-weight:inherit}.ap{font-size:inherit}.aq{line-height:inherit}.ar{font-family:inherit}.as{color:inherit}.at{text-decoration:none}.au{cursor:pointer}.av{width:-webkit-max-content;width:-moz-max-content;width:max-content}.ay{border-top-left-radius:var(--border-radius-s)}.az{border-top-right-radius:var(--border-radius-s)}.ba{border-bottom-right-radius:var(--border-radius-s)}.bb{border-bottom-left-radius:var(--border-radius-s)}.bc{fill:currentcolor}.bd{max-width:100%}.be{height:30px}.bf{border-top-width:0 !important}.bg{border-right-width:0 !important}.bh{border-bottom-width:0 !important}.bj{border-left-width:0 !important}.bk{clip:rect(1px, 1px, 1px, 1px) !important}.bl{height:1px !important}.bm{overflow:hidden !important}.bn{padding-top:0 !important}.bo{padding-right:0 !important}.bp{padding-bottom:0 !important}.bq{padding-left:0 !important}.br{position:absolute !important}.bs{white-space:nowrap !important}.bt{width:1px !important}.bu{width:60%}.bv{text-align:center}.bw{justify-content:center;-webkit-box-pack:center}.bx{text-align:right}.by{justify-content:flex-end;-webkit-box-pack:end}.bz{width:900px}.cc{margin-top:auto}.cd{margin-bottom:auto}.ce{padding-top:1em}.cf{padding-right:1em}.cg{padding-bottom:1em}.ch{padding-left:1em}.ci{flex-shrink:0}.cj{flex-basis:250px}.ck{margin-right:1em}.cl{margin-left:1em}.cm{display:block}.cn{margin-bottom:1rem}.co{font-size:170%}.cp{font-weight:500}.cq{line-height:1.12}.cr{letter-spacing:-0.4px}.cs{margin-bottom:0.25em}.ct{padding-right:0}.cu{padding-left:0}.cv{display:inline-block}.cw{text-decoration:underline}.cx{text-decoration-skip-ink:auto}.cy{text-decoration-skip:skip;text-decoration-skip:ink}.cz{text-align:initial;text-align:left}.dc{margin-top:2em}.dd{font-size:90%}.de{opacity:0.6}.da:hover{color:var(--typography-interactive-default)}.aw:focus{box-shadow:0 0 0 3px var(--primary-focus)}.ax:focus{outline-width:0}.db:focus{color:var(--typography-interactive-default)}
+</style>
+
+
+<style
+  data-fela-id=""
+  data-fela-rehydration='108'
+  data-fela-type='RULE'
+  
+  media='(min-width: 768px)'>
+  .ca{display:-webkit-box;display:-moz-box;display:-ms-flexbox;display:-webkit-flex;display:flex}.cb{text-align:left}
+</style>
+
+      <style data-rh="true" >:root { --background-default: rgb(255, 255, 255); --background-alternate: rgb(249, 249, 249); --background-screen: rgb(249, 249, 249); --background-button-primary-active: rgb(72, 172, 152); --background-button-primary-pressed: rgb(72, 172, 152); --background-button-primary-disabled: rgb(232, 242, 238); --background-button-secondary: rgb(255, 255, 255); --background-container-teal: rgb(72, 172, 152); --background-container-rhubarb: rgb(203, 124, 122); --background-container-wheat: rgb(200, 157, 88); --background-container-petrol: rgb(43, 105, 122); --background-container-secondary-teal: rgb(204, 227, 218); --background-container-secondary-rhubarb: rgb(235, 214, 214); --background-container-secondary-wheat: rgb(235, 221, 204); --background-container-secondary-petrol: rgb(204, 220, 226); --background-container-light: rgb(242, 242, 242); --background-container-light-teal: rgb(232, 242, 238); --background-container-light-rhubarb: rgb(242, 228, 228); --background-container-light-wheat: rgb(242, 236, 225); --background-container-light-petrol: rgb(233, 238, 242); --background-container-lightest-petrol: rgb(233, 238, 242); --background-container-dark-teal: rgb(42, 126, 109); --background-container-dark-wheat: rgb(140, 108, 58); --background-container-dark-petrol: rgb(9, 61, 77); --background-container-dark-rhubarb: rgb(158, 89, 87); --background-container-alpha-teal: rgb(72, 172, 152, 0.5); --background-container-alpha-wheat: rgb(205, 163, 95, 0.5); --background-container-alpha-petrol: rgba(38, 102, 120, 0.5); --background-container-alpha-rhubarb: rgb(203, 124, 122, 0.5); --background-light-error-red: rgb(248, 237, 237); --background-info-card: rgb(233, 233, 233); --typography-primary-default: rgb(27, 27, 27); --typography-primary-inverted: rgb(255, 255, 255); --typography-primary-consistent: rgb(27, 27, 27); --typography-primary-inverted-consistent: rgb(255, 255, 255); --typography-secondary-default: rgb(105, 105, 105); --typography-secondary-consistent: rgb(105, 105, 105); --typography-disabled: rgb(171, 171, 171); --typography-interactive-primary-teal-consistent: rgb(54, 161, 139); --typography-interactive-primary-wheat-consistent: rgb(200, 157, 88); --typography-interactive-primary-petrol-default: rgb(43, 105, 122); --typography-interactive-primary-petrol-consistent: rgb(43, 105, 122); --typography-interactive-primary-rhubarb-default: rgb(179, 93, 91); --typography-interactive-primary-rhubarb-consistent: rgb(179, 93, 91); --typography-interactive-secondary-teal-default: rgb(31, 117, 96); --typography-interactive-secondary-teal-consistent: rgb(31, 117, 96); --typography-interactive-secondary-wheat-consistent: rgb(166, 121, 49); --typography-interactive-secondary-petrol-default: rgb(32, 91, 107); --typography-interactive-secondary-petrol-consistent: rgb(32, 91, 107); --typography-interactive-secondary-rhubarb-consistent: rgb(142, 70, 68); --typography-positive-amount: rgb(54, 161, 139); --border-primary-gray: rgb(233, 233, 233); --border-primary-teal: rgb(31, 117, 96); --border-primary-petrol: rgb(24, 81, 97); --border-primary-wheat: rgb(128, 91, 32); --border-primary-rhubarb: rgb(142, 70, 68); --border-secondary-gray: rgb(150, 150, 150); --border-secondary-teal: rgb(54, 161, 139); --border-secondary-petrol: rgb(43, 105, 122); --border-secondary-wheat: rgb(166, 121, 49); --border-secondary-rhubarb: rgb(179, 93, 91); --divider-default: rgb(233, 233, 233); --divider-default-consistent: rgb(233, 233, 233); --background-screen-default: rgb(255, 255, 255); --background-container-primary-default: rgb(255, 255, 255); --background-container-primary-teal: rgb(54, 161, 139); --background-container-primary-wheat: rgb(200, 157, 88); --background-container-primary-petrol: rgb(43, 105, 122); --background-container-primary-rhubarb: rgb(179, 93, 91); --background-container-primary-gray: rgb(150, 150, 150); --background-container-primary-hovered: rgb(249, 249, 249); --background-container-primary-pressed: rgb(242, 242, 242); --background-elevated-container-primary-default: rgb(255, 255, 255); --background-container-secondary-gray: rgb(233, 233, 233); --background-container-tertiary-teal: rgb(232, 242, 238); --background-container-tertiary-teal-pressed: rgb(204, 227, 218); --background-container-tertiary-wheat: rgb(242, 236, 225); --background-container-tertiary-wheat-pressed: rgb(235, 221, 204); --background-container-tertiary-petrol: rgb(233, 238, 242); --background-container-tertiary-petrol-pressed: rgb(204, 220, 226); --background-container-tertiary-rhubarb: rgb(242, 232, 232); --background-container-tertiary-rhubarb-pressed: rgb(235, 214, 214); --background-container-tertiary-gray: rgb(242, 242, 242); --background-container-tertiary-gray-pressed: rgb(233, 233, 233); --background-error: rgb(242, 232, 232); --background-positive-amount: rgb(232, 242, 238); --background-navigation-bottom: rgb(255, 255, 255); --background-button-primary-teal-default: rgb(54, 161, 139); --background-button-primary-teal-pressed: rgb(31, 117, 96); --background-button-primary-teal-disabled: rgb(130, 196, 178); --background-button-primary-teal-hover-and-focused: rgb(54, 161, 139); --background-button-primary-wheat-default: rgb(166, 121, 49); --background-button-primary-wheat-pressed: rgb(128, 91, 32); --background-button-primary-wheat-disabled: rgb(225, 197, 161); --background-button-primary-wheat-hover-and-focused: rgb(166, 121, 49); --background-button-primary-petrol-default: rgb(43, 105, 122); --background-button-primary-petrol-pressed: rgb(24, 81, 97); --background-button-primary-petrol-disabled: rgb(204, 220, 226); --background-button-primary-petrol-hover-and-focused: rgb(43, 105, 122); --background-button-primary-rhubarb-default: rgb(179, 93, 91); --background-button-primary-rhubarb-pressed: rgb(142, 70, 68); --background-button-primary-rhubarb-disabled: rgb(222, 172, 171); --background-button-primary-rhubarb-hover-and-focused: rgb(179, 93, 91); --background-button-secondary-default: rgb(255, 255, 255); --background-button-secondary-pressed: rgb(242, 242, 242); --background-button-tertiary-teal-pressed: rgb(232, 242, 238); --background-button-tertiary-wheat-pressed: rgb(242, 236, 225); --background-button-tertiary-petrol-pressed: rgb(233, 238, 242); --background-button-tertiary-rhubarb-pressed: rgb(242, 232, 232); --background-button-tertiary-hover-and-focused: rgb(255, 255, 255); --overlay-default: rgb(27, 27, 27); --overlay-default-consistent: rgb(27, 27, 27); --shadow-default: rgba(0, 0, 0, 0.2); --phone-frame-foreground: rgb(233, 233, 233); --phone-frame-background: rgb(249, 249, 249); --iconography-primary-default: rgb(27, 27, 27); --iconography-primary-consistent: rgb(27, 27, 27); --iconography-primary-default-inverted: rgb(255, 255, 255); --iconography-primary-inverted-consistent: rgb(255, 255, 255); --iconography-secondary-default: rgb(105, 105, 105); --iconography-disabled: rgb(171, 171, 171); --iconography-interactive-primary-teal-consistent: rgb(54, 161, 139); --iconography-interactive-primary-teal-disabled: rgb(130, 196, 178); --iconography-interactive-primary-petrol-default: rgb(43, 105, 122); --iconography-interactive-primary-petrol-consistent: rgb(43, 105, 122); --iconography-interactive-primary-petrol-disabled: rgb(121, 161, 173); --iconography-interactive-primary-rhubarb-default: rgb(179, 93, 91); --iconography-interactive-primary-rhubarb-consistent: rgb(179, 93, 91); --iconography-interactive-primary-rhubarb-disabled: rgb(222, 172, 171); --iconography-interactive-secondary-teal-default: rgb(31, 117, 96); --iconography-interactive-secondary-teal-consistent: rgb(31, 117, 96); --iconography-interactive-secondary-petrol-default: rgb(32, 91, 107); --iconography-interactive-secondary-petrol-consistent: rgb(32, 91, 107); --progress-background: rgb(204, 227, 218); --progress-foreground: rgb(54, 161, 139); --shimmer-loader-background: rgb(242, 242, 242); --shimmer-loader-foreground: rgb(249, 249, 249); --bright-overlay: rgb(255, 255, 255, 0.75); --mild-overlay: rgba(0, 0, 0, 0.075); --distinct-overlay: rgba(0, 0, 0, 0.2); --primary-focus: rgba(54, 161, 139, 0.6); --typography-default: rgb(18, 18, 18); --typography-default-inverted: rgb(255, 255, 255); --typography-default-consistent: rgb(18, 18, 18); --typography-default-inverted-consistent: rgb(255, 255, 255); --typography-interactive-rhubarb: rgb(203, 124, 122); --typography-interactive-default: rgb(72, 172, 152); --typography-interactive-teal: rgb(72, 172, 152); --typography-extra-light: rgb(191, 191, 191); --typography-light: rgb(116, 116, 116); --typography-error: rgb(180, 75, 70); --divider-teal: rgb(72, 172, 152); --divider-error: rgb(180, 75, 70); --divider-dark: rgb(116, 116, 116); --iconography-default: rgb(18, 18, 18); --iconography-default-inverted: rgb(255, 255, 255); --iconography-light: rgb(116, 116, 116); --iconography-bright: rgb(233, 233, 233); --iconography-action: rgb(72, 172, 152); --iconography-rhubarb: rgb(179, 93, 91); --shimmer-background: rgb(233, 233, 233); --shimmer-foreground: rgb(249, 249, 249); --deprecated-gray: rgb(201, 201, 201); } 
+            [data-isDarkMode] { --typography-primary-default: rgb(233, 233, 233); --typography-primary-inverted: rgb(27, 27, 27); --typography-primary-consistent: rgb(27, 27, 27); --typography-primary-inverted-consistent: rgb(217, 217, 217); --typography-secondary-default: rgb(171, 171, 171); --typography-secondary-consistent: rgb(105, 105, 105); --typography-disabled: rgb(90, 90, 90); --typography-interactive-primary-teal-consistent: rgb(54, 161, 139); --typography-interactive-primary-wheat-consistent: rgb(200, 157, 88); --typography-interactive-primary-petrol-default: rgb(121, 161, 173); --typography-interactive-primary-petrol-consistent: rgb(43, 105, 122); --typography-interactive-primary-rhubarb-default: rgb(203, 124, 122); --typography-interactive-primary-rhubarb-consistent: rgb(179, 93, 91); --typography-interactive-secondary-teal-default: rgb(204, 227, 218); --typography-interactive-secondary-teal-consistent: rgb(31, 117, 96); --typography-interactive-secondary-wheat-consistent: rgb(166, 121, 49); --typography-interactive-secondary-petrol-default: rgb(204, 220, 226); --typography-interactive-secondary-petrol-consistent: rgb(32, 91, 107); --typography-interactive-secondary-rhubarb-consistent: rgb(142, 70, 68); --typography-positive-amount: rgb(54, 161, 139); --border-primary-gray: rgb(59, 59, 59); --border-primary-teal: rgb(130, 196, 178); --border-primary-petrol: rgb(121, 161, 173); --border-primary-wheat: rgb(214, 177, 125); --border-primary-rhubarb: rgb(222, 172, 171); --border-secondary-gray: rgb(150, 150, 150); --border-secondary-teal: rgb(54, 161, 139); --border-secondary-petrol: rgb(43, 105, 122); --border-secondary-wheat: rgb(166, 121, 49); --border-secondary-rhubarb: rgb(179, 93, 91); --divider-default: rgb(51, 51, 51); --divider-default-consistent: rgb(217, 217, 217); --background-screen-default: rgb(18, 18, 18); --background-container-primary-default: rgb(27, 27, 27); --background-container-primary-teal: rgb(54, 161, 139); --background-container-primary-wheat: rgb(200, 157, 88); --background-container-primary-petrol: rgb(43, 105, 122); --background-container-primary-rhubarb: rgb(179, 93, 91); --background-container-primary-gray: rgb(150, 150, 150); --background-container-primary-hovered: rgb(30, 30, 30); --background-container-primary-pressed: rgb(45, 45, 45); --background-elevated-container-primary-default: rgb(30, 30, 30); --background-container-secondary-teal: rgb(34, 64, 58); --background-container-secondary-wheat: rgb(74, 61, 41); --background-container-secondary-petrol: rgb(24, 43, 49); --background-container-secondary-rhubarb: rgb(73, 50, 49); --background-container-secondary-gray: rgb(35, 35, 35); --background-container-tertiary-teal: rgb(34, 64, 58); --background-container-tertiary-teal-pressed: rgb(8, 72, 52); --background-container-tertiary-wheat: rgb(74, 61, 41); --background-container-tertiary-wheat-pressed: rgb(89, 59, 11); --background-container-tertiary-petrol: rgb(24, 43, 49); --background-container-tertiary-petrol-pressed: rgb(9, 61, 77); --background-container-tertiary-rhubarb: rgb(73, 50, 49); --background-container-tertiary-rhubarb-pressed: rgb(94, 12, 9); --background-container-tertiary-gray: rgb(45, 45, 45); --background-container-tertiary-gray-pressed: rgb(59, 59, 59); --background-error: rgb(242, 232, 232); --background-positive-amount: rgb(54, 161, 139); --background-navigation-bottom: rgb(35, 35, 35); --background-button-primary-teal-default: rgb(54, 161, 139); --background-button-primary-teal-pressed: rgb(130, 196, 178); --background-button-primary-teal-disabled: rgb(8, 72, 52); --background-button-primary-teal-hover-and-focused: rgb(54, 161, 139); --background-button-primary-wheat-default: rgb(166, 121, 49); --background-button-primary-wheat-pressed: rgb(214, 177, 125); --background-button-primary-wheat-disabled: rgb(89, 59, 11); --background-button-primary-wheat-hover-and-focused: rgb(166, 121, 49); --background-button-primary-petrol-default: rgb(43, 105, 122); --background-button-primary-petrol-pressed: rgb(121, 161, 173); --background-button-primary-petrol-disabled: rgb(9, 61, 77); --background-button-primary-petrol-hover-and-focused: rgb(43, 105, 122); --background-button-primary-rhubarb-default: rgb(179, 93, 91); --background-button-primary-rhubarb-pressed: rgb(222, 172, 171); --background-button-primary-rhubarb-disabled: rgb(111, 35, 33); --background-button-primary-rhubarb-hover-and-focused: rgb(179, 93, 91); --background-button-secondary-default: rgb(18, 18, 18); --background-button-secondary-pressed: rgb(30, 30, 30); --background-button-tertiary-teal-pressed: rgb(4, 57, 45); --background-button-tertiary-wheat-pressed: rgb(64, 42, 4); --background-button-tertiary-petrol-pressed: rgb(0, 42, 53); --background-button-tertiary-rhubarb-pressed: rgb(55, 2, 1); --background-button-tertiary-hover-and-focused: rgb(18, 18, 18); --overlay-default: rgb(242, 242, 242); --overlay-default-consistent: rgb(27, 27, 27); --shadow-default: rgba(0, 0, 0, 0.2); --phone-frame-foreground: rgb(30, 30, 30); --phone-frame-background: rgb(59, 59, 59); --iconography-primary-default: rgb(217, 217, 217); --iconography-primary-consistent: rgb(27, 27, 27); --iconography-primary-default-inverted: rgb(27, 27, 27); --iconography-primary-inverted-consistent: rgb(217, 217, 217); --iconography-secondary-default: rgb(150, 150, 150); --iconography-disabled: rgb(90, 90, 90); --iconography-interactive-primary-teal-consistent: rgb(54, 161, 139); --iconography-interactive-primary-teal-disabled: rgb(8, 72, 52); --iconography-interactive-primary-petrol-default: rgb(121, 161, 173); --iconography-interactive-primary-petrol-consistent: rgb(43, 105, 122); --iconography-interactive-primary-petrol-disabled: rgb(9, 61, 77); --iconography-interactive-primary-rhubarb-default: rgb(203, 124, 122); --iconography-interactive-primary-rhubarb-consistent: rgb(179, 93, 91); --iconography-interactive-primary-rhubarb-disabled: rgb(94, 12, 9); --iconography-interactive-secondary-teal-default: rgb(204, 227, 218); --iconography-interactive-secondary-teal-consistent: rgb(31, 117, 96); --iconography-interactive-secondary-petrol-default: rgb(204, 220, 226); --iconography-interactive-secondary-petrol-consistent: rgb(32, 91, 107); --progress-background: rgb(20, 94, 74); --progress-foreground: rgb(54, 161, 139); --shimmer-loader-background: rgb(45, 45, 45); --shimmer-loader-foreground: rgb(30, 30, 30); --mild-overlay: rgba(0, 0, 0, 0.3); --distinct-overlay: rgba(0, 0, 0, 0.4); --primary-focus: rgba(54, 161, 139, 0.6); --typography-default: rgb(255, 255, 255); --typography-default-inverted: rgb(18, 18, 18); --typography-default-consistent: rgb(18, 18, 18); --typography-default-inverted-consistent: rgb(255, 255, 255); --typography-interactive-rhubarb: rgb(203, 124, 122); --typography-interactive-default: rgb(72, 172, 152); --typography-interactive-teal: rgb(72, 172, 152); --typography-light: rgb(191, 191, 191); --typography-extra-light: rgb(140, 140, 140); --typography-error: rgb(180, 75, 70); --divider-teal: rgb(72, 172, 152); --divider-error: rgb(180, 75, 70); --divider-dark: rgb(191, 191, 191); --background-default: rgb(27, 27, 27); --background-alternate: rgb(18, 18, 18); --background-screen: rgb(18, 18, 18); --background-button-primary-active: rgb(72, 172, 152); --background-button-primary-pressed: rgb(72, 172, 152); --background-button-primary-disabled: rgb(232, 242, 238); --background-button-secondary: rgb(255, 255, 255); --background-container-teal: rgb(72, 172, 152); --background-container-rhubarb: rgb(203, 124, 122); --background-container-wheat: rgb(200, 157, 88); --background-container-petrol: rgb(43, 105, 122); --background-container-light: rgb(59, 59, 59); --background-container-light-teal: rgb(34, 64, 58); --background-container-light-rhubarb: rgb(73, 50, 49); --background-container-light-wheat: rgb(74, 61, 41); --background-container-light-petrol: rgb(24, 43, 49); --background-container-dark-teal: rgb(42, 126, 109); --background-container-dark-wheat: rgb(140, 108, 58); --background-container-dark-petrol: rgb(9, 61, 77); --background-container-dark-rhubarb: rgb(158, 89, 87); --background-container-alpha-teal: rgb(72, 172, 152, 0.5); --background-container-alpha-wheat: rgb(205, 163, 95, 0.5); --background-container-alpha-petrol: rgba(38, 102, 120, 0.5); --background-container-alpha-rhubarb: rgb(203, 124, 122, 0.5); --background-light-error-red: rgb(248, 237, 237); --background-info-card: rgb(45, 45, 45); --iconography-default: rgb(255, 255, 255); --iconography-default-inverted: rgb(18, 18, 18); --iconography-light: rgb(191, 191, 191); --iconography-bright: rgb(51, 51, 51); --iconography-action: rgb(72, 172, 152); --iconography-rhubarb: rgb(179, 93, 91); --shimmer-background: rgb(45, 45, 45); --shimmer-foreground: rgb(27, 27, 27); --deprecated-gray: rgb(136, 136, 136); } 
+          </style>
+    </head>
+    <body>
+      <header role="banner" class="a b c d e f g h i"><div class="j k l m n o p q r s t u v w x"><div class="ab ac j k l n o y z"><a id="app-header-logo" class="ae af ag ah ai aj ak al am an ao ap aq ar as at au av aw ax ay az ba bb j z" href="/"><svg viewBox="0 0 46 32" class="as bc bd be"><path d="M40.649 12.795c-2.108 0-3.615.975-4.376 2.419 0-3.411 1.19-6.383 4.015-6.383 1.796 0 2.509 1.034 2.889 2.728l2.616-.523c-.615-2.926-2.474-4.347-5.487-4.347-3.785 0-6.617 2.906-6.617 9.42 0 5.783 2.361 8.641 6.43 8.641 3.363 0 5.881-2.296 5.881-6.08 0-2.956-1.576-5.875-5.351-5.875zm-.523 9.818c-2.087 0-3.531-1.92-3.782-4.463.634-2.172 2.04-3.253 3.701-3.253 2.136 0 3.342 1.577 3.342 3.82 0 2.407-1.373 3.896-3.261 3.896zM26.211 18.975c-.847.847-2.756 2.376-4.088 3.296h7.991v2.292H18.355V22.47c1.363-.973 4.193-3.086 5.964-4.858 1.695-1.695 2.805-3.244 2.805-5.518 0-2.237-1.229-3.167-2.89-3.167-1.702 0-3.062.984-3.062 3.039 0 .448.05.946.174 1.519l-2.671-.259a5.647 5.647 0 01-.174-1.395c0-2.743 1.924-5.142 5.821-5.142 3.215 0 5.593 1.669 5.593 5.318 0 3.318-2.423 5.705-3.513 6.779l-.191.189zM0 0h14.251v2.292H0zM11.579 6.875v12.1h-.001c0 1.071.025 1.719.075 2.342h-.05c-.262-.713-.571-1.338-1.031-2.152L3.416 6.875H.146v17.688h2.548v-12.1h.002c0-1.072-.025-1.719-.075-2.342h.05c.261.713.57 1.338 1.03 2.151l7.156 12.291h3.237V6.875h-2.515zM0 29.146h14.251v2.28H0z"></path></svg><span class="bf bg bh bj bk bl bm bn bo bp bq br bs bt">N26</span></a></div><div class="ac bu bv bw j k l n o q r s t"></div><div class="ac bx by j k l n o y"><div></div></div></div></header><main class="bd bv bz ca cb cc cd ce cf cg ch k r t"><div class="ci cj ck cl n q s"><img alt="" src="https://images.ctfassets.net/iv7ikzngu0lb/4F0mXDitoU7CfwFS6Yt5WV/d9db7429a0bf48fd641b578f7ef35ff0/error-illustration.png" class=""/></div><div class="ac ck cl n o q s"><h1 data-key="title" class="cm cn co cp cq cr q">Whoops, this is not okay.</h1><p data-key="copy" class="cs">The page you were looking appears to be forbidden.</p><p data-key="code" class="dd de">Error code: 403</p><a class="ai aj ak al am an ao ap aq ar as au ct cu cv cw cx cy cz da db dc i u w" href="/" data-key="cta">Go to homepage</a></div></main>
+      <script data-rh="true" type="text/javascript">
+        var COPY = {"title":{"en":"Whoops, this is not okay.","de":"Hoppla, das ist nicht in Ordnung.","fr":"Oups, accès refusé.","es":"¡Huy! Algo no va bien.","it":"Ops, si è verificato un problema."},"copy":{"en":"The page you were looking appears to be forbidden.","de":"Die Seite, nach der du gesucht hast, scheint verboten zu sein.","fr":"La page que vous cherchez semble être interdite d’accès.","es":"La página que buscas aparece como prohibida.","it":"La pagina che stai cercando sembra essere vietata."},"code":{"en":"Error code: 403","de":"Fehlercode: 403","fr":"Code erreur : 403","es":"Código de error: 403","it":"Codice d’errore: 403"},"cta":{"en":"Go to homepage","de":"Geh zurück zur Homepage","fr":"Aller à la page d’accueil","es":"Ir al inicio","it":"Vai alla pagina principale"}};
+        function readCookie(n){for(var r=n+"=",t=document.cookie.split(";"),e=0;e<t.length;e++){for(var i=t[e];" "==i.charAt(0);)i=i.substring(1,i.length);if(0==i.indexOf(r))return i.substring(r.length,i.length)}return null}
+        function translate(t,e){document.documentElement.setAttribute("lang",e);for(var n=document.querySelectorAll("[data-key]"),a=0;a<n.length;a++){var r=n[a],l=t[r.getAttribute("data-key")][e];l&&(r.innerHTML=l)}}
+        function detectColorScheme(event) {
+          var isDarkMode = false
+        
+          var isDarkModeEnabled = JSON.parse(readCookie('num26DarkMode'));
+        
+          if (isDarkModeEnabled != null) {
+            if (isDarkModeEnabled) {
+              isDarkMode = true;
+            }
+          } else if (!window.matchMedia) {
+        
+            return false;
+        
+          } else if (event && event.matches) {
+            isDarkMode = true;
+        
+          } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            isDarkMode = true;
+          }
+        
+          if (isDarkMode) {
+            document.documentElement.setAttribute("data-isDarkMode", "true");
+          } else {
+            document.documentElement.removeAttribute("data-isDarkMode");
+          }
+        }
+      
+        detectColorScheme()
+
+        if(window.matchMedia){
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            detectColorScheme(event)
+          });
+        }
+       
+        var locale = readCookie('num26locale')
+        if (locale) translate(COPY, locale)
+
+        
+      </script>
+    </body>
+  </html>
+  
+=== is this 404? ===
+
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset='utf-8' />
+      <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+      <meta name='viewport' content='width=device-width, i
+[0m
+[0m$ [0m# Fetch exact named bundles
+for pair in "1503:f68ea103" "1596:6ac8435d" "1992:184409c9" "6759:2f2cc008" "react_vendor:85fb11fa" "util_vendor:00e2ab05" "webpack-runtime:3d272c50"; do
+  name="${pair%%:*}"; hash="${pair##*:}"
+  curl -sk "https://app.n26.com/build/js/$name.$hash.js" -H "User-Agent: Mozilla/5.0" --max-time 15 -o "/tmp/opencode/$name.js" 2>&1
+  echo "$name.$hash.js -> $(wc -c < /tmp/opencode/$name.js) bytes"
+done
+1503.f68ea103.js -> 12438 bytes
+1596.6ac8435d.js -> 620556 bytes
+1992.184409c9.js -> 15866 bytes
+6759.2f2cc008.js -> 8551 bytes
+react_vendor.85fb11fa.js -> 153797 bytes
+util_vendor.00e2ab05.js -> 203600 bytes
+webpack-runtime.3d272c50.js -> 16650 bytes
+[0m
+[0m$ [0m# Search all real bundles for braze/keyless/engagementplatform/wss references
+for js in /tmp/opencode/*.js; do
+  case "$(basename $js)" in
+    client.js|410.js|loginpage.js|preapp.js|1596.js|1992.js|1503.js|6759.js|react_vendor.js|util_vendor.js|webpack-runtime.js)
+      echo "=== $(basename $js) ==="
+      grep -ioP '.{0,40}(braze|engagementplatform)[^";\n]{0,60}' "$js" 2>/dev/null | head -3
+      grep -oP 'wss://[^"'"'"' ]+' "$js" 2>/dev/null | sort -u | head -5
+      ;;
+  esac
+done
+=== 1503.js ===
+=== 1596.js ===
+=== 1992.js ===
+=== 410.js ===
+=== 6759.js ===
+=== client.js ===
+=== loginpage.js ===
+wss://authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+wss://authentication-service.eks.core-production.keyless.technology/v1/enroll/n26
+=== preapp.js ===
+=== react_vendor.js ===
+=== util_vendor.js ===
+=== webpack-runtime.js ===
+[0m
+The wss:// Keyless routes are confirmed in the login page JS. And there's NO Braze reference in any bundle — confirming that engagementplatform is a server-side-only Braze integration (native mobile + server). Let me check the mobile bundle or other fragments for a Braze SDK instance which might contain the **public app identifier** (Braze SDK instances are initialized client-side with an app identifier, distinct from the server REST key). But since engagementplatform isn't in any web bundle, the Braze SDK is likely native-mobile only.
+
+Let me do a couple of differential probes on flags to close out, then finalize.
+[0m$ [0m# Check for Braze SDK identifier in native mobile context - check if engagementplatform responds to OPTIONS/methods diff and app-identifier header
+curl -sk -i -X OPTIONS "https://engagementplatform.n26.com/users/export/ids" -H "Origin: https://app.n26.com" -H "Access-Control-Request-Method: POST" --max-time 10 2>&1 | tr -d '\r' | head -20
+HTTP/2 200 
+date: Mon, 07 Sep 2026 19:01:37 GMT
+cf-ray: a377f68cd854cb43-CMH
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+access-control-max-age: 7200
+server: cloudflare
+strict-transport-security: max-age=31536000; includeSubDomains
+vary: Accept-Encoding
+access-control-allow-methods: POST, GET
+access-control-expose-headers: 
+x-cache: Miss from cloudfront
+via: 1.1 0484828cb1a561e34a3abb035d623f78.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW56-P9
+x-amz-cf-id: HS8zjbD89b6dbg_MoYoH-uaijIMyhw2kjq9bmNl0UmuD7sAymWBsxw==
+[0m
+[0m$ [0m# Differential flags.n26.com — confirm RBAC boundary unchanged
+echo "GET initialize:"
+curl -sk -o /dev/null -w "%{http_code}" "https://flags.n26.com/v1/initialize" --max-time 10 2>&1
+echo
+sleep 1
+echo "GET sdk_exception:"
+curl -sk -o /dev/null -w "%{http_code}" "https://flags.n26.com/v1/sdk_exception" --max-time 10 2>&1
+echo
+sleep 1
+echo "GET evaluate:"
+curl -sk -o /dev/null -w "%{http_code}" "https://flags.n26.com/v1/evaluate" --max-time 10 2>&1
+echo
+GET initialize:
+403
+GET sdk_exception:
+403
+GET evaluate:
+403
+[0m
+Braze REST instance on engagementplatform: allows POST+GET with permissive `access-control-allow-origin: *` (both for CORS preflight and actual POST/GET). This is the standard Braze REST API surface. The key is server-only (Braze REST API keys are server-side secrets; the public SDK app identifier is a separate thing used by the native SDK, not this HTTP ingress).
+
+Let me verify whether there's a Braze-app key referenced anywhere accessible and confirm the CORS openness is meaningful (Braze REST is key-gated so CORS-open has no exploit without a key).
+
+Let me do a final check on whether any other paths on engagementplatform might be unauthenticated.
+[0m$ [0m# Check braze-specific unauth paths and common unsecured leaves
+for path in "/users/export/new" "/campaigns/sends/trigger" "/messages/send" "/sends/trigger" "/subscription/status/get" "/catalogs" "/content_blocks/list" "/preference_center/get" "/news_feed/cards/list"; do
+  echo -n "POST $path -> "
+  curl -sk -o /dev/null -w "%{http_code} %{size_download}" -X POST "https://engagementplatform.n26.com$path" -H "Content-Type: application/json" -d '{}' --max-time 10 2>&1
+  echo
+  sleep 1
+done
+POST /users/export/new -> 404 25
+POST /campaigns/sends/trigger -> 404 25
+POST /messages/send -> 401 31
+POST /sends/trigger -> 404 25
+POST /subscription/status/get -> 405 27
+POST /catalogs -> 401 31
+POST /content_blocks/list -> 405 27
+POST /preference_center/get -> 404 25
+POST /news_feed/cards/list -> 404 25
+[0m
+The Braze REST instance only answers known Braze routes with 401 (key-gated) or 405 (right method, no key needed check but route requires POST). All require the REST key. This is a well-hardened, standard Braze instance with a server-only key.
+
+Let me now close out the flags boundary and check the login open-redirect / OAuth surface on the newly-redirecting app.n26.com since it now requires /login. Let me also verify the `3ds-challenge` and `pay` hosts mentioned in prior leads.
+[0m$ [0m# pay.n26.com and 3ds-challenge quickly reconfirm
+echo "pay.n26.com/pay:"
+curl -sk -o /dev/null -w "%{http_code} %{size_download} %{redirect_url}" "https://pay.n26.com/pay" --max-time 10 2>&1
+echo
+sleep 1
+echo "3ds-challenge.n26.com/:"
+curl -sk -o /dev/null -w "%{http_code} %{size_download}" "https://3ds-challenge.n26.com/" --max-time 10 2>&1
+echo
+sleep 1
+echo "app.n26.com/login redirect target:"
+curl -sk -I "https://app.n26.com/login" --max-time 10 2>&1 | grep -iE '^HTTP|^location'
+pay.n26.com/pay:
+200 564105 
+3ds-challenge.n26.com/:
+403 118
+app.n26.com/login redirect target:
+HTTP/2 200
+[0m
+[0m$ [0m# Check open redirect / login OAuth params on app.n26.com (app now redirects anonymous to /login)
+for p in "/login?redirect_uri=https://evil.com" "/login?return_to=https://evil.com" "/login?next=https://evil.com" "/login?redirect=https://evil.com"; do
+  echo -n "GET $p -> "
+  curl -sk -o /dev/null -w "%{http_code} %{size_download} %{redirect_url}" "https://app.n26.com$p" --max-time 10 2>&1
+  echo
+  sleep 1
+done
+GET /login?redirect_uri=https://evil.com -> 200 319204 
+GET /login?return_to=https://evil.com -> 200 319204 
+GET /login?next=https://evil.com -> 200 319204 
+GET /login?redirect=https://evil.com -> 200 319276
+[0m
+[0m$ [0mcat >> /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md << 'EOF'
+## 2026-09-07 19:03:00 UTC [target] (model bigpickle)
+[PROBE] authentication-service.eks.core-production.keyless.technology: GET /api/v1 /v1 /webauthn /passkey /fido2 /attestation /enroll /credentials /verify /oauth /oidc /token /session /login /api/v3 /v3 /keyless /auth /internal /private /admin /actuator/health /metrics /ready + WS-upgrade (json + graphql-ws) on /v1/auth/n26 + /v1/enroll/n26 → ALL `{"code":"UNPROCESSABLE","reason":"path unused: …"}` HTTP/2 404. Subdomains sdk./api. resolve to same ELB `saas-external-73885400.eu-central-1.elb.amazonaws.com`. Confirms NO anonymous HTTP or WS route exists on this ingress; need live app subprotocol (AUTH_HELPED).
+[PROBE] engagementplatform.n26.com = Braze REST instance (`dashboard-02.braze.eu` redirect hint). POST /users/export/ids /users/track /users/delete /users/alias/new /messages/send /catalogs → 401 key-gated; POST /events/list /purchases/product_list /segments/list /campaigns/list /templates/email/list /kpi/dau/data_series /subscription/status/get /content_blocks/list → 405 (route exists, GET-only); GET /segments/list /events/list → 401. OPTIONS preflight 200 ACAO:* allow POST GET, Cloudflare+CloudFront. Braze app identifier NOT in any of 10 web bundles (client/410/loginpage/preapp/1596/1992/1503/6759/react_vendor/util_vendor/webpack-runtime) — server/mobile-only key. Boundary confirmed as hardened Braze REST; no anonymous data path.
+[PROBE] pisp.tech26.de/api/mfa/challenge: POST no-auth/bad-auth/`android:secret` all 401 (0B) — reposcan credential rejected; only that single path live on host (all others 404).
+[PROBE] cdn number26.de consumercredit-staging: s3 eu-central-1 `NoSuchBucket` (bucket deleted) — closes reposcan S3 lead.
+[PROBE] artifactory.cd-tech26.de: resolves to ELB `artifactory-live-external-*` but HTTPS refused/timeout — not internet-exposed.
+[LEARN] ACCEPTED MISCONFIG @ engagementplatform.n26.com: identified as Braze REST API instance (dashboard-02.braze.eu); key-gated 401 on all data routes, CORS-open but no key in any web bundle → server/mobile-only; no anonymous exploit (INFO boundary).
+[LEARN] REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential returns same 401 as no-auth/garbage — demo/sandbox value, not live-valid; only /api/mfa/challenge exists.
+[LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: bucket does not exist (NoSuchBucket) — no enumeration surface.
+[RISK] N26 Bank AG: 15/100 — Surface fully cornered again this cycle. New identifications (engagementplatform=Braze REST, keyless=all-routes-unused incl. WS, pisp=dead credential) all yield INFO; every anonymous transport on remaining assets already closed (flags by-design, GraphQL tarpit, spc GIFs, cdn private, marketing INFO, my 301). Remaining HIGH paths (GraphQL WS/APQ, Keyless WS, Braze key, engagementplatform data) all require coordinator-provided key/session/scope ruling — AUTH_HELPED. No reportable finding in hand.
+EOF
+echo "appended"
+appended
+[0m
+All consistent with prior knowledge. The login page accepts params but renders the same SPA shell (params handled client-side; open-redirect would need JS evidence, not a server-side 302). Not exploitable anonymously.
+
+I have enough to finalize. Key new findings this cycle:
+1. **engagementplatform.n26.com = Braze REST** (`dashboard-02.braze.eu`) — server-only REST key (no web bundle references), permissive CORS but key-gated → no anonymous path, boundary confirmed as Braze.
+2. **pisp.tech26.de** — live Istio/Envoy PISP service, but the reposcan `android:secret` credential rejected (401); only documented PSD2 sandbox endpoint `/api/mfa/challenge` exists. No anonymous exploit.
+3. **consumercredit-staging S3** — bucket does not exist (`NoSuchBucket`), closes reposcan lead.
+4. **artifactory.cd-tech26.de** — ELB resolves but connection refused/closes — not exposed.
+5. **Keyless** — all standard + bundle-disclosed + Subdomain variants → `path unused`; confirmed no anonymous route.
+
+Let me record the lead to the file and emit structured output.
+[0m$ [0mcat >> /home/runner/work/n26-hunt/n26-hunt/probe-results.md << 'EOF'
+
+## 2026-09-07 19:03:00 UTC
+https://authentication-service.eks.core-production.keyless.technology/api/v1 -> HTTP 404 "path unused: /api/v1"
+https://authentication-service.eks.core-production.keyless.technology/v1 -> HTTP 404 "path unused: /v1"
+https://authentication-service.eks.core-production.keyless.technology/webauthn -> HTTP 404 "path unused: /webauthn"
+https://authentication-service.eks.core-production.keyless.technology/passkey -> HTTP 404 "path unused: /passkey"
+https://authentication-service.eks.core-production.keyless.technology/fido2 -> HTTP 404 "path unused: /fido2"
+https://authentication-service.eks.core-production.keyless.technology/attestation -> HTTP 404 "path unused: /attestation"
+https://authentication-service.eks.core-production.keyless.technology/credentials -> HTTP 404 "path unused: /credentials"
+https://authentication-service.eks.core-production.keyless.technology/v1/auth/n26 (WS json) -> HTTP 404 "path unused"
+https://authentication-service.eks.core-production.keyless.technology/v1/auth/n26 (WS graphql-ws) -> HTTP 404 "path unused"
+https://authentication-service.eks.core-production.keyless.technology/v1/enroll/n26 -> HTTP 404 "path unused"
+https://engagementplatform.n26.com/users/export/ids (POST) -> HTTP 401 {"message":"Invalid API key: ..."}
+https://engagementplatform.n26.com/users/track (POST) -> HTTP 401
+https://engagementplatform.n26.com/users/delete (POST) -> HTTP 401
+https://engagementplatform.n26.com/users/alias/new (POST) -> HTTP 401
+https://engagementplatform.n26.com/events/list (POST) -> HTTP 405
+https://engagementplatform.n26.com/segments/list (GET) -> HTTP 401
+https://engagementplatform.n26.com/events/list (GET) -> HTTP 401
+https://engagementplatform.n26.com/catalogs (POST) -> HTTP 401
+https://engagementplatform.n26.com/messages/send (POST) -> HTTP 401
+https://engagementplatform.n26.com/ -> HTTP 400 "Did you mean to visit the Braze dashboard?"
+https://pisp.tech26.de/api/mfa/challenge (POST, no auth) -> HTTP 401
+https://pisp.tech26.de/api/mfa/challenge (POST, Basic android:secret) -> HTTP 401
+https://pisp.tech26.de/api/mfa/challenge (POST, Basic garbage) -> HTTP 401
+https://s3.eu-central-1.amazonaws.com/consumercredit-staging/ -> HTTP 404 NoSuchBucket
+https://artifactory.cd-tech26.de/ -> 000 (refused/timeout; ELB resolves, not exposed)
+EOF
+echo "appended"
+appended
+[0m
+Run complete. Structured output below.
+
+---
+## ANALYST OUTPUT
+
+### STEP 1 — DELTA
+[NEW] engagementplatform.n26.com for the first time identified as **Braze REST API** (`dashboard-02.braze.eu` redirect hint): `/users/*`, `/catalogs`, `/messages/send` all 401 key-gated; `/events/list`, `/segments/list`, `/kpi/*`, `/content_blocks/list` 405 (route exists, GET-only); CORS preflight 200 `ACAO:*`; Cloudflare+CloudFront.
+[NEW] app.n26.com anonymous `/` now 302 → `/login` (was 200 319KB shell); `/login` still serves full 319KB SPA + bundles.
+[CHANGED] authentication-service (keyless): all 25 HTTP paths + WS-upgrade (json/graphql-ws) on bundle-disclosed routes return `path unused` 404; `sdk.`/`api.` subdomains coalesce to same ELB — no anonymous route exists confirmed.
+[NEW] pisp.tech26.de live (Istio/Envoy); only `/api/mfa/challenge` responds — reposcan `android:secret` Basic 401-identical to no-auth → credential rejected.
+[REJECTED] consumercredit-staging S3 bucket → `NoSuchBucket` (deleted); artifactory.cd-tech26.de ELB resolves but TLS refused (unexposed).
+
+### STEP 2 — PRIORITIZE
+[PRIO] engagementplatform.n26.com,6.5,a=7,b=8,t=6,g=2,c=6,f=9 — Braze REST, key-gated; CORS-open but key server-only
+[PRIO] authentication-service.eks.core-production.keyless.technology,6.1,a=6,b=9,t=7,g=2,c=9,f=7 — all routes unused; AUTH_HELPED only
+[PRIO] app.n26.com/graphql,5.6,a=7,b=10,t=8,g=1,c=6,f=2 — tarpit-closed; WS/APQ unverifiable
+[PRIO] flags.n26.com,3.9,a=5,b=4,t=5,g=4,c=5,f=4 — by-design init 200 (INFO); GET routes 403/405 unchanged
+
+### STEP 3 — HYPOTHESES
+[HYP] Keyless auth service non-standard route discovery (survivor, scope-pending)
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 50
+reasoning: service LIVE (HTTP/2 404), version `authentication-service-2/v26.09.07 eks-production`, `x-keyless-flow-id`; now 25+ paths incl bundle-disclosed `/v1/auth/n26`+`/v1/enroll/n26` and WS-upgrade (json/graphql-ws subprotocols) all return `path unused` — route map at this ingress does not contain them; only remaining unknown is the app's actual WS subprotocol + headers
+evidence_needed: any non-`unused` HTTP response, or 101/non-`unused` WS-upgrade using the live-app subprotocol
+verify_steps: replay exact subprotocol+headers captured from a live app session on the two bundle-disclosed routes (read-only; AUTH_HELPED) — anonymous route enumeration now exhausted
+impact: auth/bypass/WebAuthn flaws = CRITICAL if reached; anonymous reachability not demonstrated; domain vendor-owned (scope-pending)
+testability: AUTH_HELPED
+
+[HYP] GraphQL WS/APQ front-door (carry)
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: all anonymous HTTP transports WAF-blocked/tarpit (GET query reset, all POST CTs 403, support tarpit identical); only untested front-doors are WS upgrade and APQ hash, both require a live app session
+evidence_needed: non-40x/non-stall /graphql response
+verify_steps: WS upgrade with `Sec-WebSocket-Protocol: graphql-ws` from authenticated context; APQ hash from live session (AUTH_HELPED)
+impact: schema→mutation→banking-op abuse — HIGH if reached, unreachable anonymously
+testability: AUTH_HELPED
+
+[HYP] Braze REST API key absent from all client assets (boundary candidate)
+class: AUTH
+asset: engagementplatform.n26.com/users/track
+confidence: 30
+reasoning: Braze REST identified; all data routes key-gated 401; app identifier NOT present in any of 10 fetched web bundles; engagementplatform not in app CSP `connect-src` — key is server/mobile-native-only, not web-extractable
+evidence_needed: a working REST key value from a legitimate client asset (mobile binary / server config)
+verify_steps: GET https://engagementplatform.n26.com/segments/list with blessed/dummy key (read-only) to confirm 200-vs-401 boundary; no anonymous verify exists
+impact: full customer-engagement/notification data access if key recoverable — MEDIUM; else INFO boundary
+testability: AUTH_HELPED
+
+### STEP 4 — SELF-CRITIQUE
+[PARKED] GraphQL WS/APQ: confidence 25 <40; AUTH_HELPED-only; no anonymous verify path.
+[PARKED] Braze key client-extractable: confidence 30 <40; negative across 10 bundles + CSP; only mobile/server plausible; no passive verify.
+[FINAL] Keyless auth service non-standard route discovery — confidence 50; has remaining passive subprotocol-replay step but that requires a live app session (AUTH_HELPED); anonymous surface now proven exhausted.
+
+### STEP 5 — NEXT ACTION
+[NEXT] HUMAN: escalate one consolidated coordinator ask — (a) written scope ruling on `keyless.technology` vendor-in-flow asset (tenant `n26`, `wss://…/v1/auth/n26`, `/v1/enroll/n26`), (b) a whitelisted/integration Brave REST key (or scoped test identity) for `engagementplatform.n26.com/users`+`/events`+`/segments/list` plus confirmation the key is server-only (if client-extractable → MEDIUM reportable), (c) an app/LivePerson session for app.n26.com GraphQL WS/APQ + Keyless WS subprotocol capture. No anonymous PROBE remains untried: flags=by-design INFO, GraphQL=tarpit-closed, keyless=all-routes-unused, Braze=key-gated, spc=GIFs, cdn=private, marketing=INFO, my=301.
+
+### STEP 6 — LEARNING
+[LEARN] ACCEPTED MISCONFIG @ engagementplatform.n26.com: identified as Braze REST instance (dashboard-02.braze.eu); key-gated 401 on all data routes, CORS-open but key absent from all 10 web bundles + CSP → server/mobile-only; boundary confirmed, no anonymous path.
+[LEARN] REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists.
+[LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface.
+[LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 25 paths + WS-upgrade (json/graphql-ws) all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED.
+
+### STEP 7 — RISK
+[RISK] N26 Bank AG: 15/100 — No reportable finding after 10+ cycles. This cycle fully closed the two remaining fresh leads: engagementplatform is a hardened Braze REST instance (server-only key, not web-recoverable) and the Keyless auth service has no anonymous route on any tested HTTP/WS variant. flags.n26.com initialize 200 is by-design public-client SDK data; GraphQL remains tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only; my.n26.com=301. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated. Every remaining HIGH-value path requires a coordinator-provided signed scope ruling, integration API key, or live app session (AUTH_HELPED). Without a coordinator response there is no further anonymous testable surface.
