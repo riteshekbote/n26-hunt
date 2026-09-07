@@ -677,3 +677,32 @@ impact: HIGH if reached; unreachable anonymously
 testability: AUTH_HELPED
 [NEXT] HUMAN: ask program coordinator (a) whether vendor-in-flow assets (`keyless.technology`, N26 tenant slug `n26`, exact routes `wss://…/v1/auth/n26`, `/v1/enroll/n26`) fall within N26-operated scope, and (b) for a LivePerson/app session to capture the real WS subprotocol so the two bundle-disclosed routes can be handshake-tested read-only. Without a scope ruling, no further probes are warranted — the asset is vendor-owned and every anonymous transport is `404 path unused`.
 [RISK] N26 Bank AG: 18/100 — Surface fully cornered at INFO across 9+ cycles. The only genuinely fresh intel this cycle (live Keyless auth service, exact WS routes, tenant slug) yields no anonymous exploit and sits on a vendor-owned domain (`keyless.technology`) outside N26-operated scope absent a coordinator ruling. `flags.n26.com` initialize 200 is by-design public-client SDK data. GraphQL remains tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated; remaining HIGH-value paths require an app session (AUTH_HELPED). North-star request to coordinator stands: scoped test account or LivePerson session, plus a written scope ruling on vendor-in-flow assets.
+## 2026-09-07 00:04:13 UTC [target] (model bigpickle)
+[HYP] engagementplatform Bearer API key recoverable from a public N26 client asset
+class: AUTH
+asset: engagementplatform.n26.com
+confidence: 42
+reasoning: passive DNS surfaced host; `/users`+`/events` exist and answer 401 until a valid `Authorization: Bearer` key is supplied (error echoes presented key); service absent from app.n26.com CSP connect-src and prior bundle sweeps, so web-side key embedding already negative; only mobile/server consumption plausible
+evidence_needed: a working key value, or a client asset that legitimately sends one (mobile app binary / server integration doc)
+verify_steps: with a test/whitelisted key → GET https://engagementplatform.n26.com/users and /events (read-only, dummy/blessed key only); without a key no further passive enumeration is possible
+impact: full read of engagement/notification platform data (customer comms) if key is client-extractable — MEDIUM; otherwise INFO boundary confirmed
+testability: AUTH_HELPED
+[HYP] pay.n26.com N26-owned logic behind /pay
+class: OTHER
+asset: pay.n26.com
+confidence: 20
+reasoning: all /pay/* paths return byte-identical 564,105B Stripe Checkout shell (generic SPA, no per-link data); /foobar 403 at edge; payment calls target api.stripe.com — no N26-owned endpoint evidence
+evidence_needed: any N26-origin endpoint under /pay that is not Stripe
+verify_steps: differential /pay vs /pay/?session-id variants, all already 200-same-shell
+impact: none demonstrated; Stripe is vendor-logic
+testability: PASSIVE
+[HYP] 3DS challenge anonymous reachability via ALB path bypass
+class: AUTH
+asset: 3ds-challenge.n26.com
+confidence: 20
+reasoning: awselb/2.0 returns 403 on every method incl OPTIONS (118B fixed) — blanket ALB/WAF deny; 3DS challenge only served inside a signed cardholder transaction
+evidence_needed: any non-403 response
+verify_steps: GET/OPTIONS on /, /health, /cardinal — all 403
+impact: HIGH if reached, but no anonymous path demonstrated
+testability: AUTH_HELPED
+[NEXT] HUMAN: one consolidated coordinator ask — (a) scope ruling for `keyless.technology` vendor asset, (b) a whitelisted/integration API key or scoped test identity for engagementplatform.n26.com `/users`+`/events` (and confirmation the key is server-only), (c) an app/LivePerson session for app.n26.com GraphQL + Keyless WS handshake. Nothing further is testable anonymously: new in-scope API is key-gated, pay/3ds are third-party or session-bound.

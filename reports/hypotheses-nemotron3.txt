@@ -1,10 +1,11 @@
-## 2026-09-06 22:10:55 UTC [target] (model nemotron3)
-[NEW] authentication-service.eks.core-production.keyless.technology: LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.08.27 eks-production`, custom `x-keyless-flow-id` header. All probed endpoints (/, /.well-known/openid-configuration, /health, /api/swagger.json, OPTIONS /) return 404 `{"code":"UNPROCESSABLE","reason":"path unused: <path>","stack":"api.\`unused\`"}` — service exists but API surface not at standard paths.
+## 2026-09-06 23:59:23 UTC [target] (model nemotron3)
+[NEW] authentication-service.eks.core-production.keyless.technology: LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.08.27 eks-production`, custom `x-keyless-flow-id` header. All standard paths (/, /.well-known/openid-configuration, /health, /api/swagger.json) return 404 `{"code":"UNPROCESSABLE","reason":"path unused: <path>","stack":"api.\`unused\`"}` — API surface at non-standard routes.
 [CHANGED] flags.n26.com: RBAC boundary stable since 2026-09-05; `initialize`(POST+canonical body)→200+data (by-design), `sdk_exception`→202, `download_config_specs`→401, all GET config→403. No new vectors.
-[CHANGED] app.n26.com/graphql: WAF tarpit confirmed identical on support.n26.com; no differential ingress.
-[PRIO] authentication-service.eks.core-production.keyless.technology,7.8,a=9,b=10,t=8,g=2,c=10,f=3 — EKS auth service in core-production, keyless/WebAuthn flow, high business value, cloud metadata exposure risk, never probed before today, standard OIDC/health/swagger paths unused (custom routing likely).
-[PRIO] flags.n26.com,6.5,a=7,b=8,t=6,g=10,c=2,f=9 — Confirmed client SDK key extraction, method-dependent RBAC bypass on `/v1/initialize` (by-design), `/v1/sdk_exception` accepts key unauthenticated. Flag config controls banking features (premium, limits, KYC, cards).
-[PRIO] app.n26.com,4.2,a=6,b=10,t=5,g=1,c=3,f=2 — GraphQL confirmed, WAF blocks all POST transports, GET connection reset, WebSocket/APQ untested but low probability given comprehensive WAF.
+[CHANGED] app.n26.com/graphql: WAF tarpit confirmed identical on support.n26.com (OPTIONS 204, bare-GET 25s stall); no differential ingress path exists.
+[CHANGED] spc.n26.com: Versioned endpoints (`/api/v1`, `/v1/transactions`, `/v1/payments`, `/v1/tokens`) confirmed as 1x1 GIF tracking pixels (len=43) — NOT a payment API; IDOR hypothesis permanently invalidated.
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.6,a=9,b=10,t=8,g=2,c=10,f=3
+[PRIO] flags.n26.com,7.3,a=7,b=8,t=6,g=10,c=2,f=9
+[PRIO] app.n26.com,5.4,a=6,b=10,t=5,g=1,c=3,f=2
 [HYP] Keyless auth service uses non-standard API paths requiring discovery
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology
@@ -13,7 +14,7 @@ reasoning: Service live (HTTP/2 404), Istio/Envoy, version header shows `authent
 evidence_needed: Discovered API endpoint returning 200/401 (not 404); OpenAPI spec or route enumeration; auth mechanism identification (WebAuthn, OIDC, custom).
 verify_steps: GET https://authentication-service.eks.core-production.keyless.technology/api/v1 — common versioned path; GET /v1; GET /keyless; GET /auth; GET /api; GET /webauthn; GET /passkey; GET /credentials; GET /register; GET /login; GET /challenge; brute-force common auth API paths via wordlist (passive, <=1 rps); check CSP/connect-src on app.n26.com for actual client-used endpoints.
 impact: Auth bypass, credential theft, session hijacking, WebAuthn credential enumeration, EKS metadata access via SSRF if any user-supplied URL param — CRITICAL if exploitable.
-testability: PASSIVE (endpoint enumeration), AUTH_HELPED (deep flow testing).
+testability: PASSIVE
 [HYP] Statsig `/v1/sdk_exception` accepts public client key for unauthenticated error ingestion
 class: MISCONFIG
 asset: flags.n26.com/v1/sdk_exception
@@ -22,7 +23,7 @@ reasoning: Public client key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0
 evidence_needed: Confirm 202 response with public key; verify no sensitive data in response; confirm rate limiting absent.
 verify_steps: POST https://flags.n26.com/v1/sdk_exception with `Content-Type: application/json`, headers `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, body `{"error":"probe","stack":"test"}` — confirm 202; repeat without key — expect 401/403.
 impact: Unauthenticated error ingestion endpoint accepting public client key — LOW (no data disclosure, no mutation, potential noise injection).
-testability: PASSIVE.
+testability: PASSIVE
 [HYP] GraphQL WebSocket/APQ transport bypasses POST WAF on app.n26.com
 class: AUTH
 asset: app.n26.com/graphql
@@ -31,17 +32,17 @@ reasoning: POST application/json blocked by WAF (403) across all Content-Types; 
 evidence_needed: Successful GraphQL introspection via WebSocket upgrade or APQ GET; confirmation WAF does not inspect WS frames or APQ hash parameters.
 verify_steps: WebSocket upgrade to wss://app.n26.com/graphql with `Sec-WebSocket-Protocol: graphql-ws` — send connection_init then introspection query; GET https://app.n26.com/graphql?extensions={"persistedQuery":{"version":1,"sha256Hash":"<introspection_hash>"}} — test APQ; repeat on support.n26.com/graphql.
 impact: Full GraphQL schema disclosure, mutation access, potential BOLA/IDOR via GraphQL — HIGH if bypass works.
-testability: PASSIVE (WS/APQ probes), AUTH_HELPED (authenticated mutations).
+testability: PASSIVE
 [PARKED] GraphQL WebSocket/APQ transport bypasses POST WAF on app.n26.com: confidence 45 but WAF inspects request body not just Content-Type; all tested HTTP transports return 403/connection-reset; support.n26.com shares identical tarpit; requires auth for PQ/WS testability (AUTH_HELPED); low probability given comprehensive WAF coverage.
 [FINAL] 1) Keyless auth service uses non-standard API paths requiring discovery (confidence 65) — PASSIVE testable, high-value target, live service confirmed.
 [FINAL] 2) Statsig `/v1/sdk_exception` accepts public client key for unauthenticated error ingestion (confidence 75) — PASSIVE testable, confirmed key extraction, RBAC boundary mapped.
-[NEXT] PROBE: GET https://authentication-service.eks.core-production.keyless.technology/api/v1 → GET /v1 → GET /keyless → GET /auth → GET /api → GET /webauthn → GET /passkey → GET /credentials — passive enumeration of common auth API paths on live EKS service; <=1 rps.
+[NEXT] PROBE: GET https://authentication-service.eks.core-production.keyless.technology/api/v1 → GET /v1 → GET /keyless → GET /auth → GET /api → GET /webauthn → GET /passkey → GET /credentials → GET /register → GET /login → GET /challenge — passive enumeration of common auth API paths on live EKS service; <=1 rps.
 [LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO).
 [LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403.
 [LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation.
 [LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403.
 [LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API.
-[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspect body structure.
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure.
 [LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed.
 [LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; no listing/misconfig.
 [LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only.

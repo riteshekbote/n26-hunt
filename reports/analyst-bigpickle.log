@@ -8555,3 +8555,464 @@ testability: AUTH_HELPED
 
 ## STEP 7 — RISK
 [RISK] N26 Bank AG: 18/100 — Surface fully cornered at INFO across 9+ cycles. The only genuinely fresh intel this cycle (live Keyless auth service, exact WS routes, tenant slug) yields no anonymous exploit and sits on a vendor-owned domain (`keyless.technology`) outside N26-operated scope absent a coordinator ruling. `flags.n26.com` initialize 200 is by-design public-client SDK data. GraphQL remains tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated; remaining HIGH-value paths require an app session (AUTH_HELPED). North-star request to coordinator stands: scoped test account or LivePerson session, plus a written scope ruling on vendor-in-flow assets.
+===== ANALYST bigpickle 2026-09-07 00:04:50 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mcurl -s --max-time 60 "https://crt.sh/?q=%25.n26.com&output=json" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+except Exception as e:
+    print('PARSE_FAIL', e); sys.exit(0)
+names = set()
+for e in d:
+    for n in (e.get('name_value') or '').split('\n'):
+        n = n.strip().lower()
+        if n and n.endswith('n26.com'):
+            names.add(n)
+print('\n'.join(sorted(names)))
+print('COUNT', len(names))
+"
+PARSE_FAIL Expecting value: line 1 column 1 (char 0)
+[0m
+[0m$ [0mcurl -s --max-time 60 -A "Mozilla/5.0 (X11; Linux x86_64)" "https://crt.sh/?q=%25.n26.com&output=json" -o /tmp/opencode/crt_raw.txt -w "HTTP %{http_code} bytes %{size_download}\n"; head -c 400 /tmp/opencode/crt_raw.txt
+HTTP 502 bytes 150
+<html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+[0m
+[0m$ [0mcurl -s --max-time 45 "https://api.hackertarget.com/hostsearch/?q=n26.com" -w " [HTTP %{http_code}]\n"
+3ds-challenge.n26.com,185.120.93.80
+clicks.accounts.n26.com,99.84.234.10
+app.n26.com,3.124.25.56
+static.app.n26.com,108.139.47.55
+cookie.n26.com,3.168.102.26
+docs.n26.com,108.139.29.86
+clicks.emails.n26.com,3.171.139.102
+engagementplatform.n26.com,99.84.160.105
+flags.n26.com,99.84.160.3
+get.n26.com,108.139.47.95
+join.n26.com,108.139.47.118
+mag.n26.com,108.139.47.118
+mag-de.n26.com,108.139.47.118
+mag-es.n26.com,108.139.47.62
+mag-fr.n26.com,108.139.47.31
+mag-it.n26.com,108.139.47.31
+my.n26.com,63.177.34.37
+next.n26.com,108.139.47.118
+pay.n26.com,172.64.152.100
+spc.n26.com,51.102.128.41
+static.n26.com,13.33.252.107
+support.n26.com,63.187.98.255
+static.support.n26.com,18.164.124.39
+tutorials.n26.com,3.127.92.139
+www.n26.com,108.139.47.118
+ [HTTP 200]
+[0m
+[0m$ [0mcurl -s --max-time 45 "https://otx.alienvault.com/api/v1/indicators/domain/n26.com/passive_dns" -o /tmp/opencode/otx.json -w "[HTTP %{http_code} bytes %{size_download}]\n"; python3 -c "
+import json
+try:
+    d=json.load(open('/tmp/opencode/otx.json'))
+    print('\n'.join(sorted({r['hostname'].lower() for r in d.get('passive_dns',[]) if r.get('hostname')})))
+    print('COUNT', len(set(r['hostname'].lower() for r in d.get('passive_dns',[]))))
+except Exception as e: print('PARSE_FAIL', e)"
+[HTTP 429 bytes 80]
+
+COUNT 0
+[0m
+[0m$ [0mfor h in 3ds-challenge.n26.com pay.n26.com engagementplatform.n26.com; do
+  echo "=== HEAD https://$h/ ==="
+  curl -sI --max-time 20 "https://$h/" | head -n 12
+  sleep 1
+done
+=== HEAD https://3ds-challenge.n26.com/ ===
+HTTP/1.1 403 Forbidden
+Server: awselb/2.0
+Date: Mon, 07 Sep 2026 00:00:36 GMT
+Content-Type: text/html
+Content-Length: 118
+Connection: keep-alive
+
+=== HEAD https://pay.n26.com/ ===
+HTTP/2 204 
+date: Mon, 07 Sep 2026 00:00:37 GMT
+server: cloudflare
+cache-control: max-age=60
+x-cache: FunctionGeneratedResponse from cloudfront
+via: 1.1 bed50a2a216c839ab961680bbc9c5d68.cloudfront.net (CloudFront)
+x-amz-cf-pop: MSP50-P3
+x-amz-cf-id: s_JKvxuB-u1WgNvNFyx0FOo_LaTQwGI0SB43lXNWnMPzNB2ltH5V2g==
+strict-transport-security: max-age=31556926; includeSubDomains; preload
+cf-cache-status: DYNAMIC
+cf-ray: a3716f29384ce02b-MSP
+
+=== HEAD https://engagementplatform.n26.com/ ===
+HTTP/2 400 
+content-type: text/html; charset=utf-8
+date: Mon, 07 Sep 2026 00:00:38 GMT
+cf-ray: a3716f30dee7fad4-CMH
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+cache-control: no-cache
+server: cloudflare
+strict-transport-security: max-age=31536000; includeSubDomains
+vary: Accept,Origin,Accept-Encoding
+referrer-policy: strict-origin-when-cross-origin
+x-content-type-options: nosniff
+[0m
+[0m$ [0mprobe(){ echo "=== $1 $2 ==="; curl -s -o /dev/null --max-time 20 -w "HTTP %{http_code} len %{size_download} ct %{content_type}\n" -H "Accept: application/json" "$1" "$2"; }
+probe "https://engagementplatform.n26.com/" ; sleep 1
+probe "https://engagementplatform.n26.com/health" ; sleep 1
+probe "https://engagementplatform.n26.com/api" ; sleep 1
+probe "https://engagementplatform.n26.com/status" ; sleep 1
+echo "=== OPTIONS https://engagementplatform.n26.com/ ==="; curl -s -o /dev/null --max-time 20 -w "HTTP %{http_code} allow=%header{allow}\n" -X OPTIONS "https://engagementplatform.n26.com/"; sleep 1
+probe "https://pay.n26.com/"; sleep 1
+probe "https://pay.n26.com/pay"; sleep 1
+probe "https://pay.n26.com/api"; sleep 1
+echo "=== OPTIONS https://pay.n26.com/ ==="; curl -s -o /dev/null --max-time 20 -w "HTTP %{http_code} allow=%header{allow}\n" -X OPTIONS "https://pay.n26.com/"; sleep 1
+probe "https://3ds-challenge.n26.com/"; sleep 1
+probe "https://3ds-challenge.n26.com/health"; sleep 1
+probe "https://3ds-challenge.n26.com/cardinal"; sleep 1
+echo "=== OPTIONS https://3ds-challenge.n26.com/ ==="; curl -s -o /dev/null --max-time 20 -w "HTTP %{http_code} allow=%header{allow}\n" -X OPTIONS "https://3ds-challenge.n26.com/";
+=== https://engagementplatform.n26.com/  ===
+HTTP 400 len 96 ct text/html; charset=utf-8
+HTTP 000 len 0 ct 
+=== https://engagementplatform.n26.com/health  ===
+HTTP 404 len 25 ct application/json; charset=utf-8
+HTTP 000 len 0 ct 
+=== https://engagementplatform.n26.com/api  ===
+HTTP 404 len 25 ct application/json; charset=utf-8
+HTTP 000 len 0 ct 
+=== https://engagementplatform.n26.com/status  ===
+HTTP 404 len 25 ct application/json; charset=utf-8
+HTTP 000 len 0 ct 
+=== OPTIONS https://engagementplatform.n26.com/ ===
+HTTP 404 allow=
+=== https://pay.n26.com/  ===
+HTTP 204 len 0 ct 
+HTTP 000 len 0 ct 
+=== https://pay.n26.com/pay  ===
+HTTP 200 len 564105 ct text/html; charset=utf-8
+HTTP 000 len 0 ct 
+=== https://pay.n26.com/api  ===
+HTTP 403 len 263 ct application/xml
+HTTP 000 len 0 ct 
+=== OPTIONS https://pay.n26.com/ ===
+HTTP 204 allow=
+=== https://3ds-challenge.n26.com/  ===
+HTTP 403 len 118 ct text/html
+HTTP 000 len 0 ct 
+=== https://3ds-challenge.n26.com/health  ===
+HTTP 403 len 118 ct text/html
+HTTP 000 len 0 ct 
+=== https://3ds-challenge.n26.com/cardinal  ===
+HTTP 403 len 118 ct text/html
+HTTP 000 len 0 ct 
+=== OPTIONS https://3ds-challenge.n26.com/ ===
+HTTP 403 allow=
+[0m
+Fresh surface found. Pulling the public `pay.n26.com/pay` page (read-only) to extract API endpoints and bundle references.
+[0m$ [0mcurl -s --max-time 30 -A "Mozilla/5.0" "https://pay.n26.com/pay" -o /tmp/opencode/pay.html -w "HTTP %{http_code} bytes %{size_download}\n"
+echo "--- api/hosts/endpoints referenced ---"
+grep -oE 'https?://[a-zA-Z0-9._/-]+' /tmp/opencode/pay.html | sort -u | head -40
+echo "--- js bundles / src ---"
+grep -oE '(src|href)="[^"]+\.(js|css)[^"]*"' /tmp/opencode/pay.html | sort -u | head -20
+echo "--- fetch/api calls ---"
+grep -oE '(/api/[a-zA-Z0-9/_-]+|/v[0-9]/[a-zA-Z0-9/_-]+)' /tmp/opencode/pay.html | sort | uniq -c | sort -rn | head -25
+echo "--- title ---"
+grep -oiE '<title>[^<]*</title>' /tmp/opencode/pay.html | head -3
+HTTP 200 bytes 564105
+--- api/hosts/endpoints referenced ---
+https://0413044039f446ed806d8c6805dbbd83
+https://05d34cc2a876431690ded7ee1962eea5
+https://198453e0cdc24c5ca470767075dba88d
+https://20f53591733d415ea088036b8e8ad0e3
+https://41eb33ecb50649bfab8462af40c2df93
+https://76b49ff5e43c4910b429f557acde2bfd
+https://api.stripe.com
+https://api.stripe.com/edge-internal/
+https://api.stripe.com/v1/
+https://app.klarna.com
+https://app.link.com
+https://app.onelink.com
+https://b72a573018974a42be5302132719b339
+https://billing.gamma.app
+https://billing.midjourney.com
+https://billing.vyro.ai
+https://book.stripe.com
+https://buy.stripe.com
+https://c736ae64298f402f97218af93e3e0989
+https://chatgpt.com
+https://checkout-cookies.link.com
+https://checkout-cookies.link.com/api/
+https://checkout-cookies.stripe.com/api/
+https://checkout.atlasearth.com
+https://checkout.bluebottlecoffee.com
+https://checkout.bookis.com
+https://checkout.doctorsim.com
+https://checkout.edgypro.net
+https://checkout.kudoboard.com
+https://checkout.link.com
+https://checkout.link.com/
+https://checkout.pd-ing.com
+https://checkout.runpod.io
+https://checkout.runwayml.com
+https://checkout.stripe.com
+https://checkout.stripe.com/
+https://checkout.zpos.co.uk
+https://crypto-standalone-site.corp.stripe.com
+https://crypto-standalone-site.qa.corp.stripe.com
+https://d37ugbyn3rpeym.cloudfront.net/docs/GSSL
+--- js bundles / src ---
+href="https://js.stripe.com/v3/fingerprinted/css/checkout-app-init-bfc07dd9a99e551de1f9ab17f38fb3c1.css"
+href="https://js.stripe.com/v3/fingerprinted/js/checkout-app-init-af9d4b3e97ef8014c453016ef3fe8063.js"
+href="https://js.stripe.com/v3/fingerprinted/js/stripe-a3afdc7f2994df158b9423e5f0081f92.js?stripeCheckoutInitialized=true"
+href="https://js.stripe.com/v3/fingerprinted/js/vendor-392b8a6c8c7ab0afb61c45efb5018914.js"
+src="https://js.stripe.com/v3/fingerprinted/js/stripe-a3afdc7f2994df158b9423e5f0081f92.js?stripeCheckoutInitialized=true"
+--- fetch/api calls ---
+      2 /v3/fingerprinted/js/stripe-a3afdc7f2994df158b9423e5f0081f92
+      1 /v3/static/fonts/
+      1 /v3/link-login-inner-977be4911d2d2e7c8f33d2f92b24f144
+      1 /v3/fingerprinted/js/vendor-392b8a6c8c7ab0afb61c45efb5018914
+      1 /v3/fingerprinted/js/checkout-app-init-af9d4b3e97ef8014c453016ef3fe8063
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-vipps-444ad3fb81e0b63575aa1a23cec15c2a
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-sequra-783a26313c95faf606c21836956bde93
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-scalapay-c37d9e7619a3128911bc39e94339cce8
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-satispay_dark-c01fc432e3c7b334f0204d011879bb1a
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-satispay-eca5006db20571e80caec1509c680c27
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-samsungpay_dark-535de9ca969b1968a4a9af7503e39047
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-samsungpay-ea57f885d8b777960d41a4eefc4972f8
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-paypay-df0729cee353881be6a3b8f870c4f38e
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-ng_wallet_dark-640d71cce159e5fe7b5bbc3f1a942304
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-ng_wallet-ca32fc2af1e7ae7ab43c2eb2f90d4e11
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-mondu-0410ce9097dff459c456de81de61811c
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-kriya-2fc48d982927bee3db081ff546890ab1
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-bizum_dark-09a33815c58d9f29cb0637995133c227
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-bizum-7253a7dc88bc075323a97a2a06c1cbc2
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-billie_dark-96f0fe8684ec4bb7175c217a8447cad9
+      1 /v3/fingerprinted/img/payment-methods/icon-pm-billie-ce797ab9d9419d7f283c2edbabc4a0b9
+      1 /v3/fingerprinted/css/checkout-app-init-bfc07dd9a99e551de1f9ab17f38fb3c1
+      1 /v3/favicon
+      1 /v3/checkout-inner-origin-frame-019673dadb24734ccaefeabe9e24ab38
+      1 /v3/checkout
+--- title ---
+<title>Stripe Checkout</title>
+[0m
+`pay.n26.com/pay` is a Stripe Checkout shell (third-party logic). The genuinely N26-owned new surface is `engagementplatform.n26.com` (JSON route-based API). Enumerating common paths passively.
+[0m$ [0mp(){ curl -s --max-time 15 -o /tmp/opencode/ep_body -w "%{http_code} %{size_download}B %{content_type}" -H "Accept: application/json" "https://engagementplatform.n26.com$1"; echo "  $1  body:$(head -c 120 /tmp/opencode/ep_body)"; sleep 1; }
+p /health
+p /metrics
+p /version
+p /v1
+p /v1/health
+p /api/v1
+p /api/v1/health
+p /graphql
+p /notifications
+p /users
+p /swagger.json
+p /openapi.json
+p /swagger-ui
+p /docs
+p /config
+404 25B application/json; charset=utf-8  /health  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /metrics  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /version  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /v1  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /v1/health  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /api/v1  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /api/v1/health  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /graphql  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /notifications  body:{"message":"Invalid URL"}
+401 31B application/json  /users  body:{"message":"Invalid API key: "}
+404 25B application/json; charset=utf-8  /swagger.json  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /openapi.json  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /swagger-ui  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /docs  body:{"message":"Invalid URL"}
+404 25B application/json; charset=utf-8  /config  body:{"message":"Invalid URL"}
+[0m
+`/users` diverges: 401 `Invalid API key` (echoes presented key) vs 404 everywhere else. Confirming which header is checked — dummy value, read-only.
+[0m$ [0mt(){ curl -s --max-time 15 -w " [%{http_code}]" -H "Accept: application/json" $2 "https://engagementplatform.n26.com$1"; echo "  <= $3"; sleep 1; }
+t /users "-H 'x-api-key: deadbeef'" "x-api-key: deadbeef"
+t /users/1 "-H 'x-api-key: deadbeef'"
+t /users1 "-H 'x-api-key: deadbeef'"
+t /users " " none
+t /v1/users1 "-H 'x-api-key: deadbeef'"
+[000]{"message":"Invalid API key: "} [401]  <= x-api-key: deadbeef
+ [000]{"message":"Invalid URL"} [404]  <= 
+ [000]{"message":"Invalid URL"} [404]  <= 
+{"message":"Invalid API key: "} [401]  <= none
+ [000]{"message":"Invalid URL"} [404]  <=
+[0m
+[0m$ [0mt(){ curl -s --max-time 15 -H "Accept: application/json" -H "$1" -w " [%{http_code}]" "https://engagementplatform.n26.com/users" | tr -d '\n'; echo "  <= header: $1"; sleep 1; }
+t "x-api-key: deadbeef"
+t "apikey: deadbeef"
+t "authorization: Bearer deadbeef"
+t "x-api-token: deadbeef"
+{"message":"Invalid API key: "} [401]  <= header: x-api-key: deadbeef
+{"message":"Invalid API key: "} [401]  <= header: apikey: deadbeef
+{"message":"Invalid API key: deadbeef"} [401]  <= header: authorization: Bearer deadbeef
+{"message":"Invalid API key: "} [401]  <= header: x-api-token: deadbeef
+[0m
+Header confirmed: `Authorization: Bearer <key>` is checked on `/users`. Completing route-map on engagementplatform and closing out `pay.n26.com` glob behavior.
+[0m$ [0mep(){ curl -s --max-time 15 -H "Accept: application/json" -w " [%{http_code}]" "https://engagementplatform.n26.com$1" | tr -d '\n'; echo "  $1"; sleep 1; }
+ep /admin
+ep /internal
+ep /events
+ep /campaigns
+ep /messages
+ep /push
+ep /templates
+ep /api/users
+echo "--- pay glob ---"
+pg(){ curl -s -o /dev/null --max-time 15 -w "%{http_code} %{size_download}B %{content_type}" "https://pay.n26.com$1"; echo "  $1"; sleep 1; }
+pg /pay/xyz
+pg /foobar
+pg /pay?amount=100
+{"message":"Invalid URL"} [404]  /admin
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+ [404]  /internal
+{"message":"Invalid API key: "} [401]  /events
+{"message":"Invalid URL"} [404]  /campaigns
+{"message":"Invalid URL"} [404]  /messages
+{"message":"Invalid URL"} [404]  /push
+{"message":"Invalid URL"} [404]  /templates
+{"message":"Invalid URL"} [404]  /api/users
+--- pay glob ---
+200 564105B text/html; charset=utf-8  /pay/xyz
+403 111B application/xml  /foobar
+200 564105B text/html; charset=utf-8  /pay?amount=100
+[0m
+Second route on engagementplatform (`/events` → 401), and `/internal` answers from a *different* nginx origin — probing that secondary surface.
+[0m$ [0mep(){ curl -s --max-time 15 -H "Accept: application/json" -w " [%{http_code}]" "https://engagementplatform.n26.com$1" | tr -d '\n' | head -c 130; echo "  $1"; sleep 1; }
+ep /internal/
+ep /internal/health
+ep /internal/ping
+ep /internal/status
+ep /internal/version
+ep /internal/metrics
+ep /internal/info
+ep /internal/config
+ep /events
+ep /events/1
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>  /internal/
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>  /internal/health
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>  /internal/ping
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>  /internal/status
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>  /internal/version
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>  /internal/metrics
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>  /internal/info
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>  /internal/config
+{"message":"Invalid API key: "} [401]  /events
+{"message":"Invalid URL"} [404]  /events/1
+[0m
+STEP 1 — DELTA
+- NEW engagementplatform.n26.com: Cloudflare-fronted JSON API; `/users` + `/events` gated by `Authorization: Bearer <key>` (401 `{"message":"Invalid API key: <key>"}`); `/internal/*` routed to a separate nginx origin, all 404 (2 origins behind one hostname). No unauth routes found.
+- NEW pay.n26.com: Cloudflare+CloudFront edge; `/pay` and all `/pay/*` return a generic Stripe Checkout shell (564,105B, `<title>Stripe Checkout</title>`, js.stripe.com); all other paths 403 at edge — payment logic is third-party (api.stripe.com/v1).
+- NEW 3ds-challenge.n26.com: `awselb/2.0`, HTTP 403 on all methods incl OPTIONS — ALB/WAF default-deny; 3DS challenge is session-bound.
+- NEW passive-DNS subdomain set (hackertarget hostsearch): clicks.accounts.n26.com, clicks.emails.n26.com, docs.n26.com, static.app.n26.com, static.n26.com, static.support.n26.com, mag*/.mag-de/-es/-fr/-it, join/get/next/tutorials — CloudFront static/marketing, INFO expected, unprobed.
+- CHANGED keyless auth-service: unchanged since last cycle (LIVE 404 Istio/Envoy, WS routes `path unused`); scope ruling still pending.
+
+STEP 2 — PRIORITIZE
+- [PRIO] engagementplatform.n26.com,6.8,a:6 b:8 t:6 g:3 c:9 f:10 — real N26-owned JSON API, 2 confirmed routes, key-gated
+- [PRIO] pay.n26.com,7.0,a:4 b:9 t:6 g:7 c:8 f:10 — money flow but Stripe-hosted logic, INFO ceiling
+- [PRIO] 3ds-challenge.n26.com,6.5,a:3 b:10 t:7 g:2 c:9 f:10 — cardholder-auth host, anonymous reach nil
+- [PRIO] authentication-service.eks.core-production.keyless.technology,7.0 (carried) — HIGH asset, vendor-owned, scope-pending
+
+STEP 3 — HYPOTHESES
+[HYP] engagementplatform Bearer API key recoverable from a public N26 client asset
+class: AUTH
+asset: engagementplatform.n26.com
+confidence: 42
+reasoning: passive DNS surfaced host; `/users`+`/events` exist and answer 401 until a valid `Authorization: Bearer` key is supplied (error echoes presented key); service absent from app.n26.com CSP connect-src and prior bundle sweeps, so web-side key embedding already negative; only mobile/server consumption plausible
+evidence_needed: a working key value, or a client asset that legitimately sends one (mobile app binary / server integration doc)
+verify_steps: with a test/whitelisted key → GET https://engagementplatform.n26.com/users and /events (read-only, dummy/blessed key only); without a key no further passive enumeration is possible
+impact: full read of engagement/notification platform data (customer comms) if key is client-extractable — MEDIUM; otherwise INFO boundary confirmed
+testability: AUTH_HELPED
+[HYP] pay.n26.com N26-owned logic behind /pay
+class: OTHER
+asset: pay.n26.com
+confidence: 20
+reasoning: all /pay/* paths return byte-identical 564,105B Stripe Checkout shell (generic SPA, no per-link data); /foobar 403 at edge; payment calls target api.stripe.com — no N26-owned endpoint evidence
+evidence_needed: any N26-origin endpoint under /pay that is not Stripe
+verify_steps: differential /pay vs /pay/?session-id variants, all already 200-same-shell
+impact: none demonstrated; Stripe is vendor-logic
+testability: PASSIVE
+[HYP] 3DS challenge anonymous reachability via ALB path bypass
+class: AUTH
+asset: 3ds-challenge.n26.com
+confidence: 20
+reasoning: awselb/2.0 returns 403 on every method incl OPTIONS (118B fixed) — blanket ALB/WAF deny; 3DS challenge only served inside a signed cardholder transaction
+evidence_needed: any non-403 response
+verify_steps: GET/OPTIONS on /, /health, /cardinal — all 403
+impact: HIGH if reached, but no anonymous path demonstrated
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+- [PARKED] pay.n26.com N26-owned logic: below 40; Stripe-hosted shell, edge deny elsewhere — third-party, no N26 logic, INFO at best
+- [PARKED] 3DS anonymous reachability: below 40; ALB blanket-403, session-bound, no bypass.
+- [PARKED] Keyless WS subprotocol-gating: below 40 (25), vendor-owned, needs live session — held open only as the sole untested HIGH asset
+- [FINAL] 1) engagementplatform.n26.com key hunt (confidence 42, AUTH_HELPED) — only N26-owned live API with confirmed routes in inventory; key source or test credential required
+- [FINAL] 2) Keyless scope ruling (carried, HUMAN) — vendor domain outside N26-operated boundary absent coordinator ruling
+
+STEP 5 — NEXT ACTION
+[NEXT] HUMAN: one consolidated coordinator ask — (a) scope ruling for `keyless.technology` vendor asset, (b) a whitelisted/integration API key or scoped test identity for engagementplatform.n26.com `/users`+`/events` (and confirmation the key is server-only), (c) an app/LivePerson session for app.n26.com GraphQL + Keyless WS handshake. Nothing further is testable anonymously: new in-scope API is key-gated, pay/3ds are third-party or session-bound.
+
+STEP 6 — LEARNING
+- [LEARN] ACCEPTED MISCONFIG @ pay.n26.com: /pay + /pay/* serve a generic Stripe-hosted Checkout shell (564,105B, Stripe assets, api.stripe.com); edge denies all other paths — third-party logic, INFO ceiling
+- [LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users + /events behind Authorization: Bearer API key (401 echoes key); /internal/* = separate nginx origin (all 404); no unauth routes → AUTH_HELPED
+- [LEARN] REJECTED AUTH @ 3ds-challenge.n26.com: awselb/2.0 403 across all methods — ALB default-deny, session-bound 3DS, no anonymous surface
+
+STEP 7 — RISK
+- [RISK] N26 Bank AG: 20/100 — surface no longer *fully* static: passive DNS surfaced one live N26-owned API (engagementplatform, /users + /events) plus pay/3ds/challenge hosts, but every new route is key-gated, Stripe-third-party, or session-bound; no IDOR/SSRF/business-logic/auth bypass demonstrated across 10 cycles. Remaining paths require a key or session (AUTH_HELPED) or a scope ruling (vendor asset). Coordinate ask is the single gating dependency.
