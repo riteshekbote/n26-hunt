@@ -6,3 +6,7 @@
 - 2 lead(s) marked VALID at 2026-09-07 06:12:37 UTC
   - | **Q4 Provable** | HOLD — requires valid Bearer key which is not in web CSP/bundles; cannot prove non-invasively |
   - | engagementplatform.n26.com/users | **HOLD** | Needs valid key path discovery |
+
+- 2 lead(s) marked VALID at 2026-09-07 12:47:54 UTC
+  - | Q4 Provable | **No** — requires valid Bearer key not found in web CSP/bundles |
+  - | 7 | `engagementplatform.n26.com/users` | **HOLD** | Needs valid key path |
