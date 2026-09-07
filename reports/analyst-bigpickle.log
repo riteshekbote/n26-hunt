@@ -9768,3 +9768,61 @@ STEP 6 — LEARNING:
 
 STEP 7 — RISK:
 [RISK] N26 Bank AG: 15/100 — No reportable finding in hand after 9+ cycles. Surface fully cornered at INFO: flags.n26.com initialize 200 is by-design public-client SDK data; GraphQL tarpit/WAF-closed on every anonymous transport on app+support; spc=tracking GIFs; cdn=private; marketing INFO-only; my.n26.com=301 redirect. The only genuinely fresh intel (engagementplatform 401 key-gated API + live Keyless EKS auth service) yields no anonymous exploit and gates on a Bearer key the client cannot obtain and a vendor-owned domain pending scope ruling. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated. Remaining HIGH-value paths all require a coordinator-provided key, test identity, or app session (AUTH_HELPED). North-star ask stands; without a coordinator response there is no further anonymous testable surface.
+===== ANALYST bigpickle 2026-09-07 08:42:53 UTC =====
+[0m
+> build · big-pickle
+[0m
+## STEP 1 — DELTA
+NO_DELTA. All hosts/endpoints in inventory match knowledge base; no new probes executed since last analysis.
+
+## STEP 2 — PRIORITIZE
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.6,attack_surface=8,business_value=9,tech_exposure=7,gate_ease=4,cloud_surface=8,freshness=9
+[PRIO] app.n26.com/graphql,7.4,attack_surface=9,business_value=10,tech_exposure=9,gate_ease=1,cloud_surface=6,freshness=5
+[PRIO] engagementplatform.n26.com,6.3,attack_surface=7,business_value=8,tech_exposure=6,gate_ease=2,cloud_surface=5,freshness=8
+
+## STEP 3 — HYPOTHESES
+[HYP] Keyless auth service non-standard route discovery (survivor, scope-pending)
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 65
+reasoning: service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.08.27 eks-production`, custom `x-keyless-flow-id`; /, /.well-known/openid-configuration, /health, /api/swagger.json all return `{"code":"UNPROCESSABLE","reason":"path unused: …"}` — API mounted at custom routes; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26 (both 404 on this HTTP ingress)
+evidence_needed: any non-`unused` HTTP response, or a `101`/non-`unused` WS-upgrade on either bundle-disclosed route
+verify_steps: GET /api/v1, /v1, /keyless, /auth, /webauthn, /passkey, /credentials (read-only ≤1 rps) — all likely 404 `path unused`; real handshake requires live app subprotocol (AUTH_HELPED)
+impact: auth/bypass/WebAuthn flaws = CRITICAL if reached, but anonymous reachability not demonstrated and domain is vendor-owned (scope-pending)
+testability: PASSIVE (limited) / AUTH_HELPED for live handshake
+
+[HYP] GraphQL WS/APQ front-door (carry)
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: all HTTP transports WAF-blocked/tarpit (GET query reset, all POST CTs 403, support tarpit identical); only untested front-doors are WS upgrade and APQ hash, both requiring a live app session/auth hook
+evidence_needed: non-40x/non-stall /graphql response
+verify_steps: WS upgrade with `Sec-WebSocket-Protocol: graphql-ws` from authenticated context (AUTH_HELPED)
+impact: schema→mutation→banking-op abuse — HIGH if reached, unreachable anonymously
+testability: AUTH_HELPED
+
+[HYP] Engagementplatform Bearer key client-extractable (survivor)
+class: AUTH
+asset: engagementplatform.n26.com/users
+confidence: 42
+reasoning: passive-DNS-surfaced host; /users+/events answer 401 (not 404/403/tarpit) until a valid `Authorization: Bearer` key is supplied, and the error echoes the presented key; absent from app.n26.com CSP connect-src and all 11 prior web-bundle sweeps → web key embedding already negative; only mobile/server consumption plausible
+evidence_needed: a working key value, or a client asset that legitimately transmits one (mobile binary / server integration doc)
+verify_steps: none anonymous — requires whitelisted/blessed key for GET /users and /events (read-only)
+impact: full read of customer-engagement/notification data if key recoverable — MEDIUM; otherwise INFO boundary confirmed
+testability: AUTH_HELPED
+
+## STEP 4 — SELF-CRITIQUE
+[PARKED] GraphQL WS/APQ front-door: confidence 25 < 40 threshold; requires AUTH_HELPED session; no anonymous verify path exists
+[PARKED] Engagementplatform Bearer key client-extractable: confidence 42 < 40 threshold; requires non-anonymous key; no passive verify
+[FINAL] Keyless auth service non-standard route discovery: confidence 65; has passive verify steps possible (route enumeration); scope-pending but testable read-only
+
+## STEP 5 — NEXT ACTION
+[NEXT] HUMAN: escalate consolidated coordinator ask — (a) written scope ruling on `keyless.technology` vendor-in-flow asset (tenant slug `n26`, `wss://…/v1/auth/n26`, `/v1/enroll/n26`), (b) a whitelisted/integration Bearer key (or scoped test identity) for `engagementplatform.n26.com/users`+`/events` plus confirmation the key is server-only (if client-extractable → MEDIUM reportable), (c) an app/LivePerson session for app.n26.com GraphQL WS/APQ + Keyless WS handshake. No anonymous PROBE remains untried: key is gated, keyless is `path unused`/vendor-owned, GraphQL is tarpit-closed.
+
+## STEP 6 — LEARNING
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+11 bundles → server/mobile-only; boundary confirmed, requires key to test further.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary stable — initialize(POST+body)→200 by-design (INFO), sdk_exception GET→403, download_config_specs→401, all GET config→403; no new vectors this cycle.
+[LEARN] ACCEPTED AUTH @ app.n26.com/graphql: tarpit/WAF-closed unchanged across all anonymous transports; no differential ingress appears.
+
+## STEP 7 — RISK
+[RISK] N26 Bank AG: 15/100 — No reportable finding in hand after 9+ cycles. Surface fully cornered at INFO: flags.n26.com initialize 200 is by-design public-client SDK data; GraphQL tarpit/WAF-closed on every anonymous transport on app+support; spc=tracking GIFs; cdn=private; marketing INFO-only; my.n26.com=301 redirect. The only genuinely fresh intel (engagementplatform 401 key-gated API + live Keyless EKS auth service) yields no anonymous exploit and gates on a Bearer key the client cannot obtain and a vendor-owned domain pending scope ruling. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated. Remaining HIGH-value paths all require a coordinator-provided key, test identity, or app session (AUTH_HELPED). North-star ask stands; without a coordinator response there is no further anonymous testable surface.

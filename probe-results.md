@@ -227,3 +227,6 @@ https://engagementplatform.n26.com/users -> HTTP 401
 https://flags.n26.com/v1/sdk_exception -> HTTP 403
 https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
 https://engagementplatform.n26.com/users -> HTTP 401
+
+## 2026-09-07 08:42:54 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403
