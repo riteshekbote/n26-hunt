@@ -470,3 +470,38 @@
 - LEARN: ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses; WAF blocks all POST Content-Types; GET query param connection reset.
 - LEARN: REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
 - LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v2
+
+## RANKED HYPOTHESES 2026-09-07 03:27:00 UTC
+- [65] authentication-service.eks.core-production.keyless.technology: Keyless auth service uses non-standard API paths requiring discovery (from art/lead_nemotron3.txt)
+- [25] app.n26.com/graphql: GraphQL schema via WebSocket/persisted-query upgrade on app.n26.com (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: escalate to program coordinator — request scoped test account or LivePerson/app session to enable AUTH_HELPED GraphQL WS/APQ testing (the only remaining 
+- NEXT(hypotheses-nemotron3.txt): PROBE: GET https://authentication-service.eks.core-production.keyless.technology/api/v2 → GET /v2 → GET /internal → GET /private → GET /admin → GET /actuator/he
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: POST /v1/initialize 200-with-data is Statsig DESIGN — public client key unchanged across bundle rotation, browser SDK sends 
+- LEARN: REJECTED MISCONFIG @ app.n26.com: numeric Statsig IDs (3526595..4173610755) absent from all 11 bundles — IDs server-assigned, name↔ID mapping not passively reco
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC is method+shape dependent (GET initialize 403 vs POST 200), but the 401 on download_config_specs proves app-layer
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: POST /v1/initialize 200-with-data is Statsig DESIGN — public client key unchanged across bundle rotation, browser SDK sends 
+- LEARN: REJECTED MISCONFIG @ app.n26.com: numeric Statsig IDs (3526595..4173610755) absent from all 11 bundles — IDs server-assigned, name↔ID mapping not passively reco
+- LEARN: REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+- LEARN: REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
+- LEARN: REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalati
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403
+- LEARN: REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class cl
+- LEARN: REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+- LEARN: ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
+- LEARN: REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+- LEARN: ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative acros
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary stable — initialize(POST+body)→200 by-design (INFO), sdk_exception GET→403, download_config_specs→401, all GET
+- LEARN: ACCEPTED AUTH @ app.n26.com/graphql: tarpit/WAF-closed unchanged across all anonymous transports; no differential ingress appears.
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassifie
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403.
+- LEARN: REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalati
+- LEARN: ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403.
+- LEARN: REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API.
+- LEARN: REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure.
+- LEARN: REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class cl
+- LEARN: REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; no listing/misconfig.
+- LEARN: ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only.
+- LEARN: ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses; WAF blocks all POST Content-Types; GET query param connection reset.
+- LEARN: REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+- LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v2

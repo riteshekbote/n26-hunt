@@ -9016,3 +9016,755 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 - [RISK] N26 Bank AG: 20/100 — surface no longer *fully* static: passive DNS surfaced one live N26-owned API (engagementplatform, /users + /events) plus pay/3ds/challenge hosts, but every new route is key-gated, Stripe-third-party, or session-bound; no IDOR/SSRF/business-logic/auth bypass demonstrated across 10 cycles. Remaining paths require a key or session (AUTH_HELPED) or a scope ruling (vendor asset). Coordinate ask is the single gating dependency.
+===== ANALYST bigpickle 2026-09-07 03:27:00 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m# [0mTodos
+[•] Analyze current surface for deltas from inventory/knowledge/last leads
+[ ] Prioritize assets based on attack_surface, business_value, tech_exposure, gate_ease, cloud_surface, freshness
+[ ] Formulate top 3 hypotheses with strict schema
+[ ] Self-critique hypotheses and drop low-confidence/rejected-class items
+[ ] Define exactly one NEXT action (PROBE/SCAN/RAG/HUMAN)
+[ ] Document learnings as REJECTED/ACCEPTED entries
+[ ] Assess overall program risk score
+[0m
+[0m$ [0mfind /home/runner/work/n26-hunt/n26-hunt -name "*.txt" -o -name "*.md" | head -30
+/home/runner/work/n26-hunt/n26-hunt/analyst-out.txt
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-06-17-08.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-05-04.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-02-21-44.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-14-04.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-19-53.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-03-22-24.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-09-44.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-05-00-11.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-03-08-17.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-05-17-37.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-05-12-04.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-02-23-54.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-00-26.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-03-03-32.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-06-00-20.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-06-21-29.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-06-01-23.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-05-08-36.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-17-39.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-04-22-12.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-05-15-20.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-05-19-29.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-06-14-14.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-03-12-53.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-05-04-39.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-06-06-08.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-05-21-41.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-06-23-08.md
+/home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-06-11-05.md
+[0m
+[0m→ [0mRead analyst-out.txt
+[0m→ [0mRead triage/run-2026-09-06-23-08.md
+This appears to be a task-run log. Let me look at the most recent triage run and understand the current state. The most recent run is `run-2026-09-06-23-08.md`, but today is 2026-09-07. Let me check the recent triage files.
+[0m→ [0mRead triage/run-2026-09-06-21-29.md
+Let me look at the leads and other recent files to understand the current surface. Let me check the most recent runs and the current probe-results/leads.
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/ /home/runner/work/n26-hunt/n26-hunt/leads/ /home/runner/work/n26-hunt/n26-hunt/triage/ 2>/dev/null; echo "---"; ls -lat /home/runner/work/n26-hunt/n26-hunt/triage/ | head -10
+/home/runner/work/n26-hunt/n26-hunt/:
+total 204
+drwxr-xr-x 12 runner runner  4096 Sep  7 03:24 .
+drwxr-xr-x  3 runner runner  4096 Sep  7 03:24 ..
+drwxr-xr-x  7 runner runner  4096 Sep  7 03:24 .git
+drwxr-xr-x  3 runner runner  4096 Sep  7 03:24 .github
+-rw-r--r--  1 runner runner  1844 Sep  7 03:24 README.md
+-rw-r--r--  1 runner runner  2961 Sep  7 03:25 analyst-out.txt
+-rw-r--r--  1 runner runner 53824 Sep  7 03:24 analyst-prompt.txt
+-rw-r--r--  1 runner runner 49954 Sep  7 03:24 ctx.txt
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 inventory
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 knowledge
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 leads
+-rw-r--r--  1 runner runner  9123 Sep  7 03:24 probe-results.md
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 recon-notes
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 reports
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 reposcan-raw
+-rw-r--r--  1 runner runner  3283 Sep  7 03:24 scope.yml
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 scripts
+-rw-r--r--  1 runner runner    33 Sep  7 03:24 state_bigpickle.json
+-rw-r--r--  1 runner runner    33 Sep  7 03:24 state_laguna.json
+-rw-r--r--  1 runner runner    33 Sep  7 03:24 state_ling3.json
+-rw-r--r--  1 runner runner    33 Sep  7 03:24 state_longcat.json
+-rw-r--r--  1 runner runner    33 Sep  7 03:24 state_mimo.json
+-rw-r--r--  1 runner runner    33 Sep  7 03:24 state_nemotron3.json
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 triage
+
+/home/runner/work/n26-hunt/n26-hunt/leads/:
+total 328
+drwxr-xr-x  2 runner runner   4096 Sep  7 03:24 .
+drwxr-xr-x 12 runner runner   4096 Sep  7 03:24 ..
+-rw-r--r--  1 runner runner  93319 Sep  7 03:24 lead-bigpickle.md
+-rw-r--r--  1 runner runner   1428 Sep  7 03:24 lead-laguna.md
+-rw-r--r--  1 runner runner   1400 Sep  7 03:24 lead-ling3.md
+-rw-r--r--  1 runner runner   1456 Sep  7 03:24 lead-longcat.md
+-rw-r--r--  1 runner runner     18 Sep  7 03:24 lead-mimo.md
+-rw-r--r--  1 runner runner 202993 Sep  7 03:24 lead-nemotron3.md
+-rw-r--r--  1 runner runner  11828 Sep  7 03:24 reposcan-n26.md
+
+/home/runner/work/n26-hunt/n26-hunt/triage/:
+total 172
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 .
+drwxr-xr-x 12 runner runner  4096 Sep  7 03:24 ..
+-rw-r--r--  1 runner runner     0 Sep  7 03:24 .gitkeep
+-rw-r--r--  1 runner runner   223 Sep  7 03:24 run-2026-09-02-21-44.md
+-rw-r--r--  1 runner runner   601 Sep  7 03:24 run-2026-09-02-23-54.md
+-rw-r--r--  1 runner runner   167 Sep  7 03:24 run-2026-09-03-03-32.md
+-rw-r--r--  1 runner runner   275 Sep  7 03:24 run-2026-09-03-08-17.md
+-rw-r--r--  1 runner runner   242 Sep  7 03:24 run-2026-09-03-12-53.md
+-rw-r--r--  1 runner runner   244 Sep  7 03:24 run-2026-09-03-16-58.md
+-rw-r--r--  1 runner runner   177 Sep  7 03:24 run-2026-09-03-19-43.md
+-rw-r--r--  1 runner runner   928 Sep  7 03:24 run-2026-09-03-22-24.md
+-rw-r--r--  1 runner runner   186 Sep  7 03:24 run-2026-09-04-00-26.md
+-rw-r--r--  1 runner runner   165 Sep  7 03:24 run-2026-09-04-05-04.md
+-rw-r--r--  1 runner runner   160 Sep  7 03:24 run-2026-09-04-09-44.md
+-rw-r--r--  1 runner runner   178 Sep  7 03:24 run-2026-09-04-14-04.md
+-rw-r--r--  1 runner runner   235 Sep  7 03:24 run-2026-09-04-17-39.md
+-rw-r--r--  1 runner runner   569 Sep  7 03:24 run-2026-09-04-19-53.md
+-rw-r--r--  1 runner runner   155 Sep  7 03:24 run-2026-09-04-22-12.md
+-rw-r--r--  1 runner runner   213 Sep  7 03:24 run-2026-09-05-00-11.md
+-rw-r--r--  1 runner runner   150 Sep  7 03:24 run-2026-09-05-04-39.md
+-rw-r--r--  1 runner runner   169 Sep  7 03:24 run-2026-09-05-08-36.md
+-rw-r--r--  1 runner runner   152 Sep  7 03:24 run-2026-09-05-12-04.md
+-rw-r--r--  1 runner runner   194 Sep  7 03:24 run-2026-09-05-15-20.md
+-rw-r--r--  1 runner runner 10012 Sep  7 03:24 run-2026-09-05-17-37.md
+-rw-r--r--  1 runner runner   179 Sep  7 03:24 run-2026-09-05-19-29.md
+-rw-r--r--  1 runner runner   176 Sep  7 03:24 run-2026-09-05-21-41.md
+-rw-r--r--  1 runner runner   177 Sep  7 03:24 run-2026-09-05-23-37.md
+-rw-r--r--  1 runner runner 16528 Sep  7 03:24 run-2026-09-06-00-20.md
+-rw-r--r--  1 runner runner  2538 Sep  7 03:24 run-2026-09-06-01-23.md
+-rw-r--r--  1 runner runner   187 Sep  7 03:24 run-2026-09-06-06-08.md
+-rw-r--r--  1 runner runner   152 Sep  7 03:24 run-2026-09-06-11-05.md
+-rw-r--r--  1 runner runner   189 Sep  7 03:24 run-2026-09-06-14-14.md
+-rw-r--r--  1 runner runner   143 Sep  7 03:24 run-2026-09-06-17-08.md
+-rw-r--r--  1 runner runner   182 Sep  7 03:24 run-2026-09-06-19-17.md
+-rw-r--r--  1 runner runner  6435 Sep  7 03:24 run-2026-09-06-21-29.md
+-rw-r--r--  1 runner runner   177 Sep  7 03:24 run-2026-09-06-23-08.md
+-rw-r--r--  1 runner runner   370 Sep  7 03:24 run-2026-09-07-01-06.md
+---
+total 172
+drwxr-xr-x 12 runner runner  4096 Sep  7 03:24 ..
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 .
+-rw-r--r--  1 runner runner   194 Sep  7 03:24 run-2026-09-05-15-20.md
+-rw-r--r--  1 runner runner 10012 Sep  7 03:24 run-2026-09-05-17-37.md
+-rw-r--r--  1 runner runner   179 Sep  7 03:24 run-2026-09-05-19-29.md
+-rw-r--r--  1 runner runner   176 Sep  7 03:24 run-2026-09-05-21-41.md
+-rw-r--r--  1 runner runner   177 Sep  7 03:24 run-2026-09-05-23-37.md
+-rw-r--r--  1 runner runner 16528 Sep  7 03:24 run-2026-09-06-00-20.md
+-rw-r--r--  1 runner runner  2538 Sep  7 03:24 run-2026-09-06-01-23.md
+[0m
+[0m→ [0mRead triage/run-2026-09-07-01-06.md
+[0m→ [0mRead scope.yml
+Let me look at the latest triage run (2026-09-07-01-06) since it's the most recent, plus the key leads that survived, and the knowledge/inventory files.
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/knowledge/ /home/runner/work/n26-hunt/n26-hunt/reports/ /home/runner/work/n26-hunt/n26-hunt/recon-notes/ /home/runner/work/n26-hunt/n26-hunt/inventory/ /home/runner/work/n26-hunt/n26-hunt/scripts/ 2>/dev/null
+/home/runner/work/n26-hunt/n26-hunt/inventory/:
+total 28
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 .
+drwxr-xr-x 12 runner runner  4096 Sep  7 03:24 ..
+-rw-r--r--  1 runner runner 20275 Sep  7 03:24 n26.md
+
+/home/runner/work/n26-hunt/n26-hunt/knowledge/:
+total 28
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 .
+drwxr-xr-x 12 runner runner  4096 Sep  7 03:24 ..
+-rw-r--r--  1 runner runner 17888 Sep  7 03:24 index.md
+
+/home/runner/work/n26-hunt/n26-hunt/recon-notes/:
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep  7 03:24 .
+drwxr-xr-x 12 runner runner 4096 Sep  7 03:24 ..
+-rw-r--r--  1 runner runner  809 Sep  7 03:24 DEDICATED-DEEP.md
+
+/home/runner/work/n26-hunt/n26-hunt/reports/:
+total 1308
+drwxr-xr-x  2 runner runner   4096 Sep  7 03:24 .
+drwxr-xr-x 12 runner runner   4096 Sep  7 03:24 ..
+-rw-r--r--  1 runner runner 832179 Sep  7 03:24 analyst-bigpickle.log
+-rw-r--r--  1 runner runner   6076 Sep  7 03:24 analyst-laguna.log
+-rw-r--r--  1 runner runner   6048 Sep  7 03:24 analyst-ling3.log
+-rw-r--r--  1 runner runner   6104 Sep  7 03:24 analyst-longcat.log
+-rw-r--r--  1 runner runner 411867 Sep  7 03:24 analyst-nemotron3.log
+-rw-r--r--  1 runner runner   2476 Sep  7 03:24 hypotheses-bigpickle.txt
+-rw-r--r--  1 runner runner     51 Sep  7 03:24 hypotheses-laguna.txt
+-rw-r--r--  1 runner runner     50 Sep  7 03:24 hypotheses-ling3.txt
+-rw-r--r--  1 runner runner     52 Sep  7 03:24 hypotheses-longcat.txt
+-rw-r--r--  1 runner runner   8476 Sep  7 03:24 hypotheses-nemotron3.txt
+-rw-r--r--  1 runner runner  64348 Sep  7 03:24 hypotheses.md
+-rw-r--r--  1 runner runner   4596 Sep  7 03:24 reposcan-findings.md
+-rw-r--r--  1 runner runner    299 Sep  7 03:24 valid-bugs.md
+
+/home/runner/work/n26-hunt/n26-hunt/scripts/:
+total 28
+drwxr-xr-x  2 runner runner  4096 Sep  7 03:24 .
+drwxr-xr-x 12 runner runner  4096 Sep  7 03:24 ..
+-rw-r--r--  1 runner runner 16987 Sep  7 03:24 sync-issues.py
+[0m
+Let me read the main lead files (bigpickle and nemotron3) to understand the freshest hypotheses and current state, plus the knowledge base directory.
+[0m→ [0mRead reports/hypotheses-bigpickle.txt
+[0m→ [0mRead reports/hypotheses-nemotron3.txt
+Let me read the fresh lead files from the bigpickle and nemotron3 agents, and the hypotheses files.
+[0m→ [0mRead reports/valid-bugs.md
+[0m→ [0mRead inventory/n26.md
+Now let me look at the inventory and knowledge base files to understand the full current surface, and the valid-bugs report.
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/recon-notes/; echo "==="; cat /home/runner/work/n26-hunt/n26-hunt/recon-notes/DEDICATED-DEEP.md; echo "===PROBE RESULTS==="; cat /home/runner/work/n26-hunt/n26-hunt/probe-results.md
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep  7 03:24 .
+drwxr-xr-x 12 runner runner 4096 Sep  7 03:24 ..
+-rw-r--r--  1 runner runner  809 Sep  7 03:24 DEDICATED-DEEP.md
+===
+# Dedicated deep surface (wildcard-filtered) 2026-09-03
+
+**Target:** `n26`
+**Root zones:** `n26.com`
+
+## Wildcard analysis
+
+- Total resolving hostnames in zone: 0
+- After shared/wildcard IP filtering: **0 genuinely dedicated hosts**
+- Reason: all resolving hostnames use shared/CDN/wildcard IP signatures
+
+## Honest conclusion
+
+This target's subdomain space is wildcard-dominated. No genuinely dedicated
+subdomain surface was recovered from passive brute + subfinder enumeration.
+The surface either (a) uses wildcard DNS records, (b) all CNAME records
+point to shared CDN/Cloudflare/CloudFront/AWS IPs, or (c) has no
+subdomain program at all. This is the honest exhaustive result.
+
+---
+_Honest framing: passive DNS enumeration + shared-IP wildcard filtering. No finding claimed. No active testing performed._
+===PROBE RESULTS===
+
+## 2026-09-02 21:37:48 UTC
+
+
+## 2026-09-02 23:32:55 UTC
+
+
+## 2026-09-03 01:25:44 UTC
+
+
+## 2026-09-03 06:35:49 UTC
+
+
+## 2026-09-03 11:42:06 UTC
+
+
+## 2026-09-03 15:57:40 UTC
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://flags.n26.com/v1/get_configs -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+https://flags.n26.com/v1/log_event -> HTTP 403
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://spc.n26.com/v1/payments -> 200 len=43
+https://spc.n26.com/v1/tokens -> 200 len=43
+https://spc.n26.com/docs -> HTTP 404
+https://spc.n26.com/status -> HTTP 404
+https://app.n26.com/build/js/client.*.js -> HTTP 404
+
+## 2026-09-03 18:56:42 UTC
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://app.n26.com/graphql?query={__schema{types{name -> ERR The read operation timed out
+https://app.n26.com/build/js/client.*.js -> HTTP 404
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+https://spc.n26.com/health -> HTTP 404
+https://spc.n26.com/api -> HTTP 404
+https://spc.n26.com/api/v1 -> 200 len=43
+https://spc.n26.com/internal -> HTTP 404
+https://spc.n26.com/private -> HTTP 404
+https://app.n26.com -> 200 len=319045
+
+## 2026-09-03 21:34:43 UTC
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://app.n26.com/graphql?query={__schema{types{name -> ERR The read operation timed out
+https://app.n26.com/build/js/client.*.js -> HTTP 404
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+https://spc.n26.com/health -> HTTP 404
+https://spc.n26.com/api -> HTTP 404
+https://spc.n26.com/api/v1 -> 200 len=43
+https://spc.n26.com/internal -> HTTP 404
+https://spc.n26.com/private -> HTTP 404
+https://app.n26.com -> 200 len=319045
+
+## 2026-09-03 23:36:03 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com -> 200 len=319045
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://app.n26.com/graphql?query={__schema{types{name -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
+https://app.n26.com/graphql?query=query{__typename -> ERR The read operation timed out
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/get_configs -> HTTP 403
+https://flags.n26.com/v1/log_event -> HTTP 403
+https://spc.n26.com/v1/payments -> 200 len=43
+
+## 2026-09-04 01:25:59 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319045
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+
+## 2026-09-04 06:06:17 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319045
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+
+## 2026-09-04 11:26:09 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://spc.n26.com/v1/payments -> 200 len=43
+https://spc.n26.com/v1/tokens -> 200 len=43
+https://spc.n26.com/api/v1/transactions/1 -> HTTP 404
+https://spc.n26.com/api/v1/users/1 -> HTTP 404
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
+
+## 2026-09-04 15:15:55 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+
+## 2026-09-04 18:31:24 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+
+## 2026-09-04 21:04:28 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+
+## 2026-09-04 23:08:00 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+
+## 2026-09-05 01:10:00 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+
+## 2026-09-05 05:50:04 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize -> HTTP 403
+
+## 2026-09-05 09:51:57 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://spc.n26.com/v1/payments -> 200 len=43
+https://spc.n26.com/v1/tokens -> 200 len=43
+https://spc.n26.com/api/v1/transactions/1 -> HTTP 404
+https://spc.n26.com/api/v1/users/1 -> HTTP 404
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
+
+## 2026-09-05 13:19:26 UTC
+https://spc.n26.com/api/v1 -> 200 len=43
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize -> HTTP 403
+
+## 2026-09-05 16:16:44 UTC
+https://flags.n26.com/v1/get_configs -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
+https://app.n26.com -> 200 len=319204
+https://spc.n26.com/v1/payments -> 200 len=43
+https://spc.n26.com/v1/tokens -> 200 len=43
+https://spc.n26.com/api/v1/transactions/1 -> HTTP 404
+https://spc.n26.com/api/v1/users/1 -> HTTP 404
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://flags.n26.com/v1 -> HTTP 403
+
+## 2026-09-05 18:32:00 UTC
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://flags.n26.com/v1/get_configs -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+
+## 2026-09-05 20:46:21 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+https://flags.n26.com/v1/evaluate -> HTTP 403
+
+## 2026-09-05 22:39:01 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+https://flags.n26.com/v1/evaluate -> HTTP 403
+
+## 2026-09-06 00:19:05 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+
+## 2026-09-06 04:48:39 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+
+## 2026-09-06 09:12:10 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+
+## 2026-09-06 13:02:52 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+https://app.n26.com/graphql -> ERR The read operation timed out
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+
+## 2026-09-06 16:04:48 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+
+## 2026-09-06 18:03:30 UTC
+https://flags.n26.com/v1/sdk_exception -> HTTP 403
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+
+## 2026-09-06 20:22:43 UTC
+https://flags.n26.com/v1/sdk_exception -> HTTP 403
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+
+## 2026-09-06 22:12:41 UTC
+https://flags.n26.com/v1/sdk_exception -> HTTP 403
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+
+## 2026-09-07 00:05:06 UTC
+https://flags.n26.com/v1/sdk_exception -> HTTP 403
+https://app.n26.com/graphql?extensions={ -> ERR The read operation timed out
+https://engagementplatform.n26.com/users -> HTTP 401
+[0m
+Let me check the knowledge base index and the probe-results to see the actual latest probe data, and check whether there were any new probes run since the last analysis (today is 2026-09-07).
+[0m→ [0mRead knowledge/index.md
+I now have the latest probe results. The most recent probe (2026-09-07 00:05:06 UTC) shows engagementplatform.n26.com/users returns 401, and the flags/graphql endpoints remain blocked.
+
+Let me look at the knowledge base index and the main lead-bigpickle file to understand the full engagementplatform context and the keyless service details, since my last cycle identified engagementplatform as the freshest lead.
+I now have a comprehensive view of the current state. The most recent probe (2026-09-07 00:05:06 UTC) confirmed `engagementplatform.n26.com/users` returns 401. Let me look at the full bigpickle lead file to see the last cycle's full reasoning about engagementplatform, and check if there are any other leads I should evaluate. Let me check the nemotron3 lead for the keyless service enumeration detail and lock down the current freshest hypothesis.
+
+The key new fact this cycle: engagementplatform.n26.com/users returned **401** in the 2026-09-07 00:05:06 UTC probe run (my lead flagged this last cycle as a passive DNS surfaced host with `/users`+`/events` answering 401). This is the genuinely freshest lead — it's an in-scope N26-owned host that answers with a 401 (auth-required) which is different from the WAF/tarpit patterns of the other assets. This is the best candidate for a PROBE this cycle.
+
+Let me verify whether engagementplatform is actually reachable and confirm its response behavior with a read-only probe. Since passive-first rules are relaxed for scoped active probes (max 1 rps), and this is a scoped asset, let me do a careful read-only GET/HEAD/OPTIONS probe to confirm.
+
+Let me check the bigpickle lead file for more detail on engagementplatform first.
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && tail -120 leads/lead-bigpickle.md 2>/dev/null | head -140
+testability: PASSIVE
+[HYP] GraphQL schema via WebSocket/persisted-query upgrade on app.n26.com
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: all HTTP transports stall/403 (GET query reset, all POST CT 403, support tarpit identical); only untested org front-doors are WS upgrade and APQ hash — both require live app session/auth hook
+evidence_needed: non-40x/non-stall /graphql response
+verify_steps: OPTIONS /graphql with Upgrade:websocket, Sec-WebSocket-Protocol:graphql-ws (requires LivePerson/WS session hook — AUTH_HELPED)
+impact: schema→mutation enumeration→banking-op abuse — HIGH if reached (unreached anonymously)
+testability: AUTH_HELPED
+[HYP] Weak-auth internal tooling on dev/staging namespaces
+class: MISCONFIG
+asset: *.dev-n26.com / *.staging-n26.com
+confidence: 20
+reasoning: only evidence is frame-ancestors CSP entry on support.n26.com; exact hostnames not enumerated; directionless
+evidence_needed: resolving dev/staging host with internal tool/login behavior
+verify_steps: (requires hostname discovery, out of current scope)
+impact: potential admin tooling exposure — HIGH if found, unsubstantiated now
+testability: HUMAN_ONLY
+[PARKED] GraphQL schema via WS/APQ: confidence 25 (<40), all tested HTTP transports return 403/connection-reset, no new bypass vectors; requires auth session for WS testability (AUTH_HELPED)
+[PARKED] Weak-auth dev/staging namespaces: confidence 20 (<40), no hostnames, directionless; HUMAN_ONLY
+[FINAL] 1) Statsig flag/config disclosure via method-dependent RBAC bypass on /v1/initialize (confidence 85) — by-design public-client data, INFO ceiling, no reportable impact demonstrated
+[NEXT] HUMAN: escalate to program coordinator — request scoped test account or LivePerson/app session to enable AUTH_HELPED GraphQL WS/APQ testing (the only remaining HIGH-impact reach); otherwise accept surface as fully cornered at INFO with no reportable finding in hand
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST /v1/initialize 200-with-data is Statsig DESIGN — public client key unchanged across bundle rotation, browser SDK sends identical POST+STATSIG-API-KEY from every page; reclassified from "RBAC bypass vuln" to "by-design client SDK behavior" (report value INFO unless flag config deemed sensitive)
+[LEARN] REJECTED MISCONFIG @ app.n26.com: numeric Statsig IDs (3526595..4173610755) absent from all 11 bundles — IDs server-assigned, name↔ID mapping not passively recoverable; retires evidence_needed from prior cycle
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC is method+shape dependent (GET initialize 403 vs POST 200), but the 401 on download_config_specs proves app-layer route filtering persists — bounded, not generic
+[RISK] N26 Bank AG: 20/100 — Surface mature and fully cornered: sole verified non-INFO route (flags.n26.com initialize POST 200) is by-design public-client SDK data (INFO); GraphQL tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth surface demonstrated after 8+ cycles. Remaining HIGH-impact path (GraphQL WS/APQ) requires live app session unavailable to anonymous tester. No reportable finding in hand.
+## 2026-09-06 18:01:58 UTC [target] (model bigpickle)
+[NEW] authentication-service.eks.core-production.keyless.technology — EKS-hosted WebSocket auth service in core-production cluster, discovered via CSP connect-src on app.n26.com, ZERO probe attempts across entire hunt
+[CHANGED] flags.n26.com — RBAC boundary stable since 2026-09-05; initialize POST 200-by-design (INFO); no new bypass vectors
+[CHANGED] app.n26.com/graphql — WAF tarpit confirmed identical on support.n26.com; no differential ingress path exists
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.2,a:6 b:9 t:8 g:2 c:10 f:10 — unprobed EKS auth service, highest freshness in inventory, core-production cluster, WebSocket endpoint
+[PRIO] flags.n26.com/v1/initialize,5.0,a:5 b:4 t:5 g:6 c:5 f:6 — sole 200 route, by-design public-client SDK data, INFO ceiling
+[PRIO] app.n26.com/graphql,5.4,a:7 b:9 t:8 g:1 c:6 f:2 — highest potential impact but tarpit-closed on every anonymous transport
+[HYP] Authentication service endpoint enumeration and OIDC/WebAuthn flow discovery
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 38
+reasoning: EKS-hosted in core-production cluster; "keyless" suggests passwordless/biometric/WebAuthn/JWT token exchange; listed as wss:// in CSP connect-src on app.n26.com; never actively probed despite 4 days in inventory; gate_ease=2 (likely requires auth for sensitive endpoints) but basic endpoint enumeration via GET/HEAD/OPTIONS is passive and may surface .well-known, /health, /api, or config endpoints that reveal auth flow architecture
+evidence_needed: non-error HTTP response from any endpoint; /.well-known/openid-configuration content; WebSocket upgrade handshake response
+verify_steps: HEAD https://authentication-service.eks.core-production.keyless.technology/ ; GET https://authentication-service.eks.core-production.keyless.technology/.well-known/openid-configuration ; GET https://authentication-service.eks.core-production.keyless.technology/health ; OPTIONS https://authentication-service.eks.core-production.keyless.technology/ ; GET https://authentication-service.eks.core-production.keyless.technology/api/swagger.json
+impact: auth flow architecture disclosure → identification of JWT/OIDC/WebAuthn implementation → targeted auth bypass or session hijacking; CRITICAL if key misconfig found; INFO at minimum if endpoints enumerate cleanly
+testability: PASSIVE
+[PARKED] GraphQL WS/APQ on app.n26.com: confidence 25 (<40), all HTTP transports stall/403/403, no bypass vector, requires auth session (AUTH_HELPED)
+[PARKED] Weak-auth dev/staging namespaces: confidence 20 (<40), no hostnames enumerated, directionless; HUMAN_ONLY
+[FINAL] 1) authentication-service.eks.core-production.keyless.technology endpoint enumeration (confidence 38 — below 40 but sole untested HIGH-asset in inventory; passive GET/HEAD/OPTIONS probes only; see NEXT)
+[FINAL] 2) Statsig flag/config disclosure via /v1/initialize (confidence 85) — by-design public-client data, INFO ceiling, no reportable impact
+[NEXT] PROBE: HEAD+GET+OPTIONS https://authentication-service.eks.core-production.keyless.technology/ — passive endpoint enumeration on unprobed EKS auth service; HEAD first, then GET on /.well-known/openid-configuration, /health, /api; OPTIONS for allowed methods; ≤1 rps, read-only
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST /v1/initialize 200-with-data is Statsig DESIGN — public client key unchanged across bundle rotation, browser SDK sends identical POST+STATSIG-API-KEY from every page; reclassified from "RBAC bypass vuln" to "by-design client SDK behavior" (report value INFO unless flag config deemed sensitive)
+[LEARN] REJECTED MISCONFIG @ app.n26.com: numeric Statsig IDs (3526595..4173610755) absent from all 11 bundles — IDs server-assigned, name↔ID mapping not passively recoverable
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+[RISK] N26 Bank AG: 25/100 — Surface nearly fully cornered at INFO ceiling: sole verified non-INFO route (flags.n26.com initialize POST 200) is by-design public-client SDK data (INFO); GraphQL tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. One untested HIGH-value asset remains: authentication-service.eks.core-production.keyless.technology (EKS-hosted, core-production, WebSocket, never probed). Passive endpoint enumeration on this service is the only remaining anonymous path to a potentially reportable finding. No IDOR/SSRF/funds/business-logic/auth surface demonstrated after 8+ cycles.
+## 2026-09-06 20:14:30 UTC [target] (model bigpickle)
+## 2026-09-06 22:12:17 UTC [target] (model bigpickle)
+[HYP] WS routes subprotocol-gated on Keyless auth ingress
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 25
+reasoning: app bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26; same hostname rejects both with 404 `path unused` on GET and on WS-upgrade with subprotocol `json` — router table at this HTTP ingress lacks the routes, so either a specific sec-websocket-protocol value enables routing or WS is terminated at a different ingress tensor
+evidence_needed: 101 Upgrade or non-`unused` response on either WS route with the app's actual subprotocol
+verify_steps: capture real handshake from live app session; replay exact WS subprotocol+headers read-only on the two bundle-disclosed routes
+impact: would confirm anonymous reachability of N26 biometric auth/enroll transport — HIGH if flows accept unbound sessions, but demonstrated not to be anonymously reachable today
+testability: AUTH_HELPED
+[HYP] Statsig flag/config disclosure by design
+class: MISCONFIG
+asset: flags.n26.com/v1/initialize
+confidence: 85
+reasoning: POST+canonical payload+public client key → 200 with full flag tree; reclassified as intended public-client SDK behavior; no RBAC bypass, no server key, single public key across 11 bundles
+evidence_needed: none — by-design, INFO ceiling
+verify_steps: n/a
+impact: public marketing/config metadata only
+testability: PASSIVE
+[HYP] GraphQL via WS/APQ persisted query — needs live session
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: all anonymous transports 403/tarpit/connection-reset; only untested front doors are WS upgrade and APQ hash, both requiring app session
+evidence_needed: non-40x /graphql response
+verify_steps: OPTIONS+Upgrade with graphql-ws subprotocol from authenticated context
+impact: HIGH if reached; unreachable anonymously
+testability: AUTH_HELPED
+[NEXT] HUMAN: ask program coordinator (a) whether vendor-in-flow assets (`keyless.technology`, N26 tenant slug `n26`, exact routes `wss://…/v1/auth/n26`, `/v1/enroll/n26`) fall within N26-operated scope, and (b) for a LivePerson/app session to capture the real WS subprotocol so the two bundle-disclosed routes can be handshake-tested read-only. Without a scope ruling, no further probes are warranted — the asset is vendor-owned and every anonymous transport is `404 path unused`.
+[RISK] N26 Bank AG: 18/100 — Surface fully cornered at INFO across 9+ cycles. The only genuinely fresh intel this cycle (live Keyless auth service, exact WS routes, tenant slug) yields no anonymous exploit and sits on a vendor-owned domain (`keyless.technology`) outside N26-operated scope absent a coordinator ruling. `flags.n26.com` initialize 200 is by-design public-client SDK data. GraphQL remains tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated; remaining HIGH-value paths require an app session (AUTH_HELPED). North-star request to coordinator stands: scoped test account or LivePerson session, plus a written scope ruling on vendor-in-flow assets.
+## 2026-09-07 00:04:13 UTC [target] (model bigpickle)
+[HYP] engagementplatform Bearer API key recoverable from a public N26 client asset
+class: AUTH
+asset: engagementplatform.n26.com
+confidence: 42
+reasoning: passive DNS surfaced host; `/users`+`/events` exist and answer 401 until a valid `Authorization: Bearer` key is supplied (error echoes presented key); service absent from app.n26.com CSP connect-src and prior bundle sweeps, so web-side key embedding already negative; only mobile/server consumption plausible
+evidence_needed: a working key value, or a client asset that legitimately sends one (mobile app binary / server integration doc)
+verify_steps: with a test/whitelisted key → GET https://engagementplatform.n26.com/users and /events (read-only, dummy/blessed key only); without a key no further passive enumeration is possible
+impact: full read of engagement/notification platform data (customer comms) if key is client-extractable — MEDIUM; otherwise INFO boundary confirmed
+testability: AUTH_HELPED
+[HYP] pay.n26.com N26-owned logic behind /pay
+class: OTHER
+asset: pay.n26.com
+confidence: 20
+reasoning: all /pay/* paths return byte-identical 564,105B Stripe Checkout shell (generic SPA, no per-link data); /foobar 403 at edge; payment calls target api.stripe.com — no N26-owned endpoint evidence
+evidence_needed: any N26-origin endpoint under /pay that is not Stripe
+verify_steps: differential /pay vs /pay/?session-id variants, all already 200-same-shell
+impact: none demonstrated; Stripe is vendor-logic
+testability: PASSIVE
+[HYP] 3DS challenge anonymous reachability via ALB path bypass
+class: AUTH
+asset: 3ds-challenge.n26.com
+confidence: 20
+reasoning: awselb/2.0 returns 403 on every method incl OPTIONS (118B fixed) — blanket ALB/WAF deny; 3DS challenge only served inside a signed cardholder transaction
+evidence_needed: any non-403 response
+verify_steps: GET/OPTIONS on /, /health, /cardinal — all 403
+impact: HIGH if reached, but no anonymous path demonstrated
+testability: AUTH_HELPED
+[NEXT] HUMAN: one consolidated coordinator ask — (a) scope ruling for `keyless.technology` vendor asset, (b) a whitelisted/integration API key or scoped test identity for engagementplatform.n26.com `/users`+`/events` (and confirmation the key is server-only), (c) an app/LivePerson session for app.n26.com GraphQL + Keyless WS handshake. Nothing further is testable anonymously: new in-scope API is key-gated, pay/3ds are third-party or session-bound.
+[0m
+I now have full context. Let me analyze the current state and identify the delta for this cycle.
+
+The most recent probe (2026-09-07 00:05:06 UTC) confirms:
+- `engagementplatform.n26.com/users` → **HTTP 401** (key-gated, in-scope N26-owned? — need scope assessment)
+- `flags.n26.com/v1/sdk_exception` → 403 (GET, RBAC-boundary unchanged)
+- `app.n26.com/graphql?extensions={` → timeout/tarpit (unchanged)
+
+The key question for this cycle: is `engagementplatform.n26.com` an in-scope N26-operated asset, and can I make further passive progress on it without a key? The host surfaced from passive DNS. Let me check the lead-laguna/ling3/longcat files briefly and the reposcan findings for any additional surface, and confirm whether engagementplatform behavior was explored any further.
+
+Let me check whether engagementplatform appears in any inventory/notes and whether there's been any further probing.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && cat reports/hypotheses-laguna.txt reports/hypotheses-ling3.txt reports/hypotheses-longcat.txt 2>/dev/null; echo "===REPOSCAN==="; cat reports/reposcan-findings.md 2>/dev/null | head -40
+## 2026-09-06 23:58:04 UTC [target] (model laguna)
+## 2026-09-06 23:58:05 UTC [target] (model ling3)
+## 2026-09-06 23:58:06 UTC [target] (model longcat)
+===REPOSCAN===
+# N26 Public Repository Source Code Audit Findings
+## Date: 2026-09-04
+## Auditor: opencode/mimo-v2.5-free
+
+## Scope
+- **Organization**: N26 (github.com/n26)
+- **Repos Audited**: n26/bob, n26/express-simple-locale, n26/N26AndroidSamples, n26/bob-vapor-template, n26/psd2-tpp-docs, n26/flowkit-ios
+
+---
+
+## Findings
+
+### [HYP] Hardcoded Basic Auth Credential in PSD2 MFA Challenge Script
+- **Class**: SECRET
+- **Asset**: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+- **Confidence**: 65
+- **Reasoning**: The script contains a hardcoded Base64-encoded Basic Auth header `YW5kcm9pZDpzZWNyZXQ=` which decodes to `android:secret`. This credential is used in a `curl` call to `https://$PISP_HOST/api/mfa/challenge` (default host `pisp.tech26.de`). If this is a real static credential accepted by the MFA challenge endpoint (rather than a per-session token), it could allow unauthorized triggering of out-of-band MFA challenges for any user. The script is published as a TPP example in the open-banking documentation repo and hits what appears to be the real PISP endpoint. The credential may be a well-known sandbox/example value, but if it is accepted by the production endpoint it constitutes a leaked platform credential.
+- **Impact**: Medium — potential for unauthorized MFA challenge initiation against N26 users if the credential is live
+- **Verify Steps**: (1) Passively check if `pisp.tech26.de/api/mfa/challenge` accepts `Authorization: Basic YW5kcm9pZDpzZWNyZXQ=` by observing public API docs or error responses. (2) Confirm whether the endpoint uses a static app-level credential or per-user tokens.
+
+---
+
+### [HYP] Internal S3 Staging Bucket Name Disclosure
+- **Class**: MISCONFIG
+- **Asset**: n26/N26AndroidSamples/credit/src/main/res/raw/credit_drafts.json:8,30
+- **Confidence**: 50
+- **Reasoning**: Mock credit data in the Android sample app references `https://s3.eu-central-1.amazonaws.com/consumercredit-staging/` for image assets. This reveals the internal AWS S3 bucket naming convention (`consumercredit-staging`) for N26's consumer credit staging environment. If the bucket lacks proper access controls, the naming pattern could aid enumeration or direct access. This is mock data in a sample app, so the actual bucket may or may not still exist.
+- **Impact**: Low — informational disclosure of internal bucket naming; actual exploitation depends on bucket ACL configuration
+- **Verify Steps**: (1) Passively verify if `s3://consumercredit-staging` is publicly listable or accessible via `aws s3 ls s3://consumercredit-staging/ --no-sign-request`. (2) No further active testing required.
+
+---
+
+### [HYP] Postman Sandbox Environment with Client IDs and Auth Codes
+- **Class**: SECRET
+- **Asset**: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+- **Confidence**: 40
+- **Reasoning**: The Postman environment file contains sandbox credentials including `auth_code` (`w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK`), `dedicated_aisp_client_id` (`w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI`), and `user_id` (`f3f51978-20fb-4bd9-91d9-7cc2a1fd9618`). While these are explicitly labeled as sandbox values and the environment is named `XS2A_N26_Sandbox`, they could potentially be reused or similar patterns used in production. The `redirect_uri` points to `https://app.n26.com/login` which is the production login page.
+- **Impact**: Low — sandbox credentials only; however, if the same client_id pattern is used in production or if sandbox/production share infrastructure, this could be leveraged
+- **Verify Steps**: (1) Confirm these are sandbox-only values by checking if they work against production endpoints (do NOT actively test). (2) Check if the client_id pattern follows a predictable sequence.
+[0m
+[0m# [0mTodos
+[✓] Analyze current surface for deltas from inventory/knowledge/last leads
+[•] Prioritize assets based on attack_surface, business_value, tech_exposure, gate_ease, cloud_surface, freshness
+[ ] Formulate top 3 hypotheses with strict schema
+[ ] Self-critique hypotheses and drop low-confidence/rejected-class items
+[ ] Define exactly one NEXT action (PROBE/SCAN/RAG/HUMAN)
+[ ] Document learnings as REJECTED/ACCEPTED entries
+[ ] Assess overall program risk score
+[0m
+I now have all the context I need. Let me assess the current cycle. 
+
+The current cycle's most significant delta: the `engagementplatform.n26.com/users` returning 401 was confirmed in the latest probe run (2026-09-07 00:05:06 UTC). This is the freshest in-scope lead. It's a key-gated customer-engagement/notification platform API. The prior bigpickle analysis confirmed it's absent from app.n26.com CSP connect-src and web bundles, so web-side key embedding is negative. The only remaining anonymous angle would be passive DNS / key discovery, which is exhausted.
+
+The core question is whether there's any further **anonymous, read-only** progress I can make this cycle that hasn't already been exhausted. Let me reason through the state:
+
+Assets and their status:
+1. **keyless.technology** — vendor-owned domain, outside N26-operated scope pending coordinator ruling; all anonymous transports `404 path unused`. PARKED (HUMAN).
+2. **flags.n26.com** — RBAC fully enumerated, initialize POST 200 by-design INFO. Closed.
+3. **app.n26.com / support.n26.com /graphql** — WAF/tarpit closed on all transports. Closed.
+4. **spc.n26.com** — tracking GIFs, IDOR invalidated. Closed.
+5. **cdn.number26.de** — private bucket. Closed.
+6. **n26.com marketing** — loose CSP INFO only. Closed.
+7. **my.n26.com** — 301 redirect, no takeover. Closed.
+8. **engagementplatform.n26.com** — key-gated (/users 401), web-side key negative; AUTH_HELPED.
+9. **3ds-challenge.n26.com, pay.n26.com** — third-party/session-bound, no anonymous path. Closed.
+
+Everything is cornered at INFO. No genuinely new anonymous exploitable surface was added this cycle — the engagementplatform 401 confirmation is the only fresh data point, and my last cycle already concluded the web-side key path is exhausted (AUTH_HELPED).
+
+There's nothing materially new to probe anonymously. The next most productive action remains the coordinator ask for a key/test identity, plus the scope ruling on keyless.technology.
+
+Let me also reflect on whether I should attempt any further passive-only probe on engagementplatform (e.g., enumerating other endpoints to confirm the boundary) — but that's passive, and /events and /users were already both established. No new anonymous progress.
+
+Let me finalize my analysis.
+[0m# [0mTodos
+[✓] Analyze current surface for deltas from inventory/knowledge/last leads
+[✓] Prioritize assets based on attack_surface, business_value, tech_exposure, gate_ease, cloud_surface, freshness
+[✓] Formulate top 3 hypotheses with strict schema
+[✓] Self-critique hypotheses and drop low-confidence/rejected-class items
+[✓] Define exactly one NEXT action (PROBE/SCAN/RAG/HUMAN)
+[✓] Document learnings as REJECTED/ACCEPTED entries
+[✓] Assess overall program risk score
+[0m
+I have all the information needed to output the analysis. Let me finalize the structured output.
+
+**STEP 1 — DELTA:** The only fresh surface data since the last cycle is the 2026-09-07 00:05:06 UTC probe confirming `engagementplatform.n26.com/users` → 401 (confirming the key-gated API from my prior cycle). Nothing else changed — all other endpoints returned identical status (flags sdk_exception 403 GET, graphql tarpit).
+
+**STEP 2 — PRIORITIZE:** engagementplatform is the top fresh in-scope asset (key-gated 401, distinct from WAF patterns). But it's gate_ease low (auth needed) and web-side key path already negative.
+
+**STEP 3 — HYPOTHESES:** Top 3 assets — engagementplatform (AUTH, 42), keyless (AUTH, 65 — but vendor-owned/ambiguous scope), flags graphql/initialize (closed). All the genuinely-open anonymous leads are exhausted. The keyless path is scope-pending.
+
+Let me reason about the strongest survivors. The engagementplatform hypothesis (confidence 42) is the only fresh, in-scope, non-exhausted angle, but it requires a key (AUTH_HELPED). The keyless enumeration (nemotron3, confidence 65) is PASSIVE-testable but sits on a vendor domain needing a scope ruling. GraphQL WS/APQ (confidence 25) requires session. 
+
+Given the rules require exactly one [NEXT], and each independent probe's result is what gets validated, I'll follow my prior cycle's recommendation: the only productive next action is the consolidated HUMAN coordinator ask, since all anonymous paths are exhausted. But I should also consider one passive probe worth doing: since keyless is listed at confidence 65 PASSIVE by nemotron3 and is the top-ranked anonymous-testable asset, and the scope ruling is unresolved — I've already probed it extensively (it's `404 path unused` on all standard paths). The nemotron3 probe list (GET /api/v1, /v1, /keyless) overlaps what's been tried.
+
+Let me produce the final structured analysis.
+STEP 1 — DELTA:
+- NEW engagementplatform.n26.com/users → HTTP 401 (latest probe 2026-09-07 00:05:06 UTC) — key-gated in-scope customer engagement API confirmed live, echoing presented Bearer key
+- CHANGED flags.n26.com/v1/sdk_exception GET → 403 (RBAC boundary unchanged)
+- CHANGED app.n26.com/graphql?extensions={ → tarpit timeout (unchanged)
+- NO_DELTA otherwise: all other assets returned byte-identical statuses to prior 15+ probe cycles; no new hosts/endpoints surfaced passively
+
+STEP 2 — PRIORITIZE:
+- [PRIO] engagementplatform.n26.com,6.2,a=5,b=8,t=5,g=1,c=4,f=9 — freshest in-scope host, 401-differentiated from WAF/tarpit, but gate_ease=1 (Bearer key), web-side key embedding already swept negative
+- [PRIO] authentication-service.eks.core-production.keyless.technology,5.8,a=4,b=9,t=8,g=1,c=10,f=1 — highest-value auth asset, PASSIVE-enumerable but vendor-owned domain, scope ruling unresolved, already `404 path unused` on all standard paths
+- [PRIO] flags.n26.com/v1/initialize,4.2,a=4,b=5,t=5,g=6,c=3,f=2 — sole 200 route but by-design public-client SDK data (INFO ceiling)
+
+STEP 3 — HYPOTHESES:
+[HYP] Engagementplatform Bearer key client-extractable (survivor)
+class: AUTH
+asset: engagementplatform.n26.com/users
+confidence: 42
+reasoning: passive-DNS-surfaced host; /users+/events answer 401 (not 404/403/tarpit) until a valid `Authorization: Bearer` key is supplied, and the error echoes the presented key; absent from app.n26.com CSP connect-src and all 11 prior web-bundle sweeps → web key embedding already negative; only mobile/server consumption plausible
+evidence_needed: a working key value, or a client asset that legitimately transmits one (mobile binary / server integration doc)
+verify_steps: none anonymous — requires whitelisted/blessed key for GET /users and /events (read-only)
+impact: full read of customer-engagement/notification data if key recoverable — MEDIUM; otherwise INFO boundary confirmed
+testability: AUTH_HELPED
+
+[HYP] Keyless auth service non-standard-route discovery (survivor, scope-pending)
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 65
+reasoning: service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.08.27 eks-production`, custom `x-keyless-flow-id`; /, /.well-known/openid-configuration, /health, /api/swagger.json all return `{"code":"UNPROCESSABLE","reason":"path unused: …"}` — API mounted at custom routes; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26 (both 404 on this HTTP ingress)
+evidence_needed: any non-`unused` HTTP response, or a `101`/non-`unused` WS-upgrade on either bundle-disclosed route
+verify_steps: GET /api/v1, /v1, /keyless, /auth, /webauthn, /passkey, /credentials (read-only ≤1 rps) — all likely 404 `path unused`; real handshake requires live app subprotocol (AUTH_HELPED)
+impact: auth/bypass/WebAuthn flaws = CRITICAL if reached, but anonymous reachability not demonstrated and domain is vendor-owned (scope-pending)
+testability: PASSIVE (limited) / AUTH_HELPED for live handshake
+
+[HYP] GraphQL WS/APQ front-door (carry)
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: all HTTP transports WAF-blocked/tarpit (GET query reset, all POST CTs 403, support tarpit identical); only untested front-doors are WS upgrade and APQ hash, both requiring a live app session/auth hook
+evidence_needed: non-40x/non-stall /graphql response
+verify_steps: WS upgrade with `Sec-WebSocket-Protocol: graphql-ws` from authenticated context (AUTH_HELPED)
+impact: schema→mutation→banking-op abuse — HIGH if reached, unreachable anonymously
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE:
+- [PARKED] Statsig /v1/sdk_exception error-ingestion (conf 75): GET 403 (RBAC), POST 202 accepting public client key — but impact LOW (no data disclosure/mutation, noise injection only on a public by-design endpoint); not reportable, prev cycle dropped it.
+- [PARKED] pay.n26.com (conf 20) and 3ds-challenge.n26.com (conf 20): Stripe/ALB third-party, no N26-owned anonymous path demonstrated.
+- [FINAL] 1) engagementplatform Bearer key — 42, fresh+in-scope but AUTH_HELPED. 2) Keyless non-standard routes — 65, PASSIVE-limited, scope-pending. 3) GraphQL WS/APQ — 25, AUTH_HELPED.
+
+STEP 5 — NEXT ACTION:
+[NEXT] HUMAN: escalate consolidated coordinator ask — (a) written scope ruling on `keyless.technology` vendor-in-flow asset (tenant slug `n26`, `wss://…/v1/auth/n26`, `/v1/enroll/n26`), (b) a whitelisted/integration Bearer key (or scoped test identity) for `engagementplatform.n26.com/users`+`/events` plus confirmation the key is server-only (if client-extractable → MEDIUM reportable), (c) an app/LivePerson session for app.n26.com GraphQL WS/APQ + Keyless WS handshake. No anonymous PROBE remains untried: key is gated, keyless is `path unused`/vendor-owned, GraphQL is tarpit-closed.
+
+STEP 6 — LEARNING:
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+11 bundles → server/mobile-only; boundary confirmed, requires key to test further.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary stable — initialize(POST+body)→200 by-design (INFO), sdk_exception GET→403, download_config_specs→401, all GET config→403; no new vectors this cycle.
+[LEARN] ACCEPTED AUTH @ app.n26.com/graphql: tarpit/WAF-closed unchanged across all anonymous transports; no differential ingress appears.
+
+STEP 7 — RISK:
+[RISK] N26 Bank AG: 15/100 — No reportable finding in hand after 9+ cycles. Surface fully cornered at INFO: flags.n26.com initialize 200 is by-design public-client SDK data; GraphQL tarpit/WAF-closed on every anonymous transport on app+support; spc=tracking GIFs; cdn=private; marketing INFO-only; my.n26.com=301 redirect. The only genuinely fresh intel (engagementplatform 401 key-gated API + live Keyless EKS auth service) yields no anonymous exploit and gates on a Bearer key the client cannot obtain and a vendor-owned domain pending scope ruling. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated. Remaining HIGH-value paths all require a coordinator-provided key, test identity, or app session (AUTH_HELPED). North-star ask stands; without a coordinator response there is no further anonymous testable surface.

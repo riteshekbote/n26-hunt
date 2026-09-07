@@ -1,8 +1,4 @@
-## 2026-09-06 23:59:23 UTC [target] (model nemotron3)
-[NEW] authentication-service.eks.core-production.keyless.technology: LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.08.27 eks-production`, custom `x-keyless-flow-id` header. All standard paths (/, /.well-known/openid-configuration, /health, /api/swagger.json) return 404 `{"code":"UNPROCESSABLE","reason":"path unused: <path>","stack":"api.\`unused\`"}` — API surface at non-standard routes.
-[CHANGED] flags.n26.com: RBAC boundary stable since 2026-09-05; `initialize`(POST+canonical body)→200+data (by-design), `sdk_exception`→202, `download_config_specs`→401, all GET config→403. No new vectors.
-[CHANGED] app.n26.com/graphql: WAF tarpit confirmed identical on support.n26.com (OPTIONS 204, bare-GET 25s stall); no differential ingress path exists.
-[CHANGED] spc.n26.com: Versioned endpoints (`/api/v1`, `/v1/transactions`, `/v1/payments`, `/v1/tokens`) confirmed as 1x1 GIF tracking pixels (len=43) — NOT a payment API; IDOR hypothesis permanently invalidated.
+## 2026-09-07 03:26:48 UTC [target] (model nemotron3)
 [PRIO] authentication-service.eks.core-production.keyless.technology,7.6,a=9,b=10,t=8,g=2,c=10,f=3
 [PRIO] flags.n26.com,7.3,a=7,b=8,t=6,g=10,c=2,f=9
 [PRIO] app.n26.com,5.4,a=6,b=10,t=5,g=1,c=3,f=2
@@ -10,9 +6,9 @@
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology
 confidence: 65
-reasoning: Service live (HTTP/2 404), Istio/Envoy, version header shows `authentication-service-2/v26.08.27 eks-production`, custom `x-keyless-flow-id` header present. All standard paths (/, /.well-known/openid-configuration, /health, /api/swagger.json) return "path unused" — API likely mounted at custom paths (e.g., /api/v1, /v1, /keyless, /auth). "keyless" suggests WebAuthn/passwordless flow; EKS-hosted in core-production cluster.
+reasoning: Service live (HTTP/2 404), Istio/Envoy, version header shows `authentication-service-2/v26.08.27 eks-production`, custom `x-keyless-flow-id` header present. All 11 standard paths (/, /api/v1, /v1, /keyless, /auth, /api, /webauthn, /passkey, /credentials, /register, /login, /challenge) return "path unused" — API likely mounted at custom paths. "keyless" suggests WebAuthn/passwordless flow; EKS-hosted in core-production cluster.
 evidence_needed: Discovered API endpoint returning 200/401 (not 404); OpenAPI spec or route enumeration; auth mechanism identification (WebAuthn, OIDC, custom).
-verify_steps: GET https://authentication-service.eks.core-production.keyless.technology/api/v1 — common versioned path; GET /v1; GET /keyless; GET /auth; GET /api; GET /webauthn; GET /passkey; GET /credentials; GET /register; GET /login; GET /challenge; brute-force common auth API paths via wordlist (passive, <=1 rps); check CSP/connect-src on app.n26.com for actual client-used endpoints.
+verify_steps: GET https://authentication-service.eks.core-production.keyless.technology/api/v2 → GET /v2 → GET /internal → GET /private → GET /admin → GET /actuator/health → GET /metrics → GET /healthz → GET /ready → brute-force common auth API paths via wordlist (passive, <=1 rps); check CSP/connect-src on app.n26.com for actual client-used endpoints.
 impact: Auth bypass, credential theft, session hijacking, WebAuthn credential enumeration, EKS metadata access via SSRF if any user-supplied URL param — CRITICAL if exploitable.
 testability: PASSIVE
 [HYP] Statsig `/v1/sdk_exception` accepts public client key for unauthenticated error ingestion
@@ -36,7 +32,7 @@ testability: PASSIVE
 [PARKED] GraphQL WebSocket/APQ transport bypasses POST WAF on app.n26.com: confidence 45 but WAF inspects request body not just Content-Type; all tested HTTP transports return 403/connection-reset; support.n26.com shares identical tarpit; requires auth for PQ/WS testability (AUTH_HELPED); low probability given comprehensive WAF coverage.
 [FINAL] 1) Keyless auth service uses non-standard API paths requiring discovery (confidence 65) — PASSIVE testable, high-value target, live service confirmed.
 [FINAL] 2) Statsig `/v1/sdk_exception` accepts public client key for unauthenticated error ingestion (confidence 75) — PASSIVE testable, confirmed key extraction, RBAC boundary mapped.
-[NEXT] PROBE: GET https://authentication-service.eks.core-production.keyless.technology/api/v1 → GET /v1 → GET /keyless → GET /auth → GET /api → GET /webauthn → GET /passkey → GET /credentials → GET /register → GET /login → GET /challenge — passive enumeration of common auth API paths on live EKS service; <=1 rps.
+[NEXT] PROBE: GET https://authentication-service.eks.core-production.keyless.technology/api/v2 → GET /v2 → GET /internal → GET /private → GET /admin → GET /actuator/health → GET /metrics → GET /healthz → GET /ready — passive enumeration of additional common auth/infra API paths on live EKS service; <=1 rps.
 [LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO).
 [LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403.
 [LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation.
