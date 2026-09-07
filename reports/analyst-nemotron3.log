@@ -4002,3 +4002,183 @@ testability: PASSIVE
 [LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+11 bundles → server/mobile-only; boundary confirmed, requires key to test further.
 
 [RISK] N26 Bank AG: 78 — Confirmed Statsig feature flag service with client SDK key extraction and method-dependent RBAC behavior (by-design); authentication-service.eks.core-production.keyless.technology LIVE but API surface at non-standard paths (high-value EKS auth target, cloud_surface=10); GraphQL WAF on primary app robust (no POST bypass found); spc.n26.com endpoints are tracking pixels not payment API; single exploitable path (flags.n26.com) with confirmed key extraction and full config disclosure (INFO unless flags deemed sensitive); keyless auth service unprobed beyond root — warrants enumeration for auth bypass/WebAuthn flaws.
+===== ANALYST nemotron3 2026-09-07 14:30:45 UTC =====
+[0m
+> build · nemotron-3-ultra-free
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/api/v2" --max-time 10 2>&1 | head -20
+HTTP/2 404 
+date: Mon, 07 Sep 2026 14:27:08 GMT
+content-type: application/json
+content-length: 80
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07c44-08b0-710a-80ea-e1d491d559f8
+x-envoy-upstream-service-time: 6
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/v2" --max-time 10 2>&1 | head -20
+HTTP/2 404 
+date: Mon, 07 Sep 2026 14:27:08 GMT
+content-type: application/json
+content-length: 76
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07c44-09b0-7840-9677-ced5fb30600e
+x-envoy-upstream-service-time: 3
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/internal" --max-time 10 2>&1 | head -20
+HTTP/2 404 
+date: Mon, 07 Sep 2026 14:27:09 GMT
+content-type: application/json
+content-length: 82
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07c44-0b60-76d5-8ce4-ffbce86bdd5b
+x-envoy-upstream-service-time: 2
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/private" --max-time 10 2>&1 | head -20
+HTTP/2 404 
+date: Mon, 07 Sep 2026 14:27:09 GMT
+content-type: application/json
+content-length: 81
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07c44-0d54-70a8-92e4-c6c92a3180a0
+x-envoy-upstream-service-time: 5
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/admin" --max-time 10 2>&1 | head -20
+HTTP/2 404 
+date: Mon, 07 Sep 2026 14:27:10 GMT
+content-type: application/json
+content-length: 79
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07c44-0ee3-7d66-9ee0-3a8bb005edfe
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/actuator/health" --max-time 10 2>&1 | head -20
+HTTP/2 404 
+date: Mon, 07 Sep 2026 14:27:10 GMT
+content-type: application/json
+content-length: 89
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07c44-10aa-783a-a603-3b51c55a4524
+x-envoy-upstream-service-time: 2
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/metrics" --max-time 10 2>&1 | head -20
+HTTP/2 404 
+date: Mon, 07 Sep 2026 14:27:11 GMT
+content-type: application/json
+content-length: 81
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07c44-1251-73da-b4c2-06b723cbedd6
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/healthz" --max-time 10 2>&1 | head -20
+HTTP/2 404 
+date: Mon, 07 Sep 2026 14:27:11 GMT
+content-type: application/json
+content-length: 81
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07c44-1444-755d-a3b0-12292995e621
+x-envoy-upstream-service-time: 4
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/ready" --max-time 10 2>&1 | head -20
+HTTP/2 404 
+date: Mon, 07 Sep 2026 14:27:12 GMT
+content-type: application/json
+content-length: 79
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a07c44-1771-7d97-8b3b-668c269531f8
+x-envoy-upstream-service-time: 2
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://engagementplatform.n26.com/users" --max-time 10 2>&1 | head -20
+HTTP/2 401 
+content-type: application/json
+date: Mon, 07 Sep 2026 14:27:12 GMT
+cf-ray: a3766495293bf43c-CMH
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+cache-control: no-cache
+server: cloudflare
+strict-transport-security: max-age=31536000; includeSubDomains
+vary: Origin,Accept-Encoding
+x-ratelimit-limit: 
+x-ratelimit-remaining: 
+x-ratelimit-reset: 
+x-request-id: 34e21a32-b430-4731-8ece-94d7b99c312b
+x-runtime: 0.006627
+x-cache: Error from cloudfront
+via: 1.1 1b105659c5ccf033ce945f82c6a9e386.cloudfront.net (CloudFront)
+x-amz-cf-pop: ORD58-P14
+x-amz-cf-id: e_m3D7VpPtxhOMZRS2Rftsnm7b_fZhk2uyt5p0eybtwqtvOx-W_0oQ==
+[0m
+[0m$ [0mcurl -s -X POST "https://flags.n26.com/v1/initialize" -H "Content-Type: application/json" -H "STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0" -d '{"hash":"djb2","user":{},"statsigMetadata":{}}' --max-time 15 2>&1 | head -50
+{"feature_gates":{"3526595":{"name":"3526595","value":false,"rule_id":"default","id_type":"userID"},"54269378":{"name":"54269378","value":true,"rule_id":"4fBsaixEFWEMUeW0AigxxB","id_type":"userID"},"175502603":{"name":"175502603","value":false,"rule_id":"default","id_type":"userID"},"205926605":{"name":"205926605","value":false,"rule_id":"default","id_type":"userID"},"334067965":{"name":"334067965","value":false,"rule_id":"default","id_type":"stableID"},"361410648":{"name":"361410648","value":true,"rule_id":"4jwgnfJhdr5yHLgNLQwPMF","id_type":"userID"},"672634959":{"name":"672634959","value":false,"rule_id":"default","id_type":"userID"},"937962430":{"name":"937962430","value":false,"rule_id":"default","id_type":"userID"},"1003777216":{"name":"1003777216","value":false,"rule_id":"default","id_type":"userID"},"1088109375":{"name":"1088109375","value":false,"rule_id":"default","id_type":"stableID"},"1187697484":{"name":"1187697484","value":false,"rule_id":"default","id_type":"userID"},"1340774426":{"name":"1340774426","value":false,"rule_id":"default","id_type":"userID"},"1341656401":{"name":"1341656401","value":false,"rule_id":"default","id_type":"stableID"},"1418505627":{"name":"1418505627","value":true,"rule_id":"7jVGattAv29qTOwNkoT0AO","id_type":"userID"},"1467424007":{"name":"1467424007","value":true,"rule_id":"49zkVk7dGn6ZASVvxqB3sx","id_type":"userID"},"1484508534":{"name":"1484508534","value":false,"rule_id":"default","id_type":"userID"},"1647488824":{"name":"1647488824","value":false,"rule_id":"default","id_type":"userID"},"1782171246":{"name":"1782171246","value":false,"rule_id":"default","id_type":"userID"},"1813539318":{"name":"1813539318","value":false,"rule_id":"default","id_type":"userID"},"1816971896":{"name":"1816971896","value":false,"rule_id":"default","id_type":"userID"},"1863767777":{"name":"1863767777","value":false,"rule_id":"default","id_type":"userID"},"2021501434":{"name":"2021501434","value":false,"rule_id":"default","id_type":"userID"},"2102111771":{"name":"2102111771","value":false,"rule_id":"default","id_type":"userID"},"2277800342":{"name":"2277800342","value":false,"rule_id":"default","id_type":"stableID"},"2581845103":{"name":"2581845103","value":false,"rule_id":"default","id_type":"userID"},"2749978056":{"name":"2749978056","value":false,"rule_id":"default","id_type":"userID"},"3273360575":{"name":"3273360575","value":true,"rule_id":"disabled","id_type":"userID"},"3298330345":{"name":"3298330345","value":false,"rule_id":"default","id_type":"userID"},"3450570353":{"name":"3450570353","value":false,"rule_id":"default","id_type":"userID"},"3532333389":{"name":"3532333389","value":false,"rule_id":"default","id_type":"userID"},"3571576635":{"name":"3571576635","value":false,"rule_id":"default","id_type":"userID"},"3904089483":{"name":"3904089483","value":false,"rule_id":"default","id_type":"userID"},"4133333267":{"name":"4133333267","value":false,"rule_id":"default","id_type":"userID"},"4181258251":{"name":"4181258251","value":false,"rule_id":"default","id_type":"userID"},"4188014179":{"name":"4188014179","value":false,"rule_id":"default","id_type":"userID"}},"dynamic_configs":{"113552670":{"name":"113552670","value":{"title":"Get this deal now!","price":19},"rule_id":"default","group":"default","is_device_based":false,"passed":false,"id_type":"userID"},"687145565":{"name":"687145565","value":{"Discount":0,"Months":0},"rule_id":"default","group":"default","is_device_based":false,"passed":false,"id_type":"userID"},"1078987709":{"name":"1078987709","value":{"Groups":"Test"},"rule_id":"launchedGroup","group":"launchedGroup","group_name":"Test","is_device_based":false,"id_type":"userID","is_experiment_active":false,"is_user_in_experiment":false},"1594427002":{"name":"1594427002","value":{"uiMode":"vendor","escalationType":"human","salesForceAccountType":"user","isEnabled":true},"rule_id":"default","group":"default","is_device_based":false,"passed":false,"id_type":"userID"},"2302566031":{"name":"2302566031","value":{},"rule_id":"default","group":"default","is_device_based":false,"passed":false,"id_type":"uniqueID"},"2433465790":{"name":"2433465790","value":{},"rule_id":"inlineTargetingRules","group":"inlineTargetingRules","is_device_based":false,"id_type":"userID","is_experiment_active":false,"is_user_in_experiment":false},"2818728140":{"name":"2818728140","value":{"isEnabled":false},"rule_id":"default","group":"default","is_device_based":false,"passed":false,"id_type":"userID"},"3518516657":{"name":"3518516657","value":{"use_experiment_translations":true},"rule_id":"launchedGroup","group":"launchedGroup","group_name":"Test B just badge","is_device_based":false,"id_type":"userID","is_experiment_active":false,"is_user_in_experiment":false},"4173610755":{"name":"4173610755","value":{"is_new_ui_enabled":true},"rule_id":"launchedGroup","group":"launchedGroup","group_name":"Test","is_device_based":false,"id_type":"userID","is_experiment_active":false,"is_user_in_experiment":false}},"layer_configs":{},"sdkParams":{},"has_updates":true,"generator":"scrapi-nest","time":1788790575732,"company_lcut":1788790575732,"evaluated_keys":{},"hash_used":"djb2","derived_fields":{"ip":"64.236.160.197","country":"US","browserName":"curl","browserVersion":"8.5.0","osName":"Other","osVersion":"0.0.0","browser_name":"curl","browser_version":"8.5.0","os_name":"Other","os_version":"0.0.0"},"hashed_sdk_key_used":"3867294888","can_record_session":true,"recording_blocked":false,"session_recording_rate":1,"param_stores":{},"target_app_used":"shark"}
+[0m
+[NEW] authentication-service.eks.core-production.keyless.technology: Version updated to `authentication-service-2/v26.09.07 eks-production` (was v26.08.27); all 9 probed standard paths (/api/v2, /v2, /internal, /private, /admin, /actuator/health, /metrics, /healthz, /ready) return HTTP/2 404 "path unused" with custom `x-keyless-flow-id` header — API remains at non-standard paths
+[NEW] engagementplatform.n26.com/users: Confirmed HTTP 401 (key-gated, Cloudflare fronted, rate-limit headers) — distinct live boundary, not tarpit
+[NEW] flags.n26.com/v1/initialize: POST canonical payload + public key returns 200 with 35 feature_gates + 9 dynamic_configs (numeric IDs only, no semantic names) — confirmed by-design Statsig client SDK behavior (INFO)
+[CHANGED] authentication-service.eks.core-production.keyless.technology: Deployment rotated (v26.09.07), all standard auth/infra paths still 404 — non-standard route hypothesis holds
+[CHANGED] flags.n26.com: Config disclosure stable, no sensitive gate names (payment_, kyc_, auth_, limit_, bypass_, admin_, debug_, internal_) in disclosed numeric IDs
+
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.6,a=9,b=10,t=8,g=2,c=10,f=3
+[PRIO] engagementplatform.n26.com,6.4,a=7,b=8,t=6,g=3,c=5,f=8
+[PRIO] flags.n26.com,5.8,a=7,b=6,t=5,g=10,c=2,f=9
+[PRIO] app.n26.com,5.4,a=6,b=10,t=5,g=1,c=3,f=2
+
+[HYP] Keyless auth service uses non-standard API paths requiring discovery
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 65
+reasoning: Service live (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 11 standard paths (/, /api/v1, /v1, /keyless, /auth, /api, /webauthn, /passkey, /credentials, /register, /login, /challenge, /api/v2, /v2, /internal, /private, /admin, /actuator/health, /metrics, /healthz, /ready) return "path unused" — API likely mounted at custom paths. "keyless" suggests WebAuthn/passwordless flow; EKS-hosted in core-production cluster.
+evidence_needed: Discovered API endpoint returning 200/401 (not 404); OpenAPI spec or route enumeration; auth mechanism identification (WebAuthn, OIDC, custom).
+verify_steps: GET https://authentication-service.eks.core-production.keyless.technology/api/v3 → GET /v3 → GET /api/auth → GET /auth/v1 → GET /keyless/v1 → GET /passkey/v1 → GET /webauthn/v1 → GET /credentials/v1 → GET /register/v1 → GET /login/v1 → GET /challenge/v1 → GET /api/v1/auth → GET /api/v1/keyless → GET /api/v1/webauthn — passive enumeration of versioned auth API paths on live EKS service; <=1 rps
+impact: Auth bypass, credential theft, session hijacking, WebAuthn credential enumeration, EKS metadata access via SSRF if any user-supplied URL param — CRITICAL if exploitable
+testability: PASSIVE
+
+[HYP] engagementplatform.n26.com /users endpoint yields cross-tenant user enumeration with valid Bearer token
+class: IDOR
+asset: engagementplatform.n26.com/users
+confidence: 55
+reasoning: /users returns 401 (key-gated) not 403/tarpit — distinct live boundary confirmed 2026-09-07. Web-side Bearer key embedding negative across app CSP + 11 bundles → server/mobile-only. If token acquired (mobile app, server logs, token leakage), /users/{id} or pagination params may allow cross-tenant PII dump.
+evidence_needed: Valid Bearer token for engagementplatform.n26.com; successful /users call returning user objects; IDOR via sequential user_id or email params.
+verify_steps: PASSIVE: monitor app.n26.com CSP/connect-src for engagementplatform endpoints; inspect mobile app (if in scope) for embedded tokens; check referral/redirect flows for token leakage. AUTH_HELPED: with valid token, GET /users?limit=100 → GET /users/{id} → test BOLA via cross-tenant id.
+impact: Cross-tenant user PII enumeration (email, phone, KYC status, engagement metrics) — HIGH if token obtained
+testability: AUTH_HELPED
+
+[HYP] Flags.n26.com initialize POST full config disclosure contains sensitive feature gates controlling payment/KYC/auth logic
+class: MISCONFIG
+asset: flags.n26.com/v1/initialize
+confidence: 40
+reasoning: POST /v1/initialize + canonical SDK payload + public client key returns 200 with full flag tree (35 feature_gates, 9 dynamic_configs, layer_configs). Reclassified as Statsig by-design (INFO), but flag *values* unexamined for sensitive controls (e.g., payment limits, KYC bypass, auth toggles, rollout percentages). Current disclosure shows only numeric IDs (3526595..4173610755) — no semantic names recovered.
+evidence_needed: Manual review of disclosed flag configs for security-sensitive keys (payment_, kyc_, auth_, limit_, bypass_, admin_, debug_, internal_); correlation with app.n26.com behavior changes.
+verify_steps: POST https://flags.n26.com/v1/initialize with `Content-Type: application/json`, `STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0`, body `{"hash":"djb2","user":{},"statsigMetadata":{}}` → extract all feature_gate/dynamic_config keys → grep for sensitive patterns → assess if any gate controls security-critical logic.
+impact: If flags control payment limits/KYC/auth bypass → HIGH; otherwise INFO (by-design client SDK behavior)
+testability: PASSIVE
+
+[PARKED] Flags.n26.com initialize POST full config disclosure contains sensitive feature gates: confidence 40 < 40 threshold; numeric IDs only, no semantic names recoverable passively; by-design Statsig behavior (INFO)
+[FINAL] 1) Keyless auth service uses non-standard API paths requiring discovery (confidence 65) — PASSIVE testable, high-value target, live service confirmed, deployment rotated v26.09.07
+[FINAL] 2) engagementplatform.n26.com /users endpoint yields cross-tenant user enumeration with valid Bearer token (confidence 55) — AUTH_HELPED, distinct 401 boundary confirmed, Cloudflare fronted
+
+[NEXT] PROBE: GET https://authentication-service.eks.core-production.keyless.technology/api/v3 → GET /v3 → GET /api/auth → GET /auth/v1 → GET /keyless/v1 → GET /passkey/v1 → GET /webauthn/v1 → GET /credentials/v1 → GET /register/v1 → GET /login/v1 → GET /challenge/v1 → GET /api/v1/auth → GET /api/v1/keyless → GET /api/v1/webauthn — passive enumeration of versioned auth API paths on live EKS service; <=1 rps
+
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO).
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403.
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403.
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API.
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure.
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed.
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; no listing/misconfig.
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only.
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403/timeout responses; WAF blocks all POST Content-Types; GET query param connection reset.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 20 standard paths return "path unused" — API at custom routes.
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+11 bundles → server/mobile-only; boundary confirmed, requires key to test further.
+
+[RISK] N26 Bank AG: 78 — Confirmed Statsig feature flag service with client SDK key extraction and method-dependent RBAC behavior (by-design); authentication-service.eks.core-production.keyless.technology LIVE but API surface at non-standard paths (high-value EKS auth target, cloud_surface=10, deployment rotated v26.09.07); GraphQL WAF on primary app robust (no POST bypass found); spc.n26.com endpoints are tracking pixels not payment API; single exploitable path (flags.n26.com) with confirmed key extraction and full config disclosure (INFO unless flags deemed sensitive); keyless auth service unprobed beyond 20 standard paths — warrants enumeration for auth bypass/WebAuthn flaws; engagementplatform.n26.com 401 boundary confirmed, token acquisition path unknown.

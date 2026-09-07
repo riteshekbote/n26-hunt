@@ -230,3 +230,6 @@ https://engagementplatform.n26.com/users -> HTTP 401
 
 ## 2026-09-07 08:42:54 UTC
 https://flags.n26.com/v1/initialize -> HTTP 403
+
+## 2026-09-07 14:30:46 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403
