@@ -157,3 +157,5 @@ reasoning: Sandbox test emails like `openbankingpsu@n26.com`, `test.account+...@
 impact: None — public sandbox test accounts
 verify_steps: N/A — documented in public TPP onboarding docs
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-07 22:15:53 UTC
+TARGET_ORG not configured for n26; skipping public-org deep scan.
