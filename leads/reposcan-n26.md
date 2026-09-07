@@ -137,3 +137,23 @@ TARGET_ORG not configured for n26; skipping public-org deep scan.
 TARGET_ORG not configured for n26; skipping public-org deep scan.
 ## REPOSCAN 2026-09-07 15:33:47 UTC
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-07 19:25:24 UTC
+class: OTHER
+asset: express-simple-locale/package-lock.json
+confidence: 15
+reasoning: Resolved npm packages point to https://artifactory.cd-tech26.de:443/artifactory/api/npm/npm/ — an internal N26 Artifactory instance. This is a standard npm lockfile entry, not a credential. The URL is publicly observable from any `npm install` run against this package.
+impact: Informational — internal infrastructure URL discoverable via lockfile
+verify_steps: Run `npm install` on express-simple-locale and observe registry resolution
+class: OTHER
+asset: psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+confidence: 5
+reasoning: Contains `dedicated_aisp_client_id` = `w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI` and `auth_code`. All values in this file are identical placeholder UUIDs (`f3f51978-...`) and known sandbox test values. This is intentional TPP documentation — PSD2 client_ids are public by design (they identify the TPP, not a secret). The `auth_code` is a one-time-use code that has expired. This file is shipped as part of the PSD2 integration docs.
+impact: Informational — sandbox-only public documentation values
+verify_steps: Verify the client_id does not grant access to production endpoints by checking it is sandbox-scoped
+class: OTHER
+asset: psd2-tpp-docs/doc/sandbox.md
+confidence: 10
+reasoning: Sandbox test emails like `openbankingpsu@n26.com`, `test.account+...@n26.com` are documented as public test accounts for TPP developers. These are intentionally shared.
+impact: None — public sandbox test accounts
+verify_steps: N/A — documented in public TPP onboarding docs
+TARGET_ORG not configured for n26; skipping public-org deep scan.
