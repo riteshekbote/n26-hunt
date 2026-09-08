@@ -1286,3 +1286,47 @@ testability: AUTH_HELPED
 [LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: +9 edge paths (/v1/authenticate, /v1/credentials/authenticate, /api/v1/authenticate, /v1/transactions/, /v1/devices, /v1/sessions, /v1/verification, /metrics, /api) all `{"code":"UNPROCESSABLE","reason":"path unused","stack":"api.\`unused\`"}` 404 — extends route-less proof to ~48 HTTP paths; no new anonymous route.
 [LEARN] REJECTED MISCONFIG @ engagementplatform.n26.com: root returns 400 + Braze `dashboard-02.braze.eu` dashboard pointer; all Braze REST routes key-gated 401 — no anonymous surface beyond the confirmed boundary.
 [RISK] N26 Bank AG: 15/100 — No reportable finding after 13 cycles. Keyless route discovery exhaustively negative on ~48 HTTP paths + WS-upgrade; app.n26.com stable tarpit; engagementplatform Braze key-gated 401; flags by-design INFO; spc GIFs; cdn private; marketing INFO; my 301. Every remaining HIGH-value path requires a coordinator ruling, API key, or live session (AUTH_HELPED). Triage feeder is 5th consecutive empty-LEADS — without a coordinator response and a working feeder there is no further anonymous testable surface.
+## 2026-09-08 22:18:15 UTC [target] (model bigpickle)
+[NEW] spc.n26.com: Payment service (Envoy proxy, /health returns 200 OK, /api 404, no swagger/openapi) — discovered via CSP connect-src on app.n26.com
+[NEW] flags.n26.com: Statsig feature flag service (GKE, CloudFront, RBAC-protected /v1/initialize returns 403/401) — discovered via CSP connect-src on app.n26.com
+[NEW] cdn.number26.de: S3-backed CDN (403 on root, XML access-denied) — discovered via CSP script-src on app.n26.com
+[NEW] authentication-service.eks.core-production.keyless.technology: EKS-hosted keyless auth service — discovered via CSP connect-src on app.n26.com
+[NEW] app.n26.com/graphql: GraphQL endpoints confirmed (/graphql and /api/graphql both return 403 WAF-blocked; GET via query param returned HTTP 000 connection-reset)
+[CHANGED] app.n26.com: CSP fully decoded — reveals Stripe (js.stripe.com, connect-js.stripe.com), LivePerson chat, Sumsub KYC, S3 eu-central-1, Contentful CMS, Marqeta card issuing
+[CHANGED] support.n26.com: Returns 404 but sets identical cookies to app.n26.com (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload) — same Express/Envoy backend
+[PRIO] app.n26.com,8.7,a=9,b=10,t=8,g=5,c=5,f=10 — Primary banking app, GraphQL backend, Stripe/LivePerson/Sumsub integrations, login endpoint
+[PRIO] flags.n26.com,7.1,a=7,b=7,t=7,g=8,c=7,f=10 — Statsig feature flags on GKE, RBAC-protected, CloudFront-fronted
+[PRIO] spc.n26.com,6.4,a=6,b=8,t=5,g=7,c=5,f=10 — Payment service, En
+[PRIO] app.n26.com/graphql,8.5,attack_surface=10,business_value=9,tech_exposure=10,gate_ease=3,cloud_surface=8,freshness=10
+[PRIO] flags.n26.com,7.8,attack_surface=8,business_value=7,tech_exposure=9,gate_ease=4,cloud_surface=9,freshness=10
+[PRIO] spc.n26.com,7.2,attack_surface=7,business_value=8,tech_exposure=6,gate_ease=6,cloud_surface=7,freshness=10
+[PRIO] authentication-service.eks.core-production.keyless.technology,6.5,attack_surface=6,business_value=9,tech_exposure=8,gate_ease=2,cloud_surface=10,freshness=8
+[PRIO] support.n26.com,5.8,attack_surface=6,business_value=6,tech_exposure=7,gate_ease=5,cloud_surface=5,freshness=8
+[PRIO] cdn.number26.de,4.2,attack_surface=5,business_value=4,tech_exposure=5,gate_ease=7,cloud_surface=6,freshness=8
+[PRIO] app.n26.com (CSP deps),3.8,attack_surface=4,business_value=5,tech_exposure=4,gate_ease=8,cloud_surface=4,freshness=8
+[PRIO] my.n26.com,2.1,attack_surface=3,business_value=5,tech_exposure=2,gate_ease=4,cloud_surface=3,freshness=5
+[PRIO] n26.com/www.n26.com,1.5,attack_surface=2,business_value=4,tech_exposure=1,gate_ease=9,cloud_surface=2,freshness=5
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology (WS ingress)
+confidence: 40
+reasoning: service LIVE HTTP/2 404, version v26.09.07 (unchanged since 09-07), custom x-keyless-flow-id; ~57 HTTP paths incl 9 fresh /n26-suffix tenant permutations all `path unused`; WS-upgrade json+graphql-ws on bundle-disclosed routes also `unused`; sdk./api. subdomains coalesce to one ELB. Only untested front-door is a real subprotocol+header set captured from a live authenticated session.
+evidence_needed: any non-`unused` HTTP response on new path, or a 101/non-`unused` WS-upgrade using a captured subprotocol.
+verify_steps: replay exact Sec-WebSocket-Protocol + auth headers from a live app session against `wss://…/v1/auth/n26` and `/v1/enroll/n26` (read-only handshake only, AUTH_HELPED).
+impact: auth/WebAuthn flaws = CRITICAL if reached; anonymous reachability NOT demonstrated.
+testability: AUTH_HELPED
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 25
+reasoning: every anonymous HTTP transport WAF/tarpit closed; only untested front-doors are WS-upgrade (graphql-ws) + APQ hash, both require a live session cookie/token.
+evidence_needed: non-40x/non-stall /graphql response.
+verify_steps: WS-upgrade with graphql-ws from authenticated session; APQ hash replay from live session (AUTH_HELPED).
+impact: schema→mutation→banking abuse HIGH if reached; unreachable anonymously.
+testability: AUTH_HELPED
+class: AUTH
+asset: engagementplatform.n26.com/users/track
+confidence: 30
+reasoning: Braze REST (dashboard-02.braze.eu); all data routes 401 key-gated, CORS-open; key absent from all 10 web bundles + app CSP connect-src → server/mobile-only.
+evidence_needed: working REST key from a legitimate client asset.
+verify_steps: GET /segments/list with blessed/dummy key to confirm 200-vs-401; no anonymous verify.
+impact: full customer-engagement/notification data read if key recoverable — MEDIUM; else INFO boundary.
+testability: AUTH_HELPED
