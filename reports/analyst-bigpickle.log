@@ -11934,3 +11934,105 @@ testability: AUTH_HELPED
 ```
 [RISK] N26 Bank AG: 15/100 — No reportable finding after 12 cycles. Keyless route discovery exhaustively negative on ~48 HTTP paths + WS-upgrade; app.n26.com stable tarpit; engagementplatform Braze key-gated 401; flags by-design INFO; spc GIFs; cdn private; marketing INFO; my 301. Every remaining HIGH-value path needs coordinator ruling, API key, or live session (AUTH_HELPED). Triage feeder 4th consecutive empty-LEADS — without coordinator response there is no further anonymous testable surface.
 ```
+===== ANALYST bigpickle 2026-09-08 16:52:40 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mcat /home/runner/work/n26-hunt/n26-hunt/scope.yml 2>/dev/null | head -100; echo "---INVENTORY---"; ls /home/runner/work/n26-hunt/n26-hunt/inventory/ 2>/dev/null; echo "---ART---"; ls /home/runner/work/n26-hunt/n26-hunt/art/ 2>/dev/null
+programs:
+  n26:
+    name: N26 Bank AG Bug Bounty
+    disclosure_policy: via bugs.olivermaicher.eu (Oliver Maicher private program) - report + PoC + contact + payment
+    assets:
+      - name: "All company-owned infrastructure, online banking platforms, mobile applications, APIs, customer portals, authentication systems, internal banking services, websites, and domains operated by N26 Bank AG and its subsidiaries"
+        priority: In
+    out_of_scope:
+- "Network level Denial of Service attacks"
+      - "Application Denial of Service by locking user accounts"
+      - "Descriptive error messages or headers (e.g. Stack Traces, banner grabbing)"
+      - "Disclosure of known public files or directories (e.g. robots.txt)"
+      - "Outdated software / library versions"
+      - "OPTIONS / TRACE HTTP method enabled"
+      - "CSRF on logout"
+      - "CSRF on forms that are available to anonymous users"
+      - "Cookies that lack HTTP Only or Secure settings for non-sensitive data"
+      - "Self-XSS and issues exploitable only through Self-XSS"
+      - "Reports resulting from automated scanning utilities without additional details or a POC demonstrating a specific exploit"
+      - "Attacks requiring physical access to a user's device"
+      - "Attacks dependent upon social engineering of employees or vendors"
+      - "Username enumeration based on login or forgot password pages"
+      - "Enforcement policies for brute force, rate limiting, or account lockout"
+      - "SSL/TLS best practices"
+      - "SSL attacks such as BEAST, BREACH, Renegotiation attack"
+      - "Clickjacking, without additional details demonstrating a specific exploit"
+      - "Mail configuration issues including SPF, DKIM, DMARC settings"
+      - "Use of a known-vulnerable library without a description of an exploit specific to our implementation"
+      - "Password and account recovery policies"
+      - "Presence of autocomplete functionality in form fields"
+      - "Publicly accessible login panels"
+      - "Lack of email address verification during account registration or account invitation"
+      - "Lack of email address verification password restore"
+      - "Session control during email/password changes"
+      - "Social engineering, physical attacks, and DoS/DDoS testing (per program notes)"
+      - "Exposure of customer/employee/financial/authentication data during testing (per program notes)"
+    github_orgs:
+      - none-configured
+
+rules:
+  passive_first: false          # deep-hunt agent: active probes allowed when scoped
+  max_requests_per_second: 1    # never hammer live infra
+  no_doom: true                 # no DoS/DDoS, no account-lockout attacks
+  account_creation: restricted  # only on test/sandbox assets, never live customer data
+  no_data_modification: true    # no writes/deletes on live customer data
+  no_pre_disclosure: true       # never disclose before program response
+  poc_required: true            # scanner output alone is REJECTED
+  redact_secrets_in_commits: true
+
+models:
+  - { id: opencode/big-pickle, name: bigpickle }
+  - { id: opencode/nemotron-3-ultra-free, name: nemotron3 }
+  - { id: opencode/longcat-2.0-free, name: longcat }
+  - { id: opencode/ling-3.0-flash-free, name: ling3 }
+  - { id: opencode/laguna-s-2.1-free, name: laguna }
+---INVENTORY---
+n26.md
+---ART---
+[0m
+[93m[1m! [0mpermission requested: external_directory (/tmp/opencode/*, /tmp/*); auto-rejecting
+[0m✗ [0mcd /tmp/opencode 2>/dev/null || cd /tmp
+cat > recheck.py << 'EOF'
+import http.client, ssl, socket, time
+ctx = ssl.create_default_context()
+def probe(host, port=443, path="/", method="GET", headers=None, timeout=8):
+    try:
+        c = http.client.HTTPSConnection(host, port, timeout=timeout, context=ctx)
+        h = {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64)"}
+        if headers: h.update(headers)
+        c.request(method, path, headers=h)
+        r = c.getresponse()
+        body = r.read(200)
+        return r.status, len(body), dict(r.getheaders())
+    except Exception as e:
+        return "ERR", str(e)[:60], {}
+
+# bounded recheck of live boundaries - 1 rps
+checks = [
+    ("engagementplatform.n26.com","/segments/list"),
+    ("engagementplatform.n26.com","/users/track"),
+    ("authentication-service.eks.core-production.keyless.technology","/v1/auth/n26"),
+    ("authentication-service.eks.core-production.keyless.technology","/v1/enroll/n26"),
+    ("flags.n26.com","/v1/initialize"),
+]
+for host,path in checks:
+    s,ln,h = probe(host, path=path)
+    ctl = h.get("Content-Type","") if isinstance(h,dict) else ""
+    print(f"{host} {path} -> {s} len={ln} ct={ctl[:40]}")
+    time.sleep(1.1)
+EOF
+python3 recheck.py failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+I've reviewed the full knowledge base, my state, ranked hypotheses, and leads. Let me work through the 8 steps.
+
+Context is clear: this is cycle 13. Keyless route discovery is exhaustively negative (~48 HTTP paths + WS-upgrade all `path unused`). The triage feeder has now produced 4 consecutive empty-LEADS runs. Braze key-gated 401. GraphQL tarpit. flags by-design INFO. There is no remaining anonymous PROBE surface.
+
+Let me verify the current state of things where cheap — a bounded re-check of the top-priority anomalies to detect any delta, being careful with rps.
