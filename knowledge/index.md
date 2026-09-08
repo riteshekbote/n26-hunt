@@ -137,3 +137,5 @@
 - 2026-09-08 REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface
 - 2026-09-08 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 39 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
 - 2026-09-08 ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
+- 2026-09-08 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: +14 fresh versioned/prefix permutations (v3 line) all `path unused` — ~39 paths + WS-upgrade route-less; anonymous route discovery conclusive, cross-analyst v3 branch closed; subprotocol replay is AUTH_HELPED.
+- 2026-09-08 ACCEPTED MISCONFIG @ engagementplatform.n26.com + app.n26.com: boundaries stable — Braze /segments/list 401 len=31, app /login 319204 (no bundle rotation), app / 302→login; no new anonymous surface this cycle.
