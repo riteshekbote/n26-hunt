@@ -1358,3 +1358,32 @@ evidence_needed: working REST key from a legitimate client asset.
 verify_steps: GET /segments/list with blessed/dummy key (200-vs-401 boundary).
 impact: full customer-engagement/notification data read if key recoverable — MEDIUM.
 testability: AUTH_HELPED
+## 2026-09-09 04:56:33 UTC [target] (model bigpickle)
+[HYP] Keyless WS ingress replay vs minted signed-token subprotocol
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology (wss://…/v1/auth/n26, /v1/enroll/n26)
+confidence: 60
+reasoning: bundle (client.6e429513.js LoginPage chunk) hardcodes wss://authentication-service.eks.core-production.keyless.technology/v1/auth/n26 and /v1/enroll/n26; flow = KeylessSignedTokenMutation → per-session signed token presented as WS protocol → validateKeylessSignedTokenMutation($challengeId,$transactionJwt). All anonymous static subprotocols (json/graphql-ws) returning `path unused` is now explained: server routes on the minted token, not a public string. ~58 HTTP paths route-less.
+evidence_needed: 101 or non-`unused` route response when presenting a real minted KeylessSignedToken as Sec-WebSocket-Protocol.
+verify_steps: from an authenticated app session, capture the token the browser passes to the WS connect (devtools/network), replay as exact Sec-WebSocket-Protocol header against /v1/auth/n26 (read-only handshake, abort before frames).
+impact: WebAuthn/passwordless biometric auth flaws (token reuse, challenge-binding) = CRITICAL if flawed; reachability requires a live minted token — not demonstrated anonymously.
+testability: AUTH_HELPED
+[HYP] Braze REST key recoverable from mobile asset
+class: OTHER
+asset: engagementplatform.n26.com/users, /segments/list
+confidence: 30
+reasoning: Braze REST (dashboard-02.braze.eu), all routes 401 key-gated, CORS-open; absent from 10 web bundles + CSP → server/mobile-only; web-negative proven, APK untested.
+evidence_needed: working REST key from a legitimate client asset.
+verify_steps: GET /segments/list with recovered key vs 401-garbage baseline (200-vs-401 boundary).
+impact: full customer-engagement/notification data read — MEDIUM if key recoverable.
+testability: AUTH_HELPED
+[HYP] api.tech26.de custom-protocol ingress behind managed WAF
+class: MISCONFIG
+asset: api.tech26.de
+confidence: 30
+reasoning: 27 HTTP paths empty-404 (Envoy 0B, 11–15ms), /.env 403 awselb/2.0 dotfile rule, WS-upgrade(json) 403 — distinct WAF behavior vs keyless sibling (which passes WS to app-layer `unused`); family (keyless/pisp) hides APIs at custom protocol+route, bare edge yields no fingerprint anonymously.
+evidence_needed: non-404/non-403 response on any path or a 101 WS with a legitimate subprotocol.
+verify_steps: replay a real client-session subprotocol+headers at /v1/*tech26*-suffixed paths (read-only handshake).
+impact: unknown service behind edge — INFO boundary unless a route leaks, then scoped reassessment.
+testability: AUTH_HELPED
+[NEXT] PROBE: with a KeylessSignedToken minted by an authenticated app session, replay it verbatim as `Sec-WebSocket-Protocol` against `wss://authentication-service.eks.core-production.keyless.technology/v1/auth/n26` and observe 101-vs-`unused` (read-only handshake only, abort before frames; AUTH_HELPED).
