@@ -1330,3 +1330,31 @@ evidence_needed: working REST key from a legitimate client asset.
 verify_steps: GET /segments/list with blessed/dummy key to confirm 200-vs-401; no anonymous verify.
 impact: full customer-engagement/notification data read if key recoverable — MEDIUM; else INFO boundary.
 testability: AUTH_HELPED
+## 2026-09-09 00:21:01 UTC [target] (model bigpickle)
+[HYP] Keyless WS-ingress replay vs captured subprotocol+headers
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology (wss://…/v1/auth/n26, /v1/enroll/n26)
+confidence: 55
+reasoning: LIVE HTTP/2 404 Istio/Envoy, custom x-keyless-flow-id; ~58 HTTP paths + WS-upgrade (json/graphql-ws) all `path unused`; sdk./api. subdomains coalesce to one ELB. Only untested front-door is a real subprotocol+header set captured live.
+evidence_needed: any non-`unused` HTTP body, or 101/non-`unused` WS-upgrade with a captured subprotocol.
+verify_steps: replay exact Sec-WebSocket-Protocol + auth headers from a live app session against /v1/auth/n26 and /v1/enroll/n26 (read-only handshake).
+impact: WebAuthn/passwordless auth flaws = CRITICAL if reached; anonymous reachability NOT demonstrated.
+testability: AUTH_HELPED
+[HYP] api.tech26.de custom routes at non-standard paths
+class: MISCONFIG
+asset: api.tech26.de
+confidence: 35
+reasoning: new live Envoy edge, empty 404 (0B) on 13 standard paths; same family as keyless/pisp (N26 tech domain), which both hide APIs at custom routes — but bare edge shows no route fingerprint.
+evidence_needed: any non-empty 404 (headers/body) or non-404 response on a fresh permutation.
+verify_steps: sweep versioned/tenant permutations (e.g. /api/v1/auth, /v1/enroll, /healthz, /metrics, /.env, /api/docs).
+impact: unknown behind edge; INFO boundary unless a route leaks.
+testability: PASSIVE
+[HYP] Braze REST key recoverable from mobile asset
+class: OTHER
+asset: engagementplatform.n26.com/users, /events, /segments/list
+confidence: 30
+reasoning: Braze REST (dashboard-02.braze.eu), all routes 401 key-gated, CORS-open; key absent from 10 web bundles + app CSP connect-src → server/mobile-only; negative across web, untested in mobile APK.
+evidence_needed: working REST key from a legitimate client asset.
+verify_steps: GET /segments/list with blessed/dummy key (200-vs-401 boundary).
+impact: full customer-engagement/notification data read if key recoverable — MEDIUM.
+testability: AUTH_HELPED
