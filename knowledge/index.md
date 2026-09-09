@@ -163,3 +163,14 @@
 - 2026-09-09 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 58 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
 - 2026-09-09 ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
 - 2026-09-09 REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+- 2026-09-09 ACCEPTED MISCONFIG @ api.tech26.de: 27 probed paths all 404/403, WS-upgrade(json) 403, /.env 403 awselb/2.0 — distinct WAF behavior vs keyless sibling, but anonymous probe surface may be deeper (GraphQL, gRPC-web, OpenAPI, versioned paths untested).
+- 2026-09-09 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 58+ paths "path unused", API at custom routes via minted WS token — anonymous route discovery exhausted, requires AUTH_HELPED.
+- 2026-09-09 ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary stable, POST /v1/initialize by-design (INFO), no escalation path — retired from active testing.
+- 2026-09-09 ACCEPTED MISCONFIG @ engagementplatform.n26.com: Braze REST, 401 key-gated, no web bundle key — server/mobile-only, requires AUTH_HELPED.
+- 2026-09-09 REJECTED AUTH @ app.n26.com: WAF blocks all transports across 10+ cycles — GraphQL transport class closed anonymously.
+- 2026-09-09 REJECTED IDOR @ spc.n26.com: Tracking pixels, not payment API — permanently invalidated.
+- 2026-09-09 REJECTED MISCONFIG @ cdn.number26.de: Private S3 — no misconfig.
+- 2026-09-09 REJECTED MISCONFIG @ my.n26.com: 301 redirect — no takeover.
+- 2026-09-09 REJECTED AUTH @ support.n26.com/graphql: Shared Envoy/WAF tarpit — no differential ingress.
+- 2026-09-09 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68 standard + tenant-scoped paths return "path unused" — API at custom routes
+- 2026-09-09 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED

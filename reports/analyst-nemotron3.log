@@ -5837,3 +5837,115 @@ access-control-allow-credentials: true
 server: envoy
 x-envoy-upstream-service-time: 3
 [0m
+===== ANALYST nemotron3 2026-09-09 17:30:59 UTC =====
+[0m
+> build · nemotron-3-ultra-free
+[0m
+[0m$ [0mls -la
+total 268
+drwxr-xr-x 12 runner runner  4096 Sep  9 17:28 .
+drwxr-xr-x  3 runner runner  4096 Sep  9 17:28 ..
+drwxr-xr-x  7 runner runner  4096 Sep  9 17:28 .git
+drwxr-xr-x  3 runner runner  4096 Sep  9 17:28 .github
+-rw-r--r--  1 runner runner  1844 Sep  9 17:28 README.md
+-rw-r--r--  1 runner runner    43 Sep  9 17:28 analyst-out.txt
+-rw-r--r--  1 runner runner 86207 Sep  9 17:28 analyst-prompt.txt
+-rw-r--r--  1 runner runner 82337 Sep  9 17:28 ctx.txt
+drwxr-xr-x  2 runner runner  4096 Sep  9 17:28 inventory
+drwxr-xr-x  2 runner runner  4096 Sep  9 17:28 knowledge
+drwxr-xr-x  2 runner runner  4096 Sep  9 17:28 leads
+-rw-r--r--  1 runner runner 10547 Sep  9 17:28 probe-results.md
+drwxr-xr-x  2 runner runner  4096 Sep  9 17:28 recon-notes
+drwxr-xr-x  2 runner runner  4096 Sep  9 17:28 reports
+drwxr-xr-x  2 runner runner  4096 Sep  9 17:28 reposcan-raw
+-rw-r--r--  1 runner runner  3283 Sep  9 17:28 scope.yml
+drwxr-xr-x  2 runner runner  4096 Sep  9 17:28 scripts
+-rw-r--r--  1 runner runner    33 Sep  9 17:28 state_bigpickle.json
+-rw-r--r--  1 runner runner    33 Sep  9 17:28 state_laguna.json
+-rw-r--r--  1 runner runner    33 Sep  9 17:28 state_ling3.json
+-rw-r--r--  1 runner runner    33 Sep  9 17:28 state_longcat.json
+-rw-r--r--  1 runner runner    33 Sep  9 17:28 state_mimo.json
+-rw-r--r--  1 runner runner    33 Sep  9 17:28 state_nemotron3.json
+drwxr-xr-x  2 runner runner  4096 Sep  9 17:28 triage
+[0m
+[0m→ [0mRead analyst-out.txt
+[0m→ [0mRead scope.yml
+[0m→ [0mRead probe-results.md
+[0m✱ [0mGlob "leads/*"[90m 7 matches[0m
+[0m✱ [0mGlob "inventory/*"[90m 1 match[0m
+[0m→ [0mRead leads/lead-bigpickle.md
+[0m→ [0mRead leads/lead-nemotron3.md
+[0m→ [0mRead inventory/n26.md
+[NEW] authentication-service.eks.core-production.keyless.technology: 10 tenant-scoped paths (/v1/auth/n26, /v1/enroll/n26, /v1/authenticate/n26, /v1/challenge/n26, /v1/credentials/n26, /v1/webauthn/n26, /v1/passkey/n26, /api/v1/auth/n26, /api/v1/enroll/n26, /internal/auth/n26) return `{"code":"UNPROCESSABLE","reason":"path unused: <path>"}` 404 — extends route-less proof to ~68 HTTP paths
+[NEW] engagementplatform.n26.com/users: returns 401 `{"message":"Invalid API key: "}` — Braze REST boundary confirmed, distinct from tarpit, CORS-open, no web-bundle token (consistent across 4 probe cycles)
+[CHANGED] flags.n26.com/v1/initialize: POST + canonical payload + public client key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0` returns 200 with 35 feature_gates + 9 dynamic_configs (numeric IDs only) — stable by-design Statsig client SDK behavior (INFO ceiling)
+[CHANGED] app.n26.com: anonymous `/` 302→`/login` (28B), `/login` serves identical 319KB SPA — no bundle rotation across 20+ probe runs
+[CHANGED] spc.n26.com: versioned endpoints permanently confirmed as 1x1 GIF tracking pixels (len=43) — IDOR hypothesis invalidated
+[CHANGED] support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+[CHANGED] cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; misconfig class closed
+[CHANGED] n26.com/www.n26.com: marketing Envoy+CloudFront wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
+[CHANGED] my.n26.com: server-side 301 redirect — no subdomain takeover vector
+[CHANGED] pisp.tech26.de: Basic `android:secret` 401-identical to no-auth/garbage — demo value, only `/api/mfa/challenge` exists
+[CHANGED] consumercredit-staging S3: `NoSuchBucket` — deleted, no surface
+
+[PRIO] authentication-service.eks.core-production.keyless.technology,8.45,a=9,b=10,t=9,g=3,c=10,f=9
+[PRIO] app.n26.com/graphql,7.05,a=8,b=9,t=9,g=1,c=6,f=7
+[PRIO] engagementplatform.n26.com/users,6.80,a=7,b=8,t=7,g=2,c=8,f=9
+[PRIO] flags.n26.com/v1/initialize,6.60,a=6,b=6,t=6,g=8,c=7,f=8
+[PRIO] n26.com,2.10,a=3,b=4,t=2,g=9,c=3,f=6
+
+[HYP] Keyless auth service exposes WebAuthn/passwordless enrollment at non-standard infra/admin paths
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 55
+reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 68 standard + tenant-scoped paths return `path unused` — API mounted at custom non-standard routes. "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant.
+evidence_needed: Discovered API endpoint returning 200/401 (not 404 path unused); OpenAPI spec or route enumeration; auth mechanism identification (WebAuthn, OIDC, custom)
+verify_steps: GET https://authentication-service.eks.core-production.keyless.technology/health → GET /ready → GET /metrics → GET /actuator/health → GET /api/internal/v1/auth/n26 → GET /api/private/v1/enroll/n26 → GET /internal/auth/n26 → GET /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps
+impact: Auth bypass, credential theft, session hijacking, WebAuthn credential enumeration, EKS metadata access via SSRF if any user-supplied URL param — CRITICAL if exploitable
+testability: PASSIVE
+
+[HYP] GraphQL introspection via WebSocket subprotocol upgrade from authenticated session
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 35
+reasoning: All HTTP transports blocked (GET connection-reset, all POST Content-Types 403, support.n26.com identical tarpit). Only untested transport is `graphql-ws` WebSocket upgrade which requires an authenticated browser session (MQTT/WS auth hook) — not reachable anonymously.
+evidence_needed: HTTP 101 switching protocols on wss://app.n26.com/graphql with `Sec-WebSocket-Protocol: graphql-ws` from authenticated session
+verify_steps: HUMAN: From authenticated N26 app session (browser), open DevTools → Network → filter WS → trigger login/biometric flow → capture exact `Sec-WebSocket-Protocol` and connection init payload → replay against /graphql
+impact: Full schema exposure → mutation enumeration → IDOR/BOLA on banking operations — CRITICAL (but requires AUTH_HELPED)
+testability: AUTH_HELPED
+
+[HYP] Braze REST API cross-tenant user PII enumeration via /users endpoint
+class: IDOR
+asset: engagementplatform.n26.com/users
+confidence: 55
+reasoning: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary confirmed. Identified as Braze REST API (dashboard-02.braze.eu). Web-side Bearer key embedding negative across app CSP + 10 bundles → server/mobile-only. If token acquired (mobile app, server logs, token leakage), /users/{id} or pagination params may allow cross-tenant PII dump.
+evidence_needed: Valid Bearer token for engagementplatform.n26.com; successful /users call returning user objects; IDOR via sequential user_id or email params
+verify_steps: PASSIVE: monitor app.n26.com CSP/connect-src for engagementplatform endpoints; inspect mobile app (if in scope) for embedded tokens; check referral/redirect flows for token leakage. AUTH_HELPED: with valid token, GET /users?limit=100 → GET /users/{id} → test BOLA via cross-tenant id
+impact: Cross-tenant user PII enumeration (email, phone, KYC status, engagement metrics) — HIGH if token obtained
+testability: AUTH_HELPED
+
+[PARKED] GraphQL introspection via WebSocket subprotocol upgrade: confidence 35 (<40), requires authenticated session (AUTH_HELPED), all HTTP transports exhausted
+[PARKED] Statsig feature flag config disclosure contains security-sensitive gates: confidence 35 (<40), numeric IDs only, no semantic names recoverable passively; by-design Statsig behavior (INFO ceiling)
+[FINAL] 1) Keyless auth service exposes WebAuthn/passwordless enrollment at non-standard infra/admin paths (confidence 55) — PASSIVE testable, high-value target, live service confirmed, deployment rotated v26.09.07
+[FINAL] 2) Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token (confidence 55) — AUTH_HELPED, distinct 401 boundary confirmed, Cloudflare fronted
+
+[NEXT] PROBE: GET https://authentication-service.eks.core-production.keyless.technology/health → GET /ready → GET /metrics → GET /actuator/health → GET /api/internal/v1/auth/n26 → GET /api/private/v1/enroll/n26 → GET /internal/auth/n26 → GET /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps
+
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68 standard + tenant-scoped paths return "path unused" — API at custom routes
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO)
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+[LEARN] REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
+[LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface
+[LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+[LEARN] ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
+
+[RISK] N26 Bank AG: 78 — Confirmed Statsig feature flag service with client SDK key extraction and method-dependent RBAC behavior (by-design, INFO); authentication-service.eks.core-production.keyless.technology LIVE but API surface at non-standard paths (high-value EKS auth target, cloud_surface=10, deployment rotated v26.09.07); GraphQL WAF on primary app robust (no POST bypass found after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; single exploitable path (flags.n26.com) with confirmed key extraction and full config disclosure (INFO unless flags deemed sensitive); keyless auth service unprobed beyond 68 standard paths — warrants enumeration for auth bypass/WebAuthn flaws; engagementplatform.n26.com 401 boundary confirmed, token acquisition path unknown.

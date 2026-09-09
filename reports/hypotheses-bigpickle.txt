@@ -1,7 +1,18 @@
-## 2026-09-09 13:53:47 UTC [target] (model bigpickle)
-[PRIO] authentication-service.eks.core-production.keyless.technology, 8.5, attack_surface=9, business_value=10 (auth service), tech_exposure=9 (WS/Keyless/WebAuthn), gate_ease=2 (needs live token), cloud_surface=8, freshness=9
-[PRIO] engagementplatform.n26.com, 5.0, attack_surface=5, business_value=7 (customer engagement data), tech_exposure=4 (REST/Braze), gate_ease=1 (401-gated), cloud_surface=5, freshness=6
-[PRIO] api.tech26.de, 3.5, attack_surface=6, business_value=4 (unknown), tech_exposure=3 (Envoy edge), gate_ease=3 (403/404), cloud_surface=4, freshness=4
+## 2026-09-09 17:30:25 UTC [target] (model bigpickle)
+[PRIO] api.tech26.de, 6.5, attack_surface=6, business_value=6, tech_exposure=5, gate_ease=4, cloud_surface=5, freshness=5 — unknown service behind Envoy, 27 probed paths all 404/403, WS-upgrade(json) 403 (distinct WAF vs keyless sibling), family (keyless/pisp) hides APIs at custom protocol+route; anonymous probe surface exhausted but fresh path enumeration may reveal new routes.
+[PRIO] authentication-service.eks.core-production.keyless.technology, 8.5, attack_surface=9, business_value=10, tech_exposure=9, gate_ease=2, cloud_surface=8, freshness=9 — highest-value target but AUTH_HELPED (needs live token), gate_ease=2, cannot advance anonymously.
+[PRIO] engagementplatform.n26.com, 5.0, attack_surface=5, business_value=7, tech_exposure=4, gate_ease=1, cloud_surface=5, freshness=6 — Braze REST, 401 key-gated, no key in web bundles, AUTH_HELPED.
+[PRIO] flags.n26.com, 4.0, attack_surface=4, business_value=4, tech_exposure=5, gate_ease=9, cloud_surface=4, freshness=3 — RBAC boundary fully enumerated, POST /v1/initialize by-design (INFO ceiling), no escalation path.
+[PRIO] app.n26.com/graphql, 3.0, attack_surface=5, business_value=9, tech_exposure=6, gate_ease=1, cloud_surface=5, freshness=1 — WAF blocks all transports across 10+ cycles, stalled.
+[HYP] api.tech26.de API route discovery via extended path enumeration and Content-Type probing
+class: MISCONFIG
+asset: api.tech26.de
+confidence: 35
+reasoning: api.tech26.de is the only API target in the "api" target class with anonymous probe potential. 27 HTTP paths probed all return empty-404 (Envoy 0B, 11-15ms) or 403 (awselb/2.0 dotfile rule), WS-upgrade(json) 403 — distinct WAF behavior vs keyless sibling (which passes WS to app-layer `unused`). The family (keyless/pisp) hides APIs at custom protocol+route. However, only standard REST paths have been tested — versioned paths with different prefix patterns (e.g., /api/tech26/v1/*, /internal/v1/*, /gateway/v1/*), GraphQL endpoints, gRPC-web, or OpenAPI spec paths remain untested. The awselb/2.0 dotfile rule on /.env suggests an ALB behind Envoy, not pure Envoy routing — ALB may have different path normalization or routing rules.
+evidence_needed: non-404/non-403 response on any path, or a 101 WS with a legitimate subprotocol, or a 200/401/403 with API error body.
+verify_steps: (1) GET https://api.tech26.de/openapi.json, (2) GET https://api.tech26.de/swagger.json, (3) GET https://api.tech26.de/graphql with Content-Type application/json, (4) GET https://api.tech26.de/.well-known/openid-configuration, (5) GET https://api.tech26.de/healthz, (6) GET https://api.tech26.de/readyz, (7) OPTIONS on all paths to check CORS preflight behavior, (8) POST with Content-Type application/json to /v1/ with minimal body.
+impact: unknown service behind edge — INFO boundary unless a route leaks, then scoped reassessment. If API discovered, severity depends on endpoint.
+testability: PASSIVE
 [HYP] Keyless WS ingress replay vs minted signed-token subprotocol
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology (wss://…/v1/auth/n26, /v1/enroll/n26)
@@ -20,33 +31,18 @@ evidence_needed: working REST key from a legitimate client asset.
 verify_steps: GET /segments/list with recovered key vs 401-garbage baseline (200-vs-401 boundary).
 impact: full customer-engagement/notification data read — MEDIUM if key recoverable.
 testability: AUTH_HELPED
-[HYP] api.tech26.de custom-protocol ingress behind managed WAF
-class: MISCONFIG
-asset: api.tech26.de
-confidence: 30
-reasoning: 27 HTTP paths empty-404 (Envoy 0B, 11–15ms), /.env 403 awselb/2.0 dotfile rule, WS-upgrade(json) 403 — distinct WAF behavior vs keyless sibling (which passes WS to app-layer `unused`); family (keyless/pisp) hides APIs at custom protocol+route, bare edge yields no fingerprint anonymously.
-evidence_needed: non-404/non-403 response on any path or a 101 WS with a legitimate subprotocol.
-verify_steps: replay a real client-session subprotocol+headers at /v1/*tech26*-suffixed paths (read-only handshake).
-impact: unknown service behind edge — INFO boundary unless a route leaks, then scoped reassessment.
-testability: AUTH_HELPED
-[PARKED] Braze REST key recoverable from mobile asset: requires APK reverse engineering (outside CLI scope), confidence 30, no passive verify path → parked until mobile assets available.
-[PARKED] api.tech26.de custom-protocol ingress: requires captured client session tokens, confidence 30, no anonymous verification → parked.
-[FINAL] Keyless WS ingress replay vs minted signed-token subprotocol: confidence 60, clear verify path (capture token from live session, replay as WS protocol), CRITICAL impact if reached.
-[NEXT] HUMAN: From an authenticated N26 app session (mobile or browser), open DevTools → Network → filter WS → trigger a biometric/login flow → capture the exact `Sec-WebSocket-Protocol` header value sent to `wss://authentication-service.eks.core-production.keyless.technology/v1/auth/n26` or `/v1/enroll/n26` → provide the token value for offline analysis (do NOT replay against production without explicit authorization).
-[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 58 standard + tenant-scoped paths return "path unused" — API at custom routes
-[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO)
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
-[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
-[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403
-[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
-[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
-[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
-[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
-[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
-[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
-[LEARN] REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
-[LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface
-[LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 58 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
-[LEARN] ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
-[RISK] N26 Bank AG: 45/100 — Active recon on production banking infrastructure; highest-value target (authentication-service) requires AUTH_HELPED verification (live session token capture); current anonymous surface is hardened (WAF/RBAC/tarpit); no critical findings yet but auth service has strong potential if WS handshake can be replayed.
+[PARKED] Braze REST key recoverable from mobile asset: confidence 30 (<40), requires APK reverse engineering (outside CLI scope), no passive verify path.
+[PARKED] Keyless WS ingress replay: confidence 60 (survives), but AUTH_HELPED — cannot advance without human session token capture.
+[FINAL] api.tech26.de API route discovery: confidence 35 (<40 threshold), but survives as the ONLY anonymous API probe candidate in the "api" target class. 27 paths tested, but path space may be deeper (versioned, prefix, GraphQL, gRPC-web, OpenAPI). Lowest confidence due to zero non-404/403 responses observed across all probes. Worth one fresh probe cycle before permanent parking.
+[FINAL] Keyless WS ingress replay: confidence 60, highest-value, clear verify path, CRITICAL impact — but gated on HUMAN.
+[NEXT] PROBE: Fresh api.tech26.de path enumeration — GET https://api.tech26.com/openapi.json, GET https://api.tech26.de/swagger.json, GET https://api.tech26.de/graphql, GET https://api.tech26.de/.well-known/openid-configuration, GET https://api.tech26.de/healthz, GET https://api.tech26.de/readyz, OPTIONS https://api.tech26.de/ (check CORS preflight behavior), POST https://api.tech26.de/v1/ with Content-Type: application/json body `{}` — record status+body+headers vs 404/403 baseline; specifically look for awselb/2.0 vs Envoy response body differentiation.
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: 27 probed paths all 404/403, WS-upgrade(json) 403, /.env 403 awselb/2.0 — distinct WAF behavior vs keyless sibling, but anonymous probe surface may be deeper (GraphQL, gRPC-web, OpenAPI, versioned paths untested).
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 58+ paths "path unused", API at custom routes via minted WS token — anonymous route discovery exhausted, requires AUTH_HELPED.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary stable, POST /v1/initialize by-design (INFO), no escalation path — retired from active testing.
+[LEARN] ACCEPTED MISCONFIG @ engagementplatform.n26.com: Braze REST, 401 key-gated, no web bundle key — server/mobile-only, requires AUTH_HELPED.
+[LEARN] REJECTED AUTH @ app.n26.com: WAF blocks all transports across 10+ cycles — GraphQL transport class closed anonymously.
+[LEARN] REJECTED IDOR @ spc.n26.com: Tracking pixels, not payment API — permanently invalidated.
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: Private S3 — no misconfig.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: 301 redirect — no takeover.
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: Shared Envoy/WAF tarpit — no differential ingress.
+[RISK] N26 Bank AG: 40/100 — Surface well-mapped and stale: sole live-200 service (flags.n26.com) is by-design public-client data (INFO); GraphQL fully WAF-blocked after 10+ cycles; spc.n26.com = tracking pixels; api.tech26.de anonymous surface exhausted (27 paths all 404/403); authentication-service highest-value but requires AUTH_HELPED (live session token capture); no critical findings in hand. Risk score stable — no new anonymous vectors available. Report-worthiness hinges on whether the Keyless WS token replay reveals auth flaws (CRITICAL if reached) or whether api.tech26.de has deeper anonymous API surface.
