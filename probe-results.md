@@ -268,3 +268,6 @@ https://flags.n26.com/v1/initialize -> HTTP 403
 
 ## 2026-09-09 04:58:24 UTC
 https://flags.n26.com/v1/initialize -> HTTP 403
+
+## 2026-09-09 09:25:33 UTC
+https://flags.n26.com/v1/initialize -> HTTP 403

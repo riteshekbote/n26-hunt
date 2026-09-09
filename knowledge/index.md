@@ -162,3 +162,4 @@
 - 2026-09-09 REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface
 - 2026-09-09 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 58 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
 - 2026-09-09 ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
+- 2026-09-09 REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
