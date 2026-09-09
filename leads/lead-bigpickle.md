@@ -1540,3 +1540,4 @@ testability: AUTH_HELPED
 [LEARN] REJECTED AUTH @ support.n26.com/graphql: Shared Envoy/WAF tarpit — no differential ingress.
 [RISK] N26 Bank AG: 40/100 — Surface well-mapped and stale: sole live-200 service (flags.n26.com) is by-design public-client data (INFO); GraphQL fully WAF-blocked after 10+ cycles; spc.n26.com = tracking pixels; api.tech26.de anonymous surface exhausted (27 paths all 404/403); authentication-service highest-value but requires AUTH_HELPED (live session token capture); no critical findings in hand. Risk score stable — no new anonymous vectors available. Report-worthiness hinges on whether the Keyless WS token replay reveals auth flaws (CRITICAL if reached) or whether api.tech26.de has deeper anonymous API surface.
 ## 2026-09-09 20:00:01 UTC [target] (model bigpickle)
+## 2026-09-09 22:24:30 UTC [target] (model bigpickle)
