@@ -5665,3 +5665,175 @@ testability: PASSIVE
 
 [STEP 7 — RISK]
 [RISK] N26 Bank AG: 78 — Confirmed Statsig feature flag service with client SDK key extraction and method-dependent RBAC behavior (by-design); authentication-service.eks.core-production.keyless.technology LIVE but API surface at non-standard paths (high-value EKS auth target, cloud_surface=10, deployment rotated v26.09.07); GraphQL WAF on primary app robust (no POST bypass found); spc.n26.com endpoints are tracking pixels not payment API; single exploitable path (flags.n26.com) with confirmed key extraction and full config disclosure (INFO unless flags deemed sensitive); keyless auth service unprobed beyond 58 standard paths — warrants enumeration for auth bypass/WebAuthn flaws; engagementplatform.n26.com 401 boundary confirmed, token acquisition path unknown.
+===== ANALYST nemotron3 2026-09-09 14:12:43 UTC =====
+[0m
+> build · nemotron-3-ultra-free
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/health" --max-time 10
+HTTP/2 404 
+date: Wed, 09 Sep 2026 13:54:07 GMT
+content-type: application/json
+content-length: 80
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08672-87a1-73cc-ac89-2070f2c7b19b
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/ready" --max-time 10
+HTTP/2 404 
+date: Wed, 09 Sep 2026 13:56:51 GMT
+content-type: application/json
+content-length: 79
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08675-04f8-7c93-a659-027b0c946901
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/metrics" --max-time 10
+HTTP/2 404 
+date: Wed, 09 Sep 2026 13:56:51 GMT
+content-type: application/json
+content-length: 81
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08675-064c-7cce-a6f2-50b49c383784
+x-envoy-upstream-service-time: 3
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/actuator/health" --max-time 10
+HTTP/2 404 
+date: Wed, 09 Sep 2026 13:56:51 GMT
+content-type: application/json
+content-length: 89
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08675-0827-731e-9baa-0c7a885fe5b0
+x-envoy-upstream-service-time: 5
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/api/internal/v1/auth/n26" --max-time 10
+HTTP/2 404 
+date: Wed, 09 Sep 2026 13:58:18 GMT
+content-type: application/json
+content-length: 98
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08676-5b68-7dac-b81f-0701a5ada5e3
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/api/private/v1/enroll/n26" --max-time 10
+HTTP/2 404 
+date: Wed, 09 Sep 2026 13:58:19 GMT
+content-type: application/json
+content-length: 99
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08676-5cbf-73e7-b6e2-fec8558f8cce
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I "https://authentication-service.eks.core-production.keyless.technology/internal/auth/n26" --max-time 10
+HTTP/2 404 
+date: Wed, 09 Sep 2026 13:58:19 GMT
+content-type: application/json
+content-length: 91
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08676-5e08-7ad3-9481-636898f5a16d
+x-envoy-upstream-service-time: 2
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s "https://authentication-service.eks.core-production.keyless.technology/health" --max-time 10
+{"code":"UNPROCESSABLE","reason":"path unused: /health","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -s -I "https://engagementplatform.n26.com/users" --max-time 10
+HTTP/2 401 
+content-type: application/json
+date: Wed, 09 Sep 2026 14:01:30 GMT
+cf-ray: a386b9adfa62ebe4-SJC
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+cache-control: no-cache
+server: cloudflare
+strict-transport-security: max-age=31536000; includeSubDomains
+vary: Origin,Accept-Encoding
+x-ratelimit-limit: 
+x-ratelimit-remaining: 
+x-ratelimit-reset: 
+x-request-id: 306bfbbf-3b98-454e-853a-c2ba94e796d3
+x-runtime: 0.006776
+x-cache: Error from cloudfront
+via: 1.1 04f3246f9dfa448924c0196336a80262.cloudfront.net (CloudFront)
+x-amz-cf-pop: PHX50-P1
+x-amz-cf-id: _3ePV-X1x1d4dxn_ow0BmGPGuu_SLHQKJCc37HQOLoQaNJ89WsbubQ==
+[0m
+[0m$ [0mcurl -s "https://engagementplatform.n26.com/users" --max-time 10
+{"message":"Invalid API key: "}
+[0m
+[0m$ [0mcurl -s -X POST "https://flags.n26.com/v1/initialize" \
+  -H "Content-Type: application/json" \
+  -H "STATSIG-API-KEY: client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0" \
+  -d '{"hash":"djb2","user":{},"statsigMetadata":{}}' --max-time 10
+{"feature_gates":{"3526595":{"name":"3526595","value":false,"rule_id":"default","id_type":"userID"},"54269378":{"name":"54269378","value":true,"rule_id":"4fBsaixEFWEMUeW0AigxxB","id_type":"userID"},"175502603":{"name":"175502603","value":false,"rule_id":"default","id_type":"userID"},"205926605":{"name":"205926605","value":false,"rule_id":"default","id_type":"userID"},"334067965":{"name":"334067965","value":false,"rule_id":"default","id_type":"stableID"},"361410648":{"name":"361410648","value":true,"rule_id":"4jwgnfJhdr5yHLgNLQwPMF","id_type":"userID"},"672634959":{"name":"672634959","value":false,"rule_id":"default","id_type":"userID"},"937962430":{"name":"937962430","value":false,"rule_id":"default","id_type":"userID"},"1003777216":{"name":"1003777216","value":false,"rule_id":"default","id_type":"userID"},"1088109375":{"name":"1088109375","value":false,"rule_id":"default","id_type":"stableID"},"1187697484":{"name":"1187697484","value":false,"rule_id":"default","id_type":"userID"},"1340774426":{"name":"1340774426","value":false,"rule_id":"default","id_type":"userID"},"1341656401":{"name":"1341656401","value":false,"rule_id":"default","id_type":"stableID"},"1418505627":{"name":"1418505627","value":true,"rule_id":"7jVGattAv29qTOwNkoT0AO","id_type":"userID"},"1467424007":{"name":"1467424007","value":true,"rule_id":"49zkVk7dGn6ZASVvxqB3sx","id_type":"userID"},"1484508534":{"name":"1484508534","value":false,"rule_id":"default","id_type":"userID"},"1647488824":{"name":"1647488824","value":false,"rule_id":"default","id_type":"userID"},"1782171246":{"name":"1782171246","value":false,"rule_id":"default","id_type":"userID"},"1813539318":{"name":"1813539318","value":false,"rule_id":"default","id_type":"userID"},"1816971896":{"name":"1816971896","value":false,"rule_id":"default","id_type":"userID"},"1863767777":{"name":"1863767777","value":false,"rule_id":"default","id_type":"userID"},"2021501434":{"name":"2021501434","value":false,"rule_id":"default","id_type":"userID"},"2102111771":{"name":"2102111771","value":false,"rule_id":"default","id_type":"userID"},"2277800342":{"name":"2277800342","value":false,"rule_id":"default","id_type":"stableID"},"2581845103":{"name":"2581845103","value":false,"rule_id":"default","id_type":"userID"},"2749978056":{"name":"2749978056","value":false,"rule_id":"default","id_type":"userID"},"3273360575":{"name":"3273360575","value":true,"rule_id":"disabled","id_type":"userID"},"3298330345":{"name":"3298330345","value":false,"rule_id":"default","id_type":"userID"},"3450570353":{"name":"3450570353","value":false,"rule_id":"default","id_type":"userID"},"3532333389":{"name":"3532333389","value":false,"rule_id":"default","id_type":"userID"},"3571576635":{"name":"3571576635","value":false,"rule_id":"default","id_type":"userID"},"3904089483":{"name":"3904089483","value":false,"rule_id":"default","id_type":"userID"},"3933383322":{"name":"3933383322","value":false,"rule_id":"default","id_type":"userID"},"4133333267":{"name":"4133333267","value":false,"rule_id":"default","id_type":"userID"},"4181258251":{"name":"4181258251","value":false,"rule_id":"default","id_type":"userID"},"4188014179":{"name":"4188014179","value":false,"rule_id":"default","id_type":"userID"}},"dynamic_configs":{"113552670":{"name":"113552670","value":{"title":"Get this deal now!","price":19},"rule_id":"default","group":"default","is_device_based":false,"passed":false,"id_type":"userID"},"687145565":{"name":"687145565","value":{"Discount":0,"Months":0},"rule_id":"default","group":"default","is_device_based":false,"passed":false,"id_type":"userID"},"1078987709":{"name":"1078987709","value":{"Groups":"Test"},"rule_id":"launchedGroup","group":"launchedGroup","group_name":"Test","is_device_based":false,"id_type":"userID","is_experiment_active":false,"is_user_in_experiment":false},"1594427002":{"name":"1594427002","value":{"uiMode":"vendor","escalationType":"human","salesForceAccountType":"user","isEnabled":true},"rule_id":"default","group":"default","is_device_based":false,"passed":false,"id_type":"userID"},"2302566031":{"name":"2302566031","value":{},"rule_id":"default","group":"default","is_device_based":false,"passed":false,"id_type":"uniqueID"},"2433465790":{"name":"2433465790","value":{},"rule_id":"inlineTargetingRules","group":"inlineTargetingRules","is_device_based":false,"id_type":"userID","is_experiment_active":false,"is_user_in_experiment":false},"2818728140":{"name":"2818728140","value":{"isEnabled":false},"rule_id":"default","group":"default","is_device_based":false,"passed":false,"id_type":"userID"},"3518516657":{"name":"3518516657","value":{"use_experiment_translations":true},"rule_id":"launchedGroup","group":"launchedGroup","group_name":"Test B just badge","is_device_based":false,"id_type":"userID","is_experiment_active":false,"is_user_in_experiment":false},"4173610755":{"name":"4173610755","value":{"is_new_ui_enabled":true},"rule_id":"launchedGroup","group":"launchedGroup","group_name":"Test","is_device_based":false,"id_type":"userID","is_experiment_active":false,"is_user_in_experiment":false}},"layer_configs":{},"sdkParams":{},"has_updates":true,"generator":"scrapi-nest","time":1788962558693,"company_lcut":1788962558693,"evaluated_keys":{},"hash_used":"djb2","derived_fields":{"ip":"57.154.4.56","country":"US","browserName":"curl","browserVersion":"8.5.0","osName":"Other","osVersion":"0.0.0","browser_name":"curl","browser_version":"8.5.0","os_name":"Other","os_version":"0.0.0"},"hashed_sdk_key_used":"3867294888","can_record_session":true,"recording_blocked":false,"session_recording_rate":1,"param_stores":{},"target_app_used":"shark"}
+[0m
+[0m$ [0mcurl -s -I "https://app.n26.com/" --max-time 10
+HTTP/2 302 
+date: Wed, 09 Sep 2026 14:08:20 GMT
+content-type: text/plain; charset=utf-8
+content-length: 28
+x-powered-by: Express
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+set-cookie: n26.csrf=s%3A16a1iSr5IRBcGaBG0g49uEOu.BqAZIYnWTf1OsTEPskUbH7%2FWsivVlH1Fryc%2FESqSmZQ; Path=/; HttpOnly; Secure; SameSite=Strict
+set-cookie: num26UniqueDeviceToken=e61ac0fa-4cba-4af1-b35e-801aa495a72d; Domain=.n26.com; Path=/; Expires=Tue, 09 Mar 2027 14:08:20 GMT; Secure; SameSite=Lax
+set-cookie: n26.graphql_form_payload=s%3A.YD%2B8nMu6vmWiiynmJPDg2yCwom9sJHaHUx8PNdL3ehc; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict
+x-ratelimit-limit: 60
+x-ratelimit-remaining: 59
+x-ratelimit-reset: 1788962961
+content-security-policy: report-uri /report-csp;report-to /report-csp;base-uri 'self';child-src number26://* *.n26.com n26.com *.doubleclick.net api.sumsub.com *.youtube-nocookie.com youtube-nocookie.com *.lpsnmedia.net *.liveperson.net js.stripe.com https://widgets.marqeta.com;connect-src 'self' https://spc.n26.com https://flags.n26.com wss://authentication-service.eks.core-production.keyless.technology featureassets.org prodregistryv2.org wss://lo.msg.liveperson.net wss://*.liveperson.net *.liveperson.net *.lpsnmedia.net blob: s3.eu-central-1.amazonaws.com cdn.number26.de;font-src 'self' data:;img-src https://spc.n26.com https://flags.n26.com 'self' data: images.ctfassets.net images.contentful.com *.lpsnmedia.net *.liveperson.net *.objectstorage.liveperson.net *.stripe.com message-templates-assets.tech26.de cdn.number26.de;media-src videos.contentful.com videos.ctfassets.net *.lpsnmedia.net 'self' blob:;object-src 'none';style-src 'unsafe-inline' 'self' *.lpsnmedia.net *.liveperson.net;script-src 'self' cdn.number26.de 'unsafe-inline' *.youtube-nocookie.com s.ytimg.com youtube-nocookie.com youtube.com *.lpsnmedia.net *.liveperson.net 'nonce-25d5444e5e14d1fe787d4e45edd001ef' 'strict-dynamic' js.stripe.com/v3 connect-js.stripe.com js.stripe.com;worker-src 'self';default-src * *.lpsnmedia.net;frame-ancestors 'self' *.n26.com;frame-src *.lpsnmedia.net *.liveperson.net connect-js.stripe.com js.stripe.com
+feature-policy: accelerometer 'none';autoplay 'none';camera 'self';fullscreen 'none';geolocation 'self';gyroscope 'none';magnetometer 'none';microphone 'none';midi 'none';notifications 'self';payment 'self';push 'self';speaker 'none';sync-xhr 'none';usb 'none';vibrate 'none';vr 'none'
+location: /login
+vary: Accept, Accept-Encoding
+server: envoy
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+x-envoy-upstream-service-time: 34
+[0m
+[0m$ [0mcurl -s -I "https://app.n26.com/login" --max-time 10
+HTTP/2 200 
+date: Wed, 09 Sep 2026 14:10:59 GMT
+content-type: text/html; charset=utf-8
+content-length: 319204
+x-powered-by: Express
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+cross-origin-embedder-policy: credentialless
+cross-origin-opener-policy: same-origin
+set-cookie: n26.csrf=s%3AeMMraYveMK2N56wrEYblI2Xn.Bl7Ozrurz8YjDxomYsyVn6kUeQ2MzOZQyd9n24FEL1k; Path=/; HttpOnly; Secure; SameSite=Strict
+set-cookie: num26UniqueDeviceToken=a761efe1-4347-4a82-bbc6-1a8cbc553294; Domain=.n26.com; Path=/; Expires=Tue, 09 Mar 2027 14:10:59 GMT; Secure; SameSite=Lax
+set-cookie: n26.graphql_form_payload=s%3A.YD%2B8nMu6vmWiiynmJPDg2yCwom9sJHaHUx8PNdL3ehc; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict
+x-ratelimit-limit: 60
+x-ratelimit-remaining: 59
+x-ratelimit-reset: 1788963120
+content-security-policy: report-uri /report-csp;report-to /report-csp;base-uri 'self';child-src number26://* *.n26.com n26.com *.doubleclick.net api.sumsub.com *.youtube-nocookie.com youtube-nocookie.com *.lpsnmedia.net *.liveperson.net js.stripe.com https://widgets.marqeta.com;connect-src 'self' https://spc.n26.com https://flags.n26.com wss://authentication-service.eks.core-production.keyless.technology featureassets.org prodregistryv2.org wss://lo.msg.liveperson.net wss://*.liveperson.net *.liveperson.net *.lpsnmedia.net blob: s3.eu-central-1.amazonaws.com cdn.number26.de;font-src 'self' data:;img-src https://spc.n26.com https://flags.n26.com 'self' data: images.ctfassets.net images.contentful.com *.lpsnmedia.net *.liveperson.net *.objectstorage.liveperson.net *.stripe.com message-templates-assets.tech26.de cdn.number26.de;media-src videos.contentful.com videos.ctfassets.net *.lpsnmedia.net 'self' blob:;object-src 'none';style-src 'unsafe-inline' 'self' *.lpsnmedia.net *.liveperson.net;script-src 'self' cdn.number26.de 'unsafe-inline' *.youtube-nocookie.com s.ytimg.com youtube-nocookie.com youtube.com *.lpsnmedia.net *.liveperson.net 'nonce-17d318e277d15e6704f03a204cf2e0fc' 'strict-dynamic' js.stripe.com/v3 connect-js.stripe.com js.stripe.com;worker-src 'self';default-src * *.lpsnmedia.net;frame-ancestors 'self' *.n26.com;frame-src *.lpsnmedia.net *.liveperson.net connect-js.stripe.com js.stripe.com
+feature-policy: accelerometer 'none';autoplay 'none';camera 'self';fullscreen 'none';geolocation 'self';gyroscope 'none';magnetometer 'none';microphone 'none';midi 'none';notifications 'self';payment 'self';push 'self';speaker 'none';sync-xhr 'none';usb 'none';vibrate 'none';vr 'none'
+x-recruiting: We're hiring! https://n26.com/careers | recruiting@n26.com
+report-to: {"endpoints":[{"url":"https://n26.com/report-csp"}],"include_subdomains":true,"group":"/report-csp","max_age":31536000}
+etag: W/"4dee4-pOTITctmtugUsUNO7/wif/qHy4E"
+vary: Accept-Encoding
+server: envoy
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+x-envoy-upstream-service-time: 75
+[0m
+[0m$ [0mcurl -s -I "https://spc.n26.com/v1/transactions" --max-time 10
+HTTP/2 200 
+date: Wed, 09 Sep 2026 14:12:26 GMT
+content-type: image/gif
+content-length: 43
+set-cookie: sp=2c8371c6-eea7-4972-8b49-86c5a2ef17f4; Expires=Thu, 09 Sep 2027 14:12:26 GMT; Path=/; Secure; HttpOnly; SameSite=None
+cache-control: no-cache, no-store, must-revalidate
+p3p: policyref="/w3c/p3p.xml", CP="NOI DSP COR NID PSA OUR IND COM NAV STA"
+access-control-allow-origin: *
+access-control-allow-credentials: true
+server: envoy
+x-envoy-upstream-service-time: 3
+[0m
