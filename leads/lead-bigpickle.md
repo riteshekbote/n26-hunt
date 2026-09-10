@@ -1675,3 +1675,13 @@ testability: PASSIVE
 [LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB, zero content, placeholder stub; INFO monitor-only.
 [LEARN] REJECTED AUTH @ api.tech26.de: WS-upgrade 403 = awselb/2.0 WAF edge rule; no anonymous WS bypass surface.
 [RISK] N26 Bank AG: 40/100 — Surface well-mapped and stale; sole live-200 service (flags.n26.com) is by-design public-client data (INFO); GraphQL WAF-blocked 10+ cycles; spc.n26.com = tracking pixels; api.tech26.de anonymous surface exhausted; authentication-service highest-value but AUTH_HELPED (live session token capture required); no critical findings in hand. Report-worthiness hinges entirely on whether Keyless WS token replay reveals auth flaws (CRITICAL if reached). Stable cycle.
+## 2026-09-10 17:38:59 UTC [target] (model bigpickle)
+[HYP] Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 60
+reasoning: client.6e429513.js hardcodes wss://authentication-service…/v1/auth/n26; flow = KeylessSignedTokenMutation → per-session signed token → Sec-WebSocket-Protocol → validateKeylessSignedTokenMutation. ~68 HTTP paths + WS-upgrade all `path unused` — server routes on minted token only. Version rotated v26.09.07, no route added on any HTTP method.
+evidence_needed: 101 or non-`unused` route response when presenting a real minted KeylessSignedToken as Sec-WebSocket-Protocol; token lifetime/across-path reuse.
+verify_steps: from authenticated app.n26.com session → devtools Network → WS → /v1/auth/n26 handshake → copy exact Sec-WebSocket-Protocol → read-only WSS replay against same endpoint (connect + log 101 data, abort before any frames).
+impact: token reuse / weak challenge-binding in biometric WebAuthn auth = AUTH bypass, account-takeover class = CRITICAL; requires live minted token.
+testability: AUTH_HELPED
