@@ -13888,3 +13888,241 @@ All probes return empty Envoy 404s consistent with baseline. Let me check respon
 /api-docs => 404 0
 /openapi.yaml => 404 0
 [0m
+===== ANALYST bigpickle 2026-09-10 00:38:16 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt && echo "---DB---" && ls -la /home/runner/work/n26-hunt/n26-hunt/db 2>/dev/null; ls /tmp/opencode
+total 276
+drwxr-xr-x 12 runner runner  4096 Sep 10 00:32 .
+drwxr-xr-x  3 runner runner  4096 Sep 10 00:32 ..
+drwxr-xr-x  7 runner runner  4096 Sep 10 00:32 .git
+drwxr-xr-x  3 runner runner  4096 Sep 10 00:32 .github
+-rw-r--r--  1 runner runner  1844 Sep 10 00:32 README.md
+-rw-r--r--  1 runner runner    32 Sep 10 00:32 analyst-out.txt
+-rw-r--r--  1 runner runner 93526 Sep 10 00:32 analyst-prompt.txt
+-rw-r--r--  1 runner runner 89656 Sep 10 00:32 ctx.txt
+drwxr-xr-x  2 runner runner  4096 Sep 10 00:32 inventory
+drwxr-xr-x  2 runner runner  4096 Sep 10 00:32 knowledge
+drwxr-xr-x  2 runner runner  4096 Sep 10 00:32 leads
+-rw-r--r--  1 runner runner 10634 Sep 10 00:32 probe-results.md
+drwxr-xr-x  2 runner runner  4096 Sep 10 00:32 recon-notes
+drwxr-xr-x  2 runner runner  4096 Sep 10 00:32 reports
+drwxr-xr-x  2 runner runner  4096 Sep 10 00:32 reposcan-raw
+-rw-r--r--  1 runner runner  3283 Sep 10 00:32 scope.yml
+drwxr-xr-x  2 runner runner  4096 Sep 10 00:32 scripts
+-rw-r--r--  1 runner runner    33 Sep 10 00:32 state_bigpickle.json
+-rw-r--r--  1 runner runner    33 Sep 10 00:32 state_laguna.json
+-rw-r--r--  1 runner runner    33 Sep 10 00:32 state_ling3.json
+-rw-r--r--  1 runner runner    33 Sep 10 00:32 state_longcat.json
+-rw-r--r--  1 runner runner    33 Sep 10 00:32 state_mimo.json
+-rw-r--r--  1 runner runner    33 Sep 10 00:32 state_nemotron3.json
+drwxr-xr-x  2 runner runner  4096 Sep 10 00:32 triage
+---DB---
+[0m
+[0m✱ [0mGlob "**/*.{yml,yaml,md}"[90m 68 matches[0m
+[0m→ [0mRead scope.yml
+[0m→ [0mRead probe-results.md
+[0m→ [0mRead leads/lead-bigpickle.md
+[0m
+[0m$ [0mrm -f /tmp/opencode/n26-api-probe.log body.bin; for p in openapi.json swagger.json graphql .well-known/openid-configuration healthz readyz api/v1 "v1/" metrics actuator actuator/health; do echo "===== GET /$p =====" >> /tmp/opencode/n26-api-probe.log; curl -sS -i -o body.bin --max-time 20 -H "Content-Type: application/json" "https://api.tech26.de/$p" >> /tmp/opencode/n26-api-probe.log 2>&1; wc -c body.bin >> /tmp/opencode/n26-api-probe.log; sleep 1; done; echo "done"
+done
+[0m
+[0m$ [0mwc -l /tmp/opencode/n26-api-probe.log; echo "---OPTIONS---"; curl -sS -i -o /tmp/opencode/opt.bin --max-time 20 -X OPTIONS "https://api.tech26.de/" >> /tmp/opencode/opt.log 2>&1; wc -c /tmp/opencode/opt.bin >> /tmp/opencode/opt.log; cat /tmp/opencode/opt.log; sleep 1; echo "---ENV/baseline---"; curl -sS -i --max-time 20 -o /tmp/opencode/env.bin "https://api.tech26.de/.env"; wc -c /tmp/opencode/env.bin
+22 /tmp/opencode/n26-api-probe.log
+---OPTIONS---
+156 /tmp/opencode/opt.bin
+---ENV/baseline---
+271 /tmp/opencode/env.bin
+[0m
+[0m→ [0mRead /tmp/opencode/n26-api-probe.log
+[0m
+[0m$ [0mecho "===== OPTIONS / ====="; cat /tmp/opencode/opt.bin; echo; echo "===== GET /.env ====="; cat /tmp/opencode/env.bin
+===== OPTIONS / =====
+HTTP/1.1 404 Not Found
+Date: Thu, 10 Sep 2026 00:34:00 GMT
+Content-Length: 0
+Connection: keep-alive
+server: envoy
+x-envoy-upstream-service-time: 14
+
+
+===== GET /.env =====
+HTTP/1.1 403 Forbidden
+Server: awselb/2.0
+Date: Thu, 10 Sep 2026 00:34:01 GMT
+Content-Type: text/html
+Content-Length: 118
+Connection: keep-alive
+
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+</body>
+</html>
+[0m
+The `-o`+`-i` combo clobbered per-request output. Re-running with clean per-request capture:
+[0m$ [0mcd /tmp/opencode && rm -f n26-api2.log r.bin; for p in openapi.json swagger.json graphql .well-known/openid-configuration healthz readyz api/v1 v1 metrics actuator actuator/health; do code=$(curl -sS -o r.bin --max-time 20 -w "%{http_code} %{size_download} %{content_type} srv=%header{server} t=%{time_total}" -H "Content-Type: application/json" "https://api.tech26.de/$p" 2>>n26-api2.err); echo "GET /$p -> $code" >> n26-api2.log; printf '  body: ' >> n26-api2.log; tr -d '\n' < r.bin | head -c 160 >> n26-api2.log; echo >> n26-api2.log; sleep 1; done; echo OK
+OK
+[0m
+[0m→ [0mRead /tmp/opencode/n26-api2.log
+All fresh paths uniformly empty-404 (envoy, 0B, ~0.5s). Only differentiated response is the WAF 403 on `/.env` (awselb/2.0). Let me test the surviving family-specific route (pisp's live route) and DNS-level siblings:
+[0m
+[0m$ [0mcd /tmp/opencode && rm -f n26-api3.log r.bin; for p in "api/mfa/challenge" "api/v1/mfa/challenge" "mfa/challenge" "challenge" "auth" "oauth/token" "api/oauth/token" "token" "v1/token" "api/v2"; do code=$(curl -sS -o r.bin --max-time 20 -w "%{http_code} %{size_download} srv=%header{server} t=%{time_total}" "https://api.tech26.de/$p" 2>>n26-api3.err); echo "GET /$p -> $code" >> n26-api3.log; printf '  body: ' >> n26-api3.log; tr -d '\n' < r.bin | head -c 160 >> n26-api3.log; echo >> n26-api3.log; sleep 1; done; cat n26-api3.log
+GET /api/mfa/challenge -> 404 0 srv=envoy t=0.498461
+  body: 
+GET /api/v1/mfa/challenge -> 404 0 srv=envoy t=0.466846
+  body: 
+GET /mfa/challenge -> 404 0 srv=envoy t=0.469874
+  body: 
+GET /challenge -> 404 0 srv=envoy t=0.472568
+  body: 
+GET /auth -> 404 0 srv=envoy t=0.469814
+  body: 
+GET /oauth/token -> 404 0 srv=envoy t=0.640216
+  body: 
+GET /api/oauth/token -> 404 0 srv=envoy t=0.478984
+  body: 
+GET /token -> 404 0 srv=envoy t=0.473944
+  body: 
+GET /v1/token -> 404 0 srv=envoy t=0.473166
+  body: 
+GET /api/v2 -> 404 0 srv=envoy t=0.472130
+  body:
+[0m
+[0m$ [0mfor h in api.tech26.de pisp.tech26.de sandbox-api.tech26.de staging-api.tech26.de dev-api.tech26.de auth.tech26.de mfa.tech26.de openbanking.tech26.de api-v2.tech26.de api2.tech26.de gw-api.tech26.de; do ip=$(getent ahostsv4 "$h" 2>/dev/null | awk 'NR==1{print $1}'); echo "$h -> ${ip:-NXDOMAIN}"; done; echo "---also check pisp live route for behavior---"; curl -sS -o /dev/null -w "pisp /api/mfa/challenge -> %{http_code} srv=%header{server}\n" --max-time 20 "https://pisp.tech26.de/api/mfa/challenge"
+api.tech26.de -> 3.74.242.177
+pisp.tech26.de -> 63.178.117.46
+sandbox-api.tech26.de -> NXDOMAIN
+staging-api.tech26.de -> NXDOMAIN
+dev-api.tech26.de -> NXDOMAIN
+auth.tech26.de -> NXDOMAIN
+mfa.tech26.de -> NXDOMAIN
+openbanking.tech26.de -> NXDOMAIN
+api-v2.tech26.de -> NXDOMAIN
+api2.tech26.de -> NXDOMAIN
+gw-api.tech26.de -> NXDOMAIN
+---also check pisp live route for behavior---
+pisp /api/mfa/challenge -> 404 srv=istio-envoy
+[0m
+[0m$ [0mecho | timeout 15 openssl s_client -connect api.tech26.de:443 -servername api.tech26.de 2>/dev/null | openssl x509 -noout -text 2>/dev/null | grep -A1 "Subject Alternative Name" | head -20; echo "---HTTP(80)---"; curl -sS -o /dev/null -w "http80 -> %{http_code} %redirect_url\n" --max-time 10 "http://api.tech26.de/"
+X509v3 Subject Alternative Name: 
+                DNS:api.tech26.de, DNS:beta-api.tech26.de, DNS:fpt.tech26.de
+---HTTP(80)---
+http80 -> 301 %redirect_url
+[0m
+Certificate SANs reveal two sibling hostnames: `beta-api.tech26.de` and `fpt.tech26.de`. Probing both:
+[0m$ [0mcd /tmp/opencode && rm -f n26-newh.log r.bin; for h in beta-api.tech26.de fpt.tech26.de; do for p in "" "api" "health" "healthz" "v1" "api/v1" "openapi.json" "swagger.json" "status" ".env"; do code=$(curl -sS -o r.bin --max-time 20 -w "%{http_code} %{size_download} srv=%header{server} loc=%{redirect_url}" "https://$h/$p" 2>>n26-newh.err); printf "%s GET /%s -> %s  " "$h" "$p" "$code" >> n26-newh.log; tr -d '\n' < r.bin | head -c 100 >> n26-newh.log; echo >> n26-newh.log; sleep 1; done; done; cat n26-newh.log
+beta-api.tech26.de GET / -> 404 0 srv=envoy loc=  
+beta-api.tech26.de GET /api -> 404 0 srv=envoy loc=  
+beta-api.tech26.de GET /health -> 404 0 srv=envoy loc=  
+beta-api.tech26.de GET /healthz -> 404 0 srv=envoy loc=  
+beta-api.tech26.de GET /v1 -> 404 0 srv=envoy loc=  
+beta-api.tech26.de GET /api/v1 -> 404 0 srv=envoy loc=  
+beta-api.tech26.de GET /openapi.json -> 404 0 srv=envoy loc=  
+beta-api.tech26.de GET /swagger.json -> 404 0 srv=envoy loc=  
+beta-api.tech26.de GET /status -> 404 0 srv=envoy loc=  
+beta-api.tech26.de GET /.env -> 403 118 srv=awselb/2.0 loc=  <html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+</bo
+fpt.tech26.de GET / -> 200 0 srv=awselb/2.0 loc=  
+fpt.tech26.de GET /api -> 200 0 srv=awselb/2.0 loc=  
+fpt.tech26.de GET /health -> 200 0 srv=awselb/2.0 loc=  
+fpt.tech26.de GET /healthz -> 200 0 srv=awselb/2.0 loc=  
+fpt.tech26.de GET /v1 -> 200 0 srv=awselb/2.0 loc=  
+fpt.tech26.de GET /api/v1 -> 200 0 srv=awselb/2.0 loc=  
+fpt.tech26.de GET /openapi.json -> 200 0 srv=awselb/2.0 loc=  
+fpt.tech26.de GET /swagger.json -> 200 0 srv=awselb/2.0 loc=  
+fpt.tech26.de GET /status -> 200 0 srv=awselb/2.0 loc=  
+fpt.tech26.de GET /.env -> 200 0 srv=awselb/2.0 loc=
+[0m
+`fpt.tech26.de` returns **200 empty on every path** (awselb/2.0, no WAF 403) — a distinct live edge. `beta-api` mirrors `api` (envoy empty-404). Investigating fpt further:
+[0m$ [0mcd /tmp/opencode && rm -f n26-fpt.log; for m in OPTIONS HEAD POST PUT PATCH DELETE; do code=$(curl -sS -o r.bin --max-time 15 -w "%{http_code} %{size_download} srv=%header{server} ct=%header{content-type} age=%header{x-cache} via=%header{vary}" -X $m "https://fpt.tech26.de/api/mfa/challenge" 2>>n26-fpt.err); echo "$m /api/mfa/challenge -> $code" >> n26-fpt.log; sleep 1; done; code=$(curl -sS -o r.bin --max-time 15 -w "%{http_code} %{size_download} srv=%header{server}" "https://fpt.tech26.de/?list-type=2" 2>>n26-fpt.err); echo "GET /?list-type=2 -> $code" >> n26-fpt.log; echo "--headers on root--"; curl -sS -I --max-time 15 "https://fpt.tech26.de/" 2>&1 | head -20 >> n26-fpt.log; echo "--dns--" >> n26-fpt.log; getent ahostsv4 fpt.tech26.de >> n26-fpt.log; cat n26-fpt.log
+--headers on root--
+OPTIONS /api/mfa/challenge -> 200 0 srv=awselb/2.0 ct=text/plain; charset=utf-8 age= via=
+HEAD /api/mfa/challenge -> 200 0 srv=awselb/2.0 ct=text/plain; charset=utf-8 age= via=
+POST /api/mfa/challenge -> 200 0 srv=awselb/2.0 ct=text/plain; charset=utf-8 age= via=
+PUT /api/mfa/challenge -> 200 0 srv=awselb/2.0 ct=text/plain; charset=utf-8 age= via=
+PATCH /api/mfa/challenge -> 200 0 srv=awselb/2.0 ct=text/plain; charset=utf-8 age= via=
+DELETE /api/mfa/challenge -> 200 0 srv=awselb/2.0 ct=text/plain; charset=utf-8 age= via=
+GET /?list-type=2 -> 200 0 srv=awselb/2.0
+HTTP/2 200 
+server: awselb/2.0
+date: Thu, 10 Sep 2026 00:36:25 GMT
+content-type: text/plain; charset=utf-8
+content-length: 0
+
+--dns--
+63.183.125.164  STREAM fpt.tech26.de
+63.183.125.164  DGRAM  
+63.183.125.164  RAW    
+18.197.7.44     STREAM 
+18.197.7.44     DGRAM  
+18.197.7.44     RAW    
+63.188.185.77   STREAM 
+63.188.185.77   DGRAM  
+63.188.185.77   RAW
+[0m
+[0m✱ [0mGrep "tech26|n26\.com/api|api\.n26|host|infra|endpoint"[90m in leads · 100 matches[0m
+[0m✱ [0mGrep "tech26"[90m in reports · 94 matches[0m
+`fpt.tech26.de` is a fixed-response ALB stub (200-empty `text/plain` on every method/path, no WAF, no routing) — placeholder, not a service. Checking reposcan leads for any `tech26.de` API endpoints I may have missed before concluding:
+STEP 1 — DELTA
+[NEW] api.tech26.de: 20 fresh GETs — /openapi.json /swagger.json /graphql /.well-known/openid-configuration /healthz /readyz /api/v1 /v1 /metrics /actuator /actuator/health + family routes (/api/mfa/challenge /api/v1/mfa/challenge /mfa/challenge /challenge /auth /oauth/token /api/oauth/token /token /v1/token /api/v2) — ALL envoy empty-404 (0B, ~0.5s); only differential remains /.env→403 awselb/2.0; ~47 paths now route-less.
+[NEW] beta-api.tech26.de: cert SAN sibling (same TLS leaf as api); 10 probes identical envoy empty-404 + /.env awselb-403 → same edge mesh, no distinct surface.
+[NEW] fpt.tech26.de: cert SAN sibling; fixed-response ALB — HTTP/2 200, `Content-Type: text/plain`, CL=0, `server: awselb/2.0` on EVERY method (OPTIONS/HEAD/POST/PUT/PATCH/DELETE) and every path incl `/?list-type=2` and `/.env` (no WAF 403); multi-IP eu-west-2 (18.197.7.44, 63.183.125.164, 63.188.185.77). Placeholder stub, zero content routing.
+
+STEP 2 — PRIORITIZE
+[PRIO] authentication-service.eks.core-production.keyless.technology, 8.1, a=9,b=10,t=9,g=2,c=8,f=9 — highest value, WS signed-token replay, AUTH_HELPED unchanged.
+[PRIO] api.tech26.de, 5.0, a=4,b=6,t=4,g=6,c=5,f=5 — anonymous HTTP surface NOW conclusively exhausted (~47 paths); WS subprotocol path remains only vector.
+[PRIO] engagementplatform.n26.com, 4.9, a=5,b=7,t=4,g=1,c=5,f=6 — Braze key-gated, AUTH_HELPED.
+[PRIO] fpt.tech26.de, 4.4, a=2,b=3,t=2,g=10,c=5,f=8 — fixed-200 stub, gate-easy but nothing behind it; INFO, monitor-only.
+[PRIO] flags.n26.com, 4.0 — retired, by-design Statsig INFO.
+
+STEP 3 — HYPOTHESES
+[HYP] Keyless WS ingress replay vs minted signed-token subprotocol
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology (wss://…/v1/auth/n26, /v1/enroll/n26)
+confidence: 60
+reasoning: client.6e429513.js hardcodes both WS endpoints; flow = KeylessSignedTokenMutation → per-session signed token presented as WS protocol → validateKeylessSignedTokenMutation. ~68 HTTP paths + WS-upgrade(json/graphql-ws) all `path unused` — server routes on the minted token, not a public string.
+evidence_needed: 101 or non-`unused` route response when presenting a real minted KeylessSignedToken as Sec-WebSocket-Protocol.
+verify_steps: from an authenticated app session, devtools/Network→WS handshake on /v1/auth/n26, copy exact Sec-WebSocket-Protocol, replay as read-only connect (abort before frames) against wss://authentication-service.eks.core-production.keyless.technology/v1/auth/n26 and /v1/enroll/n26.
+impact: token reuse / challenge-binding flaws in biometric WebAuthn auth = CRITICAL if reachable; requires live minted token.
+testability: AUTH_HELPED
+[HYP] api.tech26.de WS subprotocol ingress mirrors keyless-sibling minted-token routing
+class: AUTH
+asset: api.tech26.de (WS upgrade)
+confidence: 30
+reasoning: family hides APIs at custom protocol+route; api.tech26.de HTTP layer route-less at ~47 paths; WS-upgrade(json) 403 comes from the awselb/2.0 WAF edge (same rule family as /.env dotfile block) — not an app-layer signal, so no anonymous WS bypass surface.
+evidence_needed: any 101 with a valid subprotocol token, or an HTTP path outside the ~47 tested.
+verify_steps: (requires minted token — none obtainable anonymously); additionally re-confirm a custom-subprotocol upgrade response equals the awselb 403 baseline.
+impact: unreachable anonymously — would only matter with a token; LOW-INFO now.
+testability: AUTH_HELPED
+[HYP] fpt.tech26.de fixed-200 stub pre-stages an imminent live service
+class: MISCONFIG
+asset: fpt.tech26.de
+confidence: 25
+reasoning: fixed-response ALB default action (200 empty text/plain on all methods/paths, no WAF, no target routing) is a standard AWS placeholder pattern before backend registration; shares cert with api/beta-api.
+evidence_needed: any path transitioning to non-fixed-200 (404/403/503/real content) signaling backend registration.
+verify_steps: repeat GET https://fpt.tech26.de/ and /.env monthly; diff response vs fixed-200 baseline (headers server/x-cache/vary + status).
+impact: if/when a service registers behind the fixed response, re-probe for misconfig — today: INFO, nothing behind it.
+testability: PASSIVE
+
+STEP 4 — SELF-CRITIQUE
+[PARKED] api.tech26.de WS subprotocol ingress: confidence 30 (<40); no positive HTTP signal across ~47 paths; WS-403 is WAF-edge not app-layer; token required anyway — AUTH_HELPED, no anonymous advance.
+[PARKED] fpt.tech26.de stub activation: confidence 25 (<40); no content behind fixed-200; monitor-only.
+[FINAL] Keyless WS signed-token subprotocol replay (60) — only surviving hypothesis; highest value; clear (human) verify path; CRITICAL potential. Organic clean-up this cycle: api.tech26.de hypothesis retired per plan (one fresh probe cycle performed → conclusively closed).
+
+STEP 5 — NEXT ACTION
+[NEXT] HUMAN: in an authenticated app.n26.com session capture the Sec-WebSocket-Protocol the browser sends on connect to wss://authentication-service.eks.core-production.keyless.technology/v1/auth/n26 (devtools→Network→WS→handshake headers), and hand the exact token string to this analyst for read-only replay (connect+log 101 data, abort before any frames) to test token reuse/challenge-binding.
+
+STEP 6 — LEARNING
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: 20 additional GETs (OpenAPI/swagger/GraphQL/OIDC/healthz/readyz/api-v1/v1/metrics/actuator + mfa/auth/oauth/token family/custom routes) all envoy empty-404 — ~47 paths route-less; anonymous HTTP API discovery exhausted.
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical envoy empty-404 + awselb/.env 403 — same edge mesh as api, no distinct surface.
+[LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for a not-yet-registered service; INFO; monitor for activation.
+[LEARN] REJECTED AUTH @ api.tech26.de: WS-upgrade 403 is the awselb/2.0 WAF edge rule (same class as /.env dotfile block), not an app-layer signal — no anonymous WS bypass surface.
+
+STEP 7 — RISK
+[RISK] N26 Bank AG: 40/100 — Surface well-mapped and stale: api.tech26.de "api" target class conclusively closed anonymously (fresh cycle, ~47 paths all route-less across api+beta-api; fpt.tech26.de = empty fixed-200 stub); sole live-200 services are by-design (Statsig INFO) or content-less (fpt); GraphQL WAF-closed 10+ cycles; keyless auth + Braze remain the only reportable-potential assets, both AUTH_HELPED (require live session token / REST key). No critical finding in hand; upside gated on a real minted token.

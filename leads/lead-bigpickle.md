@@ -1541,3 +1541,48 @@ testability: AUTH_HELPED
 [RISK] N26 Bank AG: 40/100 — Surface well-mapped and stale: sole live-200 service (flags.n26.com) is by-design public-client data (INFO); GraphQL fully WAF-blocked after 10+ cycles; spc.n26.com = tracking pixels; api.tech26.de anonymous surface exhausted (27 paths all 404/403); authentication-service highest-value but requires AUTH_HELPED (live session token capture); no critical findings in hand. Risk score stable — no new anonymous vectors available. Report-worthiness hinges on whether the Keyless WS token replay reveals auth flaws (CRITICAL if reached) or whether api.tech26.de has deeper anonymous API surface.
 ## 2026-09-09 20:00:01 UTC [target] (model bigpickle)
 ## 2026-09-09 22:24:30 UTC [target] (model bigpickle)
+## 2026-09-10 00:38:04 UTC [target] (model bigpickle)
+[NEW] api.tech26.de: 20 fresh GETs — /openapi.json /swagger.json /graphql /.well-known/openid-configuration /healthz /readyz /api/v1 /v1 /metrics /actuator /actuator/health + family routes (/api/mfa/challenge /api/v1/mfa/challenge /mfa/challenge /challenge /auth /oauth/token /api/oauth/token /token /v1/token /api/v2) — ALL envoy empty-404 (0B, ~0.5s); only differential remains /.env→403 awselb/2.0; ~47 paths now route-less.
+[NEW] beta-api.tech26.de: cert SAN sibling (same TLS leaf as api); 10 probes identical envoy empty-404 + /.env awselb-403 → same edge mesh, no distinct surface.
+[NEW] fpt.tech26.de: cert SAN sibling; fixed-response ALB — HTTP/2 200, `Content-Type: text/plain`, CL=0, `server: awselb/2.0` on EVERY method (OPTIONS/HEAD/POST/PUT/PATCH/DELETE) and every path incl `/?list-type=2` and `/.env` (no WAF 403); multi-IP eu-west-2 (18.197.7.44, 63.183.125.164, 63.188.185.77). Placeholder stub, zero content routing.
+[PRIO] authentication-service.eks.core-production.keyless.technology, 8.1, a=9,b=10,t=9,g=2,c=8,f=9 — highest value, WS signed-token replay, AUTH_HELPED unchanged.
+[PRIO] api.tech26.de, 5.0, a=4,b=6,t=4,g=6,c=5,f=5 — anonymous HTTP surface NOW conclusively exhausted (~47 paths); WS subprotocol path remains only vector.
+[PRIO] engagementplatform.n26.com, 4.9, a=5,b=7,t=4,g=1,c=5,f=6 — Braze key-gated, AUTH_HELPED.
+[PRIO] fpt.tech26.de, 4.4, a=2,b=3,t=2,g=10,c=5,f=8 — fixed-200 stub, gate-easy but nothing behind it; INFO, monitor-only.
+[PRIO] flags.n26.com, 4.0 — retired, by-design Statsig INFO.
+[HYP] Keyless WS ingress replay vs minted signed-token subprotocol
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology (wss://…/v1/auth/n26, /v1/enroll/n26)
+confidence: 60
+reasoning: client.6e429513.js hardcodes both WS endpoints; flow = KeylessSignedTokenMutation → per-session signed token presented as WS protocol → validateKeylessSignedTokenMutation. ~68 HTTP paths + WS-upgrade(json/graphql-ws) all `path unused` — server routes on the minted token, not a public string.
+evidence_needed: 101 or non-`unused` route response when presenting a real minted KeylessSignedToken as Sec-WebSocket-Protocol.
+verify_steps: from an authenticated app session, devtools/Network→WS handshake on /v1/auth/n26, copy exact Sec-WebSocket-Protocol, replay as read-only connect (abort before frames) against wss://authentication-service.eks.core-production.keyless.technology/v1/auth/n26 and /v1/enroll/n26.
+impact: token reuse / challenge-binding flaws in biometric WebAuthn auth = CRITICAL if reachable; requires live minted token.
+testability: AUTH_HELPED
+[HYP] api.tech26.de WS subprotocol ingress mirrors keyless-sibling minted-token routing
+class: AUTH
+asset: api.tech26.de (WS upgrade)
+confidence: 30
+reasoning: family hides APIs at custom protocol+route; api.tech26.de HTTP layer route-less at ~47 paths; WS-upgrade(json) 403 comes from the awselb/2.0 WAF edge (same rule family as /.env dotfile block) — not an app-layer signal, so no anonymous WS bypass surface.
+evidence_needed: any 101 with a valid subprotocol token, or an HTTP path outside the ~47 tested.
+verify_steps: (requires minted token — none obtainable anonymously); additionally re-confirm a custom-subprotocol upgrade response equals the awselb 403 baseline.
+impact: unreachable anonymously — would only matter with a token; LOW-INFO now.
+testability: AUTH_HELPED
+[HYP] fpt.tech26.de fixed-200 stub pre-stages an imminent live service
+class: MISCONFIG
+asset: fpt.tech26.de
+confidence: 25
+reasoning: fixed-response ALB default action (200 empty text/plain on all methods/paths, no WAF, no target routing) is a standard AWS placeholder pattern before backend registration; shares cert with api/beta-api.
+evidence_needed: any path transitioning to non-fixed-200 (404/403/503/real content) signaling backend registration.
+verify_steps: repeat GET https://fpt.tech26.de/ and /.env monthly; diff response vs fixed-200 baseline (headers server/x-cache/vary + status).
+impact: if/when a service registers behind the fixed response, re-probe for misconfig — today: INFO, nothing behind it.
+testability: PASSIVE
+[PARKED] api.tech26.de WS subprotocol ingress: confidence 30 (<40); no positive HTTP signal across ~47 paths; WS-403 is WAF-edge not app-layer; token required anyway — AUTH_HELPED, no anonymous advance.
+[PARKED] fpt.tech26.de stub activation: confidence 25 (<40); no content behind fixed-200; monitor-only.
+[FINAL] Keyless WS signed-token subprotocol replay (60) — only surviving hypothesis; highest value; clear (human) verify path; CRITICAL potential. Organic clean-up this cycle: api.tech26.de hypothesis retired per plan (one fresh probe cycle performed → conclusively closed).
+[NEXT] HUMAN: in an authenticated app.n26.com session capture the Sec-WebSocket-Protocol the browser sends on connect to wss://authentication-service.eks.core-production.keyless.technology/v1/auth/n26 (devtools→Network→WS→handshake headers), and hand the exact token string to this analyst for read-only replay (connect+log 101 data, abort before any frames) to test token reuse/challenge-binding.
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: 20 additional GETs (OpenAPI/swagger/GraphQL/OIDC/healthz/readyz/api-v1/v1/metrics/actuator + mfa/auth/oauth/token family/custom routes) all envoy empty-404 — ~47 paths route-less; anonymous HTTP API discovery exhausted.
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical envoy empty-404 + awselb/.env 403 — same edge mesh as api, no distinct surface.
+[LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for a not-yet-registered service; INFO; monitor for activation.
+[LEARN] REJECTED AUTH @ api.tech26.de: WS-upgrade 403 is the awselb/2.0 WAF edge rule (same class as /.env dotfile block), not an app-layer signal — no anonymous WS bypass surface.
+[RISK] N26 Bank AG: 40/100 — Surface well-mapped and stale: api.tech26.de "api" target class conclusively closed anonymously (fresh cycle, ~47 paths all route-less across api+beta-api; fpt.tech26.de = empty fixed-200 stub); sole live-200 services are by-design (Statsig INFO) or content-less (fpt); GraphQL WAF-closed 10+ cycles; keyless auth + Braze remain the only reportable-potential assets, both AUTH_HELPED (require live session token / REST key). No critical finding in hand; upside gated on a real minted token.

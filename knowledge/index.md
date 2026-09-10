@@ -174,3 +174,24 @@
 - 2026-09-09 REJECTED AUTH @ support.n26.com/graphql: Shared Envoy/WAF tarpit — no differential ingress.
 - 2026-09-09 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68 standard + tenant-scoped paths return "path unused" — API at custom routes
 - 2026-09-09 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+- 2026-09-10 ACCEPTED MISCONFIG @ api.tech26.de: 20 additional GETs (OpenAPI/swagger/GraphQL/OIDC/healthz/readyz/api-v1/v1/metrics/actuator + mfa/auth/oauth/token family/custom routes) all envoy empty-404 — ~47 paths route-less; anonymous HTTP API discovery exhausted.
+- 2026-09-10 ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical envoy empty-404 + awselb/.env 403 — same edge mesh as api, no distinct surface.
+- 2026-09-10 ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for a not-yet-registered service; INFO; monitor for activation.
+- 2026-09-10 REJECTED AUTH @ api.tech26.de: WS-upgrade 403 is the awselb/2.0 WAF edge rule (same class as /.env dotfile block), not an app-layer signal — no anonymous WS bypass surface.
+- 2026-09-10 ACCEPTED MISCONFIG @ api.tech26.de: 27 probed paths all 404/403, WS-upgrade(json) 403, /.env 403 awselb/2.0 — distinct WAF behavior vs keyless sibling, but anonymous probe surface may be deeper (GraphQL, gRPC-web, OpenAPI, versioned paths untested)
+- 2026-09-10 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68 standard + tenant-scoped paths return "path unused" — API at custom routes
+- 2026-09-10 ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+- 2026-09-10 ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO)
+- 2026-09-10 ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
+- 2026-09-10 REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+- 2026-09-10 ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403
+- 2026-09-10 REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+- 2026-09-10 REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+- 2026-09-10 REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+- 2026-09-10 REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+- 2026-09-10 ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
+- 2026-09-10 REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+- 2026-09-10 REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
+- 2026-09-10 REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface
+- 2026-09-10 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+- 2026-09-10 ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
