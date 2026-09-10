@@ -1,24 +1,15 @@
-## 2026-09-10 05:16:56 UTC [target] (model nemotron3)
+## 2026-09-10 09:57:01 UTC [target] (model nemotron3)
 [PRIO] authentication-service.eks.core-production.keyless.technology,8.45,a=9,b=10,t=9,g=3,c=10,f=9
 [PRIO] api.tech26.de,7.05,a=8,b=9,t=8,g=4,c=7,f=6
 [PRIO] engagementplatform.n26.com/users,6.80,a=7,b=8,t=7,g=2,c=8,f=9
-[PRIO] app.n26.com/graphql,6.30,a=8,b=9,t=9,g=1,c=6,f=7
-[PRIO] flags.n26.com/v1/initialize,5.80,a=6,b=6,t=6,g=8,c=7,f=8
-[PRIO] n26.com/www.n26.com,2.10,a=3,b=4,t=2,g=9,c=3,f=6
+[PRIO] fpt.tech26.de,3.20,a=4,b=3,t=3,g=9,c=4,f=5
+[PRIO] beta-api.tech26.de,2.85,a=4,b=4,t=3,g=4,c=4,f=4
 [HYP] Keyless auth service exposes WebAuthn/passwordless enrollment at non-standard infra/admin paths
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology
 confidence: 55
 reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 68+ standard + tenant-scoped paths return `path unused` — API mounted at custom non-standard routes. "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant.
-evidence_needed: Discovered API endpoint returning 200/401 (not 404 path unused); OpenAPI spec or route enumeration; auth mechanism identification (WebAuthn, OIDC, custom)
-verify_steps: GET https://authentication-service.eks.core-production.keyless.technology/health → GET /ready → GET /metrics → GET /actuator/health → GET /api/internal/v1/auth/n26 → GET /api/private/v1/enroll/n26 → GET /internal/auth/n26 → GET /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps
-impact: Auth bypass, credential theft, session hijacking, WebAuthn credential enumeration, EKS metadata access via SSRF if any user-supplied URL param — CRITICAL if exploitable
-testability: PASSIVE
-[HYP] api.tech26.de exposes GraphQL/gRPC-web/OpenAPI at untested versioned paths
-class: AUTH
-asset: api.tech26.de
-confidence: 45
-reasoning: 47 probed paths all 404/403, WS-upgrade(json) 403, /.env 403 awselb/2.0 — distinct WAF behavior vs keyless sibling (returns awselb/2.0 header, not Istio/Envoy). GraphQL, gRPC-web, OpenAPI/swagger, and versioned paths (/api/v1, /api/v2, /v1, /v2, /beta, /internal) untested. "tech26.de" sibling to pisp.tech26.de (MFA challenge only) suggests internal API surface.
+evidence_needed: Discovered API endpoint returning 20[0m
 evidence_needed: Any endpoint returning 200/401/500 (not 403/404); GraphQL introspection response; OpenAPI spec; gRPC-web endpoint
 verify_steps: GET https://api.tech26.de/openapi.json → GET https://api.tech26.de/swagger.json → GET https://api.tech26.de/graphql → GET https://api.tech26.de/api/v1 → GET https://api.tech26.de/v1 → GET https://api.tech26.de/api/v2 → GET https://api.tech26.de/v2 → GET https://api.tech26.de/beta → GET https://api.tech26.de/internal → POST https://api.tech26.de/graphql (application/json, {"query":"{__schema{types{name}}}"}) — passive enumeration of common API surface paths; <=1 rps
 impact: API schema exposure → mutation/enumeration → IDOR/BOLA on banking operations; possible internal service mesh access — HIGH/CRITICAL
