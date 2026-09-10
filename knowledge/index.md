@@ -200,3 +200,7 @@
 - 2026-09-10 ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface.
 - 2026-09-10 ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB, zero content, placeholder stub; INFO monitor-only.
 - 2026-09-10 REJECTED AUTH @ api.tech26.de: WS-upgrade 403 = awselb/2.0 WAF edge rule; no anonymous WS bypass surface.
+- 2026-09-10 ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses (not 404). WAF actively blocks POST. Bypass exploration warranted.
+- 2026-09-10 ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. Client-side SDK key extraction from app bundle is viable path.
+- 2026-09-10 REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+- 2026-09-10 ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with /health endpoint. API enumeration needed.

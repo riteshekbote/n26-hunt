@@ -1,30 +1,95 @@
-## 2026-09-10 20:07:56 UTC [target] (model bigpickle)
-[HYP] Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw
+## 2026-09-10 22:38:25 UTC [target] (model bigpickle)
+[NEW] spc.n26.com: Payment service (Envoy proxy, /health returns 200 OK, /api 404, no swagger/openapi) — discovered via CSP connect-src on app.n26.com
+[NEW] flags.n26.com: Statsig feature flag service (GKE, CloudFront, RBAC-protected /v1/initialize returns 403/401) — discovered via CSP connect-src on app.n26.com
+[NEW] cdn.number26.de: S3-backed CDN (403 on root, XML access-denied) — discovered via CSP script-src on app.n26.com
+[NEW] authentication-service.eks.core-production.keyless.technology: EKS-hosted keyless auth service — discovered via CSP connect-src on app.n26.com
+[NEW] app.n26.com/graphql: GraphQL endpoints confirmed (/graphql and /api/graphql both return 403 WAF-blocked; GET via query param returned HTTP 000 connection-reset)
+[CHANGED] app.n26.com: CSP fully decoded — reveals Stripe (js.stripe.com, connect-js.stripe.com), LivePerson chat, Sumsub KYC, S3 eu-central-1, Contentful CMS, Marqeta card issuing
+[CHANGED] support.n26.com: Returns 404 but sets identical cookies to app.n26.com (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload) — same Express/Envoy backend
+[PRIO] app.n26.com,8.7,a=9,b=10,t=8,g=5,c=5,f=10 — Primary banking app, GraphQL backend, Stripe/LivePerson/Sumsub integrations, login endpoint
+[PRIO] flags.n26.com,7.1,a=7,b=7,t=7,g=8,c=7,f=10 — Statsig feature flags on GKE, RBAC-protected, CloudFront-fronted
+[PRIO] spc.n26.com,6.4,a=6,b=8,t=5,g=7,c=5,f=10 — Payment service, Envoy, health endpoint live, no API docs
+[PRIO] n26.com,6.0,a=5,b=8,t=3,g=6,c=7,f=10 — Marketing site, Envoy+CloudFront, no attack surface beyond CMS
+[PRIO] support.n26.com,5.8,a=5,b=6,t=5,g=7,c=4,f=10 — Ghost deployment, same backend as app.n26.com, 404 root
+[PRIO] cdn.number26.de,3.5,a=3,b=3,t=2,g=8,c=3,f=10 — S3 CDN, 403 access denied, low value
+[PRIO] www.n26.com,3.0,a=2,b=4,t=2,g=8,c=5,f=10 — Redirect to n26.com, no unique surface
+[HYP] GraphQL WAF bypass on app.n26.com
 class: AUTH
-asset: authentication-service.eks.core-production.keyless.technology
-confidence: 60
-reasoning: client.6e429513.js (verified unrotated 2026-09-10) hardcodes wss://authentication-service…/v1/auth/n26; flow KeylessSignedTokenMutation → per-session token → Sec-WebSocket-Protocol. ~68 HTTP paths + WS-upgrade `path unused`; `/` and `/v1/auth/n26` re-verified 404 `path unused` this cycle. Server routes only on minted token.
-evidence_needed: 101 or non-`unused` response when presenting a real minted KeylessSignedToken as Sec-WebSocket-Protocol; token lifetime/across-path reuse.
-verify_steps: from authenticated app.n26.com session → devtools Network → WS → /v1/auth/n26 handshake → copy exact Sec-WebSocket-Protocol → read-only WSS replay (connect + log 101 data, abort before frames).
-impact: token reuse / weak challenge-binding in biometric WebAuthn = AUTH bypass, ATO class, CRITICAL; requires live minted token.
+asset: app.n26.com/graphql
+confidence: 62
+reasoning: GraphQL endpoints exist (confirmed by n26.graphql_form_payload cookie and POST returning 403 not 404). WAF blocks raw POST. Express+Envoy stack may allow bypass via GET with query param, different Content-Type (application/x-www-form-urlencoded), or missing CSRF token manipulation. CSP shows connect-src self+spc.n26.com, suggesting GraphQL is consumed client-side.
+evidence_needed: Successful introspection response or any non-403/404 response from GraphQL endpoint
+verify_steps: (1) GET https://app.n26.com/graphql?query={__typename} with no cookies, (2) POST with Content-Type: application/x-www-form-urlencoded and query in body, (3) POST with empty body to /graphql, (4) Check if CSRF token in n26.csrf cookie is required or if it can be bypassed
+impact: GraphQL schema disclosure → discover mutations for account takeover, payment manipulation, PII access. Severity: HIGH
+testability: PASSIVE
+[HYP] Feature flag leakage on flags.n26.com
+class: MISCONFIG
+asset: flags.n26.com
+confidence: 58
+reasoning: Statsig service confirmed (x-statsig-region: gke-us-west1). /v1/initialize GET returns "RBAC: access denied" (403), POST returns "Unauthorized" (401). Statsig has additional endpoints (/v1/get_configs, /v1/log_event, /v1/evaluate) that may have weaker access controls. Client-side SDK keys may be extractable from app.n26.com JS bundles.
+evidence_needed: Any flag configuration data or SDK client key leakage
+verify_steps: (1) GET https://flags.n26.com/v1/get_configs, (2) GET https://flags.n26.com/v1/evaluate, (3) Check app.n26.com JS bundles for Statsig SDK key (client_key pattern), (4) POST https://flags.n26.com/v1/log_event with minimal JSON body
+impact: Feature flag disclosure → reveal hidden features, admin-only functionality, A/B test groups, potential access control bypass. Severity: MEDIUM
+testability: PASSIVE
+[HYP] Payment service API enumeration on spc.n26.com
+class: MISCONFIG
+asset: spc.n26.com
+confidence: 48
+reasoning: spc.n26.com confirmed live via /health returning "OK". CSP connect-src allows app.n26.com to reach this service. /api, /swagger, /openapi.json all return 404. The service likely uses path-based routing (e.g., /v1/payments, /v1/tokens). No API documentation exposed, but standard payment API patterns may apply.
+evidence_needed: Any API endpoint returning data or documentation
+verify_steps: (1) GET https://spc.n26.com/v1/transactions, (2) GET https://spc.n26.com/v1/payments, (3) GET https://spc.n26.com/v1/tokens, (4) GET https://spc.n26.com/docs, (5) GET https://spc.n26.com/status
+impact: Payment API exposure → unauthorized transaction data, card token access. Severity: CRITICAL (if accessible)
+testability: PASSIVE
+[FINAL] GraphQL WAF bypass on app.n26.com (confidence: 62, rank: 1) — Survives: class AUTH in-scope, confidence>40, verify_steps present, high business value (online banking auth)
+[FINAL] Feature flag leakage on flags.n26.com (confidence: 58, rank: 2) — Survives: class MISCONFIG in-scope, confidence>40, verify_steps present, moderate impact
+[FINAL] Payment service API enumeration on spc.n26.com (confidence: 48, rank: 3) — Survives: class MISCONFIG in-scope, confidence>40, verify_steps present, but lowest confidence due to no confirmed API surface yet
+[PARKED] Subdomain takeover my.n26.com → app.n26.com: 301 redirect via Envoy, not a dangling CNAME. Redirect is server-side (not DNS-based). No takeover vector confirmed. Class MISCONFIG but no evidence of exploitable misconfiguration.
+[NEXT] PROBE: GET https://app.n26.com/build/js/client.*.js (extract Statsig SDK key from JS bundle to unlock flags.n26.com testing), then GET https://flags.n26.com/v1/evaluate with extracted key
+[LEARN] ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses (not 404). WAF actively blocks POST. Bypass exploration warranted.
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. Client-side SDK key extraction from app bundle is viable path.
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+[LEARN] ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with /health endpoint. API enumeration needed.
+[RISK] n26: 25/100 — Private program via bugs.olivermaicher.eu, 1 rps rate limit, WAF present on GraphQL, CSP is comprehensive (nonce-based script-src, frame-ancestors self), Envoy service mesh with rate limiting headers (x-ratelimit-limit: 60). No credential stuffing surface found yet. Account creation restricted per scope.yml.
+[HYP] GraphQL WAF bypass via GET query param smuggling
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 70
+reasoning: GraphQL confirmed via cookie + 403 responses (not 404). WAF blocks POST. GET with `?query={__typename}` returned HTTP 000 (connection-reset), suggesting WAF inspected body but GET param bypassed inspection layer. Express+Envoy stack may allow query param injection.
+[PRIO] app.n26.com/graphql,8.5,attack_surface=10,business_value=9,tech_exposure=10,gate_ease=3,cloud_surface=8,freshness=10
+[PRIO] flags.n26.com,7.8,attack_surface=8,business_value=7,tech_exposure=9,gate_ease=4,cloud_surface=9,freshness=10
+[PRIO] spc.n26.com,7.2,attack_surface=7,business_value=8,tech_exposure=6,gate_ease=6,cloud_surface=7,freshness=10
+[PRIO] authentication-service.eks.core-production.keyless.technology,6.5,attack_surface=6,business_value=9,tech_exposure=8,gate_ease=2,cloud_surface=10,freshness=8
+[PRIO] support.n26.com,5.8,attack_surface=6,business_value=6,tech_exposure=7,gate_ease=5,cloud_surface=5,freshness=8
+[PRIO] cdn.number26.de,4.2,attack_surface=5,business_value=4,tech_exposure=5,gate_ease=7,cloud_surface=6,freshness=8
+[PRIO] app.n26.com (CSP deps),3.8,attack_surface=4,business_value=5,tech_exposure=4,gate_ease=8,cloud_surface=4,freshness=8
+[PRIO] my.n26.com,2.1,attack_surface=3,business_value=5,tech_exposure=2,gate_ease=4,cloud_surface=3,freshness=5
+[PRIO] n26.com/www.n26.com,1.5,attack_surface=2,business_value=4,tech_exposure=1,gate_ease=9,cloud_surface=2,freshness=5
+[HYP] GraphQL WAF bypass via GET query param smuggling
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 70
+reasoning: POST /graphql and /api/graphql return 403 (WAF block); GET with query param returned HTTP 000 (connection reset) suggesting different code path; cookie-based auth confirmed (n26.csrf, num26UniqueDeviceToken, n26.graphql_form_payload)
+evidence_needed: GraphQL introspection response via GET bypassing WAF; successful mutation execution
+verify_steps: GET https://app.n26.com/graphql?query={__typename} (no auth); GET https://app.n26.com/graphql?query={__schema{types{name}}} with valid cookies; test POST with Content-Type: application/json vs x-www-form-urlencoded
+impact: Full GraphQL schema exposure → mutation enumeration → IDOR/BOLA on banking operations → critical
 testability: AUTH_HELPED
-[HYP] PSD2 family (aisp/xs2a) route activation on tenant rollout
+[HYP] Statsig SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass
 class: MISCONFIG
-asset: aisp.tech26.de / xs2a.tech26.de
-confidence: 35
-reasoning: shared SAN+istio mesh with pisp (only /api/mfa/challenge registered); aisp/xs2a currently route-less at `/` and `/api/mfa/challenge`; PSD2 AISP/XS2A endpoints (balance/consent/accounts) high business value if a route registers.
-evidence_needed: any path returning non-empty 404/401/200 on aisp/xs2a (route registration) or TLS version bump.
-verify_steps: repeat GET https://aisp.tech26.de/ and /api/mfa/challenge monthly; diff vs istio empty-404 baseline.
-impact: newly exposed PSD2 API → config/consent misconfig — HIGH if it ever activates; today none.
+asset: flags.n26.com
+confidence: 75
+reasoning: flags.n26.com is Statsig behind CloudFront+GKE; /v1/initialize returns 403/401 (RBAC); CSP connect-src on app.n26.com includes flags.n26.com; client-side SDK keys typically embedded in JS bundles for feature flag evaluation
+evidence_needed: Valid client SDK key from app.n26.com JS bundle; successful /v1/initialize call with extracted key
+verify_steps: GET https://app.n26.com/build/js/client.*.js (extract SDK key pattern); GET https://flags.n26.com/v1/initialize?client_key=<extracted>; test feature flag evaluation endpoint
+impact: Feature flag manipulation → bypass payment limits/KYC/premium features → high
 testability: PASSIVE
-[HYP] aigw.tech26.de internal split-horizon DNS leak
-class: MISCONFIG
-asset: aigw.tech26.de
-confidence: 45
-reasoning: public DNS returns RFC1918 10.255.1.134/2.252/5.236 — internal addresses in public resolution; indicates split-horizon misconfig for an "AI/API gateway" service.
-evidence_needed: any public routing (impossible — RFC1918), or pairing of leaked IPs with visible istio mesh.
-verify_steps: none meaningful (RFC1918 unroutable); record-only.
-impact: reveals internal IP scheme to attacker; INFO/descriptive ceiling, no exploit chain.
-testability: PASSIVE
-[NEXT] PROBE: retry passive CT sweep `https://crt.sh/?q=%25.n26.com` (429'd this cycle; transient rate limit), resolve all names, and HEAD-probe any public-resolving n26.com leaves absent from inventory — closes the last breadth gap; monitor recipients aisp/xs2a/fpt stay passive-monthly.
-[RISK] N26 Bank AG: 42/100 — Breadth gap closed (73 subdomains mapped; PSD2 family + mambu + infra all route-less/filtered/private); every live surface stable and previously classified; keyless remains the only path to CRITICAL (token replay) but is AUTH_HELPED; flags INFO by-design; GraphQL closed 10+ cycles; no critical finding in hand. Risk unchanged +2 for the enlarged mapped surface that adds no new exploit but raises watch-list duty.
+[HYP] Payment service API enumeration on spc.n26.com → BOLA/IDOR on financial operations
+class: IDOR
+asset: spc.n26.com
+confidence: 60
+reasoning: Live payment service (Envoy proxy); /health returns 200; /api returns 404 (no Swagger); discovered via CSP connect-src on app.n26.com; Marqeta card issuing in CSP suggests card transaction APIs; payment services high-value for IDOR/BOLA
+evidence_needed: API endpoint list (brute /api/v1, /api/v2, /internal, /private); authenticated request showing user-scoped data access
+verify_steps: GET https://spc.n26.com/health; GET https://spc.n26.com/api; GET https://spc.n26.com/api/v1; GET https://spc.n26.com/internal; GET https://spc.n26.com/private; test with app.n26.com cookies
+impact: Cross-user transaction access, card manipulation, balance tampering → critical
+testability: AUTH_HELPED
+[PARKED] GraphQL WAF bypass via GET query param smuggling: confidence 70 but HTTP 000 on GET suggests connection reset not WAF bypass; needs confirmation GET actually reaches GraphQL engine
+[PARKED] Statsig SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass: confidence 75 but SDK key may be server-side only (Statsig supports both); client key may not grant /v1/initialize access
