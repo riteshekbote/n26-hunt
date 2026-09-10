@@ -14126,3 +14126,279 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 [RISK] N26 Bank AG: 40/100 — Surface well-mapped and stale: api.tech26.de "api" target class conclusively closed anonymously (fresh cycle, ~47 paths all route-less across api+beta-api; fpt.tech26.de = empty fixed-200 stub); sole live-200 services are by-design (Statsig INFO) or content-less (fpt); GraphQL WAF-closed 10+ cycles; keyless auth + Braze remain the only reportable-potential assets, both AUTH_HELPED (require live session token / REST key). No critical finding in hand; upside gated on a real minted token.
+===== ANALYST bigpickle 2026-09-10 05:17:09 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m✱ [0mGlob "art/**"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.md"[90m 68 matches[0m
+[0m→ [0mRead probe-results.md[90m [offset=1, limit=80][0m
+[0m→ [0mRead leads/lead-bigpickle.md
+[0m→ [0mRead triage/run-2026-09-10-00-54.md
+[0m→ [0mRead reports/hypotheses.md[90m [limit=80][0m
+[0m→ [0mRead inventory/n26.md[90m [limit=60][0m
+[0m✱ [0mGlob "**/scope*"[90m 1 match[0m
+[0m→ [0mRead probe-results.md[90m [offset=200][0m
+[0m→ [0mRead scope.yml
+[0m→ [0mRead leads/lead-bigpickle.md[90m [offset=410][0m
+[0m
+[0m$ [0mecho | timeout 20 openssl s_client -connect api.tech26.de:443 -servername api.tech26.de 2>/dev/null | openssl x509 -noout -text 2>/dev/null | grep -A2 "Subject Alternative Name"
+X509v3 Subject Alternative Name: 
+                DNS:api.tech26.de, DNS:beta-api.tech26.de, DNS:fpt.tech26.de
+            X509v3 Certificate Policies:
+[0m
+[0m$ [0mcurl -s -o /dev/null -w "fpt / -> %{http_code} ct=%{content_type} cl=%{size_download} server=%header{server}\n" --max-time 15 https://fpt.tech26.de/ ; curl -s -o /dev/null -w "fpt /.env -> %{http_code} ct=%{content_type} cl=%{size_download} server=%header{server}\n" --max-time 15 https://fpt.tech26.de/.env
+fpt / -> 200 ct=text/plain; charset=utf-8 cl=0 server=awselb/2.0
+fpt /.env -> 200 ct=text/plain; charset=utf-8 cl=0 server=awselb/2.0
+[0m
+[0m$ [0mtimeout 25 curl -s "https://crt.sh/?q=%25.tech26.de&output=json" | python3 -c "import sys,json; d=json.load(sys.stdin); names=sorted({n for e in d for n in e['name_value'].split(chr(10)) if n.strip()}); print('\n'.join(names))" 2>/dev/null || echo "CT fetch failed"
+*.atlantis.sto.tech26.de
+*.controlplane.sto.tech26.de
+*.sto.tech26.de
+*.tech26.de
+aigw.tech26.de
+aisp-staging.tech26.de
+aisp.tech26.de
+api.tech26.de
+backstage.tech26.de
+bapi.tech26.de
+beta-api.tech26.de
+consul-default-fra-001.tech26.de
+consul-default-fra-002.tech26.de
+consul-default-fra-003.tech26.de
+consul-default-fra.tech26.de
+epiedge.tech26.de
+esign-staging.tech26.de
+fpadedge.tech26.de
+fpt.tech26.de
+gophish-staging-fra.tech26.de
+healthrouter-default-fra.tech26.de
+healthrouter-live-fra.tech26.de
+healthrouter-live-fra.tech26.de.tech26.de
+helium-staging-fra.tech26.de
+ideal-request-signing.tech26.de
+idealedge.tech26.de
+jcmd-oldstaging-fra-001.tech26.de
+jcmd-oldstaging-fra-002.tech26.de
+jcmd-oldstaging-fra.tech26.de
+kibana-monitoring-lb-live-fra.tech26.de
+livepersonedge.tech26.de
+mambuedge.tech26.de
+maxtest-staging-fra.tech26.de
+message-templates-assets-live.tech26.de
+message-templates-assets-staging.tech26.de
+message-templates-assets.tech26.de
+monkey-staging-fra.tech26.de
+n26uk.tz2-mambu-preproduction-uk.tech26.de
+n26uk.tz2-mambu-sandbox-uk.tech26.de
+n26uk.tz2-mambu-uk.tech26.de
+number26.tz2-mambu-preproduction-eu.tech26.de
+number26.tz2-mambu-sandbox-eu.tech26.de
+number26.tz2-mambu.tech26.de
+oneglobaledge-client.tech26.de
+oneglobaledge.tech26.de
+phishing-report.tech26.de
+phising-report.tech26.de
+pisp-staging.tech26.de
+pisp.tech26.de
+rcs-demo.tech26.de
+registry-default-fra.tech26.de
+registry-default-fra.tech26.de.tech26.de
+registrytest-default-fra.tech26.de
+s-dash26-api.tech26.de
+sapi.tech26.de
+sonarqube-default-fra.tech26.de
+sredocs.tech26.de
+staging-api.tech26.de
+statsig-ssh.tech26.de
+taktileedge.tech26.de
+tech26.de
+telemetry.sto.tech26.de
+telemetry.tech26.de
+tpp.tech26.de
+vault-default-fra.tech26.de
+vault-staging-fra-001.tech26.de
+vault-staging-fra-002.tech26.de
+vault-staging-fra-003.tech26.de
+vault-staging-fra.tech26.de
+vsaq-light-staging-fra.tech26.de
+vsaq-live-fra.tech26.de
+vsaq-staging-fra.tech26.de
+vsaq.tech26.de
+vsaqlight-staging-fra.tech26.de
+vsaqlight.tech26.de
+xs2a-staging.tech26.de
+xs2a.tech26.de
+[0m
+[0m$ [0mfor h in staging-api.tech26.de sapi.tech26.de bapi.tech26.de s-dash26-api.tech26.de aigw.tech26.de xs2a.tech26.de taktileedge.tech26.de epiedge.tech26.de mambuedge.tech26.de telemetry.tech26.de tpp.tech26.de vsaq.tech26.de; do printf "%-32s " "$h"; python3 -c "
+import socket
+try:
+    print(sorted({i[4][0] for i in socket.getaddrinfo('$h',443)}))
+except Exception as e:
+    print('NXDOMAIN/ERR')
+"; sleep 0.4; done
+staging-api.tech26.de            NXDOMAIN/ERR
+sapi.tech26.de                   ['18.193.218.192', '52.29.78.193', '63.187.219.208']
+bapi.tech26.de                   NXDOMAIN/ERR
+s-dash26-api.tech26.de           NXDOMAIN/ERR
+aigw.tech26.de                   ['10.255.1.134', '10.255.2.252', '10.255.5.53']
+xs2a.tech26.de                   ['3.68.252.71', '3.74.59.163', '63.178.117.46']
+taktileedge.tech26.de            ['18.194.192.214', '52.58.151.251', '63.178.89.22']
+epiedge.tech26.de                ['3.120.50.113', '51.102.63.156', '63.186.83.240']
+mambuedge.tech26.de              ['51.102.137.147', '63.188.228.80']
+telemetry.tech26.de              ['3.126.221.148', '63.186.105.254', '63.188.202.42']
+tpp.tech26.de                    NXDOMAIN/ERR
+vsaq.tech26.de                   NXDOMAIN/ERR
+[0m
+Several new `api`-family hostnames resolve (fresh from CT, none in the knowledge base). Probing read-only, spaced to ≤1 rps.
+[0m$ [0mfor h in sapi.tech26.de xs2a.tech26.de taktileedge.tech26.de epiedge.tech26.de mambuedge.tech26.de telemetry.tech26.de; do
+  echo "=== $h ==="
+  timeout 15 curl -sk -o /dev/null -D - --max-time 12 "https://$h/" -w "status=%{http_code} cl=%{size_download} redirect=%{redirect_url}\n" 2>&1 | grep -iE "^(HTTP|location:|server:|x-|status=|content-type:|via:|access-control)" | head -12
+  sleep 1.4
+done
+=== sapi.tech26.de ===
+HTTP/1.1 404 Not Found
+server: envoy
+x-envoy-upstream-service-time: 20
+status=404 cl=0 redirect=
+=== xs2a.tech26.de ===
+HTTP/2 404 
+server: istio-envoy
+x-envoy-upstream-service-time: 1
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+status=404 cl=0 redirect=
+=== taktileedge.tech26.de ===
+status=000 cl=0 redirect=
+=== epiedge.tech26.de ===
+status=000 cl=0 redirect=
+=== mambuedge.tech26.de ===
+status=000 cl=0 redirect=
+=== telemetry.tech26.de ===
+HTTP/2 403 
+server: awselb/2.0
+content-type: text/html
+status=403 cl=118 redirect=
+[0m
+Two fresh live services in the `api` class: **sapi.tech26.de** (plain envoy 404) and **xs2a.tech26.de** (hardened istio-envoy 404, PSD2-style). Enumerating their standard route conventions read-only.
+[0m$ [0mfor p in /.well-known/openid-configuration /.well-known/jwks.json /health /v1/consents /v1/accounts /oauth/token /openapi.json /swagger/index.html /api/v1 /v1/payment-service ; do
+  r=$(timeout 12 curl -sk --max-time 10 -o /tmp/xs2a_body -w "%{http_code}|%{size_download}|%header{content-type}|%header{server}" "https://xs2a.tech26.de$p")
+  echo "xs2a $p -> $r"
+  sleep 1.3
+done
+xs2a /.well-known/openid-configuration -> 404|0||istio-envoy
+xs2a /.well-known/jwks.json -> 404|0||istio-envoy
+xs2a /health -> 404|0||istio-envoy
+xs2a /v1/consents -> 404|0||istio-envoy
+xs2a /v1/accounts -> 404|0||istio-envoy
+xs2a /oauth/token -> 404|0||istio-envoy
+xs2a /openapi.json -> 404|0||istio-envoy
+xs2a /swagger/index.html -> 404|0||istio-envoy
+xs2a /api/v1 -> 404|0||istio-envoy
+xs2a /v1/payment-service -> 404|0||istio-envoy
+[0m
+[0m$ [0mfor h in xs2a.tech26.de sapi.tech26.de; do
+echo "########## $h ##########"
+for p in /v1.1/consents /v1/payments/sepa-credit-transfers /api /api/v1 /v2 /healthz /readyz /actuator/health /metrics /debug /version /graphql /pisp /xs2a /openbanking /.git/config /.svn/entries; do
+  r=$(timeout 12 curl -sk --max-time 10 -o /dev/null -w "%{http_code}|%{size_download}" -H "Host: $h" "https://xs2a.tech26.de$p" 2>/dev/null)
+  echo "IGNORE"
+  sleep 0.2
+done
+break
+done
+echo "--- direct hostname probes ---"
+for p in /health /api/v1 /v1.1/consents /v2 /openbanking /pisp /graphql; do
+  r=$(timeout 12 curl -sk --max-time 10 -o /tmp/xb -w "%{http_code}|%{size_download}|%header{server}" "https://xs2a.tech26.de$p"); echo "xs2a $p -> $r"; sleep 1.3
+done
+########## xs2a.tech26.de ##########
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+IGNORE
+--- direct hostname probes ---
+xs2a /health -> 404|0|istio-envoy
+xs2a /api/v1 -> 404|0|istio-envoy
+xs2a /v1.1/consents -> 404|0|istio-envoy
+xs2a /v2 -> 404|0|istio-envoy
+xs2a /openbanking -> 404|0|istio-envoy
+xs2a /pisp -> 404|0|istio-envoy
+xs2a /graphql -> 404|0|istio-envoy
+[0m
+[0m$ [0mfor p in / ./ /health /healthz /api /api/v1 /v1 /openapi.json /swagger.json /swagger-ui.html /graphql /metrics /actuator /actuator/health /.well-known/openid-configuration /version /status /robots.txt; do
+  r=$(timeout 12 curl -sk --max-time 10 -o /tmp/sapib -w "%{http_code}|%{size_download}|%header{content-type}|%header{server}" "https://sapi.tech26.de$p")
+  echo "sapi $p -> $r"
+  sleep 1.3
+done
+sapi / -> 404|0||envoy
+sapi ./ -> 404|0||envoy
+sapi /health -> 404|0||envoy
+sapi /healthz -> 404|0||envoy
+sapi /api -> 404|0||envoy
+sapi /api/v1 -> 404|0||envoy
+sapi /v1 -> 404|0||envoy
+sapi /openapi.json -> 404|0||envoy
+sapi /swagger.json -> 404|0||envoy
+sapi /swagger-ui.html -> 404|0||envoy
+sapi /graphql -> 404|0||envoy
+sapi /metrics -> 404|0||envoy
+sapi /actuator -> 404|0||envoy
+sapi /actuator/health -> 404|0||envoy
+sapi /.well-known/openid-configuration -> 404|0||envoy
+sapi /version -> 404|0||envoy
+sapi /status -> 404|0||envoy
+sapi /robots.txt -> 404|0||envoy
+[0m
+[0m$ [0mfor h in taktileedge.tech26.de epiedge.tech26.de mambuedge.tech26.de; do
+  echo "=== $h ==="
+  timeout 18 curl -skv --max-time 15 --http1.1 -o /dev/null "https://$h/" 2>&1 | grep -iE "connected|SSL connection|HTTP/|error|refused|timeout|alert" | head -5
+  sleep 1.2
+done
+=== taktileedge.tech26.de ===
+* ipv4 connect timeout after 7463ms, move on!
+* ipv4 connect timeout after 3731ms, move on!
+=== epiedge.tech26.de ===
+* ipv4 connect timeout after 7406ms, move on!
+* ipv4 connect timeout after 3703ms, move on!
+=== mambuedge.tech26.de ===
+* ipv4 connect timeout after 7488ms, move on!
+[0m
+[0m$ [0mfor h in vault-default-fra.tech26.de registry-default-fra.tech26.de kibana-monitoring-lb-live-fra.tech26.de sonarqube-default-fra.tech26.de consul-default-fra.tech26.de helsinki-live-fra.tech26.de statsig-ssh.tech26.de gophish-staging-fra.tech26.de backstage.tech26.de phishing-report.tech26.de; do
+  printf "%-42s " "$h"; python3 -c "
+import socket
+try: print(sorted({i[4][0] for i in socket.getaddrinfo('$h',443)}))
+except Exception: print('NXDOMAIN')
+"; done
+vault-default-fra.tech26.de                NXDOMAIN
+registry-default-fra.tech26.de             NXDOMAIN
+kibana-monitoring-lb-live-fra.tech26.de    NXDOMAIN
+sonarqube-default-fra.tech26.de            ['52.58.49.67', '54.93.204.141']
+consul-default-fra.tech26.de               NXDOMAIN
+helsinki-live-fra.tech26.de                NXDOMAIN
+statsig-ssh.tech26.de                      ['3.69.87.198']
+gophish-staging-fra.tech26.de              NXDOMAIN
+backstage.tech26.de                        ['18.153.242.176', '52.28.223.252', '63.182.130.99']
+phishing-report.tech26.de                  ['3.78.140.114', '63.179.62.214', '63.186.60.148']
+[0m
+[93m[1m! [0mpermission requested: external_directory (/tmp/*); auto-rejecting
+[0m✗ [0mfor u in "https://sonarqube-default-fra.tech26.de/" "https://sonarqube-default-fra.tech26.de/api/server/version" "https://sonarqube-default-fra.tech26.de/api/system/status" "https://sonarqube-default-fra.tech26.de/sessions/new" "https://sonarqube-default-fra.tech26.de/api/projects/search" ; do
+  r=$(timeout 15 curl -sk --max-time 12 -o /tmp/sq -D - "$u" 2>/dev/null | grep -iE "^(HTTP|location:|server:|content-type:|set-cookie)" | tr '\n' ' ')
+  b=$(cat /tmp/sq | head -c 120 | tr '\n' ' ')
+  echo "$(echo $u | sed 's|https://sonarqube-default-fra.tech26.de||') -> $r | body[${b}]"
+  sleep 1.4
+done failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+Three infra-looking names resolve publicly — including a **SonarQube** instance. Probing read-only.

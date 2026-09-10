@@ -195,3 +195,4 @@
 - 2026-09-10 REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface
 - 2026-09-10 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
 - 2026-09-10 ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
+- 2026-09-10 ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
