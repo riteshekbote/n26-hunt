@@ -1,10 +1,30 @@
-## 2026-09-10 17:38:59 UTC [target] (model bigpickle)
+## 2026-09-10 20:07:56 UTC [target] (model bigpickle)
 [HYP] Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology
 confidence: 60
-reasoning: client.6e429513.js hardcodes wss://authentication-service…/v1/auth/n26; flow = KeylessSignedTokenMutation → per-session signed token → Sec-WebSocket-Protocol → validateKeylessSignedTokenMutation. ~68 HTTP paths + WS-upgrade all `path unused` — server routes on minted token only. Version rotated v26.09.07, no route added on any HTTP method.
-evidence_needed: 101 or non-`unused` route response when presenting a real minted KeylessSignedToken as Sec-WebSocket-Protocol; token lifetime/across-path reuse.
-verify_steps: from authenticated app.n26.com session → devtools Network → WS → /v1/auth/n26 handshake → copy exact Sec-WebSocket-Protocol → read-only WSS replay against same endpoint (connect + log 101 data, abort before any frames).
-impact: token reuse / weak challenge-binding in biometric WebAuthn auth = AUTH bypass, account-takeover class = CRITICAL; requires live minted token.
+reasoning: client.6e429513.js (verified unrotated 2026-09-10) hardcodes wss://authentication-service…/v1/auth/n26; flow KeylessSignedTokenMutation → per-session token → Sec-WebSocket-Protocol. ~68 HTTP paths + WS-upgrade `path unused`; `/` and `/v1/auth/n26` re-verified 404 `path unused` this cycle. Server routes only on minted token.
+evidence_needed: 101 or non-`unused` response when presenting a real minted KeylessSignedToken as Sec-WebSocket-Protocol; token lifetime/across-path reuse.
+verify_steps: from authenticated app.n26.com session → devtools Network → WS → /v1/auth/n26 handshake → copy exact Sec-WebSocket-Protocol → read-only WSS replay (connect + log 101 data, abort before frames).
+impact: token reuse / weak challenge-binding in biometric WebAuthn = AUTH bypass, ATO class, CRITICAL; requires live minted token.
 testability: AUTH_HELPED
+[HYP] PSD2 family (aisp/xs2a) route activation on tenant rollout
+class: MISCONFIG
+asset: aisp.tech26.de / xs2a.tech26.de
+confidence: 35
+reasoning: shared SAN+istio mesh with pisp (only /api/mfa/challenge registered); aisp/xs2a currently route-less at `/` and `/api/mfa/challenge`; PSD2 AISP/XS2A endpoints (balance/consent/accounts) high business value if a route registers.
+evidence_needed: any path returning non-empty 404/401/200 on aisp/xs2a (route registration) or TLS version bump.
+verify_steps: repeat GET https://aisp.tech26.de/ and /api/mfa/challenge monthly; diff vs istio empty-404 baseline.
+impact: newly exposed PSD2 API → config/consent misconfig — HIGH if it ever activates; today none.
+testability: PASSIVE
+[HYP] aigw.tech26.de internal split-horizon DNS leak
+class: MISCONFIG
+asset: aigw.tech26.de
+confidence: 45
+reasoning: public DNS returns RFC1918 10.255.1.134/2.252/5.236 — internal addresses in public resolution; indicates split-horizon misconfig for an "AI/API gateway" service.
+evidence_needed: any public routing (impossible — RFC1918), or pairing of leaked IPs with visible istio mesh.
+verify_steps: none meaningful (RFC1918 unroutable); record-only.
+impact: reveals internal IP scheme to attacker; INFO/descriptive ceiling, no exploit chain.
+testability: PASSIVE
+[NEXT] PROBE: retry passive CT sweep `https://crt.sh/?q=%25.n26.com` (429'd this cycle; transient rate limit), resolve all names, and HEAD-probe any public-resolving n26.com leaves absent from inventory — closes the last breadth gap; monitor recipients aisp/xs2a/fpt stay passive-monthly.
+[RISK] N26 Bank AG: 42/100 — Breadth gap closed (73 subdomains mapped; PSD2 family + mambu + infra all route-less/filtered/private); every live surface stable and previously classified; keyless remains the only path to CRITICAL (token replay) but is AUTH_HELPED; flags INFO by-design; GraphQL closed 10+ cycles; no critical finding in hand. Risk unchanged +2 for the enlarged mapped surface that adds no new exploit but raises watch-list duty.

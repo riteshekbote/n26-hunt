@@ -14779,3 +14779,707 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 - [RISK] N26 Bank AG: 40/100 — Surface fully mapped and stable for 8+ cycles. Sole live-200 service (flags.n26.com) is by-design public-client data (INFO); GraphQL WAF-closed; api.tech26.de anonymous HTTP exhausted (~47 paths); fpt.tech26.de is an empty fixed-200 stub; engagementplatform key-gated with no web-bundle token. No critical findings in hand; report-worthiness hinges entirely on the Keyless WS signed-token replay (CRITICAL if token reuse/challenge-binding breaks), which now requires HUMAN session capture. Any additional productivity rests on surfaced leads from the coordinator (triage feeder has produced 3+ empty-LEADS runs).
+===== ANALYST bigpickle 2026-09-10 20:10:15 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la && ls -la art/ 2>/dev/null && ls -la *.md 2>/dev/null
+total 292
+drwxr-xr-x 12 runner runner   4096 Sep 10 20:00 .
+drwxr-xr-x  3 runner runner   4096 Sep 10 20:00 ..
+drwxr-xr-x  7 runner runner   4096 Sep 10 20:00 .git
+drwxr-xr-x  3 runner runner   4096 Sep 10 20:00 .github
+-rw-r--r--  1 runner runner   1844 Sep 10 20:00 README.md
+-rw-r--r--  1 runner runner     32 Sep 10 20:00 analyst-out.txt
+-rw-r--r--  1 runner runner 101503 Sep 10 20:00 analyst-prompt.txt
+-rw-r--r--  1 runner runner  97633 Sep 10 20:00 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 10 20:00 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 10 20:00 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 10 20:00 leads
+-rw-r--r--  1 runner runner  10779 Sep 10 20:00 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 10 20:00 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 10 20:00 reports
+drwxr-xr-x  2 runner runner   4096 Sep 10 20:00 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 10 20:00 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 10 20:00 scripts
+-rw-r--r--  1 runner runner     33 Sep 10 20:00 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 10 20:00 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 10 20:00 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 10 20:00 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 10 20:00 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 10 20:00 state_nemotron3.json
+drwxr-xr-x  2 runner runner   4096 Sep 10 20:00 triage
+[0m
+[0m$ [0mgit log --oneline -5 2>/dev/null; git status --short 2>/dev/null | head -20
+ddd539e reposcan 2026-09-10-18-57
+?? analyst-out.txt
+?? analyst-prompt.txt
+?? ctx.txt
+[0m
+[0m$ [0mls -la leads/ knowledge/ inventory/ triage/ reports/ scripts/ && wc -l leads/* 2>/dev/null
+inventory/:
+total 52
+drwxr-xr-x  2 runner runner  4096 Sep 10 20:00 .
+drwxr-xr-x 12 runner runner  4096 Sep 10 20:00 ..
+-rw-r--r--  1 runner runner 43272 Sep 10 20:00 n26.md
+
+knowledge/:
+total 48
+drwxr-xr-x  2 runner runner  4096 Sep 10 20:00 .
+drwxr-xr-x 12 runner runner  4096 Sep 10 20:00 ..
+-rw-r--r--  1 runner runner 39612 Sep 10 20:00 index.md
+
+leads/:
+total 692
+drwxr-xr-x  2 runner runner   4096 Sep 10 20:00 .
+drwxr-xr-x 12 runner runner   4096 Sep 10 20:00 ..
+-rw-r--r--  1 runner runner 233371 Sep 10 20:00 lead-bigpickle.md
+-rw-r--r--  1 runner runner   2652 Sep 10 20:00 lead-laguna.md
+-rw-r--r--  1 runner runner   2600 Sep 10 20:00 lead-ling3.md
+-rw-r--r--  1 runner runner   2704 Sep 10 20:00 lead-longcat.md
+-rw-r--r--  1 runner runner     18 Sep 10 20:00 lead-mimo.md
+-rw-r--r--  1 runner runner 429093 Sep 10 20:00 lead-nemotron3.md
+-rw-r--r--  1 runner runner  19832 Sep 10 20:00 reposcan-n26.md
+
+reports/:
+total 2144
+drwxr-xr-x  2 runner runner    4096 Sep 10 20:00 .
+drwxr-xr-x 12 runner runner    4096 Sep 10 20:00 ..
+-rw-r--r--  1 runner runner 1270394 Sep 10 20:00 analyst-bigpickle.log
+-rw-r--r--  1 runner runner   11284 Sep 10 20:00 analyst-laguna.log
+-rw-r--r--  1 runner runner   11232 Sep 10 20:00 analyst-ling3.log
+-rw-r--r--  1 runner runner   11336 Sep 10 20:00 analyst-longcat.log
+-rw-r--r--  1 runner runner  720019 Sep 10 20:00 analyst-nemotron3.log
+-rw-r--r--  1 runner runner    1188 Sep 10 20:00 hypotheses-bigpickle.txt
+-rw-r--r--  1 runner runner      51 Sep 10 20:00 hypotheses-laguna.txt
+-rw-r--r--  1 runner runner      50 Sep 10 20:00 hypotheses-ling3.txt
+-rw-r--r--  1 runner runner      52 Sep 10 20:00 hypotheses-longcat.txt
+-rw-r--r--  1 runner runner    9818 Sep 10 20:00 hypotheses-nemotron3.txt
+-rw-r--r--  1 runner runner  160814 Sep 10 20:00 hypotheses.md
+-rw-r--r--  1 runner runner    4596 Sep 10 20:00 reposcan-findings.md
+-rw-r--r--  1 runner runner     781 Sep 10 20:00 valid-bugs.md
+
+scripts/:
+total 28
+drwxr-xr-x  2 runner runner  4096 Sep 10 20:00 .
+drwxr-xr-x 12 runner runner  4096 Sep 10 20:00 ..
+-rw-r--r--  1 runner runner 16987 Sep 10 20:00 sync-issues.py
+
+triage/:
+total 284
+drwxr-xr-x  2 runner runner  4096 Sep 10 20:00 .
+drwxr-xr-x 12 runner runner  4096 Sep 10 20:00 ..
+-rw-r--r--  1 runner runner     0 Sep 10 20:00 .gitkeep
+-rw-r--r--  1 runner runner   223 Sep 10 20:00 run-2026-09-02-21-44.md
+-rw-r--r--  1 runner runner   601 Sep 10 20:00 run-2026-09-02-23-54.md
+-rw-r--r--  1 runner runner   167 Sep 10 20:00 run-2026-09-03-03-32.md
+-rw-r--r--  1 runner runner   275 Sep 10 20:00 run-2026-09-03-08-17.md
+-rw-r--r--  1 runner runner   242 Sep 10 20:00 run-2026-09-03-12-53.md
+-rw-r--r--  1 runner runner   244 Sep 10 20:00 run-2026-09-03-16-58.md
+-rw-r--r--  1 runner runner   177 Sep 10 20:00 run-2026-09-03-19-43.md
+-rw-r--r--  1 runner runner   928 Sep 10 20:00 run-2026-09-03-22-24.md
+-rw-r--r--  1 runner runner   186 Sep 10 20:00 run-2026-09-04-00-26.md
+-rw-r--r--  1 runner runner   165 Sep 10 20:00 run-2026-09-04-05-04.md
+-rw-r--r--  1 runner runner   160 Sep 10 20:00 run-2026-09-04-09-44.md
+-rw-r--r--  1 runner runner   178 Sep 10 20:00 run-2026-09-04-14-04.md
+-rw-r--r--  1 runner runner   235 Sep 10 20:00 run-2026-09-04-17-39.md
+-rw-r--r--  1 runner runner   569 Sep 10 20:00 run-2026-09-04-19-53.md
+-rw-r--r--  1 runner runner   155 Sep 10 20:00 run-2026-09-04-22-12.md
+-rw-r--r--  1 runner runner   213 Sep 10 20:00 run-2026-09-05-00-11.md
+-rw-r--r--  1 runner runner   150 Sep 10 20:00 run-2026-09-05-04-39.md
+-rw-r--r--  1 runner runner   169 Sep 10 20:00 run-2026-09-05-08-36.md
+-rw-r--r--  1 runner runner   152 Sep 10 20:00 run-2026-09-05-12-04.md
+-rw-r--r--  1 runner runner   194 Sep 10 20:00 run-2026-09-05-15-20.md
+-rw-r--r--  1 runner runner 10012 Sep 10 20:00 run-2026-09-05-17-37.md
+-rw-r--r--  1 runner runner   179 Sep 10 20:00 run-2026-09-05-19-29.md
+-rw-r--r--  1 runner runner   176 Sep 10 20:00 run-2026-09-05-21-41.md
+-rw-r--r--  1 runner runner   177 Sep 10 20:00 run-2026-09-05-23-37.md
+-rw-r--r--  1 runner runner 16528 Sep 10 20:00 run-2026-09-06-00-20.md
+-rw-r--r--  1 runner runner  2538 Sep 10 20:00 run-2026-09-06-01-23.md
+-rw-r--r--  1 runner runner   187 Sep 10 20:00 run-2026-09-06-06-08.md
+-rw-r--r--  1 runner runner   152 Sep 10 20:00 run-2026-09-06-11-05.md
+-rw-r--r--  1 runner runner   189 Sep 10 20:00 run-2026-09-06-14-14.md
+-rw-r--r--  1 runner runner   143 Sep 10 20:00 run-2026-09-06-17-08.md
+-rw-r--r--  1 runner runner   182 Sep 10 20:00 run-2026-09-06-19-17.md
+-rw-r--r--  1 runner runner  6435 Sep 10 20:00 run-2026-09-06-21-29.md
+-rw-r--r--  1 runner runner   177 Sep 10 20:00 run-2026-09-06-23-08.md
+-rw-r--r--  1 runner runner   370 Sep 10 20:00 run-2026-09-07-01-06.md
+-rw-r--r--  1 runner runner  6087 Sep 10 20:00 run-2026-09-07-06-12.md
+-rw-r--r--  1 runner runner 12246 Sep 10 20:00 run-2026-09-07-12-47.md
+-rw-r--r--  1 runner runner   250 Sep 10 20:00 run-2026-09-07-18-09.md
+-rw-r--r--  1 runner runner   754 Sep 10 20:00 run-2026-09-07-21-36.md
+-rw-r--r--  1 runner runner   226 Sep 10 20:00 run-2026-09-07-23-46.md
+-rw-r--r--  1 runner runner   181 Sep 10 20:00 run-2026-09-08-03-38.md
+-rw-r--r--  1 runner runner   143 Sep 10 20:00 run-2026-09-08-08-20.md
+-rw-r--r--  1 runner runner   211 Sep 10 20:00 run-2026-09-08-13-03.md
+-rw-r--r--  1 runner runner   151 Sep 10 20:00 run-2026-09-08-17-17.md
+-rw-r--r--  1 runner runner   246 Sep 10 20:00 run-2026-09-08-19-57.md
+-rw-r--r--  1 runner runner   186 Sep 10 20:00 run-2026-09-08-22-33.md
+-rw-r--r--  1 runner runner   154 Sep 10 20:00 run-2026-09-09-00-36.md
+-rw-r--r--  1 runner runner   160 Sep 10 20:00 run-2026-09-09-05-15.md
+-rw-r--r--  1 runner runner   213 Sep 10 20:00 run-2026-09-09-09-52.md
+-rw-r--r--  1 runner runner   188 Sep 10 20:00 run-2026-09-09-14-14.md
+-rw-r--r--  1 runner runner   183 Sep 10 20:00 run-2026-09-09-17-52.md
+-rw-r--r--  1 runner runner   171 Sep 10 20:00 run-2026-09-09-20-39.md
+-rw-r--r--  1 runner runner   185 Sep 10 20:00 run-2026-09-09-22-46.md
+-rw-r--r--  1 runner runner   234 Sep 10 20:00 run-2026-09-10-00-54.md
+-rw-r--r--  1 runner runner   268 Sep 10 20:00 run-2026-09-10-05-42.md
+-rw-r--r--  1 runner runner 10028 Sep 10 20:00 run-2026-09-10-10-54.md
+-rw-r--r--  1 runner runner   181 Sep 10 20:00 run-2026-09-10-14-55.md
+-rw-r--r--  1 runner runner   608 Sep 10 20:00 run-2026-09-10-18-12.md
+  1687 leads/lead-bigpickle.md
+    52 leads/lead-laguna.md
+    52 leads/lead-ling3.md
+    52 leads/lead-longcat.md
+     1 leads/lead-mimo.md
+  2687 leads/lead-nemotron3.md
+   227 leads/reposcan-n26.md
+  4758 total
+[0m
+[0m✗ [0mInvalid Tool
+The arguments provided to the tool are invalid: Model tried to call unavailable tool 'bashed'. Available tools: bash, edit, glob, grep, invalid, read, skill, task, todowrite, webfetch, websearch, write.
+[0m
+[0m→ [0mRead triage/run-2026-09-10-18-12.md
+[0m→ [0mRead probe-results.md
+[0m→ [0mRead scope.yml
+[0m→ [0mRead reports/hypotheses-nemotron3.txt
+[0m→ [0mRead reports/hypotheses-bigpickle.txt
+[0m→ [0mRead reports/valid-bugs.md
+[0m
+[0m$ [0mgrep -n "client.6e429513\|KeylessSigned\|Sec-WebSocket\|wss://" inventory/n26.md | head -30
+(no output)
+[0m
+[0m$ [0mgrep -n "2026-09-10" inventory/n26.md | tail -20
+346:## 2026-09-10 00:38:16 UTC
+363:## 2026-09-10 05:17:09 UTC
+365:## 2026-09-10 09:57:10 UTC
+371:## 2026-09-10 14:06:50 UTC
+382:## 2026-09-10 17:44:23 UTC
+[0m
+[0m→ [0mRead inventory/n26.md[90m [offset=346, limit=80][0m
+[0m
+[0m$ [0mgrep -n "keyless\|6e429513\|client\." leads/lead-bigpickle.md | head -20
+5:[NEW] authentication-service.eks.core-production.keyless.technology: EKS-hosted keyless auth service — discovered via CSP connect-src on app.n26.com
+47:[NEXT] PROBE: GET https://app.n26.com/build/js/client.*.js (extract Statsig SDK key from JS bundle to unlock flags.n26.com testing), then GET https://flags.n26.com/v1/evaluate with extracted key
+121:reasoning: Statsig service confirmed (x-statsig-region: gke-us-west1). /v1/initialize returns 403 (RBAC). Previous attempt to find client.*.js returned 404. Client-side Statsig SDK keys are embedded in frontend bundles — need to extract actual JS bundle URLs from app.n26.com HTML response, not assumed paths.
+166:reasoning: Statsig service confirmed (x-statsig-region: gke-us-west1). /v1/initialize returns 403 (RBAC). Previous attempt to find client.*.js returned 404. Client-side Statsig SDK keys are embedded in frontend bundles — need to extract actual JS bundle URLs from app.n26.com HTML response, not assumed paths.
+220:reasoning: Statsig service confirmed (x-statsig-region: gke-us-west1). /v1/initialize returns 403 (RBAC). Previous attempt to find client.*.js returned 404. Client-side Statsig SDK keys are embedded in frontend bundles — need to extract actual JS bundle URLs from app.n26.com HTML response, not assumed paths.
+308:[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. All `/v1/*` endpoints return 403/401. Client-side SDK key path (client.*.js) returns 404 — bundle location changed or server-only keys.
+324:reasoning: Public client key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0` (client.64629020.js, env=live). Prior map said initialize GET-403/POST-401, but POST with canonical SDK body returns 200 + full init payload: 35 gates, 9 dynamic configs with real values (e.g. `{'title':'Get this deal now!','price':19}`, `{'uiMode':'vendor','escalationType':'human',...}`), `company_lcut=1788632107688`. Numeric IDs map to banking feature names in the same 410.js bundle.
+617:[NEW] authentication-service.eks.core-production.keyless.technology — EKS-hosted WebSocket auth service in core-production cluster, discovered via CSP connect-src on app.n26.com, ZERO probe attempts across entire hunt
+620:[PRIO] authentication-service.eks.core-production.keyless.technology,7.2,a:6 b:9 t:8 g:2 c:10 f:10 — unprobed EKS auth service, highest freshness in inventory, core-production cluster, WebSocket endpoint
+625:asset: authentication-service.eks.core-production.keyless.technology
+627:reasoning: EKS-hosted in core-production cluster; "keyless" suggests passwordless/biometric/WebAuthn/JWT token exchange; listed as wss:// in CSP connect-src on app.n26.com; never actively probed despite 4 days in inventory; gate_ease=2 (likely requires auth for sensitive endpoints) but basic endpoint enumeration via GET/HEAD/OPTIONS is passive and may surface .well-known, /health, /api, or config endpoints that reveal auth flow architecture
+629:verify_steps: HEAD https://authentication-service.eks.core-production.keyless.technology/ ; GET https://authentication-service.eks.core-production.keyless.technology/.well-known/openid-configuration ; GET https://authentication-service.eks.core-production.keyless.technology/health ; OPTIONS https://authentication-service.eks.core-production.keyless.technology/ ; GET https://authentication-service.eks.core-production.keyless.technology/api/swagger.json
+634:[FINAL] 1) authentication-service.eks.core-production.keyless.technology endpoint enumeration (confidence 38 — below 40 but sole untested HIGH-asset in inventory; passive GET/HEAD/OPTIONS probes only; see NEXT)
+636:[NEXT] PROBE: HEAD+GET+OPTIONS https://authentication-service.eks.core-production.keyless.technology/ — passive endpoint enumeration on unprobed EKS auth service; HEAD first, then GET on /.well-known/openid-configuration, /health, /api; OPTIONS for allowed methods; ≤1 rps, read-only
+648:[RISK] N26 Bank AG: 25/100 — Surface nearly fully cornered at INFO ceiling: sole verified non-INFO route (flags.n26.com initialize POST 200) is by-design public-client SDK data (INFO); GraphQL tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. One untested HIGH-value asset remains: authentication-service.eks.core-production.keyless.technology (EKS-hosted, core-production, WebSocket, never probed). Passive endpoint enumeration on this service is the only remaining anonymous path to a potentially reportable finding. No IDOR/SSRF/funds/business-logic/auth surface demonstrated after 8+ cycles.
+653:asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+678:[NEXT] HUMAN: ask program coordinator (a) whether vendor-in-flow assets (`keyless.technology`, N26 tenant slug `n26`, exact routes `wss://…/v1/auth/n26`, `/v1/enroll/n26`) fall within N26-operated scope, and (b) for a LivePerson/app session to capture the real WS subprotocol so the two bundle-disclosed routes can be handshake-tested read-only. Without a scope ruling, no further probes are warranted — the asset is vendor-owned and every anonymous transport is `404 path unused`.
+679:[RISK] N26 Bank AG: 18/100 — Surface fully cornered at INFO across 9+ cycles. The only genuinely fresh intel this cycle (live Keyless auth service, exact WS routes, tenant slug) yields no anonymous exploit and sits on a vendor-owned domain (`keyless.technology`) outside N26-operated scope absent a coordinator ruling. `flags.n26.com` initialize 200 is by-design public-client SDK data. GraphQL remains tarpit/WAF-closed on every anonymous transport; spc=tracking GIFs; cdn=private; marketing INFO-only. No IDOR/SSRF/funds/business-logic/auth compromise demonstrated; remaining HIGH-value paths require an app session (AUTH_HELPED). North-star request to coordinator stands: scoped test account or LivePerson session, plus a written scope ruling on vendor-in-flow assets.
+708:[NEXT] HUMAN: one consolidated coordinator ask — (a) scope ruling for `keyless.technology` vendor asset, (b) a whitelisted/integration API key or scoped test identity for engagementplatform.n26.com `/users`+`/events` (and confirmation the key is server-only), (c) an app/LivePerson session for app.n26.com GraphQL + Keyless WS handshake. Nothing further is testable anonymously: new in-scope API is key-gated, pay/3ds are third-party or session-bound.
+737:[NEW] authentication-service.eks.core-production.keyless.technology — EKS-hosted WebSocket auth service in core-production cluster, discovered via CSP connect-src on app.n26.com, ZERO probe attempts across entire hunt
+[0m
+[0m$ [0mcurl -sS --http2 -o /dev/null -D - --max-time 20 -A "Mozilla/5.0" https://authentication-service.eks.core-production.keyless.technology/ | head -15; sleep 1; curl -sS --http2 --max-time 20 -A "Mozilla/5.0" https://authentication-service.eks.core-production.keyless.technology/v1/auth/n26 | head -c 300; echo
+HTTP/2 404 
+date: Thu, 10 Sep 2026 20:01:27 GMT
+content-type: application/json
+content-length: 74
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08ce9-2de9-787b-9f9e-c29fd031d0bd
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+
+{"code":"UNPROCESSABLE","reason":"path unused: /v1/auth/n26","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -sS --max-time 25 -A "Mozilla/5.0" https://app.n26.com/login -o /tmp/applogin.html -w "HTTP %{http_code} size %{size_download}\n"; grep -oE 'src="[^"]*client\.[a-z0-9]+\.js"' /tmp/applogin.html | head -5
+HTTP 200 size 319204
+src="/build/js/client.6e429513.js"
+[0m
+[0m$ [0mcurl -sS --max-time 20 -A "Mozilla/5.0" https://authentication-service.eks.core-production.keyless.technology/; echo; sleep 1; curl -sS --max-time 20 -o /dev/null -w "flags /v1/initialize GET -> HTTP %{http_code}\n" https://flags.n26.com/v1/initialize; sleep 1; curl -sS --max-time 20 -O /dev/null -w "eng /users -> HTTP %{http_code} size %{size_download} (first line)\n" https://engagementplatform.n26.com/users 2>/dev/null | head -1
+{"code":"UNPROCESSABLE","reason":"path unused: /","stack":"api.`unused`"}
+
+flags /v1/initialize GET -> HTTP 403
+eng /users -> HTTP 000 size 0 (first line)
+[0m
+[0m$ [0mcurl -sS --max-time 20 -A "Mozilla/5.0" -o /tmp/eng.txt -w "HTTP %{http_code} size %{size_download}\n" https://engagementplatform.n26.com/users; head -c 200 /tmp/eng.txt; echo
+HTTP 401 size 31
+{"message":"Invalid API key: "}
+[0m
+[0m$ [0mls -la recon-notes/ reposcan-raw/ 2>/dev/null; wc -l recon-notes/* 2>/dev/null
+recon-notes/:
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep 10 20:00 .
+drwxr-xr-x 12 runner runner 4096 Sep 10 20:00 ..
+-rw-r--r--  1 runner runner  809 Sep 10 20:00 DEDICATED-DEEP.md
+
+reposcan-raw/:
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep 10 20:00 .
+drwxr-xr-x 12 runner runner 4096 Sep 10 20:00 ..
+-rw-r--r--  1 runner runner   66 Sep 10 20:00 summary.txt
+21 recon-notes/DEDICATED-DEEP.md
+[0m
+[0m$ [0mgrep -riE "tech26\.de|crt\.sh|certificate|ct\.log|cert-transparency" recon-notes/ 2>/dev/null | head -20
+(no output)
+[0m
+[0m$ [0mcurl -sS --max-time 40 -A "Mozilla/5.0" "https://crt.sh/?q=%25.tech26.de&output=json" -o /tmp/ct_tech26.json -w "HTTP %{http_code} size %{size_download}\n" 2>&1 | tail -2
+HTTP 200 size 155953
+[0m
+[0m$ [0mpython3 -c "
+import json
+data = json.load(open('/tmp/ct_tech26.json'))
+names = set()
+for e in data:
+    for n in e.get('name_value','').split('\n'):
+        n = n.strip().lower()
+        if n and not n.startswith('*'): names.add(n)
+for n in sorted(names): print(n)
+print('TOTAL', len(names))
+"
+aigw.tech26.de
+aisp-staging.tech26.de
+aisp.tech26.de
+api.tech26.de
+backstage.tech26.de
+bapi.tech26.de
+beta-api.tech26.de
+consul-default-fra-001.tech26.de
+consul-default-fra-002.tech26.de
+consul-default-fra-003.tech26.de
+consul-default-fra.tech26.de
+epiedge.tech26.de
+esign-staging.tech26.de
+fpadedge.tech26.de
+fpt.tech26.de
+gophish-staging-fra.tech26.de
+healthrouter-default-fra.tech26.de
+healthrouter-live-fra.tech26.de
+healthrouter-live-fra.tech26.de.tech26.de
+helium-staging-fra.tech26.de
+ideal-request-signing.tech26.de
+idealedge.tech26.de
+jcmd-oldstaging-fra-001.tech26.de
+jcmd-oldstaging-fra-002.tech26.de
+jcmd-oldstaging-fra.tech26.de
+kibana-monitoring-lb-live-fra.tech26.de
+livepersonedge.tech26.de
+mambuedge.tech26.de
+maxtest-staging-fra.tech26.de
+message-templates-assets-live.tech26.de
+message-templates-assets-staging.tech26.de
+message-templates-assets.tech26.de
+monkey-staging-fra.tech26.de
+n26uk.tz2-mambu-preproduction-uk.tech26.de
+n26uk.tz2-mambu-sandbox-uk.tech26.de
+n26uk.tz2-mambu-uk.tech26.de
+number26.tz2-mambu-preproduction-eu.tech26.de
+number26.tz2-mambu-sandbox-eu.tech26.de
+number26.tz2-mambu.tech26.de
+oneglobaledge-client.tech26.de
+oneglobaledge.tech26.de
+phishing-report.tech26.de
+phising-report.tech26.de
+pisp-staging.tech26.de
+pisp.tech26.de
+rcs-demo.tech26.de
+registry-default-fra.tech26.de
+registry-default-fra.tech26.de.tech26.de
+registrytest-default-fra.tech26.de
+s-dash26-api.tech26.de
+sapi.tech26.de
+sonarqube-default-fra.tech26.de
+sredocs.tech26.de
+staging-api.tech26.de
+statsig-ssh.tech26.de
+taktileedge.tech26.de
+tech26.de
+telemetry.sto.tech26.de
+telemetry.tech26.de
+tpp.tech26.de
+vault-default-fra.tech26.de
+vault-staging-fra-001.tech26.de
+vault-staging-fra-002.tech26.de
+vault-staging-fra-003.tech26.de
+vault-staging-fra.tech26.de
+vsaq-light-staging-fra.tech26.de
+vsaq-live-fra.tech26.de
+vsaq-staging-fra.tech26.de
+vsaq.tech26.de
+vsaqlight-staging-fra.tech26.de
+vsaqlight.tech26.de
+xs2a-staging.tech26.de
+xs2a.tech26.de
+TOTAL 73
+[0m
+Fresh CT signal: 73 tech26.de subdomains, most never probed (inventory only had api/beta-api/fpt/pisp). Checking which resolve and are reachable (passive DNS + read-only probes).
+[0m$ [0mpython3 -c "
+import json
+data = json.load(open('/tmp/ct_tech26.json'))
+names = set()
+for e in data:
+    for n in e.get('name_value','').split('\n'):
+        n = n.strip().lower()
+        if n and not n.startswith('*'): names.add(n)
+names.add('tech26.de')
+import subprocess
+for n in sorted(names):
+    r = subprocess.run(['getent','hosts',n],capture_output=True,text=True,timeout=5)
+    if r.returncode==0:
+        ips = ' '.join(sorted(set(l.split()[-1] for l in r.stdout.strip().splitlines())))
+        print(f'{n:55} {ips}')
+" 2>/dev/null
+aigw.tech26.de                                          aigw.tech26.de
+aisp-staging.tech26.de                                  aisp-staging.tech26.de
+aisp.tech26.de                                          aisp.tech26.de
+api.tech26.de                                           api.tech26.de
+backstage.tech26.de                                     backstage.tech26.de
+beta-api.tech26.de                                      beta-api.tech26.de
+epiedge.tech26.de                                       epiedge.tech26.de
+esign-staging.tech26.de                                 esign-staging.tech26.de
+fpadedge.tech26.de                                      fpadedge.tech26.de
+fpt.tech26.de                                           fpt.tech26.de
+idealedge.tech26.de                                     idealedge.tech26.de
+livepersonedge.tech26.de                                livepersonedge.tech26.de
+mambuedge.tech26.de                                     mambuedge.tech26.de
+message-templates-assets-staging.tech26.de              message-templates-assets-staging.tech26.de
+message-templates-assets.tech26.de                      message-templates-assets.tech26.de
+n26uk.tz2-mambu-preproduction-uk.tech26.de              n26uk.tz2-mambu-preproduction-uk.tech26.de
+n26uk.tz2-mambu-sandbox-uk.tech26.de                    n26uk.tz2-mambu-sandbox-uk.tech26.de
+n26uk.tz2-mambu-uk.tech26.de                            n26uk.tz2-mambu-uk.tech26.de
+number26.tz2-mambu-preproduction-eu.tech26.de           number26.tz2-mambu-preproduction-eu.tech26.de
+number26.tz2-mambu-sandbox-eu.tech26.de                 number26.tz2-mambu-sandbox-eu.tech26.de
+number26.tz2-mambu.tech26.de                            number26.tz2-mambu.tech26.de
+oneglobaledge.tech26.de                                 oneglobaledge.tech26.de
+phishing-report.tech26.de                               phishing-report.tech26.de
+pisp-staging.tech26.de                                  pisp-staging.tech26.de
+pisp.tech26.de                                          pisp.tech26.de
+rcs-demo.tech26.de                                      rcs-demo.tech26.de
+sapi.tech26.de                                          sapi.tech26.de
+sonarqube-default-fra.tech26.de                         sonarqube-default-fra.tech26.de
+sredocs.tech26.de                                       sredocs.tech26.de
+statsig-ssh.tech26.de                                   statsig-ssh.tech26.de
+taktileedge.tech26.de                                   taktileedge.tech26.de
+telemetry.tech26.de                                     telemetry.tech26.de
+xs2a-staging.tech26.de                                  xs2a-staging.tech26.de
+xs2a.tech26.de                                          xs2a.tech26.de
+[0m
+[0m$ [0mpython3 -c "
+import json, socket
+data = json.load(open('/tmp/ct_tech26.json'))
+names = set()
+for e in data:
+    for n in e.get('name_value','').split('\n'):
+        n = n.strip().lower()
+        if n and not n.startswith('*'): names.add(n)
+names.add('tech26.de')
+for n in sorted(names):
+    try:
+        ips = socket.gethostbyname_ex(n)[2]
+        print(f'{n:55} {\",\".join(ips)}')
+    except Exception as ex:
+        pass
+" 2>/dev/null
+aigw.tech26.de                                          10.255.2.252,10.255.5.236,10.255.1.134
+aisp-staging.tech26.de                                  3.64.120.186,52.29.23.240,18.199.191.206
+aisp.tech26.de                                          3.68.252.71,63.178.117.46,3.74.59.163
+api.tech26.de                                           63.182.81.136,3.74.242.177,63.178.184.15
+backstage.tech26.de                                     63.182.130.99,18.153.242.176,52.28.223.252
+beta-api.tech26.de                                      63.182.81.136,63.178.184.15,3.74.242.177
+epiedge.tech26.de                                       3.120.50.113,63.186.83.240,51.102.63.156
+esign-staging.tech26.de                                 13.225.47.116,13.225.47.63,13.225.47.110,13.225.47.54
+fpadedge.tech26.de                                      3.67.208.127,3.77.231.189,63.179.34.223
+fpt.tech26.de                                           18.197.7.44,63.188.185.77,63.183.125.164
+idealedge.tech26.de                                     18.194.113.4,3.78.21.160,3.69.184.189
+livepersonedge.tech26.de                                18.159.151.48,18.195.109.103,3.127.53.142
+mambuedge.tech26.de                                     51.102.137.147,63.188.228.80
+message-templates-assets-staging.tech26.de              99.86.77.88,99.86.77.87,99.86.77.125,99.86.77.60
+message-templates-assets.tech26.de                      18.160.200.129,18.160.200.20,18.160.200.23,18.160.200.36
+n26uk.tz2-mambu-preproduction-uk.tech26.de              63.184.136.22,3.122.146.177
+n26uk.tz2-mambu-sandbox-uk.tech26.de                    3.122.146.177,63.184.136.22
+n26uk.tz2-mambu-uk.tech26.de                            63.188.228.80,51.102.137.147
+number26.tz2-mambu-preproduction-eu.tech26.de           3.122.146.177,63.184.136.22
+number26.tz2-mambu-sandbox-eu.tech26.de                 3.122.146.177,63.184.136.22
+number26.tz2-mambu.tech26.de                            51.102.137.147,63.188.228.80
+oneglobaledge.tech26.de                                 18.157.247.13,3.66.60.186,3.124.135.101
+phishing-report.tech26.de                               63.187.106.141,63.179.62.214,18.158.236.148
+pisp-staging.tech26.de                                  52.29.23.240,18.199.191.206,3.64.120.186
+pisp.tech26.de                                          3.68.252.71,3.74.59.163,63.178.117.46
+rcs-demo.tech26.de                                      13.249.141.94,13.249.141.5,13.249.141.81,13.249.141.63
+sapi.tech26.de                                          18.193.218.192,52.29.78.193,63.187.219.208
+sonarqube-default-fra.tech26.de                         54.93.204.141,63.179.204.166
+sredocs.tech26.de                                       63.187.208.5,3.67.190.241,18.194.200.233
+statsig-ssh.tech26.de                                   3.69.87.198
+taktileedge.tech26.de                                   18.194.192.214,63.178.89.22,52.58.151.251
+telemetry.tech26.de                                     63.186.105.254,3.126.221.148,63.188.202.42
+xs2a-staging.tech26.de                                  3.64.120.186,18.199.191.206,52.29.23.240
+xs2a.tech26.de                                          3.68.252.71,63.178.117.46,3.74.59.163
+[0m
+Major delta: 73 tech26.de subdomains from CT, ~35 resolve publicly. AISP/XS2A (PSD2 financial API siblings of pisp), Mambu core-banking, staging esign, dev/infra portals (backstage, sonarqube, sredocs) all resolve. Probing highest-value ones read-only (≤1 rps).
+[0m$ [0mfor h in aisp.tech26.de xs2a.tech26.de sapi.tech26.de; do
+  echo "=== $h root ==="
+  curl -sS --http2 --max-time 15 -A "Mozilla/5.0" -o /tmp/p.txt -D - "https://$h/" | grep -iE "^HTTP|^content-type|^server|^location|^content-length" | head -8
+  head -c 200 /tmp/p.txt; echo; sleep 1.2
+done
+=== aisp.tech26.de root ===
+HTTP/2 404 
+content-length: 0
+server: istio-envoy
+
+=== xs2a.tech26.de root ===
+HTTP/2 404 
+content-length: 0
+server: istio-envoy
+
+=== sapi.tech26.de root ===
+HTTP/1.1 404 Not Found
+Content-Length: 0
+server: envoy
+[0m
+[0m$ [0mfor h in aisp.tech26.de xs2a.tech26.de; do
+  echo "=== $h /api/mfa/challenge ==="
+  curl -sS --http2 --max-time 15 -u "android:secret" -o /tmp/p.txt -D - "https://$h/api/mfa/challenge" | grep -iE "^HTTP" 
+
+  head -c 200 /tmp/p.txt; echo; sleep 1.2
+done
+=== aisp.tech26.de /api/mfa/challenge ===
+HTTP/2 404 
+
+=== xs2a.tech26.de /api/mfa/challenge ===
+HTTP/2 404
+[0m
+[0m$ [0mfor h in backstage.tech26.de sonarqube-default-fra.tech26.de sredocs.tech26.de telemetry.tech26.de statsig-ssh.tech26.de; do
+  echo "=== $h/ ==="
+  curl -sS --max-time 12 -A "Mozilla/5.0" -o /tmp/p.txt -D - "https://$h/" | grep -iE "^HTTP|^server:|^location:|^content-type:|^content-length:|^x-powered" | head -6
+  head -c 180 /tmp/p.txt; echo; sleep 1.2
+done
+=== backstage.tech26.de/ ===
+curl: (28) Connection timed out after 12002 milliseconds
+
+=== sonarqube-default-fra.tech26.de/ ===
+curl: (28) Connection timed out after 12002 milliseconds
+
+=== sredocs.tech26.de/ ===
+curl: (28) Connection timed out after 12001 milliseconds
+
+=== telemetry.tech26.de/ ===
+HTTP/2 403 
+server: awselb/2.0
+content-type: text/html
+content-length: 118
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+</body>
+</html>
+
+=== statsig-ssh.tech26.de/ ===
+curl: (28) Connection timed out after 12002 milliseconds
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+</body>
+</html>
+[0m
+[0m$ [0mfor h in esign-staging.tech26.de message-templates-assets.tech26.de message-templates-assets-staging.tech26.de rcs-demo.tech26.de phishing-report.tech26.de; do
+  echo "=== $h/ ==="
+  curl -sS --max-time 12 -A "Mozilla/5.0" -o /tmp/p.txt -D - "https://$h/" | grep -iE "^HTTP|^server:|^location:|^content-type:|^content-length:|^x-amz" | head -6
+  head -c 150 /tmp/p.txt; echo; sleep 1.2
+done
+=== esign-staging.tech26.de/ ===
+HTTP/2 403 
+content-type: application/xml
+server: AmazonS3
+x-amz-cf-pop: ORD58-P15
+x-amz-cf-id: ScwQTmWTAx8MhEji8BXbRVi_xGBkim67KhB57gCOWTDIW3R2GYkbww==
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== message-templates-assets.tech26.de/ ===
+HTTP/2 403 
+content-type: application/xml
+server: AmazonS3
+x-amz-cf-pop: ORD56-P5
+x-amz-cf-id: BaMdXQYip5oCApKWqek_nU_XDlZGuqXXRMVo4pDoOtYiPtihY5NOew==
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== message-templates-assets-staging.tech26.de/ ===
+HTTP/2 403 
+content-type: application/xml
+server: AmazonS3
+x-amz-cf-pop: ORD56-P17
+x-amz-cf-id: w1umOhBMwCHdFzeXVM5tdnacHj0Oj09_udPTt6zFVC2p_-5iMCZtAQ==
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== rcs-demo.tech26.de/ ===
+HTTP/2 403 
+content-type: application/xml
+server: AmazonS3
+x-amz-cf-pop: ORD56-P14
+x-amz-cf-id: NdvoryDWwIgQr2K4z_nWI_9jWInIQBb7lM1FRLTmPkNVtgCxkMuA-g==
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== phishing-report.tech26.de/ ===
+curl: (28) Connection timed out after 12002 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+[0m
+[0m$ [0mfor h in number26.tz2-mambu.tech26.de n26uk.tz2-mambu-uk.tech26.de number26.tz2-mambu-sandbox-eu.tech26.de mambuedge.tech26.de; do
+  echo "=== $h/ ==="
+  curl -sS --max-time 12 -A "Mozilla/5.0" -o /tmp/p.txt -D - "https://$h/" | grep -iE "^HTTP|^server:|^location:|^content-type:|^www-authenticate" | head -6
+  head -c 150 /tmp/p.txt; echo; sleep 1.2
+done
+=== number26.tz2-mambu.tech26.de/ ===
+curl: (28) Connection timed out after 12003 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== n26uk.tz2-mambu-uk.tech26.de/ ===
+curl: (28) Connection timed out after 12002 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== number26.tz2-mambu-sandbox-eu.tech26.de/ ===
+curl: (28) Connection timed out after 12002 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== mambuedge.tech26.de/ ===
+curl: (28) Connection timed out after 12002 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+[0m
+[0m$ [0mfor h in ideaedge idealedge.tech26.de fpadedge.tech26.de oneglobaledge.tech26.de taktileedge.tech26.de epiedge.tech26.de livepersonedge.tech26.de; do
+  [ "$h" = "ideaedge" ] && continue
+  echo "=== $h/ ==="
+  curl -sS --max-time 10 -A "Mozilla/5.0" -o /tmp/p.txt -D - "https://$h/" | grep -iE "^HTTP|^server:|^location:|^content-type:" | head -4
+  head -c 120 /tmp/p.txt; echo; sleep 1.0
+done
+=== idealedge.tech26.de/ ===
+curl: (28) Connection timed out after 10002 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== fpadedge.tech26.de/ ===
+curl: (28) Connection timed out after 10002 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== oneglobaledge.tech26.de/ ===
+curl: (28) Connection timed out after 10001 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== taktileedge.tech26.de/ ===
+curl: (28) Connection timed out after 10002 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== epiedge.tech26.de/ ===
+curl: (28) Connection timed out after 10001 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== livepersonedge.tech26.de/ ===
+curl: (28) Connection timed out after 10000 milliseconds
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+[0m
+[0m$ [0mcurl -sS --max-time 12 -A "Mozilla/5.0" -o /tmp/p.txt -D - "https://esign-staging.tech26.de/?list-type=2" | grep -iE "^HTTP|^content-type:" | head -3; head -c 200 /tmp/p.txt; echo; sleep 1.0
+echo "=== pisp root (baseline) ==="
+curl -sS --http2 --max-time 12 -A "Mozilla/5.0" -o /tmp/p.txt -D - "https://pisp.tech26.de/" | grep -iE "^HTTP|^server:|^content-length" | head -4; head -c 120 /tmp/p.txt; echo; sleep 1.0
+echo "=== aisp TLS cert SAN ==="
+echo | timeout 15 openssl s_client -connect aisp.tech26.de:443 -servername aisp.tech26.de 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | tr ',' '\n' | head -12
+HTTP/2 403 
+content-type: application/xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+=== pisp root (baseline) ===
+HTTP/2 404 
+content-length: 0
+server: istio-envoy
+
+=== aisp TLS cert SAN ===
+X509v3 Subject Alternative Name: 
+    DNS:aisp.tech26.de
+ DNS:xs2a.tech26.de
+ DNS:pisp.tech26.de
+[0m
+The PSD2 family (aisp/xs2a/pisp) shares one cert + istio mesh; only pisp has a registered route. S3 buckets private. Infra hosts filtered. Running the same CT sweep on n26.com to complete breadth.
+[0m$ [0mcurl -sS --max-time 40 -A "Mozilla/5.0" "https://crt.sh/?q=%25.n26.com&output=json" -o /tmp/ct_n26.json -w "HTTP %{http_code} size %{size_download}\n" 2>&1 | tail -1
+python3 -c "
+import json, socket
+data = json.load(open('/tmp/ct_n26.json'))
+names=set()
+for e in data:
+    for n in e.get('name_value','').split('\n'):
+        n=n.strip().lower()
+        if n and not n.startswith('*'): names.add(n)
+res={}
+for n in sorted(names):
+    try: res[n]=socket.gethostbyname_ex(n)[2]
+    except: pass
+for n in sorted(res): print(f'{n:48}', ','.join(res[n]))
+print('TOTAL_RESOLVING', len(res), 'of', len(names))
+" 2>/dev/null
+HTTP 429 size 162
+[0m
+CT sweep on n26.com is rate-limited (429); retry queued. All data gathered — writing the analysis.
+
+STEP 1 — DELTA:
+- NEW: crt.sh CT sweep surfaced ~73 `tech26.de` subdomains (35 public-resolving); most never probed — first breadth expansion of the hunt.
+- NEW: `aisp.tech26.de` + `xs2a.tech26.de` = PSD2 AISP/XS2A siblings of `pisp.tech26.de` on the SAME TLS SAN (`aisp|xs2a|pisp.tech26.de`) and same istio-envoy mesh; HTTP/2 route-less 404 at `/` and `/api/mfa/challenge` (pisp holds the only registered route).
+- NEW: infra/dev hosts extern only filtered or private: `vault-*`/`consul-*`/`registry-*`/`kibana-*`/`jcmd-*` unresolvable (internal); `backstage`/`sonarqube-default-fra`/`sredocs`/`statsig-ssh`/`*edge`/`*tz2-mambu*` connect-timeout (filtered); `telemetry.tech26.de` awselb/2.0 403.
+- NEW: `esign-staging`/`message-templates-assets(-staging)`/`rcs-demo` = S3+CloudFront private buckets; `/` and `/?list-type=2` both 403 `AccessDenied` (same class as cdn.number26.de).
+- NEW: `aigw.tech26.de` public DNS returns RFC1918 `10.255.x.x` (split-horizon leak; INFO-only, descriptive).
+- CHANGED: all tracked live surfaces stable — keyless v26.09.07, app bundle `client.6e429513.js` (no rotation), flags GET `/v1/initialize` 403, eng `/users` 401 len=31.
+
+STEP 2 — PRIORITIZE:
+- [PRIO] authentication-service.eks.core-production.keyless.technology, 8.1, a=9,b=10,t=9,g=2,c=8,f=9 — sole surviving high-value; WS token replay; AUTH_HELPED
+- [PRIO] aisp.tech26.de/xs2a.tech26.de, 5.3, a=3,b=9,t=6,g=2,c=4,f=10 — PSD2 financial siblings, same mesh as pisp, currently route-less
+- [PRIO] engagementplatform.n26.com, 4.9, a=5,b=7,t=4,g=1,c=5,f=6 — Braze key-gated; AUTH_HELPED
+- [PRIO] fpt.tech26.de, 4.4, a=2,b=3,t=2,g=10,c=5,f=8 — fixed-200 stub, INFO monitor-only
+- [PRIO] mambu family + aigw(+4.4/cap INFO), a=2..3 — filtered/unreachable or descriptive-only leak
+
+STEP 3 — HYPOTHESES:
+[HYP] Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 60
+reasoning: client.6e429513.js (verified unrotated 2026-09-10) hardcodes wss://authentication-service…/v1/auth/n26; flow KeylessSignedTokenMutation → per-session token → Sec-WebSocket-Protocol. ~68 HTTP paths + WS-upgrade `path unused`; `/` and `/v1/auth/n26` re-verified 404 `path unused` this cycle. Server routes only on minted token.
+evidence_needed: 101 or non-`unused` response when presenting a real minted KeylessSignedToken as Sec-WebSocket-Protocol; token lifetime/across-path reuse.
+verify_steps: from authenticated app.n26.com session → devtools Network → WS → /v1/auth/n26 handshake → copy exact Sec-WebSocket-Protocol → read-only WSS replay (connect + log 101 data, abort before frames).
+impact: token reuse / weak challenge-binding in biometric WebAuthn = AUTH bypass, ATO class, CRITICAL; requires live minted token.
+testability: AUTH_HELPED
+[HYP] PSD2 family (aisp/xs2a) route activation on tenant rollout
+class: MISCONFIG
+asset: aisp.tech26.de / xs2a.tech26.de
+confidence: 35
+reasoning: shared SAN+istio mesh with pisp (only /api/mfa/challenge registered); aisp/xs2a currently route-less at `/` and `/api/mfa/challenge`; PSD2 AISP/XS2A endpoints (balance/consent/accounts) high business value if a route registers.
+evidence_needed: any path returning non-empty 404/401/200 on aisp/xs2a (route registration) or TLS version bump.
+verify_steps: repeat GET https://aisp.tech26.de/ and /api/mfa/challenge monthly; diff vs istio empty-404 baseline.
+impact: newly exposed PSD2 API → config/consent misconfig — HIGH if it ever activates; today none.
+testability: PASSIVE
+[HYP] aigw.tech26.de internal split-horizon DNS leak
+class: MISCONFIG
+asset: aigw.tech26.de
+confidence: 45
+reasoning: public DNS returns RFC1918 10.255.1.134/2.252/5.236 — internal addresses in public resolution; indicates split-horizon misconfig for an "AI/API gateway" service.
+evidence_needed: any public routing (impossible — RFC1918), or pairing of leaked IPs with visible istio mesh.
+verify_steps: none meaningful (RFC1918 unroutable); record-only.
+impact: reveals internal IP scheme to attacker; INFO/descriptive ceiling, no exploit chain.
+testability: PASSIVE
+
+STEP 4 — SELF-CRITIQUE:
+- [PARKED] PSD2 family (aisp/xs2a) route activation: confidence 35 (<40); no live route now; monitor-only like fpt.
+- [PARKED] aigw.tech26.de RFC1918 leak: descriptive/INFO class, no exploit; not reportable.
+- [PARKED] mambu/backstage/sonarqube/sredocs/*edge infra: externally unreachable (timeout) or unresolvable — no anonymous surface.
+- [REJECTED] S3 buckets (esign-staging/message-templates-assets/rcs-demo): private, list-type 403 — same closed class as cdn.number26.de.
+- [FINAL] Keyless WS signed-token subprotocol replay (60) — sole survivor, CRITICAL-adjacent, requires HUMAN-captured token; everything else this cycle closed breadth, no new exploit path.
+
+STEP 5 — NEXT ACTION:
+[NEXT] PROBE: retry passive CT sweep `https://crt.sh/?q=%25.n26.com` (429'd this cycle; transient rate limit), resolve all names, and HEAD-probe any public-resolving n26.com leaves absent from inventory — closes the last breadth gap; monitor recipients aisp/xs2a/fpt stay passive-monthly.
+
+STEP 6 — LEARNING:
+- [LEARN] ACCEPTED MISCONFIG @ tech26.de: CT enumeration surfaced ~73 subdomains (35 public-resolving, most unprobed) — first breadth expansion; PSD2 family (aisp/xs2a/pisp) share one TLS SAN + istio mesh, pisp-only route.
+- [LEARN] REJECTED MISCONFIG @ aisp.tech26.de/xs2a.tech26.de: same cert+mesh as pisp, route-less 404 at `/` and /api/mfa/challenge — no distinct anonymous surface.
+- [LEARN] REJECTED MISCONFIG @ esign-staging/message-templates-assets(-staging)/rcs-demo.tech26.de: S3+CloudFront private buckets — `/` + `/?list-type=2` both 403 AccessDenied; object-only class closed.
+- [LEARN] REJECTED MISCONFIG @ backstage/sonarqube-default-fra/sredocs/statsig-ssh/*edge/*tz2-mambu.tech26.de: connect-timeout or unresolvable — infrastructure filtered from public internet.
+- [LEARN] ACCEPTED MISCONFIG @ aigw.tech26.de: public DNS leaks RFC1918 10.255.x.x (split-horizon) — INFO/descriptive only, no chain.
+- [LEARN] ACCEPTED AUTH @ authentication-service.eks.core-production.keyless.technology: `/` and /v1/auth/n26 re-verified `path unused` 404, version v26.09.07, bundle client.6e429513.js unrotated — no change.
+
+STEP 7 — RISK:
+[RISK] N26 Bank AG: 42/100 — Breadth gap closed (73 subdomains mapped; PSD2 family + mambu + infra all route-less/filtered/private); every live surface stable and previously classified; keyless remains the only path to CRITICAL (token replay) but is AUTH_HELPED; flags INFO by-design; GraphQL closed 10+ cycles; no critical finding in hand. Risk unchanged +2 for the enlarged mapped surface that adds no new exploit but raises watch-list duty.

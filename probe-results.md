@@ -298,3 +298,6 @@ https://flags.n26.com/v1/initialize -> HTTP 403
 
 ## 2026-09-10 17:44:23 UTC
 
+
+## 2026-09-10 20:10:17 UTC
+https://crt.sh/?q=%25.n26.com` -> HTTP 502
