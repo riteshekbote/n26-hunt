@@ -1,4 +1,13 @@
-## 2026-09-10 09:57:01 UTC [target] (model nemotron3)
+## 2026-09-10 14:06:40 UTC [target] (model nemotron3)
+[NEW] fpt.tech26.de: fixed-response ALB (HTTP/2 200 empty text/plain, CL=0, awselb/2.0 on all methods/paths) — placeholder stub for unregistered service; INFO; monitor for activation
+[CHANGED] api.tech26.de: +20 fresh GETs (OpenAPI/swagger/GraphQL/OIDC/healthz/readyz/api-v1/v1/metrics/actuator + mfa/auth/oauth/token family) all envoy empty-404 — ~47 paths route-less; anonymous HTTP discovery exhausted
+[CHANGED] api.tech26.de: WS-upgrade(json) 403 confirmed as awselb/2.0 WAF edge rule (same class as /.env dotfile block) — not app-layer signal; no anonymous WS bypass
+[CHANGED] beta-api.tech26.de: cert SAN sibling, identical envoy empty-404 + awselb/.env 403 — same edge mesh, no distinct surface
+[CHANGED] authentication-service.eks.core-production.keyless.technology: route-less proof extended to 68 standard + tenant-scoped paths + WS-upgrade all "path unused" — API at custom routes, anonymous discovery exhausted
+[CHANGED] engagementplatform.n26.com/users: 401 key-gated boundary confirmed across cycles (Braze REST, dashboard-02.braze.eu, CORS-open, no web-bundle token) — stable
+[CHANGED] flags.n26.com: RBAC boundary stable, POST /v1/initialize 200 by-design (INFO), retired from active testing
+[CHANGED] app.n26.com/graphql: WAF tarpit confirmed identical on support.n26.com — GraphQL transport class closed anonymously
+[CHANGED] spc.n26.com: versioned endpoints permanently confirmed as 1x1 GIF tracking pixels (len=43) — IDOR hypothesis invalidated
 [PRIO] authentication-service.eks.core-production.keyless.technology,8.45,a=9,b=10,t=9,g=3,c=10,f=9
 [PRIO] api.tech26.de,7.05,a=8,b=9,t=8,g=4,c=7,f=6
 [PRIO] engagementplatform.n26.com/users,6.80,a=7,b=8,t=7,g=2,c=8,f=9
@@ -9,9 +18,8 @@ class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology
 confidence: 55
 reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 68+ standard + tenant-scoped paths return `path unused` — API mounted at custom non-standard routes. "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant.
-evidence_needed: Discovered API endpoint returning 20[0m
-evidence_needed: Any endpoint returning 200/401/500 (not 403/404); GraphQL introspection response; OpenAPI spec; gRPC-web endpoint
-verify_steps: GET https://api.tech26.de/openapi.json → GET https://api.tech26.de/swagger.json → GET https://api.tech26.de/graphql → GET https://api.tech26.de/api/v1 → GET https://api.tech26.de/v1 → GET https://api.tech26.de/api/v2 → GET https://api.tech26.de/v2 → GET https://api.tech26.de/beta → GET https://api.tech26.de/internal → POST https://api.tech26.de/graphql (application/json, {"query":"{__schema{types{name}}}"}) — passive enumeration of common API surface paths; <=1 rps
+evidence_needed: Discovered API endpoint returning 200/401/500 (not 403/404); GraphQL introspection response; OpenAPI spec; gRPC-web endpoint
+verify_steps: GET https://authentication-service.eks.core-production.keyless.technology/health → GET /ready → GET /metrics → GET /actuator/health → GET /api/internal/v1/auth/n26 → GET /api/private/v1/enroll/n26 → GET /internal/auth/n26 → GET /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps
 impact: API schema exposure → mutation/enumeration → IDOR/BOLA on banking operations; possible internal service mesh access — HIGH/CRITICAL
 testability: PASSIVE
 [HYP] Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token
@@ -23,11 +31,20 @@ evidence_needed: Valid Bearer token for engagementplatform.n26.com; successful /
 verify_steps: PASSIVE: monitor app.n26.com CSP/connect-src for engagementplatform endpoints; inspect mobile app (if in scope) for embedded tokens; check referral/redirect flows for token leakage. AUTH_HELPED: with valid token, GET /users?limit=100 → GET /users/{id} → test BOLA via cross-tenant id
 impact: Cross-tenant user PII enumeration (email, phone, KYC status, engagement metrics) — HIGH if token obtained
 testability: AUTH_HELPED
-[PARKED] api.tech26.de exposes GraphQL/gRPC-web/OpenAPI at untested versioned paths: confidence 45 (<50 threshold for deep-hunt), no prior signal of live API beyond awselb/2.0 header; high false-positive risk on generic path brute
+[HYP] api.tech26.de exposes GraphQL/gRPC-web/OpenAPI at untested versioned paths behind awselb/2.0 WAF
+class: MISCONFIG
+asset: api.tech26.de
+confidence: 45
+reasoning: 47 paths probed (all envoy empty-404), WS-upgrade 403 (awselb WAF), /.env 403. Distinct WAF (awselb/2.0) vs keyless sibling. GraphQL, gRPC-web, OpenAPI, versioned paths (/api/v2, /v2, /beta, /internal) untested. cert SAN shows beta-api sibling same edge mesh.
+evidence_needed: Any endpoint returning 200/401/500 (not 403/404); GraphQL introspection response; OpenAPI spec; gRPC-web endpoint
+verify_steps: GET https://api.tech26.de/openapi.json → GET https://api.tech26.de/swagger.json → GET https://api.tech26.de/graphql → GET https://api.tech26.de/api/v1 → GET https://api.tech26.de/v1 → GET https://api.tech26.de/api/v2 → GET https://api.tech26.de/v2 → GET https://api.tech26.de/beta → GET https://api.tech26.de/internal → POST https://api.tech26.de/graphql (application/json, {"query":"{__schema{types{name}}}"}) — passive enumeration of common API surface paths; <=1 rps
+impact: API schema exposure → mutation/enumeration → IDOR/BOLA on banking operations; possible internal service mesh access — HIGH/CRITICAL
+testability: PASSIVE
+[PARKED] api.tech26.de exposes GraphQL/gRPC-web/OpenAPI at untested versioned paths behind awselb/2.0 WAF: confidence 45 (<50 threshold for deep-hunt), no prior signal of live API beyond awselb/2.0 header; high false-positive risk on generic path brute
 [FINAL] 1) Keyless auth service exposes WebAuthn/passwordless enrollment at non-standard infra/admin paths (confidence 55) — PASSIVE testable, high-value target, live service confirmed, deployment rotated v26.09.07
 [FINAL] 2) Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token (confidence 55) — AUTH_HELPED, distinct 401 boundary confirmed, Cloudflare fronted
 [NEXT] PROBE: GET https://authentication-service.eks.core-production.keyless.technology/health → GET /ready → GET /metrics → GET /actuator/health → GET /api/internal/v1/auth/n26 → GET /api/private/v1/enroll/n26 → GET /internal/auth/n26 → GET /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps
-[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: 27 probed paths all 404/403, WS-upgrade(json) 403, /.env 403 awselb/2.0 — distinct WAF behavior vs keyless sibling, but anonymous probe surface may be deeper (GraphQL, gRPC-web, OpenAPI, versioned paths untested)
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: 20 additional GETs (OpenAPI/swagger/GraphQL/OIDC/healthz/readyz/api-v1/v1/metrics/actuator + mfa/auth/oauth/token family/custom routes) all envoy empty-404 — ~47 paths route-less; anonymous HTTP API discovery exhausted
 [LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical envoy empty-404 + awselb/.env 403 — same edge mesh as api, no distinct surface
 [LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
 [LEARN] REJECTED AUTH @ api.tech26.de: WS-upgrade 403 is the awselb/2.0 WAF edge rule (same class as /.env dotfile block), not an app-layer signal — no anonymous WS bypass surface

@@ -196,3 +196,7 @@
 - 2026-09-10 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
 - 2026-09-10 ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
 - 2026-09-10 ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
+- 2026-09-10 ACCEPTED MISCONFIG @ api.tech26.de: ~47 paths all envoy empty-404; anonymous HTTP API discovery conclusively exhausted across api + beta-api + fpt.
+- 2026-09-10 ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface.
+- 2026-09-10 ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB, zero content, placeholder stub; INFO monitor-only.
+- 2026-09-10 REJECTED AUTH @ api.tech26.de: WS-upgrade 403 = awselb/2.0 WAF edge rule; no anonymous WS bypass surface.

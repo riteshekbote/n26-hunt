@@ -14509,3 +14509,85 @@ testability: PASSIVE
 **STEP 7 — RISK**
 
 [RISK] N26 Bank AG: 40/100 — Surface well-mapped and stale: sole live-200 service (flags.n26.com) is by-design public-client data (INFO); GraphQL fully WAF-blocked after 10+ cycles; spc.n26.com = tracking pixels; api.tech26.de anonymous surface exhausted (47 paths all 404/403 across api+beta-api; fpt.tech26.de = empty fixed-200 stub); authentication-service highest-value but requires AUTH_HELPED (live session token capture); no critical findings in hand. Report-worthiness hinges on whether the Keyless WS token replay reveals auth flaws (CRITICAL if reached) or whether api.tech26.de has deeper anonymous API surface — both now require HUMAN action. Stable cycle.
+===== ANALYST bigpickle 2026-09-10 14:06:50 UTC =====
+[0m
+> build · big-pickle
+[0m
+STEP 1 — DELTA
+
+NO_DELTA. All 2026-09-10 knowledge base entries (api.tech26.de ~47 paths route-less, beta-api identical edge, fpt fixed-200 stub, WS-upgrade 403 is awselb WAF edge) already reflected in last leads and aggregated hypotheses. No new surface, no status changes on live targets.
+
+---
+
+STEP 2 — PRIORITIZE
+
+[PRIO] authentication-service.eks.core-production.keyless.technology, 8.1, a=9,b=10,t=9,g=2,c=8,f=9 — highest value; WS signed-token replay; AUTH_HELPED only
+[PRIO] api.tech26.de, 5.0, a=4,b=6,t=4,g=6,c=5,f=5 — anonymous HTTP closed (~47 paths); WS subprotocol is only vector (AUTH_HELPED)
+[PRIO] engagementplatform.n26.com, 4.9, a=5,b=7,t=4,g=1,c=5,f=6 — Braze key-gated; AUTH_HELPED
+[PRIO] fpt.tech26.de, 4.4, a=2,b=3,t=2,g=10,c=5,f=8 — fixed-200 stub; INFO monitor-only
+[PRIO] flags.n26.com, 4.0 — retired by-design Statsig INFO
+
+---
+
+STEP 3 — HYPOTHESES
+
+[HYP] Keyless WS signed-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 60
+reasoning: client.6e429513.js hardcodes wss://authentication-service…/v1/auth/n26 and /v1/enroll/n26; flow = KeylessSignedTokenMutation → per-session signed token → Sec-WebSocket-Protocol → validateKeylessSignedTokenMutation. ~68 HTTP paths + WS-upgrade(json/graphql-ws) all `path unused` — server routes on minted token, not public string.
+evidence_needed: 101 or non-`unused` route response when presenting a real minted KeylessSignedToken as Sec-WebSocket-Protocol.
+verify_steps: from authenticated app.n26.com session → devtools Network → WS → /v1/auth/n26 handshake → copy exact Sec-WebSocket-Protocol header → replay read-only WSS connect (abort before frames) against same endpoint.
+impact: token reuse / challenge-binding flaw in biometric WebAuthn auth = CRITICAL; requires live minted token.
+testability: AUTH_HELPED
+
+[HYP] api.tech26.de WS subprotocol ingress mirrors keyless-sibling minted-token routing
+class: AUTH
+asset: api.tech26.de
+confidence: 30
+reasoning: family hides APIs at custom protocol+route; HTTP layer route-less at ~47 paths; WS-upgrade(json) 403 is awselb/2.0 WAF edge rule (same family as /.env dotfile block), not app-layer signal; no anonymous WS bypass.
+evidence_needed: any 101 with valid subprotocol token, or HTTP path outside ~47 tested.
+verify_steps: requires minted token (none obtainable anonymously); re-confirm custom-subprotocol upgrade = awselb 403 baseline.
+impact: unreachable anonymously — only matters with token; LOW-INFO.
+testability: AUTH_HELPED
+
+[HYP] fpt.tech26.de fixed-200 stub pre-stages imminent live service
+class: MISCONFIG
+asset: fpt.tech26.de
+confidence: 25
+reasoning: fixed-response ALB default action (200 empty text/plain all methods/paths, no WAF, no routing) is standard AWS placeholder before backend registration; shares cert with api/beta-api.
+evidence_needed: any path transitioning to non-fixed-200 (404/403/503/real content) signaling backend registration.
+verify_steps: repeat GET https://fpt.tech26.de/ and /.env monthly; diff vs fixed-200 baseline.
+impact: if service registers behind it, re-probe for misconfig — today: INFO, nothing behind it.
+testability: PASSIVE
+
+---
+
+STEP 4 — SELF-CRITIQUE
+
+[PARKED] api.tech26.de WS subprotocol ingress: confidence 30 (<40); no positive HTTP signal across ~47 paths; WS-403 is awselb WAF edge not app-layer; token required anyway — AUTH_HELPED, no anonymous advance.
+
+[PARKED] fpt.tech26.de stub activation: confidence 25 (<40); no content behind fixed-200; monitor-only.
+
+[FINAL] Keyless WS signed-token subprotocol replay (60) — only surviving hypothesis; highest value; clear (human) verify path; CRITICAL potential. Organic clean-up: api.tech26.de HTTP hypothesis conclusively closed this cycle (~47 paths all route-less across api+beta-api; fpt empty fixed-200 stub).
+
+---
+
+STEP 5 — NEXT ACTION
+
+[NEXT] HUMAN: in an authenticated app.n26.com session, capture the `Sec-WebSocket-Protocol` header the browser sends on WS connect to `wss://authentication-service.eks.core-production.keyless.technology/v1/auth/n26` (devtools → Network → WS → handshake request headers), and hand the exact token string to this analyst for read-only replay (connect + log 101 data, abort before any frames) to test token reuse / challenge-binding.
+
+---
+
+STEP 6 — LEARNING
+
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: ~47 paths all envoy empty-404; anonymous HTTP API discovery conclusively exhausted across api + beta-api + fpt.
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface.
+[LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB, zero content, placeholder stub; INFO monitor-only.
+[LEARN] REJECTED AUTH @ api.tech26.de: WS-upgrade 403 = awselb/2.0 WAF edge rule; no anonymous WS bypass surface.
+
+---
+
+STEP 7 — RISK
+
+[RISK] N26 Bank AG: 40/100 — Surface well-mapped and stale; sole live-200 service (flags.n26.com) is by-design public-client data (INFO); GraphQL WAF-blocked 10+ cycles; spc.n26.com = tracking pixels; api.tech26.de anonymous surface exhausted; authentication-service highest-value but AUTH_HELPED (live session token capture required); no critical findings in hand. Report-worthiness hinges entirely on whether Keyless WS token replay reveals auth flaws (CRITICAL if reached). Stable cycle.
