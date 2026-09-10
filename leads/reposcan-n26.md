@@ -195,3 +195,33 @@ TARGET_ORG not configured for n26; skipping public-org deep scan.
 TARGET_ORG not configured for n26; skipping public-org deep scan.
 ## REPOSCAN 2026-09-10 15:49:54 UTC
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-10 18:57:50 UTC
+[HYP] Hardcoded Basic Auth Credential `android:secret` in PSD2 MFA Script
+class: SECRET
+asset: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+confidence: 60
+reasoning: Line 26 contains `Authorization:Basic YW5kcm9pZDpzZWNyZXQ=` (decodes to `android:secret`) hardcoded in a curl call to `https://$PISP_HOST/api/mfa/challenge`. The script is a TPP onboarding example but targets the real PISP endpoint `pisp.tech26.de` (confirmed live in passive recon). The credential is a static app-level OAuth client ID/secret pair, not a per-user token. If accepted by the production MFA challenge endpoint, it could allow unauthorized out-of-band MFA challenge initiation. The credential may be a well-known sandbox/demo value per PSD2 documentation conventions.
+impact: Medium — potential unauthorized MFA challenge trigger if credential is live on production PISP
+verify_steps: (1) Confirm `pisp.tech26.de/api/mfa/challenge` accepts `Basic YW5kcm9pZDpzZWNyZXQ=` passively by observing public API docs or error responses. (2) Check N26 PSD2 developer docs to verify if `android:secret` is documented as a sandbox-only credential.
+[HYP] Internal S3 Bucket Name Disclosure in Android Sample Data
+class: MISCONFIG
+asset: n26/N26AndroidSamples/credit/src/main/res/raw/credit_drafts.json:8,30
+confidence: 40
+reasoning: Two mock credit entries reference `https://s3.eu-central-1.amazonaws.com/consumercredit-staging/` for image assets. This discloses the internal AWS S3 bucket naming convention (`consumercredit-staging`) for N26's consumer credit staging environment. The bucket currently returns 403/NoSuchBucket (confirmed via passive recon at cdn.number26.de), so it may be deleted or private. However, the naming pattern reveals internal infrastructure naming and could aid enumeration if the bucket is recreated or if similar naming conventions apply to other staging buckets.
+impact: Low — bucket appears non-public/deleted; informational naming convention leak only
+verify_steps: (1) Already confirmed bucket is non-public via cdn.number26.de probes. (2) No further action needed unless staging bucket is recreated.
+[HYP] Sandbox OAuth Client ID and Internal Hostname Exposed in Postman Collection
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+confidence: 30
+reasoning: Postman environment file contains sandbox credentials: `dedicated_aisp_client_id=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI`, `auth_code`, sandbox IBAN `DE15100110012627633320`, and internal hostname `xs2a.tech26.de`. While explicitly labeled as sandbox, these values: (1) reveal internal PSD2 API hostname and OAuth client registration format, (2) the `auth_code` is a one-time-use value that has expired, (3) the `dedicated_aisp_client_id` matches the public Statsig client key already discovered in app bundles. All values are documented sandbox test artifacts for TPP developers.
+impact: Informational — sandbox-only documentation values, no production secrets
+verify_steps: (1) Confirm `xs2a.tech26.de` is sandbox-only. (2) Verify `dedicated_aisp_client_id` is a public client key, not a secret.
+[HYP] Slack Token Transmitted via URL Query Parameter
+class: MISCONFIG
+asset: n26/bob/Sources/Bob/Core/Slack/SlackClient.swift:31
+confidence: 35
+reasoning: The Slack RTM client passes the API token as a URL query parameter (`token=...`) to `https://slack.com/api/rtm.start`. Tokens in URL query strings appear in server logs, proxy logs, and browser history. The token is loaded from config at runtime (not hardcoded), but the transmission pattern is an insecure practice per OWASP. This is the deprecated Slack RTM API pattern (superseded by Socket Mode).
+impact: Low — token is not hardcoded (loaded from config); insecure transmission pattern only
+verify_steps: (1) Verify token is not committed anywhere in the repo. (2) Confirm this is the deprecated RTM API pattern.
+TARGET_ORG not configured for n26; skipping public-org deep scan.
