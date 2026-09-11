@@ -224,3 +224,13 @@
 - 2026-09-11 REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface
 - 2026-09-11 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
 - 2026-09-11 ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
+- 2026-09-11 ACCEPTED MISCONFIG @ aigw.tech26.de: public DNS persistently publishes internal-aigw-wan-edge-live ELB CNAME + RFC1918 A records (10.255.1.134/2.252/5.236); unique vs obnium-public siblings (xs2a/aisp/pisp-staging) — passive infra-naming disclosure, INFO.
+- 2026-09-11 REJECTED MISCONFIG @ vault/consul/registry/kibana/atatls/vsaq.tech26.de: NXDOMAIN — certs revoked/expired, no DNS, no surface (HashiCorp stack not published).
+- 2026-09-11 REJECTED MISCONFIG @ message-templates-assets.tech26.de + esign-staging.tech26.de: CloudFront-private S3 403 AccessDenied on /, index.html, list-type=2 — object-only, mirrors cdn.number26.de; class closed.
+- 2026-09-11 REJECTED AUTH @ sapi.tech26.de: envoy empty-404 on all paths + awselb /.env 403 — same edge as api/beta-api; no distinct surface.
+- 2026-09-11 REJECTED MISCONFIG @ {fpadedge,mambuedge,oneglobaledge,taktileedge,epiedge,sredocs,telemetry}*.tech26.de: 10–15s connect-stall (source-restricted SG / egress filter) — not anonymously reachable; HUMAN_ONLY.
+- 2026-09-11 ACCEPTED AUTH @ pay.n26.com/v1/*: 23 Stripe-shaped routes uniformly 401 len=342 key-gated; /v1 403 CF; root 204 — host-side forwarding complete, anonymously closed.
+- 2026-09-11 ACCEPTED MISCONFIG @ pay.n26.com: live payment API with versioned /v1/payments, /v1/balance, /v1/charges endpoints returning HTTP 401 (auth-gated, not tarpit) — NEW attack surface, core banking value
+- 2026-09-11 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68+ standard + tenant-scoped paths return "path unused" — API at custom routes
+- 2026-09-11 ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
+- 2026-09-11 ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface

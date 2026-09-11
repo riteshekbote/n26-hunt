@@ -1838,3 +1838,36 @@ evidence_needed: N26 confirmation the 10.x A records are unintended exposure
 verify_steps: (1) dig +short aigw.tech26.de A (2) dig +short aigw.tech26.de CNAME (3) compare vs xs2a-staging.tech26.de A — pure passive
 impact: internal network topology/naming disclosure — INFO-LOW, non-exploitable without reachability
 testability: PASSIVE
+## 2026-09-11 05:19:47 UTC [target] (model bigpickle)
+[PRIO] pay.n26.com/v1/*,4.7,attack_surface=4,business_value=5,tech_exposure=3,gate_ease=6,cloud_surface=4,freshness=7
+[PRIO] *.tech26.de infra tier (fpad/mambu/sonarqube/backstage),4.15,attack_surface=4,business_value=5,tech_exposure=3,gate_ease=1,cloud_surface=5,freshness=8
+[PRIO] aigw.tech26.de,4.35,attack_surface=3,business_value=2,tech_exposure=2,gate_ease=10,cloud_surface=6,freshness=7
+[HYP] Stripe key recoverable from N26 client assets unlocks pay.n26.com forwarded API
+class: AUTH
+asset: pay.n26.com/v1/*
+confidence: 45
+reasoning: 23/23 probed /v1/* routes return Stripe 401 len=342 (uniform key-gate); /v1 403 CF vs root 204 CF catch-all; CORS allowlists app.n26.com with Stripe expose-headers; 11 web bundles contain no pk_/sk_/rk_live_ and no pay.n26.com refs → key is server/mobile-only (engagementplatform pattern).
+evidence_needed: Stripe secret/restricted/publishable key embedded in an N26 client (Android APK/iOS/docs/support) that authenticates a /v1 route.
+verify_steps: (1) GET https://api.github.com/search/code?q=repo:n26 pay.n26.com (passive) (2) rerun bundle-grep on next rotation for `(sk|pk|rk)_live_` and `pay\.n26\.com` (3) with key: POST https://pay.n26.com/v1/payments Authorization:Bearer <key>
+impact: restricted/secret key → read+write Stripe account (charges/refunds/payouts); publishable-overbroad → tokenize. HIGH if key; boundary-only today.
+testability: AUTH_HELPED
+[HYP] tech26.de infra tier (SonarQube/Backstage/edge ALBs) reachable via allowlisted egress only
+class: MISCONFIG
+asset: sonarqube-default-fra.tech26.de
+confidence: 30
+reasoning: 10 hosts resolve to public ELBs (fpadedge-live-fra, mambuedge-oldlive, oneglobaledge, taktileedge, epiedge) but all 10–15s connect-stall from this vantage; sonarqube CNAME→sonarqube-alb-ci-live ALB same stall → source-restricted security groups, ingress unconfirmed.
+evidence_needed: HTTP 200/302 from / or /api/system/status from non-sandbox vantage; SonarQube version banner.
+verify_steps: (1) GET https://sonarqube-default-fra.tech26.de/api/system/status (2) GET https://fpadedge.tech26.de/health from allowed network
+impact: SonarQube default exposure (admin/admin, /api/system/status) → source/CI creds; CRITICAL if verified — currently unconfirmed.
+testability: HUMAN_ONLY
+[PARKED] tech26.de infra tier: confidence 30 <40; requires external vantage, cannot close anonymously.
+[FINAL] pay.n26.com Stripe key (45, AUTH_HELPED) — only surviving actionable lead; boundary rock-solid, exploit gated entirely on key disclosure.
+[FINAL] aigw.tech26.de internal-ELB+RFC1918 disclosure — confirmed stable across sessions; accepts as INFO passive finding.
+[NEXT] PROBE: GET https://app.n26.com/login → parse JS bundles → grep each for `(sk|pk|rk)_live_[A-Za-z0-9]{10,}` and `pay\.n26\.com`; if bundles rotated this cycle, also recheck `paypoints`/stripe connect-src targets. Passive, 1 GET + bundle greps.
+[LEARN] ACCEPTED MISCONFIG @ aigw.tech26.de: public DNS persistently publishes internal-aigw-wan-edge-live ELB CNAME + RFC1918 A records (10.255.1.134/2.252/5.236); unique vs obnium-public siblings (xs2a/aisp/pisp-staging) — passive infra-naming disclosure, INFO.
+[LEARN] REJECTED MISCONFIG @ vault/consul/registry/kibana/atatls/vsaq.tech26.de: NXDOMAIN — certs revoked/expired, no DNS, no surface (HashiCorp stack not published).
+[LEARN] REJECTED MISCONFIG @ message-templates-assets.tech26.de + esign-staging.tech26.de: CloudFront-private S3 403 AccessDenied on /, index.html, list-type=2 — object-only, mirrors cdn.number26.de; class closed.
+[LEARN] REJECTED AUTH @ sapi.tech26.de: envoy empty-404 on all paths + awselb /.env 403 — same edge as api/beta-api; no distinct surface.
+[LEARN] REJECTED MISCONFIG @ {fpadedge,mambuedge,oneglobaledge,taktileedge,epiedge,sredocs,telemetry}*.tech26.de: 10–15s connect-stall (source-restricted SG / egress filter) — not anonymously reachable; HUMAN_ONLY.
+[LEARN] ACCEPTED AUTH @ pay.n26.com/v1/*: 23 Stripe-shaped routes uniformly 401 len=342 key-gated; /v1 403 CF; root 204 — host-side forwarding complete, anonymously closed.
+[RISK] n26: 42 — perimeter infra tier well-governed (SG-restricted, dead certs removed, uniform key-gates, private S3); anonymous surface across 20+ hosts now conclusively exhausted; remaining exposure (Stripe key, egress-tier ingress) all AUTH_HELPED/HUMAN_ONLY.
