@@ -315,3 +315,8 @@ https://spc.n26.com/status -> HTTP 404
 https://app.n26.com/build/js/client.*.js -> HTTP 404
 https://app.n26.com/graphql?query={__schema{types{name -> ERR The read operation timed out
 https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
+
+## 2026-09-11 00:39:42 UTC
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401

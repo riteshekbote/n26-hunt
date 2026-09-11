@@ -1810,3 +1810,31 @@ impact: Cross-user transaction access, card manipulation, balance tampering → 
 testability: AUTH_HELPED
 [PARKED] GraphQL WAF bypass via GET query param smuggling: confidence 70 but HTTP 000 on GET suggests connection reset not WAF bypass; needs confirmation GET actually reaches GraphQL engine
 [PARKED] Statsig SDK key extraction from app.n26.com JS bundle → flags.n26.com RBAC bypass: confidence 75 but SDK key may be server-side only (Statsig supports both); client key may not grant /v1/initialize access
+## 2026-09-11 00:39:29 UTC [target] (model bigpickle)
+[HYP] Stripe key recoverable from N26-owned client assets unlocks pay.n26.com forwarded API
+class: AUTH
+asset: pay.n26.com/v1/*
+confidence: 45
+reasoning: 15+ `/v1/*` Stripe-shaped routes forward to api.stripe.com (401 missing-key len=342; `/v1/tokens` Stripe-native 404; root 204 CF catch-all). CORS-allowlists app.n26.com with Stripe expose-headers. 11 freshly-fetched bundles (client.6e429513.js etc.) contain no pk_/sk_/rk_live_ and no pay.n26.com refs → key server/mobile-only (mirrors engagementplatform pattern). Both GET and POST on /v1/payments give identical Stripe 401.
+evidence_needed: a Stripe secret/restricted/publishable key embedded in an N26-owned client (mobile APK/iOS/docs/support) that authenticates a /v1 route with data
+verify_steps: (1) POST https://pay.n26.com/v1/payments `Authorization: Bearer <key>` (2) GET https://pay.n26.com/v1/balance with key (3) GET https://pay.n26.com/v1/charges with key — host-side mapping is complete; key is the unlock
+impact: if a restricted/secret key is ever found → read/write Stripe account (charges, refunds, payouts); publishable-key with over-broad permissions → tokenize/read. HIGH if key, boundary-only today.
+testability: AUTH_HELPED
+[HYP] SonarQube/Backstage CI tooling exposed on tech26.de
+class: MISCONFIG
+asset: sonarqube-default-fra.tech26.de
+confidence: 55
+reasoning: CT-visible, CNAME→`sonarqube-alb-ci-live-fra-1576505372.eu-central-1.elb.amazonaws.com` (public 63.183.156.167/54.93.204.141); DNS fine but 12s connect timeout from sandbox → ALB IP-allowlist or egress filter, not NXDOMAIN. SonarQube defaults (unauthenticated /api/system/status, admin/admin) are a classic anonymous exposure; backstage.tech26.de (52.28.223.252) same timeout class.
+evidence_needed: HTTP 200/302 from `/` or `/api/system/status` from non-sandbox vantage; SonarQube version banner
+verify_steps: (1) GET https://sonarqube-default-fra.tech26.de/api/system/status (2) GET https://sonarqube-default-fra.tech26.de/ (3) GET /api/system/health — unauthenticated, requires alternate network
+impact: source/analysis data, CI config, possible creds in history; CRITICAL if reachable — ingress unconfirmed
+testability: HUMAN_ONLY
+[HYP] aigw.tech26.de public DNS publishes internal ELB + RFC1918 addressing
+class: MISCONFIG
+asset: aigw.tech26.de
+confidence: 60
+reasoning: this-session dig: A→10.255.5.236/10.255.1.134, CNAME→`internal-aigw-wan-edge-live-950074591.eu-central-1.elb.amazonaws.com`. Public resolvers return a private-space `internal-` ELB alias — infra naming + reserved IP disclosure unique to this host (contrast: xs2a-staging resolves to public obnium ALB IPs).
+evidence_needed: N26 confirmation the 10.x A records are unintended exposure
+verify_steps: (1) dig +short aigw.tech26.de A (2) dig +short aigw.tech26.de CNAME (3) compare vs xs2a-staging.tech26.de A — pure passive
+impact: internal network topology/naming disclosure — INFO-LOW, non-exploitable without reachability
+testability: PASSIVE
