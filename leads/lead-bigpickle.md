@@ -1918,3 +1918,4 @@ testability: PASSIVE
 [LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface
 [LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
 [RISK] n26: 42 — perimeter infra tier well-governed (SG-restricted, dead certs removed, uniform key-gates, private S3); anonymous surface across 20+ hosts now conclusively exhausted; remaining exposure (Stripe key, egress-tier ingress) all AUTH_HELPED/HUMAN_ONLY.
+## 2026-09-11 17:42:37 UTC [target] (model bigpickle)

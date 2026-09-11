@@ -16935,3 +16935,177 @@ testability: PASSIVE
 
 ### STEP 7 — RISK
 [RISK] n26: 42 — perimeter infra tier well-governed (SG-restricted, dead certs removed, uniform key-gates, private S3); anonymous surface across 20+ hosts now conclusively exhausted; remaining exposure (Stripe key, egress-tier ingress) all AUTH_HELPED/HUMAN_ONLY.
+===== ANALYST bigpickle 2026-09-11 17:45:33 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m# [0mTodos
+[•] STEP 1: DELTA — compare current state against last cycle
+[ ] STEP 2: PRIORITIZE — score api target and nearby surfaces
+[ ] STEP 3: HYPOTHESES — top 3 assets with strict schema
+[ ] STEP 4: SELF-CRITIQUE — drop low confidence
+[ ] STEP 5: NEXT ACTION — one concrete probe
+[ ] STEP 6: LEARN — rejections and acceptances
+[ ] STEP 7: RISK — program risk score
+[0m
+[0m$ [0mls /home/runner/work/n26-hunt/n26-hunt/
+README.md
+analyst-out.txt
+analyst-prompt.txt
+ctx.txt
+inventory
+knowledge
+leads
+probe-results.md
+recon-notes
+reports
+reposcan-raw
+scope.yml
+scripts
+state_bigpickle.json
+state_laguna.json
+state_ling3.json
+state_longcat.json
+state_mimo.json
+state_nemotron3.json
+triage
+[0m
+[0m$ [0mls /home/runner/work/n26-hunt/n26-hunt/art/ 2>/dev/null || echo "no art dir"
+no art dir
+[0m
+[0m$ [0mls /home/runner/work/n26-hunt/n26-hunt/logs/ 2>/dev/null || echo "no logs dir"
+no logs dir
+[0m
+[0m→ [0mRead probe-results.md[90m [limit=100, offset=0][0m
+[0m→ [0mRead scope.yml
+[0m→ [0mRead state_bigpickle.json
+[0m→ [0mRead probe-results.md[90m [offset=280][0m
+[0m
+[0m$ [0mls /home/runner/work/n26-hunt/n26-hunt/leads/
+lead-bigpickle.md
+lead-laguna.md
+lead-ling3.md
+lead-longcat.md
+lead-mimo.md
+lead-nemotron3.md
+reposcan-n26.md
+[0m
+[0m→ [0mRead leads/lead-bigpickle.md
+[0m→ [0mRead leads/lead-nemotron3.md
+[0m
+[0m$ [0mcurl -sS -o /tmp/probe1.txt -D - -m 20 https://pay.n26.com/v1/payments -X GET | grep -iE '^HTTP|^content-type|^content-length|^www-authenticate|^access-control|^cf-cache|^server|^x-' ; echo "---BODY---"; head -c 400 /tmp/probe1.txt; echo
+HTTP/2 401 
+content-type: application/json
+content-length: 342
+server: cloudflare
+access-control-allow-credentials: true
+access-control-allow-methods: GET, HEAD, PUT, PATCH, POST, DELETE
+access-control-allow-origin: *
+access-control-expose-headers: Request-Id, Stripe-Manage-Version, Stripe-Should-Retry, X-Stripe-External-Auth-Required, X-Stripe-Privileged-Session-Required
+access-control-max-age: 300
+www-authenticate: Basic realm="Stripe"
+x-robots-tag: none
+x-wc: 383
+cf-cache-status: DYNAMIC
+---BODY---
+{
+  "error": {
+    "message": "You did not provide an API key. You need to provide your API key in the Authorization header, using Bearer auth (e.g. 'Authorization: Bearer YOUR_SECRET_KEY'). See https://stripe.com/docs/api#authentication for details, or we can help at https://support.stripe.com/.",
+    "type": "invalid_request_error"
+  }
+}
+[0m
+[0m$ [0msleep 1; curl -sS -o /tmp/probe2.txt -D - -m 20 https://pay.n26.com/v1/tokens | grep -iE '^HTTP|^content-length'; echo "---BODY---"; head -c 300 /tmp/probe2.txt; echo
+HTTP/2 404 
+content-length: 201
+---BODY---
+{
+  "error": {
+    "message": "Unrecognized request URL (GET: /v1/tokens). Please see https://stripe.com/docs or we can help at https://support.stripe.com/.",
+    "type": "invalid_request_error"
+  }
+}
+[0m
+[0m$ [0mfor p in /v1/payment_intents /v1/setup_intents /v1/payment_methods /v1/customers /v1/account /v1/checkout/sessions /v1/balance/history; do
+code=$(curl -sS -o /tmp/r.txt -w '%{http_code} %{size_download}' -m 20 "https://pay.n26.com$p")
+sleep 1
+echo "$p -> $code"
+done
+/v1/payment_intents -> 401 342
+/v1/setup_intents -> 401 342
+/v1/payment_methods -> 401 342
+/v1/customers -> 401 342
+/v1/account -> 401 342
+/v1/checkout/sessions -> 401 342
+/v1/balance/history -> 401 342
+[0m
+[0m$ [0mcurl -sS -o /tmp/r2.txt -w 'HTTP %{http_code} len=%{size_download}\n' -m 20 -H 'Authorization: Bearer sk_test_invalid0000000000000000' https://pay.n26.com/v1/customers
+head -c 300 /tmp/r2.txt; echo
+HTTP 401 len=133
+{
+  "error": {
+    "message": "Invalid API Key provided: sk_test_*******************0000",
+    "type": "invalid_request_error"
+  }
+}
+[0m
+[0m$ [0msleep 1
+curl -sS -m 20 https://app.n26.com/login -o /tmp/login.html
+echo "len=$(wc -c < /tmp/login.html)"
+grep -oE 'src="[^"]+\.js[^"]*"' /tmp/login.html | head -40
+len=319204
+src="/build/js/webpack-runtime.3d272c50.js"
+src="/build/js/util_vendor.00e2ab05.js"
+src="/build/js/react_vendor.85fb11fa.js"
+src="/build/js/410.15d71588.js"
+src="/build/js/client.6e429513.js"
+src="/build/js/6759.2f2cc008.js"
+src="/build/js/1503.f68ea103.js"
+src="/build/js/banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js"
+src="/build/js/1596.6ac8435d.js"
+src="/build/js/1992.184409c9.js"
+src="/build/js/banking-features-auth-biometric-LoginPage.60e488b5.js"
+[0m
+[0m$ [0msleep 1
+curl -sS -m 20 https://app.n26.com/build/js/client.6e429513.js -o /tmp/client.js
+echo "len=$(wc -c < /tmp/client.js)"
+grep -oE '(sk|pk|rk)_(live|test)_[A-Za-z0-9]{10,}' /tmp/client.js | head; echo "---keys done---"
+grep -oE 'pay\.n26\.com' /tmp/client.js | sort | uniq -c; echo "---pay refs done---"
+grep -oE 'stripe' /tmp/client.js | sort | uniq -c
+len=1476393
+---keys done---
+---pay refs done---
+      1 stripe
+[0m
+[0m$ [0mgrep -oE 'client-Ouln[^"'"'"']{0,60}' /tmp/client.js | head -3; echo "---statsig key search---"
+grep -oE 'client-[A-Za-z0-9]{30,}' /tmp/client.js | sort -u | head
+client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0
+---statsig key search---
+client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0
+[0m
+Bundles rotated (client.64629020.js → client.6e429513.js). Re-sweeping new set for Stripe keys.
+[0m$ [0mfor b in webpack-runtime.3d272c50 util_vendor.00e2ab05 react_vendor.85fb11fa 410.15d71588 6759.2f2cc008 1503.f68ea103 banking-features-auth-biometric-PreAppAuthPages.dbe8a051 1596.6ac8435d 1992.184409c9 banking-features-auth-biometric-LoginPage.60e488b5; do
+curl -sS -m 20 "https://app.n26.com/build/js/$b.js" -o /tmp/b.js
+echo "$b len=$(wc -c < /tmp/b.js) keys=$(grep -oE '(sk|pk|rk)_(live|test)_[A-Za-z0-9]{10,}' /tmp/b.js | wc -l) payref=$(grep -c 'pay\.n26\.com' /tmp/b.js)"
+sleep 1
+done
+webpack-runtime.3d272c50 len=16650 keys=0 payref=0
+util_vendor.00e2ab05 len=203600 keys=0 payref=0
+react_vendor.85fb11fa len=153797 keys=0 payref=0
+410.15d71588 len=1362976 keys=0 payref=0
+6759.2f2cc008 len=8551 keys=0 payref=0
+1503.f68ea103 len=12438 keys=0 payref=0
+banking-features-auth-biometric-PreAppAuthPages.dbe8a051 len=7800 keys=0 payref=0
+1596.6ac8435d len=620556 keys=0 payref=0
+1992.184409c9 len=15866 keys=0 payref=0
+banking-features-auth-biometric-LoginPage.60e488b5 len=221645 keys=0 payref=0
+[0m
+[0m$ [0mgrep -oE '.{60}stripe.{60}' /tmp/client.js | head -5
+t,setStripePaymentIntent:r};return(0,i.jsx)(x.A,{projects:["stripetopup"],children:(0,i.jsxs)(u.dO,{children:[(0,i.jsx)(u.qh,{
+[0m
+[0m$ [0mcurl -sS -m 25 "https://crt.sh/?q=%25.n26.com&output=json" -o /tmp/crt.json 2>/tmp/crterr; echo "rc=$? size=$(wc -c < /tmp/crt.json 2>/dev/null)"; head -c 200 /tmp/crterr
+rc=0 size=150
+[0m
+[93m[1m! [0mpermission requested: external_directory (/tmp/*); auto-rejecting
+[0m✗ [0mcat /tmp/crt.json failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.

@@ -1,20 +1,24 @@
-## 2026-09-11 09:59:22 UTC [target] (model nemotron3)
-[NEW] pay.n26.com/v1/*: Live Stripe-forwarded payment API confirmed (23+ endpoints returning HTTP 401 with Stripe error format; /v1/tokens 404; root 204; /v1 403 CloudFront)
-[CHANGED] authentication-service.eks.core-production.keyless.technology: Deployment stable at v26.09.07; all 68+ standard + tenant-scoped paths return `{"code":"UNPROCESSABLE","reason":"path unused"}` — API confirmed at non-standard custom routes
+## 2026-09-11 17:45:23 UTC [target] (model nemotron3)
+[NEW] pay.n26.com/v1/*: Live Stripe-forwarded payment API confirmed (23+ endpoints returning HTTP 401 with Stripe error format; /v1/tokens 404; root 204; /v1 403 CloudFront) — discovered 2026-09-11
+[NEW] pay.n26.com subdomain: Versioned /v1/payments, /v1/balance, /v1/charges all HTTP 401 (auth-gated, not tarpit) — first live payment endpoints observed
+[CHANGED] authentication-service.eks.core-production.keyless.technology: Deployment stable at v26.09.07; all 68+ standard + tenant-scoped paths return `{"code":"UNPROCESSABLE","reason":"path unused"}` — API at custom routes
 [CHANGED] engagementplatform.n26.com/users: Braze REST boundary stable (401 key-gated, Cloudflare, CORS-open, no web-bundle token)
 [CHANGED] app.n26.com CSP: No pay.n26.com in connect-src (web app doesn't call pay.n26.com directly) — payment API likely mobile/server-only
 [CHANGED] flags.n26.com: RBAC boundary fully stable (POST /v1/initialize 200 by-design, GET all 403, sdk_exception 202, download_config_specs 401) — retired from active testing
-[PRIO] pay.n26.com/v1/payments,9.25,a=10,b=10,t=9,g=10,c=9,f=8
-[PRIO] authentication-service.eks.core-production.keyless.technology,8.45,a=9,b=10,t=9,g=3,c=10,f=9
-[PRIO] engagementplatform.n26.com/users,6.80,a=7,b=8,t=7,g=2,c=8,f=9
-[PRIO] api.tech26.de,5.80,a=6,b=7,t=6,g=3,c=7,f=5
-[PRIO] fpt.tech26.de,3.20,a=4,b=3,t=3,g=9,c=4,f=5
-[PRIO] beta-api.tech26.de,2.85,a=4,b=4,t=3,g=4,c=4,f=4
+[CHANGED] api.tech26.de: Anonymous HTTP API discovery exhausted (~47 paths all envoy empty-404); WS-upgrade 403 = awselb/2.0 WAF edge rule
+[CHANGED] beta-api.tech26.de: Cert SAN sibling, identical edge mesh, no distinct surface
+[CHANGED] fpt.tech26.de: Fixed-response ALB placeholder stub (HTTP/2 200 empty, CL=0, awselb/2.0)
+[CHANGED] crt.sh/%25.n26.com: Rate limited (HTTP 502) — transient
+[PRIO] pay.n26.com/v1/payments,8.50,a=10,b=10,t=9,g=1,c=10,f=10
+[PRIO] authentication-service.eks.core-production.keyless.technology,8.35,a=9,b=10,t=9,g=3,c=10,f=8
+[PRIO] engagementplatform.n26.com/users,6.70,a=7,b=8,t=7,g=2,c=8,f=8
+[PRIO] api.tech26.de,5.05,a=5,b=6,t=5,g=3,c=6,f=5
+[PRIO] fpt.tech26.de,3.50,a=3,b=2,t=2,g=9,c=3,f=3
 [HYP] pay.n26.com/v1/* Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth
 class: IDOR
 asset: pay.n26.com/v1/payments
 confidence: 75
-reasoning: pay.n26.com/v1/payments, /v1/balance, /v1/charges all return HTTP 401 (not 403/404) — distinct live auth boundary. CSP on app.n26.com shows Stripe (js.stripe.com, connect-js.stripe.com) and Marqeta card issuing. pay.n26.com likely forwards to Stripe/Marqeta backend. If auth token obtained (mobile app, session hijack, token leakage), sequential charge_id or user_id params may allow cross-tenant payment data access.
+reasoning: pay.n26.com/v1/payments, /v1/balance, /v1/charges all return HTTP 401 (not 403/404) — distinct live auth boundary with Stripe error format. CSP on app.n26.com shows Stripe (js.stripe.com, connect-js.stripe.com) and Marqeta card issuing. pay.n26.com likely forwards to Stripe/Marqeta backend. If auth token obtained (mobile app, session hijack, token leakage), sequential charge_id or user_id params may allow cross-tenant payment data access.
 evidence_needed: Valid auth token for pay.n26.com; successful /v1/payments call returning payment objects; IDOR via sequential charge_id or user_id params
 verify_steps: PASSIVE: monitor app.n26.com CSP/connect-src for pay.n26.com endpoints; inspect mobile app (if in scope) for embedded pay.n26.com tokens; check referral/redirect flows for token leakage. AUTH_HELPED: with valid token, GET /v1/payments?limit=10 → GET /v1/payments/{id} → GET /v1/balance → test BOLA via cross-tenant charge_id
 impact: Cross-tenant payment data enumeration (amounts, merchants, timestamps, card last4), balance disclosure — HIGH/CRITICAL
@@ -62,4 +66,4 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
 [LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface
 [LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
-[RISK] N26 Bank AG: 82 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO); api.tech26.de/beta-api/fpt exhausted/placeholder; crt.sh rate limited.
+[RISK] N26 Bank AG: 85 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO); api.tech26.de/beta-api/fpt exhausted/placeholder
