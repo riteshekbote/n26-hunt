@@ -1,16 +1,10 @@
-## 2026-09-11 05:15:40 UTC [target] (model nemotron3)
-[NEW] pay.n26.com/v1/payments, /v1/balance, /v1/charges → HTTP 401 (auth-gated payment API, not 403/404) — first live payment endpoints observed
-[NEW] pay.n26.com subdomain confirmed live with versioned /v1/* payment routes — discovered via probe 2026-09-11 00:39:42 UTC
-[CHANGED] authentication-service.eks.core-production.keyless.technology: route-less proof extended to 68+ standard + tenant-scoped paths + WS-upgrade all "path unused" — API at custom routes
-[CHANGED] engagementplatform.n26.com/users: 401 key-gated boundary stable (Braze REST, dashboard-02.braze.eu, CORS-open, no web-bundle token)
-[CHANGED] flags.n26.com: RBAC boundary stable, POST /v1/initialize 200 by-design (INFO), retired from active testing
-[CHANGED] app.n26.com/graphql: WAF tarpit confirmed identical on support.n26.com — GraphQL transport class closed anonymously
-[CHANGED] spc.n26.com: Versioned endpoints permanently confirmed as 1x1 GIF tracking pixels (len=43) — IDOR hypothesis invalidated
-[CHANGED] api.tech26.de: Anonymous HTTP API discovery exhausted (~47 paths all envoy empty-404); WS-upgrade 403 = awselb/2.0 WAF edge rule
-[CHANGED] beta-api.tech26.de: Cert SAN sibling, identical edge mesh, no distinct surface
-[CHANGED] fpt.tech26.de: Fixed-response ALB placeholder stub (HTTP/2 200 empty, CL=0, awselb/2.0)
-[CHANGED] crt.sh/%25.n26.com: Rate limited (HTTP 502) — transient
-[PRIO] pay.n26.com/v1/*,9.25,a=10,b=10,t=9,g=10,c=9,f=8
+## 2026-09-11 09:59:22 UTC [target] (model nemotron3)
+[NEW] pay.n26.com/v1/*: Live Stripe-forwarded payment API confirmed (23+ endpoints returning HTTP 401 with Stripe error format; /v1/tokens 404; root 204; /v1 403 CloudFront)
+[CHANGED] authentication-service.eks.core-production.keyless.technology: Deployment stable at v26.09.07; all 68+ standard + tenant-scoped paths return `{"code":"UNPROCESSABLE","reason":"path unused"}` — API confirmed at non-standard custom routes
+[CHANGED] engagementplatform.n26.com/users: Braze REST boundary stable (401 key-gated, Cloudflare, CORS-open, no web-bundle token)
+[CHANGED] app.n26.com CSP: No pay.n26.com in connect-src (web app doesn't call pay.n26.com directly) — payment API likely mobile/server-only
+[CHANGED] flags.n26.com: RBAC boundary fully stable (POST /v1/initialize 200 by-design, GET all 403, sdk_exception 202, download_config_specs 401) — retired from active testing
+[PRIO] pay.n26.com/v1/payments,9.25,a=10,b=10,t=9,g=10,c=9,f=8
 [PRIO] authentication-service.eks.core-production.keyless.technology,8.45,a=9,b=10,t=9,g=3,c=10,f=9
 [PRIO] engagementplatform.n26.com/users,6.80,a=7,b=8,t=7,g=2,c=8,f=9
 [PRIO] api.tech26.de,5.80,a=6,b=7,t=6,g=3,c=7,f=5
@@ -43,7 +37,7 @@ evidence_needed: Valid Bearer token for engagementplatform.n26.com; successful /
 verify_steps: PASSIVE: monitor app.n26.com CSP/connect-src for engagementplatform endpoints; inspect mobile app (if in scope) for embedded tokens; check referral/redirect flows for token leakage. AUTH_HELPED: with valid token, GET /users?limit=100 → GET /users/{id} → test BOLA via cross-tenant id
 impact: Cross-tenant user PII enumeration (email, phone, KYC status, engagement metrics) — HIGH if token obtained
 testability: AUTH_HELPED
-[PARKED] api.tech26.de exposes GraphQL/gRPC-web/OpenAPI at untested versioned paths behind awselb/2.0 WAF: confidence 45 (<50 threshold for deep-hunt), no prior signal of live API beyond awselb/2.0 header; high false-positive risk on generic path brute
+[PARKED] api.tech26.de GraphQL/gRPC-web/OpenAPI at untested versioned paths: confidence 45 (<50 threshold), awselb/2.0 WAF blocks all anonymous probes, no prior signal of live API beyond headers; high false-positive risk on generic path brute
 [FINAL] 1) pay.n26.com/v1/* Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth (confidence 75) — AUTH_HELPED testable, NEW live payment API with 401 boundary, core banking value
 [FINAL] 2) Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw (confidence 60) — AUTH_HELPED testable, high-value target, live service confirmed, deployment rotated v26.09.07
 [FINAL] 3) Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token (confidence 55) — AUTH_HELPED, distinct 401 boundary confirmed, Cloudflare fronted

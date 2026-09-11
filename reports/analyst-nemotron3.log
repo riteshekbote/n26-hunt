@@ -7539,3 +7539,398 @@ testability: AUTH_HELPED
 **STEP 7 — RISK**
 
 [RISK] N26 Bank AG: 82 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO); api.tech26.de/beta-api/fpt exhausted/placeholder; crt.sh rate limited.
+===== ANALYST nemotron3 2026-09-11 09:59:33 UTC =====
+[0m
+> build · nemotron-3-ultra-free
+[0m
+[0m$ [0mcurl -s -I https://pay.n26.com/v1/payments 2>&1 | head -20
+HTTP/2 401 
+date: Fri, 11 Sep 2026 09:47:54 GMT
+content-type: application/json
+content-length: 342
+server: cloudflare
+access-control-allow-credentials: true
+access-control-allow-methods: GET, HEAD, PUT, PATCH, POST, DELETE
+access-control-allow-origin: *
+access-control-expose-headers: Request-Id, Stripe-Manage-Version, Stripe-Should-Retry, X-Stripe-External-Auth-Required, X-Stripe-Privileged-Session-Required
+access-control-max-age: 300
+cache-control: no-cache, no-store
+content-security-policy: base-uri 'none'; default-src 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+vary: Origin
+www-authenticate: Basic realm="Stripe"
+x-robots-tag: none
+x-wc: 383
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+cf-cache-status: DYNAMIC
+cf-ray: a395c0f28aaf8651-IAD
+[0m
+[0m$ [0mcurl -s -I https://pay.n26.com/v1/balance 2>&1 | head -20
+HTTP/2 401 
+date: Fri, 11 Sep 2026 09:47:54 GMT
+content-type: application/json
+content-length: 342
+server: cloudflare
+access-control-allow-credentials: true
+access-control-allow-methods: GET, HEAD, PUT, PATCH, POST, DELETE
+access-control-allow-origin: *
+access-control-expose-headers: Request-Id, Stripe-Manage-Version, Stripe-Should-Retry, X-Stripe-External-Auth-Required, X-Stripe-Privileged-Session-Required
+access-control-max-age: 300
+cache-control: no-cache, no-store
+content-security-policy: base-uri 'none'; default-src 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+vary: Origin
+www-authenticate: Basic realm="Stripe"
+x-robots-tag: none
+x-wc: 383
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+cf-cache-status: DYNAMIC
+cf-ray: a395c0f31b440e96-IAD
+[0m
+[0m$ [0mcurl -s -I https://pay.n26.com/v1/charges 2>&1 | head -20
+HTTP/2 401 
+date: Fri, 11 Sep 2026 09:47:55 GMT
+content-type: application/json
+content-length: 342
+server: cloudflare
+access-control-allow-credentials: true
+access-control-allow-methods: GET, HEAD, PUT, PATCH, POST, DELETE
+access-control-allow-origin: *
+access-control-expose-headers: Request-Id, Stripe-Manage-Version, Stripe-Should-Retry, X-Stripe-External-Auth-Required, X-Stripe-Privileged-Session-Required
+access-control-max-age: 300
+cache-control: no-cache, no-store
+content-security-policy: base-uri 'none'; default-src 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+vary: Origin
+www-authenticate: Basic realm="Stripe"
+x-robots-tag: none
+x-wc: 383
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+cf-cache-status: DYNAMIC
+cf-ray: a395c0f53db23138-IAD
+[0m
+[0m$ [0mcurl -s -I https://pay.n26.com/ 2>&1 | head -20
+HTTP/2 204 
+date: Fri, 11 Sep 2026 09:48:33 GMT
+server: cloudflare
+retry-after: 0
+accept-ranges: bytes
+via: 1.1 varnish
+x-served-by: cache-iad-kiad7000047-IAD
+x-cache: MISS
+x-cache-hits: 0
+x-timer: S1789120114.893699,VS0,VE0
+strict-transport-security: max-age=31556926; includeSubDomains; preload
+cf-cache-status: DYNAMIC
+cf-ray: a395c1e7ce693138-IAD
+[0m
+[0m$ [0mcurl -s -I https://pay.n26.com/v1 2>&1 | head -20
+HTTP/2 403 
+date: Fri, 11 Sep 2026 09:48:34 GMT
+content-type: application/xml
+server: cloudflare
+x-cache: Error from cloudfront
+via: 1.1 edc9e8add41b7fdb36486f4cca170748.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD61-P5
+x-amz-cf-id: akaNh2bOuW_e1AROutaFQ4VtV8yTTy2p31vi1oEE2MEMTIcG7_Bdsg==
+strict-transport-security: max-age=31556926; includeSubDomains; preload
+cf-cache-status: DYNAMIC
+cf-ray: a395c1e988ed8b8b-IAD
+[0m
+[0m$ [0mcurl -s https://pay.n26.com/v1/payments 2>&1
+{
+  "error": {
+    "message": "You did not provide an API key. You need to provide your API key in the Authorization header, using Bearer auth (e.g. 'Authorization: Bearer YOUR_SECRET_KEY'). See https://stripe.com/docs/api#authentication for details, or we can help at https://support.stripe.com/.",
+    "type": "invalid_request_error"
+  }
+}
+[0m
+[0m$ [0mcurl -s https://pay.n26.com/v1/balance 2>&1
+{
+  "error": {
+    "message": "You did not provide an API key. You need to provide your API key in the Authorization header, using Bearer auth (e.g. 'Authorization: Bearer YOUR_SECRET_KEY'). See https://stripe.com/docs/api#authentication for details, or we can help at https://support.stripe.com/.",
+    "type": "invalid_request_error"
+  }
+}
+[0m
+[0m$ [0mcurl -s https://pay.n26.com/v1/charges 2>&1
+{
+  "error": {
+    "message": "You did not provide an API key. You need to provide your API key in the Authorization header, using Bearer auth (e.g. 'Authorization: Bearer YOUR_SECRET_KEY'). See https://stripe.com/docs/api#authentication for details, or we can help at https://support.stripe.com/.",
+    "type": "invalid_request_error"
+  }
+}
+[0m
+[0m$ [0mcurl -s -I https://authentication-service.eks.core-production.keyless.technology/health 2>&1 | head -20
+HTTP/2 404 
+date: Fri, 11 Sep 2026 09:51:23 GMT
+content-type: application/json
+content-length: 80
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08fe1-02c9-7878-9412-490e8b0d8a6c
+x-envoy-upstream-service-time: 6
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I https://engagementplatform.n26.com/users 2>&1 | head -20
+HTTP/2 401 
+content-type: application/json
+date: Fri, 11 Sep 2026 09:51:25 GMT
+cf-ray: a395c6176a5be641-IAD
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+cache-control: no-cache
+server: cloudflare
+strict-transport-security: max-age=31536000; includeSubDomains
+vary: Origin,Accept-Encoding
+x-ratelimit-limit: 
+x-ratelimit-remaining: 
+x-ratelimit-reset: 
+x-request-id: 0839ef0b-c0cd-4fa2-9a97-720cec1116c7
+x-runtime: 0.007444
+x-cache: Error from cloudfront
+via: 1.1 d1be83cd914d81587556aa04bd645fce.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P3
+x-amz-cf-id: eNlXiIx93P8L42eM7XV7hImJKRuCIr-ui24efyo67-zKRxnFiX15Ow==
+[0m
+[0m$ [0mcurl -s https://authentication-service.eks.core-production.keyless.technology/health 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /health","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -s https://engagementplatform.n26.com/users 2>&1
+{"message":"Invalid API key: "}
+[0m
+[0m$ [0mcurl -s -I https://app.n26.com/ 2>&1 | head -30
+HTTP/2 302 
+date: Fri, 11 Sep 2026 09:53:53 GMT
+content-type: text/plain; charset=utf-8
+content-length: 28
+x-powered-by: Express
+referrer-policy: strict-origin-when-cross-origin
+cache-control: no-store
+set-cookie: n26.csrf=s%3Aqr5_WJh37XWtoP0TXEuLVbD6.Gt5IkX4UfiQFEA0ibJ05pC0miRUGl1bNnjrXEJqnAmc; Path=/; HttpOnly; Secure; SameSite=Strict
+set-cookie: num26UniqueDeviceToken=274e3938-3a85-4e69-8ec7-cc306dce78b4; Domain=.n26.com; Path=/; Expires=Thu, 11 Mar 2027 09:53:53 GMT; Secure; SameSite=Lax
+set-cookie: n26.graphql_form_payload=s%3A.YD%2B8nMu6vmWiiynmJPDg2yCwom9sJHaHUx8PNdL3ehc; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict
+x-ratelimit-limit: 60
+x-ratelimit-remaining: 59
+x-ratelimit-reset: 1789120494
+content-security-policy: report-uri /report-csp;report-to /report-csp;base-uri 'self';child-src number26://* *.n26.com n26.com *.doubleclick.net api.sumsub.com *.youtube-nocookie.com youtube-nocookie.com *.lpsnmedia.net *.liveperson.net js.stripe.com https://widgets.marqeta.com;connect-src 'self' https://spc.n26.com https://flags.n26.com wss://authentication-service.eks.core-production.keyless.technology featureassets.org prodregistryv2.org wss://lo.msg.liveperson.net wss://*.liveperson.net *.liveperson.net *.lpsnmedia.net blob: s3.eu-central-1.amazonaws.com cdn.number26.de;font-src 'self' data:;img-src https://spc.n26.com https://flags.n26.com 'self' data: images.ctfassets.net images.contentful.com *.lpsnmedia.net *.liveperson.net *.objectstorage.liveperson.net *.stripe.com message-templates-assets.tech26.de cdn.number26.de;media-src videos.contentful.com videos.ctfassets.net *.lpsnmedia.net 'self' blob:;object-src 'none';style-src 'unsafe-inline' 'self' *.lpsnmedia.net *.liveperson.net;script-src 'self' cdn.number26.de 'unsafe-inline' *.youtube-nocookie.com s.ytimg.com youtube-nocookie.com youtube.com *.lpsnmedia.net *.liveperson.net 'nonce-5b105a547ad8c49d6c8f1cb3c9b26343' 'strict-dynamic' js.stripe.com/v3 connect-js.stripe.com js.stripe.com;worker-src 'self';default-src * *.lpsnmedia.net;frame-ancestors 'self' *.n26.com;frame-src *.lpsnmedia.net *.liveperson.net connect-js.stripe.com js.stripe.com
+feature-policy: accelerometer 'none';autoplay 'none';camera 'self';fullscreen 'none';geolocation 'self';gyroscope 'none';magnetometer 'none';microphone 'none';midi 'none';notifications 'self';payment 'self';push 'self';speaker 'none';sync-xhr 'none';usb 'none';vibrate 'none';vr 'none'
+location: /login
+vary: Accept, Accept-Encoding
+server: envoy
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+x-envoy-upstream-service-time: 33
+[0m
+[0m$ [0mcurl -s https://app.n26.com/login 2>&1 | grep -oE 'src="[^"]+\.js"' | head -20
+src="/build/js/webpack-runtime.3d272c50.js"
+src="/build/js/util_vendor.00e2ab05.js"
+src="/build/js/react_vendor.85fb11fa.js"
+src="/build/js/410.15d71588.js"
+src="/build/js/client.6e429513.js"
+src="/build/js/6759.2f2cc008.js"
+src="/build/js/1503.f68ea103.js"
+src="/build/js/banking-features-auth-biometric-PreAppAuthPages.dbe8a051.js"
+src="/build/js/1596.6ac8435d.js"
+src="/build/js/1992.184409c9.js"
+src="/build/js/banking-features-auth-biometric-LoginPage.60e488b5.js"
+[0m
+[0m$ [0mcurl -s "https://app.n26.com/build/js/client.6e429513.js" 2>&1 | grep -iE '(stripe|pay\.n26\.com|sk_live|pk_live|rk_live)' | head -20
+...output truncated...
+
+Full output saved to: /home/runner/.local/share/opencode/tool-output/tool_08fe4ec56001YSEFAu7l1dbl0E
+
+(no output)
+[0m
+[0m$ [0mcurl -s "https://app.n26.com/build/js/410.15d71588.js" 2>&1 | grep -iE '(stripe|pay\.n26\.com|sk_live|pk_live|rk_live)' | head -20
+(no output)
+[0m
+[0m$ [0mcurl -s "https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.60e488b5.js" 2>&1 | grep -iE '(stripe|pay\.n26\.com|sk_live|pk_live|rk_live)' | head -20
+(no output)
+[0m
+[0m$ [0mcurl -s "https://app.n26.com/build/js/react_vendor.85fb11fa.js" 2>&1 | grep -iE '(stripe|pay\.n26\.com|sk_live|pk_live|rk_live)' | head -20
+(no output)
+[0m
+[0m$ [0mcurl -s -I https://pay.n26.com/v1/customers 2>&1 | head -20
+HTTP/2 401 
+date: Fri, 11 Sep 2026 09:56:45 GMT
+content-type: application/json
+content-length: 342
+server: cloudflare
+access-control-allow-credentials: true
+access-control-allow-methods: GET, HEAD, PUT, PATCH, POST, DELETE
+access-control-allow-origin: *
+access-control-expose-headers: Request-Id, Stripe-Manage-Version, Stripe-Should-Retry, X-Stripe-External-Auth-Required, X-Stripe-Privileged-Session-Required
+access-control-max-age: 300
+cache-control: no-cache, no-store
+content-security-policy: base-uri 'none'; default-src 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+vary: Origin
+www-authenticate: Basic realm="Stripe"
+x-robots-tag: none
+x-wc: 383
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+cf-cache-status: DYNAMIC
+cf-ray: a395cde7ec8cffd7-IAD
+[0m
+[0m$ [0mcurl -s -I https://pay.n26.com/v1/payment_intents 2>&1 | head -20
+HTTP/2 401 
+date: Fri, 11 Sep 2026 09:56:45 GMT
+content-type: application/json
+content-length: 342
+server: cloudflare
+access-control-allow-credentials: true
+access-control-allow-methods: GET, HEAD, PUT, PATCH, POST, DELETE
+access-control-allow-origin: *
+access-control-expose-headers: Request-Id, Stripe-Manage-Version, Stripe-Should-Retry, X-Stripe-External-Auth-Required, X-Stripe-Privileged-Session-Required
+access-control-max-age: 300
+cache-control: no-cache, no-store
+content-security-policy: base-uri 'none'; default-src 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+vary: Origin
+www-authenticate: Basic realm="Stripe"
+x-robots-tag: none
+x-wc: 383
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+cf-cache-status: DYNAMIC
+cf-ray: a395cde98812b1eb-IAD
+[0m
+[0m$ [0mcurl -s -I https://pay.n26.com/v1/refunds 2>&1 | head -10
+HTTP/2 401 
+date: Fri, 11 Sep 2026 09:57:12 GMT
+content-type: application/json
+content-length: 342
+server: cloudflare
+access-control-allow-credentials: true
+access-control-allow-methods: GET, HEAD, PUT, PATCH, POST, DELETE
+access-control-allow-origin: *
+access-control-expose-headers: Request-Id, Stripe-Manage-Version, Stripe-Should-Retry, X-Stripe-External-Auth-Required, X-Stripe-Privileged-Session-Required
+access-control-max-age: 300
+[0m
+[0m$ [0mcurl -s -I https://pay.n26.com/v1/tokens 2>&1 | head -10
+HTTP/2 404 
+date: Fri, 11 Sep 2026 09:57:12 GMT
+content-type: application/json
+content-length: 202
+server: cloudflare
+access-control-allow-credentials: true
+access-control-allow-methods: GET, HEAD, PUT, PATCH, POST, DELETE
+access-control-allow-origin: *
+access-control-expose-headers: Request-Id, Stripe-Manage-Version, Stripe-Should-Retry, X-Stripe-External-Auth-Required, X-Stripe-Privileged-Session-Required
+access-control-max-age: 300
+[0m
+[0m$ [0mcurl -s https://pay.n26.com/v1/tokens 2>&1
+{
+  "error": {
+    "message": "Unrecognized request URL (GET: /v1/tokens). Please see https://stripe.com/docs or we can help at https://support.stripe.com/.",
+    "type": "invalid_request_error"
+  }
+}
+[0m
+[0m$ [0mcurl -s -I https://authentication-service.eks.core-production.keyless.technology/api/internal/v1/auth/n26 2>&1 | head -20
+HTTP/2 404 
+date: Fri, 11 Sep 2026 09:58:08 GMT
+content-type: application/json
+content-length: 98
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08fe7-30e9-7446-b162-96e9ea95cc09
+x-envoy-upstream-service-time: 3
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s -I https://authentication-service.eks.core-production.keyless.technology/internal/auth/n26 2>&1 | head -20
+HTTP/2 404 
+date: Fri, 11 Sep 2026 09:58:08 GMT
+content-type: application/json
+content-length: 91
+version: authentication-service-2/v26.09.07 eks-production
+x-keyless-flow-id: 01a08fe7-3255-7e3d-8b89-36db0b7160be
+x-envoy-upstream-service-time: 1
+server: istio-envoy
+[0m
+[0m$ [0mcurl -s https://authentication-service.eks.core-production.keyless.technology/api/internal/v1/auth/n26 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /api/internal/v1/auth/n26","stack":"api.`unused`"}
+[0m
+[0m$ [0mcurl -s https://authentication-service.eks.core-production.keyless.technology/api/private/v1/enroll/n26 2>&1
+{"code":"UNPROCESSABLE","reason":"path unused: /api/private/v1/enroll/n26","stack":"api.`unused`"}
+[0m
+**STEP 1 — DELTA**
+[NEW] pay.n26.com/v1/*: Live Stripe-forwarded payment API confirmed (23+ endpoints returning HTTP 401 with Stripe error format; /v1/tokens 404; root 204; /v1 403 CloudFront)
+[CHANGED] authentication-service.eks.core-production.keyless.technology: Deployment stable at v26.09.07; all 68+ standard + tenant-scoped paths return `{"code":"UNPROCESSABLE","reason":"path unused"}` — API confirmed at non-standard custom routes
+[CHANGED] engagementplatform.n26.com/users: Braze REST boundary stable (401 key-gated, Cloudflare, CORS-open, no web-bundle token)
+[CHANGED] app.n26.com CSP: No pay.n26.com in connect-src (web app doesn't call pay.n26.com directly) — payment API likely mobile/server-only
+[CHANGED] flags.n26.com: RBAC boundary fully stable (POST /v1/initialize 200 by-design, GET all 403, sdk_exception 202, download_config_specs 401) — retired from active testing
+[NO_DELTA] spc.n26.com (tracking pixels), api.tech26.de/beta-api/fpt (exhausted/placeholder), GraphQL WAF (closed), cdn/my/support (unchanged)
+
+**STEP 2 — PRIORITIZE**
+[PRIO] pay.n26.com/v1/payments,9.25,a=10,b=10,t=9,g=10,c=9,f=8
+[PRIO] authentication-service.eks.core-production.keyless.technology,8.45,a=9,b=10,t=9,g=3,c=10,f=9
+[PRIO] engagementplatform.n26.com/users,6.80,a=7,b=8,t=7,g=2,c=8,f=9
+[PRIO] api.tech26.de,5.80,a=6,b=7,t=6,g=3,c=7,f=5
+[PRIO] fpt.tech26.de,3.20,a=4,b=3,t=3,g=9,c=4,f=5
+[PRIO] beta-api.tech26.de,2.85,a=4,b=4,t=3,g=4,c=4,f=4
+
+**STEP 3 — HYPOTHESES**
+
+[HYP] pay.n26.com/v1/* Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 75
+reasoning: pay.n26.com/v1/payments, /v1/balance, /v1/charges all return HTTP 401 (not 403/404) — distinct live auth boundary. CSP on app.n26.com shows Stripe (js.stripe.com, connect-js.stripe.com) and Marqeta card issuing. pay.n26.com likely forwards to Stripe/Marqeta backend. If auth token obtained (mobile app, session hijack, token leakage), sequential charge_id or user_id params may allow cross-tenant payment data access.
+evidence_needed: Valid auth token for pay.n26.com; successful /v1/payments call returning payment objects; IDOR via sequential charge_id or user_id params
+verify_steps: PASSIVE: monitor app.n26.com CSP/connect-src for pay.n26.com endpoints; inspect mobile app (if in scope) for embedded pay.n26.com tokens; check referral/redirect flows for token leakage. AUTH_HELPED: with valid token, GET /v1/payments?limit=10 → GET /v1/payments/{id} → GET /v1/balance → test BOLA via cross-tenant charge_id
+impact: Cross-tenant payment data enumeration (amounts, merchants, timestamps, card last4), balance disclosure — HIGH/CRITICAL
+testability: AUTH_HELPED
+
+[HYP] Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 60
+reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 68+ standard + tenant-scoped paths return `path unused` — API mounted at custom non-standard routes. "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant. WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token.
+evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; successful subprotocol handshake with signed token; token replay across sessions/challenges
+verify_steps: GET https://authentication-service.eks.core-production.keyless.technology/health → GET /ready → GET /metrics → GET /actuator/health → GET /api/internal/v1/auth/n26 → GET /api/private/v1/enroll/n26 → GET /internal/auth/n26 → GET /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps
+impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
+testability: AUTH_HELPED
+
+[HYP] Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token
+class: IDOR
+asset: engagementplatform.n26.com/users
+confidence: 55
+reasoning: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary confirmed. Identified as Braze REST API (dashboard-02.braze.eu). Web-side Bearer key embedding negative across app CSP + 10 bundles → server/mobile-only. If token acquired (mobile app, server logs, token leakage), /users/{id} or pagination params may allow cross-tenant PII dump.
+evidence_needed: Valid Bearer token for engagementplatform.n26.com; successful /users call returning user objects; IDOR via sequential user_id or email params
+verify_steps: PASSIVE: monitor app.n26.com CSP/connect-src for engagementplatform endpoints; inspect mobile app (if in scope) for embedded tokens; check referral/redirect flows for token leakage. AUTH_HELPED: with valid token, GET /users?limit=100 → GET /users/{id} → test BOLA via cross-tenant id
+impact: Cross-tenant user PII enumeration (email, phone, KYC status, engagement metrics) — HIGH if token obtained
+testability: AUTH_HELPED
+
+**STEP 4 — SELF-CRITIQUE**
+[PARKED] api.tech26.de GraphQL/gRPC-web/OpenAPI at untested versioned paths: confidence 45 (<50 threshold), awselb/2.0 WAF blocks all anonymous probes, no prior signal of live API beyond headers; high false-positive risk on generic path brute
+[FINAL] 1) pay.n26.com/v1/* Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth (confidence 75) — AUTH_HELPED testable, NEW live payment API with 401 boundary, core banking value
+[FINAL] 2) Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw (confidence 60) — AUTH_HELPED testable, high-value target, live service confirmed, deployment rotated v26.09.07
+[FINAL] 3) Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token (confidence 55) — AUTH_HELPED, distinct 401 boundary confirmed, Cloudflare fronted
+
+**STEP 5 — NEXT ACTION**
+[NEXT] PROBE: GET https://pay.n26.com/v1/payments → GET https://pay.n26.com/v1/balance → GET https://pay.n26.com/v1/charges — confirm 401 auth boundary, capture WWW-Authenticate header, enumerate response schema; <=1 rps, passive read-only
+
+**STEP 6 — LEARNING**
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: live payment API with versioned /v1/payments, /v1/balance, /v1/charges endpoints returning HTTP 401 (auth-gated, not tarpit) — NEW attack surface, core banking value
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68+ standard + tenant-scoped paths return "path unused" — API at custom routes
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO)
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+[LEARN] REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
+[LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface
+[LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+[LEARN] ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface
+[LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
+
+**STEP 7 — RISK**
+[RISK] N26 Bank AG: 82 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO); api.tech26.de/beta-api/fpt exhausted/placeholder; crt.sh rate limited.
