@@ -234,3 +234,7 @@
 - 2026-09-11 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68+ standard + tenant-scoped paths return "path unused" — API at custom routes
 - 2026-09-11 ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
 - 2026-09-11 ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface
+- 2026-09-11 ACCEPTED AUTH @ pay.n26.com: no-key 401 len=342 vs fake-key 401 len=132 "Invalid API Key provided: sk_live_****0000" — host is pure Stripe API passthrough on N26 domain, no N26-side key injection; anonymous surface nil; exploit gated on valid N26-account key (AUTH_HELPED).
+- 2026-09-11 REJECTED MISCONFIG @ app.n26.com: reswept 11 login bundles this cycle — 0 keys, 0 pay.n26.com/acct_ refs; `stripetopup`+`/topup/card` are internal identifiers of the public Stripe top-up partnership, not key material; web leak pathway closed.
+- 2026-09-11 REJECTED MISCONFIG @ docs.n26.com: legal-PDF host surfaced in bundle strings — static content, INFO, no app surface.
+- 2026-09-11 REJECTED AUTH @ api.github.com: `/search/code?q=pay.n26.com` → 401 requires-authentication — public-repo leak-scan blocked without token this cycle.

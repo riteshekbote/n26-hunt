@@ -1,4 +1,4 @@
-## 2026-09-11 17:45:23 UTC [target] (model nemotron3)
+## 2026-09-11 20:08:16 UTC [target] (model nemotron3)
 [NEW] pay.n26.com/v1/*: Live Stripe-forwarded payment API confirmed (23+ endpoints returning HTTP 401 with Stripe error format; /v1/tokens 404; root 204; /v1 403 CloudFront) — discovered 2026-09-11
 [NEW] pay.n26.com subdomain: Versioned /v1/payments, /v1/balance, /v1/charges all HTTP 401 (auth-gated, not tarpit) — first live payment endpoints observed
 [CHANGED] authentication-service.eks.core-production.keyless.technology: Deployment stable at v26.09.07; all 68+ standard + tenant-scoped paths return `{"code":"UNPROCESSABLE","reason":"path unused"}` — API at custom routes
@@ -12,8 +12,8 @@
 [PRIO] pay.n26.com/v1/payments,8.50,a=10,b=10,t=9,g=1,c=10,f=10
 [PRIO] authentication-service.eks.core-production.keyless.technology,8.35,a=9,b=10,t=9,g=3,c=10,f=8
 [PRIO] engagementplatform.n26.com/users,6.70,a=7,b=8,t=7,g=2,c=8,f=8
-[PRIO] api.tech26.de,5.05,a=5,b=6,t=5,g=3,c=6,f=5
-[PRIO] fpt.tech26.de,3.50,a=3,b=2,t=2,g=9,c=3,f=3
+[PRIO] app.n26.com/graphql,4.20,a=4,b=6,t=5,g=1,c=5,f=5
+[PRIO] api.tech26.de,3.80,a=3,b=4,t=4,g=3,c=4,f=4
 [HYP] pay.n26.com/v1/* Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth
 class: IDOR
 asset: pay.n26.com/v1/payments
@@ -41,7 +41,10 @@ evidence_needed: Valid Bearer token for engagementplatform.n26.com; successful /
 verify_steps: PASSIVE: monitor app.n26.com CSP/connect-src for engagementplatform endpoints; inspect mobile app (if in scope) for embedded tokens; check referral/redirect flows for token leakage. AUTH_HELPED: with valid token, GET /users?limit=100 → GET /users/{id} → test BOLA via cross-tenant id
 impact: Cross-tenant user PII enumeration (email, phone, KYC status, engagement metrics) — HIGH if token obtained
 testability: AUTH_HELPED
-[PARKED] api.tech26.de GraphQL/gRPC-web/OpenAPI at untested versioned paths: confidence 45 (<50 threshold), awselb/2.0 WAF blocks all anonymous probes, no prior signal of live API beyond headers; high false-positive risk on generic path brute
+[PARKED] app.n26.com/graphql GraphQL introspection/mutation bypass: confidence 40 (<50 threshold), WAF tarpit confirmed identical on support.n26.com across 20+ cycles, no differential ingress, all POST Content-Types blocked, GET query param connection reset — transport class closed anonymously
+[PARKED] api.tech26.de GraphQL/gRPC-web/OpenAPI at untested versioned paths: confidence 38 (<50), awselb/2.0 WAF blocks all anonymous probes, no prior signal of live API beyond headers; high false-positive risk on generic path brute
+[PARKED] spc.n26.com versioned endpoints as payment API: REJECTED-class (confirmed 1x1 GIF tracking pixels len=43 across 10+ cycles) — permanently invalidated
+[PARKED] flags.n26.com server-key escalation: REJECTED-class (full bundle sweep found only public client key, no server/secret keys) — no escalation path
 [FINAL] 1) pay.n26.com/v1/* Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth (confidence 75) — AUTH_HELPED testable, NEW live payment API with 401 boundary, core banking value
 [FINAL] 2) Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw (confidence 60) — AUTH_HELPED testable, high-value target, live service confirmed, deployment rotated v26.09.07
 [FINAL] 3) Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token (confidence 55) — AUTH_HELPED, distinct 401 boundary confirmed, Cloudflare fronted
