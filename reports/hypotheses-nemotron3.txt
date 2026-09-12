@@ -1,11 +1,4 @@
-## 2026-09-12 05:02:52 UTC [target] (model nemotron3)
-[NEW] pay.n26.com/v1/payments, /v1/balance, /v1/charges: Live Stripe-forwarded payment API confirmed — all three endpoints return HTTP 401 (342 bytes, Stripe error JSON), Cloudflare edge, CORS-open (ACAO: *), WWW-Authenticate: Basic realm="Stripe" — NEW attack surface, core banking value
-[CHANGED] authentication-service.eks.core-production.keyless.technology: /health returns 404 "path unused" — consistent with 68+ paths route-less; deployment stable at v26.09.07; API at custom non-standard routes only
-[CHANGED] engagementplatform.n26.com/users: HTTP 401 Braze REST boundary confirmed — CORS-open, key-gated (not tarpit), no Bearer token in web bundles/CSP — server/mobile-only
-[CHANGED] app.n26.com/graphql: WAF tarpit unchanged — POST blocked, GET connection reset, identical on support.n26.com — transport class closed anonymously
-[CHANGED] flags.n26.com: RBAC boundary stable — POST /v1/initialize 200 (by-design Statsig client SDK), all GET 403, sdk_exception 202, download_config_specs 401 — retired from active testing
-[CHANGED] spc.n26.com: Versioned endpoints permanently confirmed as 1x1 GIF tracking pixels (len=43) — IDOR hypothesis invalidated
-[CHANGED] api.tech26.de / beta-api.tech26.de / fpt.tech26.de: Anonymous HTTP API discovery exhausted (~47 paths envoy empty-404); WS-upgrade 403 = awselb/2.0 WAF edge rule; fpt fixed-response ALB placeholder
+## 2026-09-12 09:09:10 UTC [target] (model nemotron3)
 [PRIO] pay.n26.com/v1/payments,8.75,a=9,b=10,t=8,g=2,c=9,f=9
 [PRIO] authentication-service.eks.core-production.keyless.technology,7.60,a=8,b=9,t=9,g=1,c=9,f=8
 [PRIO] engagementplatform.n26.com/users,6.50,a=7,b=8,t=7,g=2,c=7,f=7
@@ -65,4 +58,7 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
 [LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface
 [LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
+[LEARN] ACCEPTED AUTH @ pay.n26.com: 401 boundary stable 4+ cycles — pure Stripe passthrough, no-key len=342 vs fake-key len=132; no N26-side key injection; anonymous surface nil.
+[LEARN] REJECTED AUTH @ api.github.com: `/search/code?q=pay.n26.com` still 401 token-gated — public-repo code-search blocked; only grep.app/websearch remain for key discovery.
+[LEARN] ACCEPTED MISCONFIG @ crt.sh: 502 rate-limit persisted 09-10→09-12 — passive subdomain corpus not refreshed; no fresh leaves to test.
 [RISK] N26 Bank AG: 85 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO); api.tech26.de/beta-api/fpt exhausted/placeholder

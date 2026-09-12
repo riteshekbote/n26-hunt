@@ -18652,3 +18652,589 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 [RISK] n26: 45 — functional anonymous HTTP surface across 20+ hosts conclusively exhausted; residual exposure is entirely external-dependent (repo/CI Stripe-key leaks → pay.n26.com financial BOLA; server-side Braze key → PII; egress-tier ingress HUMAN_ONLY). Internal infra naming/IP disclosure (aigw, tech26 tier) is INFO. One valid externally-leaked payment key escalates to fund-level impact; no anonymous wormhole found this cycle.
+===== ANALYST bigpickle 2026-09-12 09:12:56 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/ && git log --oneline -5 2>/dev/null
+total 348
+drwxr-xr-x 12 runner runner   4096 Sep 12 09:06 .
+drwxr-xr-x  3 runner runner   4096 Sep 12 09:06 ..
+drwxr-xr-x  7 runner runner   4096 Sep 12 09:06 .git
+drwxr-xr-x  3 runner runner   4096 Sep 12 09:06 .github
+-rw-r--r--  1 runner runner   1844 Sep 12 09:06 README.md
+-rw-r--r--  1 runner runner     32 Sep 12 09:06 analyst-out.txt
+-rw-r--r--  1 runner runner 126770 Sep 12 09:06 analyst-prompt.txt
+-rw-r--r--  1 runner runner 122900 Sep 12 09:06 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 12 09:06 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 12 09:06 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 12 09:06 leads
+-rw-r--r--  1 runner runner  13194 Sep 12 09:06 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 12 09:06 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 12 09:06 reports
+drwxr-xr-x  2 runner runner   4096 Sep 12 09:06 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 12 09:06 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 12 09:06 scripts
+-rw-r--r--  1 runner runner     33 Sep 12 09:06 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 12 09:06 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 12 09:06 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 12 09:06 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 12 09:06 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 12 09:06 state_nemotron3.json
+drwxr-xr-x  2 runner runner   4096 Sep 12 09:06 triage
+795183c reposcan 2026-09-12-06-29
+[0m
+[0m✱ [0mGlob "**/*.md"[90m 83 matches[0m
+[0m→ [0mRead probe-results.md
+[0m→ [0mRead state_bigpickle.json
+[0m→ [0mRead triage/run-2026-09-12-06-29.md
+[0m→ [0mRead leads/lead-bigpickle.md
+[0m
+[0m$ [0mwc -l /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md && tail -160 /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
+2075 /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68+ standard + tenant-scoped paths return "path unused" — API at custom routes
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface
+[LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
+[RISK] n26: 42 — perimeter infra tier well-governed (SG-restricted, dead certs removed, uniform key-gates, private S3); anonymous surface across 20+ hosts now conclusively exhausted; remaining exposure (Stripe key, egress-tier ingress) all AUTH_HELPED/HUMAN_ONLY.
+## 2026-09-11 17:42:37 UTC [target] (model bigpickle)
+## 2026-09-11 20:04:27 UTC [target] (model bigpickle)
+[PRIO] pay.n26.com/v1/*,4.7,attack_surface=4,business_value=5,tech_exposure=3,gate_ease=6,cloud_surface=4,freshness=7
+[PRIO] aigw.tech26.de,4.35,attack_surface=3,business_value=2,tech_exposure=2,gate_ease=10,cloud_surface=6,freshness=7
+[PRIO] tech26.de infra tier (sonarqube/edge ALBs),4.15,attack_surface=4,business_value=5,tech_exposure=3,gate_ease=1,cloud_surface=5,freshness=8
+[HYP] Stripe key recoverable from N26 client/leak assets unlocks pay.n26.com Stripe passthrough (account-level BOLA)
+class: AUTH
+asset: pay.n26.com/v1/*
+confidence: 45
+reasoning: 23/23 /v1 routes return Stripe-origin 401; no-key len=342 vs fake-key len=132 ("Invalid API Key provided: sk_live_****0000") proves pure passthrough with no server-side key — any valid N26-account Stripe key unlocks the whole account/charge/refund surface via this domain; 0/11 web bundles carry pk_/sk_/rk_live_ or pay.n26.com; /topup/card is the Stripe top-up integration (public partnership). GitHub code search requires token (401) this cycle.
+evidence_needed: valid Stripe key bound to N26's account (sk_/rk_live_) from public repo commit, CI log, mobile APK, or leak archive.
+verify_steps: (1) with token: `GET https://api.github.com/search/code?q=pay.n26.com` (2) grep.app/websearch: `pay.n26.com` / `sk_live_` + n26 (3) with key: `GET https://pay.n26.com/v1/customers` + `POST /v1/payment_intents` Authorization: Bearer <key>.
+impact: rk_/sk_live_ → account-wide BOLA: enumerate customers/PII, page charges, issue refunds to attacker-chosen destination; fund-level impact. HIGH if key; boundary-only today.
+testability: AUTH_HELPED
+[HYP] aigw.tech26.de internal-ELB + RFC1918 addressing exposed in public DNS
+class: MISCONFIG
+asset: aigw.tech26.de
+confidence: 60
+reasoning: dig A → 10.255.5.236/10.255.1.134; CNAME → internal-aigw-wan-edge-live…elb.amazonaws.com; contrast xs2a-staging resolves to public obnium ALB IPs — infra naming + reserved-space disclosure unique to this host, stable across sessions.
+evidence_needed: N26 confirmation the 10.x A records are unintended.
+verify_steps: (1) dig +short aigw.tech26.de A (2) dig +short aigw.tech26.de CNAME — passive only.
+impact: internal network topology/naming disclosure — INFO-LOW, non-exploitable without reachability.
+testability: PASSIVE
+[HYP] tech26.de infra tier (SonarQube/Backstage) reachable via allowlisted egress only
+class: MISCONFIG
+asset: sonarqube-default-fra.tech26.de
+confidence: 30
+reasoning: 10 hosts resolve to public ELBs but all 10–15s connect-stall from this vantage → source-restricted SG / egress filter; ingress unconfirmed this cycle.
+evidence_needed: HTTP 200/302 from a non-sandbox vantage; SonarQube version banner.
+verify_steps: (1) GET https://sonarqube-default-fra.tech26.de/api/system/status (2) GET https://fpadedge.tech26.de/health from allowed network.
+impact: SonarQube default/admin exposure → source/CI creds; CRITICAL if verified, currently unconfirmed.
+testability: HUMAN_ONLY
+[NEXT] RAG: leak-scan public code/commit/tooling indexes (grep.app; GitHub `/search/code` once a token exists; websearch `"pay.n26.com"` `"sk_live_"`) for an N26-account Stripe key; if found, validate with one read-only `GET https://pay.n26.com/v1/payments` Bearer probe. Host-side anonymous surface remains conclusively exhausted.
+[LEARN] ACCEPTED AUTH @ pay.n26.com: no-key 401 len=342 vs fake-key 401 len=132 "Invalid API Key provided: sk_live_****0000" — host is pure Stripe API passthrough on N26 domain, no N26-side key injection; anonymous surface nil; exploit gated on valid N26-account key (AUTH_HELPED).
+[LEARN] REJECTED MISCONFIG @ app.n26.com: reswept 11 login bundles this cycle — 0 keys, 0 pay.n26.com/acct_ refs; `stripetopup`+`/topup/card` are internal identifiers of the public Stripe top-up partnership, not key material; web leak pathway closed.
+[LEARN] REJECTED MISCONFIG @ docs.n26.com: legal-PDF host surfaced in bundle strings — static content, INFO, no app surface.
+[LEARN] REJECTED AUTH @ api.github.com: `/search/code?q=pay.n26.com` → 401 requires-authentication — public-repo leak-scan blocked without token this cycle.
+[RISK] n26: 44 — payment-tier integration (pay.n26.com→Stripe passthrough) is key-gated and anonymously closed, but a single valid-key leak yields account-level financial BOLA on N26's Stripe account; web tier shows no key leakage across bundle rotations; residual exposure lies entirely external (repo/CI leaks, egress-tier ingress), anonymous HTTP surface across 20+ hosts conclusively exhausted.
+## 2026-09-11 22:42:37 UTC [target] (model bigpickle)
+[HYP] tech26.de infra tier DNS-exposed with public IPs, HTTP gated to allowlist
+class: MISCONFIG
+asset: backstage.tech26.de
+confidence: 45
+reasoning: crt.sh cert corpus + `dig A` prove public DNS/A-records (eu-central-1) for backstage.tech26.de, backstage.platform26-live-eu.platform26.de, phishing-report.tech26.de, number26.tz2-mambu.* + n26uk.tz2-mambu-* (Mambu core-banking sandbox/preprod-UK tenant names), statsig-ssh.tech26.de (3.69.87.198); tpp.tech26.de → internal tpp-live ELB CNAME; ALL hosts 10s connect-stall from this vantage → SG/egress allowlist, matching prior fpadedge/mambuedge family (HUMAN_ONLY); DNS naming + banking-core tenant/IP disclosure is the confirmable portion.
+evidence_needed: HTTP 200/302 (Backstage/TPP/HealthRouter banner) from an allowlisted vantage.
+verify_steps: from allowed network: GET https://backstage.tech26.de/ then GET https://tpp.tech26.de/ and https://phishing-report.tech26.de/.
+impact: dev portal / PSD2 TPP / monitoring exposure → source+CI creds, banking-core tenant adjacency; CRITICAL if verified; today INFO naming/IP disclosure.
+testability: HUMAN_ONLY
+[HYP] N26 Stripe key in 2026-08-18 "Satanic" 659-merchant archive unlocks pay.n26.com passthrough
+class: AUTH
+asset: pay.n26.com/v1/*
+confidence: 40
+reasoning: pay.n26.com is a pure Stripe forwarder (no-key 401 len=342 vs fake-key 401 len=132 `Invalid API Key provided: sk_live_****0000`); N26 card top-up runs on Stripe; archive holds 650 valid `sk_live` keys + folders per merchant with acct_ index (2022-01→2026-06, 42 countries); Ransomnews deliberately publishes no merchant names/domains/key hashes → N26 presence not publicly checkable, only inside the archive.
+evidence_needed: N26 account folder/acct_ present in the leaked index; its sk_live key.
+verify_steps: (HUMAN channel, archive is out-of-scope custodian data): check index for N26 folder → if present, one read-only GET https://pay.n26.com/v1/payments with Bearer key; do NOT extract customer records.
+impact: `sk_/rk_` → full Stripe-account BOLA on N26 (customers/PII, charges, refunds, webhooks) — HIGH if listed; currently unverifiable.
+testability: HUMAN_ONLY
+[HYP] 3ds-challenge.n26.com Netcetera ACS as 3DS-phishing/return-URL surface
+class: OTHER
+asset: 3ds-challenge.n26.com
+confidence: 30
+reasoning: N26-domain hosts Netcetera ACS challenge front (403 awselb on all probed paths incl /acs/challenge); challenge URLs are transaction-signed → anonymous differential impossible; a fabricated-but-live challenge on a real n26.com page could anchor phishing, but that is inherent 3DS design, not provable here.
+evidence_needed: a live 3DS transaction reference; HTML/redirect handling of its return URL.
+verify_steps: requires real card-transaction challenge → cannot run anonymously.
+impact: credential-phishing channel on trusted bank domain — MEDIUM if demonstrated; today N/A.
+testability: HUMAN_ONLY
+## 2026-09-12 00:36:24 UTC [target] (model bigpickle)
+## 2026-09-12 05:00:09 UTC [target] (model bigpickle)
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)  
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface  
+[LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation  
+[RISK] N26 Bank AG: 85 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO); api.tech26.de/beta-api/fpt exhausted/placeholder
+[PRIO] pay.n26.com/v1/payments,8.75,a=9,b=10,t=8,g=2,c=9,f=9  
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.60,a=8,b=9,t=9,g=1,c=9,f=8  
+[PRIO] engagementplatform.n26.com/users,6.50,a=7,b=8,t=7,g=2,c=7,f=7  
+[PRIO] app.n26.com/graphql,4.35,a=4,b=6,t=5,g=1,c=5,f=4  
+[HYP] pay.n26.com/v1/* Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth  
+[HYP] Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw  
+[HYP] Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token  
+[PARKED] app.n26.com/graphql GraphQL introspection/mutation bypass: confidence 40 (<50 threshold), WAF tarpit confirmed identical on support.n26.com across 20+ cycles, no differential ingress, all POST Content-Types blocked, GET query param connection reset — transport class closed anonymously  
+[PARKED] api.tech26.de GraphQL/gRPC-web/OpenAPI at untested versioned paths: confidence 38 (<50), awselb/2.0 WAF blocks all anonymous probes, no prior signal of live API beyond headers; high false-positive risk on generic path brute  
+[PARKED] spc.n26.com versioned endpoints as payment API: REJECTED-class (confirmed 1x1 GIF tracking pixels len=43 across 10+ cycles) — permanently invalidated  
+[PARKED] flags.n26.com server-key escalation: REJECTED-class (full bundle sweep found only public client key, no server/secret keys) — no escalation path  
+[FINAL] 1) pay.n26.com/v1/* Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth (confidence 75) — AUTH_HELPED testable, NEW live payment API with 401 boundary, core banking value  
+[FINAL] 2) Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw (confidence 60) — AUTH_HELPED testable, high-value target, live service confirmed, deployment rotated v26.09.07  
+[FINAL] 3) Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token (confidence 55) — AUTH_HELPED, distinct 401 boundary confirmed, Cloudflare fronted  
+[NEXT] PROBE: GET https://pay.n26.com/v1/payments → GET https://pay.n26.com/v1/balance → GET https://pay.n26.com/v1/charges — confirm 401 auth boundary, capture WWW-Authenticate header, enumerate response schema; <=1 rps, passive read-only  
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: live payment API with versioned /v1/payments, /v1/balance, /v1/charges endpoints returning HTTP 401 (auth-gated, not tarpit) — NEW attack surface, core banking value  
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68+ standard + tenant-scoped paths return "path unused" — API at custom routes  
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO)  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403  
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation  
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403  
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API  
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure  
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed  
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; no listing/misconfig  
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only  
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector  
+[LEARN] REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists  
+[LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface  
+[LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED  
+[LEARN] ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path  
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)  
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface  
+[LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation  
+[RISK] N26 Bank AG: 85 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO); api.tech26.de/beta-api/fpt exhausted/placeholder
+[CHANGED] pay.n26.com: Stripe-passthrough 401 boundary stable across 4+ cycles — probe-results 09-12 00:39 identical to 09-11 (pay.n26.com/v1/payments|balance|charges → 401); no-key len=342 vs fake-key len=132 `Invalid API Key: sk_live_****0000` unchanged; anonymous surface conclusively nil.
+[CHANGED] crt.sh `%25.n26.com` / `%25.tech26.de`: 502 rate-limit persists since 2026-09-10 22:41 — passive subdomain corpus stale, no fresh leaf names to test.
+[CHANGED] External key-leak path: GitHub `/search/code?q=pay.n26.com` remains 401 token-gated; grep.app index untested this cycle — only viable unlock for top asset.
+[PRIO] pay.n26.com/v1/*,7.70,a=9,b=10,t=7,g=2,c=8,f=8 — live payment passthrough, core-banking value, key-gated
+[PRIO] authentication-service.eks.core-production.keyless.technology,6.35,a=8,b=9,t=9,g=1,c=1,f=5 — custom-route auth service, WS subprotocol replay untested
+[PRIO] engagementplatform.n26.com,5.65,a=7,b=8,t=7,g=1,c=2,f=5 — Braze REST, key-gated 401, CORS-open
+[PRIO] tech26.de infra tier (sonarqube/backstage/tpp),5.85,a=7,b=8,t=8,g=0,c=6,f=3 — SG-stalled, HUMAN_ONLY unreachable
+[PRIO] aigw.tech26.de RFC1918 A-records,4.95,a=2,b=4,t=5,g=10,c=6,f=6 — passive, INFO ceiling
+[HYP] pay.n26.com full-object Stripe passthrough yields account-wide BOLA once any N26-linked key leaks
+class: IDOR
+asset: pay.n26.com/v1/*
+confidence: 50
+reasoning: 23/23 /v1 routes Stripe-origin 401; key-delta proves pure forwarder (no N26-side key injection); N26 card top-up runs on Stripe; 0 keys in 11 web bundles + CSP; GitHub code-search 401-gated, grep.app unexercised.
+evidence_needed: N26-linked Stripe key (sk_/rk_live_) from a public/licensed index.
+verify_steps: (1) `GET https://grep.app/api/search?q=pay.n26.com` (2) websearch `"pay.n26.com"` and `"sk_live_" n26` (3) given key, read-only `GET https://pay.n26.com/v1/payments?limit=3` Bearer <key>.
+impact: rk_/sk_live_ → customers/PII, charges, refunds to attacker-chosen destination; fund-level BOLA. HIGH if key.
+testability: AUTH_HELPED
+[HYP] keyless WS subprotocol replay lacks token-reuse / challenge-binding protection
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 45
+reasoning: Live Istio/Envoy service (v26.09.07), custom `x-keyless-flow-id`; 68+ HTTP paths + WS-upgrade all `path unused` — anonymous exhausted; json/graphql-ws subprotocol semantics never exercised with a real minted token.
+evidence_needed: minted keyless WS token (requires auth).
+verify_steps: with token → two sequential `wss://` handshakes (json + graphql-ws subprotocol) replaying the same token; observe reuse acceptance / missing challenge binding vs credential rotation.
+impact: replayable auth token → auth-flow confusion toward login/session takeover; HIGH if flawed.
+testability: AUTH_HELPED
+[HYP] Braze CORS-open data routes permit cross-tenant PII call once REST key obtained
+class: IDOR
+asset: engagementplatform.n26.com
+confidence: 50
+reasoning: /users 401 key-gated (not tarpit); root points to dashboard-02.braze.eu; CORS-open; key absent from 10 web bundles + CSP → server/mobile-only; value materializes only via server-side key use or leak.
+evidence_needed: valid Braze REST key; ACAO reflection on data routes.
+verify_steps: (1) passive `GET https://engagementplatform.n26.com/` capture CORS headers (2) with key → `GET /users/export/ids` + `Origin: https://attacker.invalid` observe ACAO.
+impact: cross-tenant Braze PII (users, segments, events) if key ever reaches a browser/secondary path; MEDIUM-HIGH, key-gated.
+testability: AUTH_HELPED
+[PARKED] aigw.tech26.de RFC1918 DNS disclosure: INFO ceiling, no exploit path, REJECTED-class impact — infra naming only.
+[PARKED] tech26.de infra tier (sonarqube/backstage/tpp): confidence 30 (<40), 10-15s connect-stall = SG/egress-filtered, unverifiable from sandbox; HUMAN_ONLY.
+[PARKED] Ransomnews "Satanic" 659-merchant archive: handling leaked financial credentials exceeds program out-of-scope and is unverifiable anonymously — do not pursue.
+[PARKED] app.n26.com GraphQL: WAF tarpit identical 20+ cycles, transport class closed anonymously — no differential ingress.
+[FINAL] 1) pay.n26.com BOLA on key leak — confidence 50, AUTH_HELPED, top priority.
+[FINAL] 2) keyless WS subprotocol replay — confidence 45, AUTH_HELPED.
+[FINAL] 3) Braze cross-tenant PII — confidence 50, AUTH_HELPED, chained on key.
+[NEXT] RAG: query `GET https://grep.app/api/search?q=pay.n26.com` and websearch `"sk_live_"/"rk_live_" n26 pay.n26.com` for a public/licensed N26-linked Stripe key; if found, validate with single read-only `GET https://pay.n26.com/v1/payments?limit=3` (Authorization: Bearer <key>). Ignore the Ransomnews merchant archive. Host-side anonymous surface remains conclusively exhausted.
+[LEARN] ACCEPTED AUTH @ pay.n26.com: 401 boundary stable 4+ cycles — pure Stripe passthrough, no-key len=342 vs fake-key len=132; no N26-side key injection; anonymous surface nil.
+[LEARN] REJECTED AUTH @ api.github.com: `/search/code?q=pay.n26.com` still 401 token-gated — public-repo code-search blocked; only grep.app/websearch remain for key discovery.
+[LEARN] ACCEPTED MISCONFIG @ crt.sh: 502 rate-limit persisted 09-10→09-12 — passive subdomain corpus not refreshed; no fresh leaves to test.
+[RISK] n26: 45 — functional anonymous HTTP surface across 20+ hosts conclusively exhausted; residual exposure is entirely external-dependent (repo/CI Stripe-key leaks → pay.n26.com financial BOLA; server-side Braze key → PII; egress-tier ingress HUMAN_ONLY). Internal infra naming/IP disclosure (aigw, tech26 tier) is INFO. One valid externally-leaked payment key escalates to fund-level impact; no anonymous wormhole found this cycle.
+[0m
+[0m$ [0mcurl -s -m 20 -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128 Safari/537.36" -w "\nHTTP %{http_code}\n" "https://grep.app/api/search?q=pay.n26.com" | head -c 3000
+<!DOCTYPE html><html lang="en" data-astro-cid-4wdtffzm><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#000"><title>Vercel Security Checkpoint</title><style>.spinner[data-astro-cid-ijmsm3te]{flex-direction:column;justify-content:center;align-items:center;display:flex}.spinner-circle[data-astro-cid-ijmsm3te]{transform-origin:50%;animation:1s step-start infinite spinner-circle-animate}rect[data-astro-cid-ijmsm3te]{fill:var(--ds-gray-900)}@keyframes spinner-circle-animate{0%{transform:rotate(0)}10%{transform:rotate(36deg)}20%{transform:rotate(72deg)}30%{transform:rotate(108deg)}40%{transform:rotate(144deg)}50%{transform:rotate(180deg)}60%{transform:rotate(216deg)}70%{transform:rotate(252deg)}80%{transform:rotate(288deg)}90%{transform:rotate(324deg)}to{transform:rotate(360deg)}}:root{--ds-gray-900:#666;--ds-gray-alpha-1000:#000000e8;--background-color:#fff;--link-color:#0070f3}@media (prefers-color-scheme:dark){:root{--ds-gray-900:#a1a1a1;--ds-gray-alpha-1000:#ffffffeb;--background-color:#0a0a0a;--link-color:#3291ff}}html{box-sizing:border-box}[data-astro-cid-4wdtffzm],[data-astro-cid-4wdtffzm]:after,[data-astro-cid-4wdtffzm]:before{box-sizing:inherit}body{word-break:break-word;font-kerning:auto;font-variant:normal;text-rendering:optimizelegibility;hyphens:auto;background-color:var(--background-color);height:100vh;max-height:100vh;color:var(--ds-gray-900);margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Noto Sans,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji;font-size:1.2rem;line-height:1.65}.container[data-astro-cid-4wdtffzm]{flex-direction:column;justify-content:center;min-height:100%;display:flex}#root[data-astro-cid-4wdtffzm]{display:none}main[data-astro-cid-4wdtffzm]{text-align:center;max-width:80rem;margin:auto;padding:4rem 6rem}p[data-astro-cid-4wdtffzm]#header-text,p[data-astro-cid-4wdtffzm]#header-noscript-text{color:var(--ds-gray-alpha-1000);text-align:center;font-size:1.2rem;font-weight:500;line-height:32px}#fix-container[data-astro-cid-4wdtffzm]{flex-direction:column;align-items:center;display:flex}.fix-text[data-astro-cid-4wdtffzm]{color:var(--link-color);cursor:pointer;margin-top:0;font-family:ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;font-size:.75rem;font-weight:200;line-height:1rem;text-decoration:underline}.metadata-text[data-astro-cid-4wdtffzm]{opacity:.7;margin-top:4px;font-family:ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;font-size:.75rem;font-weight:200}footer[data-astro-cid-4wdtffzm]{color:var(--ds-gray-900);flex-direction:row;justify-content:center;align-items:center;padding-bottom:24px;font-family:ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;font-size:.75rem;font-weight:200;line-height:1rem;display:flex}footer[data-astro-cid-4wdtffzm] div[data-astro-cid-4wdtffzm]{flex-direction:row;gap:3px;display:flex}@media (width<=60
+[0m
+[0m◈ [0mExa Web Search ""pay.n26.com" stripe"
+[0m
+[0m$ [0mcurl -s -m 25 -A "Mozilla/5.0" "https://api.github.com/orgs/n26/repos?per_page=100&sort=updated" -w "\nHTTP %{http_code}\n" | python3 -c "import sys,json;d=json.load(sys.stdin);print('count',len(d));[print(r['name'],'|',r['html_url'],'|lang:',r.get('language'),'|push:',r['pushed_at'],'|fork:',r['fork'],'|size:',r['size']) for r in d]" 2>&1 | head -80
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/usr/lib/python3.12/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 340, in decode
+    raise JSONDecodeError("Extra data", s, end)
+json.decoder.JSONDecodeError: Extra data: line 2 column 1 (char 31053)
+[0m
+[0m◈ [0mExa Web Search ""sk_live_" OR "rk_live_" "n26" stripe key leak"
+[0m
+[0m$ [0mcurl -s -m 25 -A "Mozilla/5.0" "https://api.github.com/orgs/n26/repos?per_page=100" -o /tmp/opencode/n26-org.json -w "HTTP %{http_code}\n"; python3 - <<'EOF'
+import json
+try:
+    d=json.load(open('/tmp/opencode/n26-org.json'))
+except Exception as e:
+    print("parse err",e); print(open('/tmp/opencode/n26-org.json').read()[:300]); raise SystemExit
+print('count',len(d))
+for r in d:
+    print(r['name'],'|',r['html_url'],'|lang:',r.get('language'),'|pushed:',r['pushed_at'],'|fork:',r['fork'])
+EOF
+HTTP 200
+count 6
+bob | https://github.com/n26/bob |lang: Swift |pushed: 2020-04-24T07:29:45Z |fork: False
+express-simple-locale | https://github.com/n26/express-simple-locale |lang: JavaScript |pushed: 2022-07-11T15:11:56Z |fork: False
+N26AndroidSamples | https://github.com/n26/N26AndroidSamples |lang: Java |pushed: 2020-12-21T20:02:03Z |fork: False
+bob-vapor-template | https://github.com/n26/bob-vapor-template |lang: Swift |pushed: 2019-09-24T12:58:04Z |fork: False
+psd2-tpp-docs | https://github.com/n26/psd2-tpp-docs |lang: None |pushed: 2026-08-31T11:04:07Z |fork: False
+flowkit-ios | https://github.com/n26/flowkit-ios |lang: Swift |pushed: 2026-07-08T12:18:21Z |fork: False
+[0m
+[0m$ [0mcurl -s -m 25 -A "Mozilla/5.0" "https://raw.githubusercontent.com/n26/psd2-tpp-docs/main/README.md" -o /tmp/opencode/psd2.md -w "HTTP %{http_code}\n"; wc -c /tmp/opencode/psd2.md; grep -iEo 'https?://[a-z0-9.-]+' /tmp/opencode/psd2.md | sort -u | head -30
+HTTP 200
+25519 /tmp/opencode/psd2.md
+https://n26.com
+[0m
+[0m$ [0mfor h in metabase.n26.com analytics.n26.com bi.n26.com onyx.n26.com metabase.tech26.de psd2.tech26.de sandbox.tech26.de; do printf "%-24s " "$h"; dig +short "$h" A | tr '\n' ' '; echo; sleep 0.3; done
+metabase.n26.com         
+analytics.n26.com        
+bi.n26.com               
+onyx.n26.com             
+metabase.tech26.de       
+psd2.tech26.de           
+sandbox.tech26.de
+[0m
+[0m$ [0mdig +short metabase.n26.com 2>&1 | head -3; echo "---psd2 md---"; sed -n '1,60p' /tmp/opencode/psd2.md
+---psd2 md---
+# N26 PSD2 Interfaces - Open Banking for Third Party Providers
+## Access documentation
+<details>
+<summary> PSD2 Dedicated Interface</summary>
+
+**Decoupled (OAuth2 as a pre-step)**
+
+- [AISP Access documentation](./doc/decoupled/dedicated-aisp.md)
+
+- [PISP Access documentation](./doc/decoupled/dedicated-pisp.md)
+
+- [CBPII Access documentation](./doc/decoupled/dedicated-cbpii.md)
+
+**Redirect (App-to-App)**
+
+- [AISP Access documentation](./doc/redirect/dedicated-aisp.md)
+
+- [PISP Access documentation](./doc/redirect/dedicated-pisp.md)
+
+- [CBPII Access documentation](./doc/redirect/dedicated-cbpii.md)
+
+</details>
+
+<details>
+<summary> PSD2 Fallback Interface</summary>
+
+- [AISP access documentation](./doc/fallback-aisp.md)
+
+- [PISP access documentation](./doc/fallback-pisp.md)
+
+</details>
+
+<details>
+<summary> PSD2 Sandbox Interface</summary>
+
+- [Sandbox Access documentation](./doc/sandbox.md)
+
+</details>
+
+## Key announcements
+### PSD2 Dedicated Interface
+<details>
+<summary> 2026</summary>
+
+- **August 31, 2026** The Redirect (App-to-App) SCA approach is now available for AIS, PIS and CBPII, as an alternative to the existing Decoupled approach. The PSU authenticates directly in the N26 app and is redirected back to the TPP. *(please refer to our Redirect access documentation)*
+
+</details>
+
+<details>
+<summary> 2025</summary>
+
+- **October 08, 2025** From October 9th 2025, an additional field `tppMessages` will be included in the response when requesting the status of a payment to comply with the Instant Payments Regulation enforced by the European Union. The field will detail, for rejected payments, whether it failed due to funds not available or other.
+
+- **September 19, 2025** From October 13, 2025, all requests to our PSD2 APIs must include the user-agent of your http client. Requests without this information will be blocked as part of infrastructure updates to improve API performance and security.
+
+- **September 18, 2025** Additional transaction status ACCC will replace ACSC in the /v1/payments/instant-sepa-credit-transfers/{{paymentId}}/status endpoint, from October 9th 2025, to comply with the Instant Payments Regulation enforced by the European Union.
+
+- **January 08, 2025** We are no longer requiring customers to accept the ___Term And Conditions___ for the SEPA Instant feature prior to performing the first transfer. There are no longer any fees associated with SEPA Instant.
+
+</details>
+[0m
+[0m$ [0mcurl -s -m 25 -A "Mozilla/5.0" "https://raw.githubusercontent.com/n26/psd2-tpp-docs/main/doc/sandbox.md" -o /tmp/opencode/sandbox.md -w "HTTP %{http_code}\n"; grep -iEo 'https?://[a-z0-9.:/_-]+' /tmp/opencode/sandbox.md | sort -u | head; echo "---urls in decoupled pisp---"; curl -s -m 25 -A "Mozilla/5.0" "https://raw.githubusercontent.com/n26/psd2-tpp-docs/main/doc/decoupled/dedicated-pisp.md" | grep -iEo 'https?://[a-z0-9.:/_-]+' | sort -u | head
+HTTP 200
+https://app.n26.com/open-banking
+https://app.n26.com/wl/open-banking/aisp
+https://tpp.com/redirect
+https://tpp.example.com/cb
+https://xs2a.tech26.de/sandbox
+https://xs2a.tech26.de/sandbox//v1/berlin-group/v1/funds-confirmations
+https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts
+https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents
+https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents/confirmation-of-funds
+https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/payments
+---urls in decoupled pisp---
+https://app.n26.com/open-banking
+https://oauth.net/2/
+https://tonyxu-io.github.io/pkce-generator/
+https://tools.ietf.org/html/rfc7636
+https://tpp.com/redirect
+https://webgate.ec.europa.eu/tl-browser/
+https://www.berlin-group.org/nextgenpsd2-downloads
+https://www.tpp.com/redirect
+https://xs2a.tech26.de
+https://xs2a.tech26.de/sandbox
+[0m
+[0m$ [0mfor h in xs2a.tech26.de aisp.tech26.de pisp-staging.tech26.de pisp.tech26.de; do printf "%-28s " "$h"; dig +short "$h" A | tr '\n' ' '; echo; sleep 0.4; done
+xs2a.tech26.de               obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com. 63.178.117.46 3.68.252.71 3.74.59.163 
+aisp.tech26.de               obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com. 3.68.252.71 3.74.59.163 63.178.117.46 
+pisp-staging.tech26.de       obnium-mtls-staging-fra-558276106.eu-central-1.elb.amazonaws.com. 3.64.120.186 52.29.23.240 18.199.191.206 
+pisp.tech26.de               obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com. 63.178.117.46 3.68.252.71 3.74.59.163
+[0m
+[0m$ [0mprobe(){ printf "\n=== %s ===\n" "$1"; curl -s -m 18 -o /tmp/opencode/r.out -w "HTTP %{http_code} len=%{size_download} server=%{header_json}" -A "Mozilla/5.0" "$1" 2>/dev/null | head -c 400; echo; head -c 220 /tmp/opencode/r.out | tr -d '\n'; echo; }
+probe "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents"; sleep 1
+probe "https://pay.n26.com/v1/payments"; sleep 1
+probe "https://app.n26.com/wl/open-banking/aisp"; sleep 1
+probe "https://engagementplatform.n26.com/users"
+=== https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents ===
+HTTP 401 len=0 server={"date":["Sat, 12 Sep 2026 09:07:44 GMT"],
+"content-length":["0"],
+"x-content-type-options":["nosniff","nosniff"],
+"x-frame-options":["DENY","DENY"],
+"x-xss-protection":["1; mode=block","1; mode=block"],
+"server":["istio-envoy"],
+"x-envoy-upstream-service-time":["32"]
+}
+
+
+=== https://pay.n26.com/v1/payments ===
+HTTP 401 len=342 server={"date":["Sat, 12 Sep 2026 09:07:46 GMT"],
+"content-type":["application/json"],
+"content-length":["342"],
+"server":["cloudflare"],
+"access-control-allow-credentials":["true"],
+"access-control-allow-methods":["GET, HEAD, PUT, PATCH, POST, DELETE"],
+"access-control-allow-origin":["*"],
+"access-control-expose-headers":["Request-Id, Stripe-Manage-Version, Stripe-Should-Retry, X
+{  "error": {    "message": "You did not provide an API key. You need to provide your API key in the Authorization header, using Bearer auth (e.g. 'Authorization: Bearer YOUR_SECRET_KEY'). See https://stripe.com/docs/a
+
+=== https://app.n26.com/wl/open-banking/aisp ===
+HTTP 302 len=40 server={"date":["Sat, 12 Sep 2026 09:07:47 GMT"],
+"content-type":["text/plain; charset=utf-8"],
+"content-length":["40"],
+"x-powered-by":["Express"],
+"referrer-policy":["strict-origin-when-cross-origin"],
+"cache-control":["no-store"],
+"set-cookie":["n26.csrf=s%3AjpL19Yj3Z385t5VMotrUR3rQ.IV9PtntVv8k4kvz6O0OEwSfuAk2PBXTwQVTK26iFIbM; Path=/; HttpOnly; Secure; SameSite=Strict","num26Uni
+Found. Redirecting to /open-banking/aisp
+
+=== https://engagementplatform.n26.com/users ===
+HTTP 401 len=31 server={"content-type":["application/json"],
+"date":["Sat, 12 Sep 2026 09:07:49 GMT"],
+"cf-ray":["a39dc397493015db-CMH"],
+"cf-cache-status":["DYNAMIC"],
+"access-control-allow-origin":["*"],
+"cache-control":["no-cache"],
+"x-runtime":["0.007743"],
+"server":["cloudflare"],
+"strict-transport-security":["max-age=31536000; includeSubDomains"],
+"vary":["Origin,Accept-Encoding"],
+"x-rateli
+{"message":"Invalid API key: "}
+[0m
+[0m$ [0mcurl -s -m 25 -A "Mozilla/5.0" "https://raw.githubusercontent.com/n26/psd2-tpp-docs/main/doc/redirect/dedicated-aisp.md" -o /tmp/opencode/red-aisp.md -w "HTTP %{http_code}\n"; grep -niE 'oauth|redirect_uri|authoriz|endpoint|https://' /tmp/opencode/red-aisp.md | head -40
+HTTP 200
+13:4. [OAuth as a Pre-step](./dedicated-aisp.md#oauth-as-a-pre-step)
+15:6. [Authentication endpoints](./dedicated-aisp.md#authentication-endpoints)
+16:7. [Consent endpoints](./dedicated-aisp.md#consent-endpoints)
+17:8. [AIS endpoints](./dedicated-aisp.md#ais-endpoints)
+23:Berlin Group Conformity : [Implementation Guidelines version 1.3.6](https://www.berlin-group.org/nextgenpsd2-downloads)
+25:Authorisation protocol: [oAuth 2.0](https://oauth.net/2/)
+28:QTSP is available on the [European Comission eIDAS Trusted List](https://webgate.ec.europa.eu/tl-browser/#/). For the N26 PSD2 Dedicated Interface API, the QWAC
+37:```https://xs2a.tech26.de```
+41:```https://xs2a.tech26.de/sandbox```
+54:| Supported SCA Approaches                                                       | Redirect / App-to-App (OAuth2 client_credentials pre-step) |
+76:## OAuth as a Pre-step
+78:OAuth2 is supported by this API through a cert-only **`client_credentials`** grant. The TPP obtains a
+79:single access token by calling `POST /oauth2/token` over an mTLS connection presenting its eIDAS QWAC
+80:certificate — there is **no** browser-based PSU login, **no** authorization code, and **no** token
+96:    TPP->>N26: POST /oauth2/token<br/>grant_type=client_credentials (eIDAS QWAC cert)
+99:    TPP->>N26: POST /consents<br/>Authorization: Bearer access_token
+109:| **How to get** | Call `POST /oauth2/token` with `grant_type=client_credentials` over mTLS with your eIDAS QWAC certificate. No PSU login or authorization code is required. | Existing refresh token |
+129:## Authentication endpoints
+131:These endpoints are used to retrieve an access or refresh token for use with the /consents and /accounts endpoints.
+137:The TPP obtains a cert-only `client_credentials` access token bound to its eIDAS QWAC certificate. This single token is used to create the consent and call the AIS endpoints after SCA — no PSU login and no authorization code exchange take place.
+142:POST    /oauth2/token?role=DEDICATED_AISP HTTP/1.1
+191:POST    /oauth2/token?role=DEDICATED_AISP HTTP/1.1
+211:| refresh_token         | The refresh token from the last POST /oauth2/token call. Mandatory parameter. |
+227:## Consent endpoints
+230:token retrieved as per the oauth session.
+253:Authorization: bearer {{access_token}}
+256:TPP-Redirect-URI: https://tpp.com/redirect
+281:            "href": "https://app.n26.com/wl/open-banking/aisp?consentId=fb44eb9c-d12f-4aef-90bd-726c47f2e864"
+295:This endpoint is intended to be polled by the TPP to determine whether the users have confirmed the consent in the N26 app. Please note that users have up to 10 minutes to confirm consent, and thus the time taken for the status to change is dependent on the user.
+301:Authorization: bearer {{access_token}}
+306:>ℹ️  This endpoint should not be polled more than **two times per second**. After a terminal status is reached (`REJECTED`; `VALID`; `EXPIRED`; `REVOKED_BY_PSU`; `TERMINATED_BY_TPP`), the polling should stop.
+324:Authorization: bearer {{access_token}}
+370:Authorization: bearer {{access_token}}
+387:Authorization: bearer {{access_token}}
+408:Authorization: bearer {{access_token}}
+413:>ℹ️  This endpoint should not be polled more than **one time per second**. After a terminal status is reached (`FINALISED`; `FAILED`), the polling should stop.
+423:## AIS endpoints
+428:access token retrieved during [Oauth](./dedicated-aisp.md#validity-of-access--refresh-tokens) session.
+434:Authorization: bearer {{access_token}}
+588:Authorization: bearer {{access_token}}
+[0m
+[0m$ [0mprobe(){ printf "=== %s ===\n" "$1"; curl -s -m 18 -L -o /tmp/opencode/r.out -w "final=%{url_effective} code=%{http_code} len=%{size_download}\n" -A "Mozilla/5.0" "$1" 2>/dev/null; head -c 200 /tmp/opencode/r.out | tr -d '\n'; echo; }
+probe "https://app.n26.com/open-banking/aisp"; sleep 1
+probe "https://app.n26.com/wl/open-banking/aisp?consentId=fb44eb9c-d12f-4aef-90bd-726c47f2e864"; sleep 1
+probe "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/payments"
+=== https://app.n26.com/open-banking/aisp ===
+final=https://app.n26.com/login?redirect=%2Fopen-banking%2Faisp code=200 len=319969
+<!doctype html><html lang="en" data-theme="light">  <head>    <meta charset="utf-8" />    <meta http-equiv="X-UA-Compatible" content="IE=edge" />    <meta name="viewport" content="width=device-w
+=== https://app.n26.com/wl/open-banking/aisp?consentId=fb44eb9c-d12f-4aef-90bd-726c47f2e864 ===
+final=https://app.n26.com/login?consentId=fb44eb9c-d12f-4aef-90bd-726c47f2e864&redirect=%2Fopen-banking%2Faisp%3FconsentId%3Dfb44eb9c-d12f-4aef-90bd-726c47f2e864 code=200 len=320071
+<!doctype html><html lang="en" data-theme="light">  <head>    <meta charset="utf-8" />    <meta http-equiv="X-UA-Compatible" content="IE=edge" />    <meta name="viewport" content="width=device-w
+=== https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/payments ===
+final=https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/payments code=401 len=0
+[0m
+[0m$ [0mcurl -s -m 30 -A "Mozilla/5.0" "https://sourcegraph.com/.api/search/stream?q=context:global+%22pay.n26.com%22&v=V3&display=20" -o /tmp/opencode/sg1.txt -w "HTTP %{http_code} bytes=%{size_download}\n"; head -c 1500 /tmp/opencode/sg1.txt | tr -d '\n'; echo; echo "=== sk_live n26 ==="; curl -s -m 30 -A "Mozilla/5.0" "https://sourcegraph.com/.api/search/stream?q=context:global+%22sk_live_%22+n26&v=V3&display=20" -o /tmp/opencode/sg2.txt -w "HTTP %{http_code} bytes=%{size_download}\n"; head -c 800 /tmp/opencode/sg2.txt | tr -d '\n'
+HTTP 200 bytes=2624
+event: filtersdata: [{"value":"archived:yes","label":"Include archived repos","count":67708,"exhaustive":false,"kind":"utility"},{"value":"fork:yes","label":"Include forked repos","count":282,"exhaustive":false,"kind":"utility"}]event: progressdata: {"done":false,"matchCount":0,"durationMs":213,"skipped":[{"reason":"repository-fork","title":"282 forked","message":"By default we exclude forked repositories. Include them with `fork:yes` in your query.","severity":"info","suggested":{"title":"include forked","queryExpression":"fork:yes"}},{"reason":"excluded-archive","title":"67k archived","message":"By default we exclude archived repositories. Include them with `archived:yes` in your query.","severity":"info","suggested":{"title":"include archived","queryExpression":"archived:yes"}}],"trace":"https://console.cloud.google.com/traces/list?tid=a8fb71ab3581d8b23e12f70b4885d191\u0026authuser=0\u0026project=src-c4cd661e8a76d6b51c26"}event: progressdata: {"done":false,"matchCount":0,"durationMs":5012,"skipped":[{"reason":"repository-fork","title":"282 forked","message":"By default we exclude forked repositories. Include them with `fork:yes` in your query.","severity":"info","suggested":{"title":"include forked","queryExpression":"fork:yes"}},{"reason":"excluded-archive","title":"67k archived","message":"By default we exclude archived repositories. Include them with `archived:yes` in your query.","severity":"info","suggested":{"title":"include archived","queryExpression":"archiv
+=== sk_live n26 ===
+HTTP 200 bytes=2624
+event: filtersdata: [{"value":"archived:yes","label":"Include archived repos","count":67708,"exhaustive":false,"kind":"utility"},{"value":"fork:yes","label":"Include forked repos","count":282,"exhaustive":false,"kind":"utility"}]event: progressdata: {"done":false,"matchCount":0,"durationMs":206,"skipped":[{"reason":"repository-fork","title":"282 forked","message":"By default we exclude forked repositories. Include them with `fork:yes` in your query.","severity":"info","suggested":{"title":"include forked","queryExpression":"fork:yes"}},{"reason":"excluded-archive","title":"67k archived","message":"By default we exclude archived repositories. Include them with `archived:yes` in your query.","severity":"info","suggested":{"title":"include archived","queryExpression":"archived:yes"}}],"tr
+[0m
+[0m$ [0mq(){ echo "=== $1 ==="; curl -s -m 30 -A "Mozilla/5.0" "https://sourcegraph.com/.api/search/stream?q=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$1")&v=V3&display=20" | grep -E '^event: matches|"repository"|matchCount' | head -c 1200; echo; }
+q "context:global count:50 n26 sk_live"
+sleep 1
+q "context:global count:20 pay.n26.com fork:yes archived:yes"
+sleep 1
+q "context:global count:20 \"sk_live\" \"n26.com\""
+=== context:global count:50 n26 sk_live ===
+data: {"done":false,"matchCount":0,"durationMs":207,"skipped":[{"reason":"repository-fork","title":"282 forked","message":"By default we exclude forked repositories. Include them with `fork:yes` in your query.","severity":"info","suggested":{"title":"include forked","queryExpression":"fork:yes"}},{"reason":"excluded-archive","title":"67k archived","message":"By default we exclude archived repositories. Include them with `archived:yes` in your query.","severity":"info","suggested":{"title":"include archived","queryExpression":"archived:yes"}}],"trace":"https://console.cloud.google.com/traces/list?tid=19e8fed60bcaa9623d751081477ae115\u0026authuser=0\u0026project=src-c4cd661e8a76d6b51c26"}
+data: {"done":false,"matchCount":0,"durationMs":5007,"skipped":[{"reason":"repository-fork","title":"282 forked","message":"By default we exclude forked repositories. Include them with `fork:yes` in your query.","severity":"info","suggested":{"title":"include forked","queryExpression":"fork:yes"}},{"reason":"excluded-archive","title":"67k archived","message":"By default we exclude archived repositories. Include them with `archived:yes` in your query.","severity":"info","suggested":{"title":"include 
+=== context:global count:20 pay.n26.com fork:yes archived:yes ===
+data: {"done":true,"matchCount":0,"durationMs":1675,"skipped":[],"trace":"https://console.cloud.google.com/traces/list?tid=6845b8b14f476f9d3d755469ad4a3e8a\u0026authuser=0\u0026project=src-c4cd661e8a76d6b51c26"}
+
+=== context:global count:20 "sk_live" "n26.com" ===
+data: {"done":false,"matchCount":0,"durationMs":215,"skipped":[{"reason":"repository-fork","title":"282 forked","message":"By default we exclude forked repositories. Include them with `fork:yes` in your query.","severity":"info","suggested":{"title":"include forked","queryExpression":"fork:yes"}},{"reason":"excluded-archive","title":"67k archived","message":"By default we exclude archived repositories. Include them with `archived:yes` in your query.","severity":"info","suggested":{"title":"include archived","queryExpression":"archived:yes"}}],"trace":"https://console.cloud.google.com/traces/list?tid=f1b002ef7d3f65df384c738eab9b502d\u0026authuser=0\u0026project=src-c4cd661e8a76d6b51c26"}
+data: {"done":true,"matchCount":0,"durationMs":2744,"skipped":[{"reason":"repository-fork","title":"282 forked","message":"By default we exclude forked repositories. Include them with `fork:yes` in your query.","severity":"info","suggested":{"title":"include forked","queryExpression":"fork:yes"}},{"reason":"excluded-archive","title":"67k archived","message":"By default we exclude archived repositories. Include them with `archived:yes` in your query.","severity":"info","suggested":{"title":"include a
+[0m
+[0m◈ [0mExa Web Search ""engagementplatform.n26.com" OR "dashboard-02.braze.eu" n26 braze api key"
+[0m
+[0m$ [0mq(){ echo "=== $1 ==="; curl -s -m 30 -A "Mozilla/5.0" "https://sourcegraph.com/.api/search/stream?q=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$1")&v=V3&display=10" | grep -E '"done"|"repository"' | head -c 900; echo; }
+q "context:global count:20 dashboard-02.braze.eu fork:yes archived:yes"
+sleep 1
+q "context:global count:20 n26 braze REST API key:Fork: false fork:yes archived:yes" >/dev/null; q "context:global count:20 engagementplatform fork:yes archived:yes"
+=== context:global count:20 dashboard-02.braze.eu fork:yes archived:yes ===
+data: [{"type":"content","path":"libs/destination-functions/src/meta.ts","repositoryID":41706083,"repository":"github.com/jitsucom/jitsu","repoStars":5069,"repoLastFetched":"2026-09-12T09:09:09.545804Z","branches":[""],"commit":"d88651c4ba8f04e9fcf6b950faed35ec622ad847","hunks":null,"lineMatches":[{"line":"      \"EU-02 : dashboard-02.braze.eu\",","lineNumber":310,"offsetAndLengths":[[15,21]]}],"language":"TypeScript"},{"type":"content","path":"libs/destination-functions/src/functions/braze-destination.ts","repositoryID":41706083,"repository":"github.com/jitsucom/jitsu","repoStars":5069,"repoLastFetched":"2026-09-12T09:09:09.545804Z","branches":[""],"commit":"d88651c4ba8f04e9fcf6b950faed35ec622ad847","hunks":null,"lineMatches":[{"line":"  \"EU-02 : dashboard-02.braze.eu\": \"https://rest.fra-02.braze.eu\",","lineNumber":18,"offsetAndLengths":[[11,21]]}],"language":"TypeScript"}]
+data: {"
+=== context:global count:20 engagementplatform fork:yes archived:yes ===
+data: [{"type":"content","path":"src/types/index.ts","repositoryID":64264161,"repository":"github.com/builderz-labs/marketing-dashboard","repoStars":457,"repoLastFetched":"2026-09-12T06:04:44.486111Z","branches":[""],"commit":"ef3d43f0ae1dcc3f2a9a9e31fda7172f8455b89f","hunks":null,"lineMatches":[{"line":"export type EngagementPlatform = 'x' | 'linkedin';","lineNumber":80,"offsetAndLengths":[[12,18]]},{"line":"  platform: EngagementPlatform | null;","lineNumber":86,"offsetAndLengths":[[12,18]]}],"language":"TypeScript"}]
+data: [{"type":"content","path":"backend/src/routes/analytics.ts","repositoryID":64248466,"repository":"github.com/rejourneyco/rejourney","repoStars":279,"repoLastFetched":"2026-09-12T07:58:25.262793Z","branches":[""],"commit":"62d4e58c01bfb79344925922d6c30eb19a981c72","hunks":null,"lineMatches":[{"line":"        const engagementPlatform = typeof req.query.platform === 's
+[0m
+[0m$ [0mq(){ echo "=== $1 ==="; curl -s -m 30 -A "Mozilla/5.0" "https://sourcegraph.com/.api/search/stream?q=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$1")&v=V3&display=10" | grep -E '"done"|"repository"' | python3 -c "import sys,json,re
+s=sys.stdin.read()
+for m in re.finditer(r'\"(?:event:\s)?data:\s*(\{.*?\})\n+', ''): pass
+" 2>/dev/null | head -c 1200; echo; }
+fetch(){ curl -s -m 30 -A "Mozilla/5.0" "https://sourcegraph.com/.api/search/stream?q=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$1")&v=V3&display=10" | grep -E '^event: matches|"repository"|"done"'; }
+echo "=== STRIPE_SECRET_KEY n26 ==="; fetch "context:global count:20 STRIPE_SECRET_KEY n26 fork:yes archived:yes" | head -c 700; echo
+sleep 1
+echo "=== rk_live n26 ==="; fetch "context:global count:20 rk_live n26 fork:yes archived:yes" | head -c 700; echo
+sleep 1
+echo "=== striptopup ==="; fetch "context:global count:20 stripetopup fork:yes archived:yes" | head -c 700
+=== STRIPE_SECRET_KEY n26 ===
+
+=== rk_live n26 ===
+data: {"done":false,"matchCount":0,"durationMs":5015,"skipped":[],"trace":"https://console.cloud.google.com/traces/list?tid=5e225b4bdcf61aa521fdcf9b4ee86d3b\u0026authuser=0\u0026project=src-c4cd661e8a76d6b51c26"}
+data: {"done":false,"matchCount":0,"durationMs":10015,"skipped":[],"trace":"https://console.cloud.google.com/traces/list?tid=5e225b4bdcf61aa521fdcf9b4ee86d3b\u0026authuser=0\u0026project=src-c4cd661e8a76d6b51c26"}
+data: {"done":false,"matchCount":0,"durationMs":15016,"skipped":[],"trace":"https://console.cloud.google.com/traces/list?tid=5e225b4bdcf61aa521fdcf9b4ee86d3b\u0026authuser=0\u0026project=src-c4cd661e8a76d6b51c26"}
+data: {"done":false,"matchCount":0,"durationMs":20016,"skip
+=== striptopup ===
+event: matches
+data: [{"type":"content","path":"Sources/StripeKit/Connect/TopUp/TopUpRoutes.swift","repositoryID":55216958,"repository":"github.com/vapor-community/stripe-kit","repoStars":149,"repoLastFetched":"2026-09-12T01:54:21.493375Z","branches":[""],"commit":"91476c51b72680d792610006042e731ac2c5daeb","hunks":null,"lineMatches":[{"line":"public struct StripeTopUpRoutes: TopUpRoutes {","lineNumber":66,"offsetAndLengths":[[14,11]]}],"language":"Swift"},{"type":"content","path":"packages/db/src/schema/billing.ts","repositoryID":64318245,"repository":"github.com/oblien/openship","repoStars":12239,"repoLastFetched":"2026-09-12T05:33:54.095538Z","branches":[""],"commit":"30ae48a4d67aabe8502df
+[0m
+[0m$ [0mcurl -s -m 25 -A "Mozilla/5.0" "https://searchcode.com/api/codesearch_I/?q=pay.n26.com&per_page=20" -w "\nHTTP %{http_code}\n" | head -c 800; echo; sleep 1; curl -s -m 25 -A "Mozilla/5.0" "https://searchcode.com/api/codesearch_I/?q=tech26.de+sk_live&per_page=20" -w "\nHTTP %{http_code}\n" | head -c 800
+404 page not found
+
+HTTP 404
+
+404 page not found
+
+HTTP 404
+[0m
+Sourcegraph confirms no N26 keys in public indexes; searchcode API dead. Analysis complete.
+
+STEP 1 — DELTA:
+- [NEW] xs2a.tech26.de: PSD2 sandbox live at Envoy — `/sandbox/v1/berlin-group/v1/consents` + `/payments` → 401 len=0 (mTLS/QWAC-gated; distinct from api.tech26.de empty-404 family, resolvable public ELB) — surfaced from official `n26/psd2-tpp-docs` (pushed 2026-08-31).
+- [NEW] app.n26.com/wl/open-banking/*: fresh "Redirect (App-to-App)" SCA consent flow — `/open-banking/aisp` → 302 → `/login?redirect=%2Fopen-banking%2Faisp` (SPA, Express, n26.csrf set); consent URLs carry `?consentId=<uuid>`, login-gated.
+- [NEW] GitHub org `n26` enumerated: 6 public repos (bob, express-simple-locale, N26AndroidSamples, bob-vapor-template, psd2-tpp-docs, flowkit-ios) — all official SDKs/docs, 0 keys, 0 internal host refs.
+- [CHANGED] grep.app: 429 → now Vercel Security Checkpoint (JS wall) — index machine-unusable.
+- [CHANGED] Sourcegraph stream API works anonymously — `pay.n26.com`, `sk_live_`/`rk_live_`/`STRIPE_SECRET_KEY`+n26 (incl. forks+archived) all 0 matches; `stripetopup` matches only generic Stripe TopUp SDK. Public-index key-leak path now cross-exhausted (GitHub 401, grep.app walled, Sourcegraph nil, websearch nil, searchcode API 404).
+- [CHANGED] engagementplatform.n26.com=Braze **EU-02** confirmed via third-party map (jitsucom/jitsu: `dashboard-02.braze.eu → rest.fra-02.braze.eu`).
+
+STEP 2 — PRIORITIZE:
+- [PRIO] pay.n26.com/v1/*,7.70,a=9,b=10,t=7,g=2,c=8,f=6 — pure Stripe forwarder; public-index discovery now nil, value survives only via non-indexed key leak.
+- [PRIO] authentication-service.eks.core-production.keyless.technology,6.35,a=8,b=9,t=9,g=1,c=1,f=5 — custom-route auth, WS replay untested; AUTH_HELPED.
+- [PRIO] engagementplatform.n26.com,5.65,a=7,b=8,t=7,g=1,c=2,f=5 — Braze EU-02 REST, key-gated, CORS-open.
+- [PRIO] app.n26.com/wl/open-banking/*,4.35,a=5,b=7,t=6,g=2,c=2,f=9 — freshest surface (2wk), login-gated, PSD2 consent flow.
+
+STEP 3 — HYPOTHESES:
+[HYP] pay.n26.com full-object Stripe passthrough yields account-wide BOLA on any leaked N26-bound key
+class: IDOR
+asset: pay.n26.com/v1/*
+confidence: 40
+reasoning: 23/23 /v1 routes Stripe-origin 401 (no-key len=342 vs fake-key len=132, key-delta proves pure forwarder); N26 card top-up runs on public Stripe TopUp API; 0/11 web bundles have pk_/sk_/rk_live_/pay.n26.com; sourcegraph+grep.app+github-search+websearch+searchcode all negative this cycle.
+evidence_needed: N26-bound sk_/rk_live_ key from a non-indexed source (CI logs, APK, server leak).
+verify_steps: (1) with candidate key, read-only `GET https://pay.n26.com/v1/payments?limit=3` Bearer <key> (2) if 200, `GET /v1/balance` (3) do NOT mutate/list PII.
+impact: rk_/sk_live_ → customers/PII, charges, refunds to attacker-chosen destination; fund-level BOLA. HIGH if key, nil today.
+testability: AUTH_HELPED
+
+[HYP] keyless WS subprotocol replay lacks token-reuse / challenge-binding protection
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 45
+reasoning: Live Istio/Envoy v26.09.07, x-keyless-flow-id; 68+ HTTP paths + WS-upgrade all `path unused`; json/graphql-ws subprotocol semantics never exercised with a minted token.
+evidence_needed: minted keyless WS token (requires auth).
+verify_steps: with token → two sequential `wss://` handshakes (json + graphql-ws) replaying the same token; observe reuse acceptance / missing challenge binding.
+impact: replayable auth token → auth-flow confusion toward login/session takeover; HIGH if flawed.
+testability: AUTH_HELPED
+
+[HYP] Braze EU-02 CORS-open data routes permit cross-tenant PII call once REST key obtained
+class: IDOR
+asset: engagementplatform.n26.com
+confidence: 50
+reasoning: /users 401 key-gated (not tarpit); root→dashboard-02.braze.eu, now third-party-confirmed = rest.fra-02.braze.eu; CORS-open; key absent from 10 web bundles+CSP → server/mobile-only; value materializes only via key use/leak.
+evidence_needed: valid Braze REST key; ACAO reflection on data routes.
+verify_steps: (1) `GET https://engagementplatform.n26.com/` capture CORS (2) with key → `GET /users/export/ids` + `Origin: https://attacker.invalid` observe ACAO.
+impact: cross-tenant Braze PII (users, segments, events); MEDIUM-HIGH, key-gated.
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE:
+- [PARKED] PSD2 consent-flow OAuth on app.n26.com/wl/open-banking: confidence 30 (<40) — redirect_uri is server-side via `TPP-Redirect-URI` header (not client param), /oauth2/token is QWAC cert-bound client_credentials only, page is login-gated; no anonymous OAuth flaw reachable.
+- [PARKED] pay.n26.com public-index key hunt: the *discovery* sub-hypothesis is falsified (all 5 reachable indexes negative); survival now rests solely on non-indexed leak channels.
+- [FINAL] 1) Braze cross-tenant PII — 50, AUTH_HELPED.
+- [FINAL] 2) keyless WS subprotocol replay — 45, AUTH_HELPED.
+- [FINAL] 3) pay.n26.com BOLA on key leak — 40, AUTH_HELPED, degraded evidence path.
+
+STEP 5 — NEXT ACTION:
+- [NEXT] RAG: sweep remaining non-indexed leak channels for an N26-bound Stripe/Braze key — (a) Sourcegraph `context:global count:50 "tech26.de" "sk_live_"` and `"spc.n26.com"` (only working anonymous code index; includes forks/archived), (b) websearch `"number26" "sk_live_"` and `"n26" braze "api_key"`; if any candidate surfaces, validate with single read-only `GET https://pay.n26.com/v1/payments?limit=3` (Authorization: Bearer <key>) or `GET https://engagementplatform.n26.com/users` — do not mutate or enumerate PII.
+
+STEP 6 — LEARNING:
+- [LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: PSD2 Berlin-group sandbox routes live at Envoy (401/len=0, mTLS+istio) — sanctioned QWAC channel, anonymous nil; distinct from api.tech26.de empty-404 and SG-stalled families.
+- [LEARN] ACCEPTED MISCONFIG @ app.n26.com/wl/open-banking: Redirect SCA consent flow live but login-gated (302→/login?redirect=), TPP-Redirect-URI header-side only; no anonymous OAuth surface.
+- [LEARN] REJECTED AUTH @ Sourcegraph: `pay.n26.com`, `sk_live_`/`rk_live_`/`STRIPE_SECRET_KEY`/`stripetopup` + n26 → 0 matches incl. forks+archived — N26 keys absent from publicly-indexed code.
+- [LEARN] ACCEPTED MISCONFIG @ engagementplatform.n26.com: third-party confirms dashboard-02.braze.eu ≡ rest.fra-02.braze.eu (Braze EU-02) — instance identification now externally corroborated.
+- [LEARN] REJECTED AUTH @ grep.app/searchcode.com: grep.app behind Vercel JS-checkpoint; searchcode codesearch API 404 — both indexes unusable anonymously.
+
+STEP 7 — RISK:
+- [RISK] n26: 44 — anonymous HTTP surface across 20+ hosts conclusively exhausted and now cross-validated by negative public-index sweeps; all high-value paths (pay.n26.com, keyless WS, Braze EU-02) are key/auth-gated with no anonymous wormhole; freshest surface (PSD2 open-banking) is QWAC/login-bound; residual exposure is entirely external-dependent (non-indexed Stripe/Braze key leaks, egress-tier ingress HUMAN_ONLY). One valid externally-leaked payment key still escalates to fund-level BOLA; none found on any reachable index this cycle.

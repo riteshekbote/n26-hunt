@@ -261,3 +261,7 @@
 - 2026-09-12 ACCEPTED AUTH @ pay.n26.com: 401 boundary stable 4+ cycles — pure Stripe passthrough, no-key len=342 vs fake-key len=132; no N26-side key injection; anonymous surface nil.
 - 2026-09-12 REJECTED AUTH @ api.github.com: `/search/code?q=pay.n26.com` still 401 token-gated — public-repo code-search blocked; only grep.app/websearch remain for key discovery.
 - 2026-09-12 ACCEPTED MISCONFIG @ crt.sh: 502 rate-limit persisted 09-10→09-12 — passive subdomain corpus not refreshed; no fresh leaves to test.
+- 2026-09-12 ACCEPTED AUTH @ pay.n26.com: no-key 401 len=342 vs fake-key 401 len=132 "Invalid API Key provided: sk_live_****0000" — host is pure Stripe API passthrough on N26 domain, no N26-side key injection; anonymous surface nil; exploit gated on valid N26-account key (AUTH_HELPED).
+- 2026-09-12 REJECTED MISCONFIG @ app.n26.com: reswept 11 login bundles this cycle — 0 keys, 0 pay.n26.com/acct_ refs; `stripetopup`+`/topup/card` are internal identifiers of the public Stripe top-up partnership, not key material; web leak pathway closed.
+- 2026-09-12 REJECTED MISCONFIG @ docs.n26.com: legal-PDF host surfaced in bundle strings — static content, INFO, no app surface.
+- 2026-09-12 REJECTED AUTH @ api.github.com: `/search/code?q=pay.n26.com` → 401 requires-authentication — public-repo leak-scan blocked without token this cycle.
