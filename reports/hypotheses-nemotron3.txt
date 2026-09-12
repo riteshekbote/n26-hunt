@@ -1,9 +1,15 @@
-## 2026-09-11 22:43:26 UTC [target] (model nemotron3)
-[PRIO] pay.n26.com/v1/*,8.05,a=9,b=10,t=8,g=2,c=8,f=10  
-[PRIO] authentication-service.eks.core-production.keyless.technology,7.60,a=8,b=9,t=10,g=1,c=9,f=8  
+## 2026-09-12 00:39:31 UTC [target] (model nemotron3)
+[NEW] pay.n26.com/v1/* — Live Stripe-forwarded payment API confirmed (23+ endpoints: /v1/payments, /v1/balance, /v1/charges all HTTP 401 with Stripe error format; /v1/tokens 404; root 204; /v1 403 CloudFront) — discovered 2026-09-11, first live payment endpoints observed  
+[NEW] pay.n26.com subdomain — Versioned /v1/payments, /v1/balance, /v1/charges all HTTP 401 (auth-gated, not tarpit) — core banking attack surface  
+[CHANGED] authentication-service.eks.core-production.keyless.technology — Deployment stable at v26.09.07; all 68+ standard + tenant-scoped paths return `{"code":"UNPROCESSABLE","reason":"path unused"}` — API at custom routes, anonymous discovery exhausted  
+[CHANGED] engagementplatform.n26.com/users — Braze REST boundary stable (401 key-gated, Cloudflare, CORS-open, no web-bundle token across 10 bundles + CSP)  
+[CHANGED] app.n26.com CSP — No pay.n26.com in connect-src (web app doesn't call pay.n26.com directly) — payment API likely mobile/server-only  
+[CHANGED] flags.n26.com — RBAC boundary fully stable (POST /v1/initialize 200 by-design, GET all 403, sdk_exception 202, download_config_specs 401) — retired from active testing  
+[CHANGED] api.tech26.de / beta-api.tech26.de / fpt.tech26.de — Anonymous HTTP API discovery exhausted (~47 paths all envoy empty-404); WS-upgrade 403 = awselb/2.0 WAF edge rule; fpt fixed-response ALB placeholder  
+[PRIO] pay.n26.com/v1/payments,8.75,a=9,b=10,t=8,g=2,c=9,f=9  
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.60,a=8,b=9,t=9,g=1,c=9,f=8  
 [PRIO] engagementplatform.n26.com/users,6.50,a=7,b=8,t=7,g=2,c=7,f=7  
 [PRIO] app.n26.com/graphql,4.35,a=4,b=6,t=5,g=1,c=5,f=4  
-[PRIO] api.tech26.de,3.60,a=3,b=4,t=4,g=3,c=4,f=4  
 [HYP] pay.n26.com/v1/* Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth  
 class: IDOR  
 asset: pay.n26.com/v1/payments  
@@ -38,7 +44,7 @@ testability: AUTH_HELPED
 [FINAL] 1) pay.n26.com/v1/* Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth (confidence 75) — AUTH_HELPED testable, NEW live payment API with 401 boundary, core banking value  
 [FINAL] 2) Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw (confidence 60) — AUTH_HELPED testable, high-value target, live service confirmed, deployment rotated v26.09.07  
 [FINAL] 3) Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token (confidence 55) — AUTH_HELPED, distinct 401 boundary confirmed, Cloudflare fronted  
-[NEXT] PROBE: GET https://pay.n26.com/v1/payments → GET https://pay.n26.com/v1/balance → GET https://pay.n26.com/v1/charges — confirm 401 auth boundary, capture WWW-Authenticate header, enumerate response schema; <=1 rps, passive read-only
+[NEXT] PROBE: GET https://pay.n26.com/v1/payments → GET https://pay.n26.com/v1/balance → GET https://pay.n26.com/v1/charges — confirm 401 auth boundary, capture WWW-Authenticate header, enumerate response schema; <=1 rps, passive read-only  
 [LEARN] ACCEPTED MISCONFIG @ pay.n26.com: live payment API with versioned /v1/payments, /v1/balance, /v1/charges endpoints returning HTTP 401 (auth-gated, not tarpit) — NEW attack surface, core banking value  
 [LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68+ standard + tenant-scoped paths return "path unused" — API at custom routes  
 [LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further  
