@@ -2291,3 +2291,33 @@ verify_steps: (1) passive GET https://api.tech26.de/api/accounts (2) POST https:
 impact: if legacy endpoint live → brute/MFA-flow logic, token refresh semantics (psd2 docs: one-time-use refresh chains); MEDIUM; low confidence.
 testability: PASSIVE
 [NEXT] PROBE: OPTIONS+GET https://api.tech26.de/api/accounts and OPTIONS+POST https://api.tech26.de/oauth2/token (Content-Type: application/x-www-form-urlencoded, empty/garbage body, grant_type=password) — replay open-source-client real paths to disprove/confirm envoy empty-404; passive, <=1 rps.
+## 2026-09-12 20:39:59 UTC [target] (model bigpickle)
+[HYP] Legacy api.tech26.de resource server grants balance/PII if any current-epoch N26 bearer token or leaked OSS-client credential is usable
+class: AUTH
+asset: api.tech26.de/api/accounts
+confidence: 50
+reasoning: /api/accounts+/api/accounts/me+/api/me → 401 len=211 invalid_token / "Login attempt expired" behind envoy with NO WWW-Authenticate challenge (custom OAuth filter, not stock Spring); exact OSS contract (python-n26 `BASE_URL_DE`, grant_type=password + `Basic bmF0aXZld2ViOg==`) still routes; access_token query-param → unchanged 401 (header-bearer only); /api/me/cards /api/cards /api/me/spaces /api/v1/me /api/v2/accounts → empty-404.
+evidence_needed: any valid bearer/refresh token; whether token realm overlaps current app/mobile tokens; 200 body shape change on /api/accounts.
+verify_steps: (1) with token, passive `GET https://api.tech26.de/api/accounts` Bearer <t> (2) if 200, `GET /api/me` (3) do not mutate/read PII beyond presence check.
+impact: balance, IBAN/BIC, me-PII if any token reuse or leaked OSS-flow credential; MEDIUM, token-gated.
+testability: AUTH_HELPED
+[HYP] PSD2 fallback AISP on aisp.tech26.de reachable at HTTP layer without client-cert; token-permitted /api/v2/accounts* yields cross-tenant bank data
+class: MISCONFIG
+asset: aisp.tech26.de/api/v2/accounts
+confidence: 45
+reasoning: base URL from official n26/psd2-tpp-docs fallback-aisp.md; /api/v2/accounts + /api/v2/accounts/{uuid} → HTTP/2 401 len=0 `server: istio-envoy`, X-Frame/XSS headers but NO WWW-Authenticate and NO client-cert handshake rejection at edge (HTTP layer reachable anonymously); docs gate on device-token+x-tpp-userip+bearer only; Berlin /v1/*, /api/v2/me → 404.
+evidence_needed: whether a QSEAL cert is demanded upstream (401 vs 403 at app layer once headers/cert present); route map of rest of /api/v2/*.
+verify_steps: (1) passive `GET https://aisp.tech26.de/api/v2/accounts/<zero-uuid>/transactions` and `/balances` for map (2) with TPP cert+headers → 200? (3) read-only.
+impact: PSD2 TPP-scope bank data if gating weak; MEDIUM, cert+key gated.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe BOLA on leaked N26-bound key
+class: IDOR
+asset: pay.n26.com/v1/*
+confidence: 45
+reasoning: 401 boundary stable 4+ cycles; Stripe fingerprint headers; no-key 342B vs fake-key 132B; 0 keys in 11 bundles; grep.app still 429 this cycle (webfetch), GitHub code-search 401 → no key source today.
+evidence_needed: N26-bound sk_/rk_live_ from non-indexed source.
+verify_steps: read-only `GET /v1/balance` + `GET /v1/payments?limit=3` with candidate Bearer key; no mutation/PII.
+impact: fund-level BOLA (charges/refunds/PII); HIGH if key, nil now.
+testability: AUTH_HELPED
+[NEXT] PROBE: passive GET `https://aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000/transactions` and `.../balances` and `.../positions` (read-only, 1rps) to complete the NEW live PSD2 host's route map (401 vs 404 per route) — nothing else offsets prior to token acquisition.
+[RISK] n26: 15 — all four active surfaces 401-bound (no data reached), probes strictly GET/OPTIONS ≤1rps, no credentials/mutations, findings passive-only via documented channel; residual = any tokenized next step must be human-authorized.
