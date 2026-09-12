@@ -2257,3 +2257,4 @@ verify_steps: (1) `GET https://engagementplatform.n26.com/` capture CORS (2) wit
 impact: cross-tenant Braze PII (users, segments, events); MEDIUM-HIGH, key-gated.
 testability: AUTH_HELPED
 ## 2026-09-12 12:54:39 UTC [target] (model bigpickle)
+## 2026-09-12 16:01:26 UTC [target] (model bigpickle)
