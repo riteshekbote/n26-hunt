@@ -19630,3 +19630,359 @@ testability: AUTH_HELPED
 
 **STEP 7 — RISK**
 [RISK] n26: 15 — all four active surfaces 401-bound (no data reached), probes strictly GET/OPTIONS ≤1rps, no credentials/mutations, findings passive-only via documented channel; residual = any tokenized next step must be human-authorized.
+===== ANALYST bigpickle 2026-09-12 22:35:22 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mdate -u; for u in \
+  "https://aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000/transactions" \
+  "https://aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000/balances" \
+  "https://aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000/positions" \
+  "https://aisp.tech26.de/api/v2/accounts" \
+  "https://aisp.tech26.de/api/v2/me" \
+  "https://api.tech26.de/api/accounts" \
+  "https://api.tech26.de/api/me" \
+  ; do
+  echo "### $u"
+  curl -sS -o /tmp/b.txt -D /tmp/h.txt -m 20 "$u" -H "User-Agent: curl" 2>/dev/null
+  echo "HTTP $(head -1 /tmp/h.txt 2>/dev/null)  bytes=$(wc -c < /tmp/b.txt 2>/dev/null)"
+  grep -ioE "^(HTTP/[0-9.]+ [0-9]+[^ ]*|server: .*|www-authenticate: .*|access-control-allow-origin: .*|content-type: .*|x-frame-options: .*)" /tmp/h.txt 2>/dev/null | tr -d '\r' | head -10
+  echo "BODY: $(head -c 250 /tmp/b.txt 2>/dev/null)"
+  echo ""
+  sleep 1
+done
+Sat Sep 12 22:32:24 UTC 2026
+### https://aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000/transactions
+HTTP HTTP/2 401 
+  bytes=0
+HTTP/2 401
+x-frame-options: DENY
+server: istio-envoy
+x-frame-options: DENY
+BODY: 
+
+### https://aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000/balances
+HTTP HTTP/2 401 
+  bytes=0
+HTTP/2 401
+x-frame-options: DENY
+server: istio-envoy
+x-frame-options: DENY
+BODY: 
+
+### https://aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000/positions
+HTTP HTTP/2 401 
+  bytes=0
+HTTP/2 401
+x-frame-options: DENY
+server: istio-envoy
+x-frame-options: DENY
+BODY: 
+
+### https://aisp.tech26.de/api/v2/accounts
+HTTP HTTP/2 401 
+  bytes=0
+HTTP/2 401
+x-frame-options: DENY
+server: istio-envoy
+x-frame-options: DENY
+BODY: 
+
+### https://aisp.tech26.de/api/v2/me
+HTTP HTTP/2 404 
+  bytes=0
+HTTP/2 404
+server: istio-envoy
+x-frame-options: DENY
+BODY: 
+
+### https://api.tech26.de/api/accounts
+HTTP HTTP/1.1 401 Unauthorized
+  bytes=211
+HTTP/1.1 401
+Content-Type: application/problem+json
+x-frame-options: DENY
+server: envoy
+x-frame-options: DENY
+BODY: {"status":401,"detail":"Invalid token","type":"error","userMessage":{"title":"Login attempt expired","detail":"That took too long, please try again."},"error":"invalid_token","error_description":"Invalid token"}
+
+### https://api.tech26.de/api/me
+HTTP HTTP/1.1 401 Unauthorized
+  bytes=211
+HTTP/1.1 401
+Content-Type: application/problem+json
+x-frame-options: DENY
+server: envoy
+x-frame-options: DENY
+BODY: {"status":401,"detail":"Invalid token","type":"error","userMessage":{"title":"Login attempt expired","detail":"That took too long, please try again."},"error":"invalid_token","error_description":"Invalid token"}
+[0m
+[0m$ [0mfor u in \
+  "https://api.tech26.de/oauth2/token" \
+  "https://api.tech26.de/api/accounts" \
+  "https://aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000/transactions" \
+  "https://aisp.tech26.de/" \
+  ; do
+  echo "### OPTIONS $u"
+  curl -sS -o /tmp/b.txt -D /tmp/h.txt -m 20 -X OPTIONS "$u" -H "User-Agent: curl" -H "Access-Control-Request-Method: GET" -H "Origin: https://app.n26.com" 2>/dev/null
+  echo "HTTP $(head -1 /tmp/h.txt 2>/dev/null)  bytes=$(wc -c < /tmp/b.txt 2>/dev/null)"
+  grep -ioE "^(HTTP/[0-9.]+ [0-9]+[^ ]*|server: .*|access-control-allow-.*: .*|content-type: .*|allow: .*)" /tmp/h.txt 2>/dev/null | tr -d '\r' | head -10
+  echo "BODY: $(head -c 250 /tmp/b.txt 2>/dev/null)"
+  echo ""
+  sleep 1
+done
+### OPTIONS https://api.tech26.de/oauth2/token
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY: 
+
+### OPTIONS https://api.tech26.de/api/accounts
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY: 
+
+### OPTIONS https://aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000/transactions
+HTTP HTTP/2 404 
+  bytes=0
+HTTP/2 404
+server: istio-envoy
+BODY: 
+
+### OPTIONS https://aisp.tech26.de/
+HTTP HTTP/2 404 
+  bytes=0
+HTTP/2 404
+server: istio-envoy
+BODY:
+[0m
+[0m◈ [0mExa Web Search ""pay.n26.com" OR "api.tech26.de" "sk_live" OR "ApiKey" OR "api key" leak"
+[0m◈ [0mExa Web Search ""aisp.tech26.de" OR "api/v2/accounts" n26 psd2 tpp token"
+[0m
+[0m$ [0mfor u in \
+  "https://api.tech26.de/oauth/token" \
+  "https://api.tech26.de/oauth2/authorize" \
+  "https://api.tech26.de/api/v2/accounts" \
+  "https://api.tech26.de/api/accounts/me" \
+  "https://api.tech26.de/api/v2/me" \
+  ; do
+  echo "### $u"
+  curl -sS -o /tmp/b.txt -D /tmp/h.txt -m 20 "$u" -H "User-Agent: curl" 2>/dev/null
+  echo "HTTP $(head -1 /tmp/h.txt 2>/dev/null)  bytes=$(wc -c < /tmp/b.txt 2>/dev/null)"
+  grep -ioE "^(HTTP/[0-9.]+ [0-9]+[^ ]*|server: .*|content-type: .*|location: .*|access-control-allow-origin: .*)" /tmp/h.txt 2>/dev/null | tr -d '\r' | head -8
+  echo "BODY: $(head -c 200 /tmp/b.txt 2>/dev/null)"
+  echo ""
+  sleep 1
+done
+### https://api.tech26.de/oauth/token
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY: 
+
+### https://api.tech26.de/oauth2/authorize
+HTTP HTTP/1.1 400 Bad Request
+  bytes=195
+HTTP/1.1 400
+Content-Type: application/json;charset=ISO-8859-1
+server: envoy
+BODY: {"status":400,"detail":"bad_request","type":"invalid_request","userMessage":{"title":"Application error","detail":"Application error"},"error":"invalid_request","error_description":"bad_request"}
+
+### https://api.tech26.de/api/v2/accounts
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY: 
+
+### https://api.tech26.de/api/accounts/me
+HTTP HTTP/1.1 401 Unauthorized
+  bytes=211
+HTTP/1.1 401
+Content-Type: application/problem+json
+server: envoy
+BODY: {"status":401,"detail":"Invalid token","type":"error","userMessage":{"title":"Login attempt expired","detail":"That took too long, please try again."},"error":"invalid_token","error_description":"Inva
+
+### https://api.tech26.de/api/v2/me
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY:
+[0m
+[0m$ [0mfor u in \
+  "https://api.tech26.de/oauth2/authorize?redirectUrl=https://example.com/cb&state=test123" \
+  "https://api.tech26.de/oauth2/authorize?redirectUrl=https://example.com/cb" \
+  "https://api.tech26.de/oauth2/authorize?redirect_uri=https:%2F%2Fexample.com%2Fcb&code_challenge=abc&code_challenge_method=S256&response_type=code&client_id=android&scope=read" \
+  ; do
+  echo "### $u"
+  curl -sS -o /tmp/b.txt -D /tmp/h.txt -m 20 "$u" -H "User-Agent: curl" 2>/dev/null
+  echo "HTTP $(head -1 /tmp/h.txt 2>/dev/null)  bytes=$(wc -c < /tmp/b.txt 2>/dev/null)"
+  grep -ioE "^(HTTP/[0-9.]+ [0-9]+[^ ]*|server: .*|content-type: .*|location: .*|set-cookie: [^;]*)" /tmp/h.txt 2>/dev/null | tr -d '\r' | head -8
+  echo "BODY: $(head -c 220 /tmp/b.txt 2>/dev/null)"
+  echo ""
+  sleep 1
+done
+### https://api.tech26.de/oauth2/authorize?redirectUrl=https://example.com/cb&state=test123
+HTTP HTTP/1.1 400 Bad Request
+  bytes=195
+HTTP/1.1 400
+Content-Type: application/json;charset=ISO-8859-1
+server: envoy
+BODY: {"status":400,"detail":"bad_request","type":"invalid_request","userMessage":{"title":"Application error","detail":"Application error"},"error":"invalid_request","error_description":"bad_request"}
+
+### https://api.tech26.de/oauth2/authorize?redirectUrl=https://example.com/cb
+HTTP HTTP/1.1 400 Bad Request
+  bytes=195
+HTTP/1.1 400
+Content-Type: application/json;charset=ISO-8859-1
+server: envoy
+BODY: {"status":400,"detail":"bad_request","type":"invalid_request","userMessage":{"title":"Application error","detail":"Application error"},"error":"invalid_request","error_description":"bad_request"}
+
+### https://api.tech26.de/oauth2/authorize?redirect_uri=https:%2F%2Fexample.com%2Fcb&code_challenge=abc&code_challenge_method=S256&response_type=code&client_id=android&scope=read
+HTTP HTTP/1.1 400 Bad Request
+  bytes=195
+HTTP/1.1 400
+Content-Type: application/json;charset=ISO-8859-1
+server: envoy
+BODY: {"status":400,"detail":"bad_request","type":"invalid_request","userMessage":{"title":"Application error","detail":"Application error"},"error":"invalid_request","error_description":"bad_request"}
+[0m
+[0m$ [0mfor u in \
+  "https://api.tech26.de/oauth2/token" \
+  "https://api.tech26.de/oauth2/token?role=DEDICATED_AISP" \
+  "https://api.tech26.de/oauth/token/authorize" \
+  ; do
+  echo "### GET $u"
+  curl -sS -o /tmp/b.txt -D /tmp/h.txt -m 20 "$u" -H "User-Agent: curl" 2>/dev/null
+  echo "HTTP $(head -1 /tmp/h.txt 2>/dev/null)  bytes=$(wc -c < /tmp/b.txt 2>/dev/null)"
+  grep -ioE "^(HTTP/[0-9.]+ [0-9]+[^ ]*|server: .*|content-type: .*|allow: .*|location: .*)" /tmp/h.txt 2>/dev/null | tr -d '\r' | head -6
+  echo "BODY: $(head -c 200 /tmp/b.txt 2>/dev/null)"
+  echo ""
+  sleep 1
+done
+### GET https://api.tech26.de/oauth2/token
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY: 
+
+### GET https://api.tech26.de/oauth2/token?role=DEDICATED_AISP
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY: 
+
+### GET https://api.tech26.de/oauth/token/authorize
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY:
+[0m
+[0m$ [0mfor u in \
+  "https://api.tech26.de/api/mfa/challenge" \
+  "https://api.tech26.de/api/me/status" \
+  "https://api.tech26.de/api/spaces" \
+  "https://api.tech26.de/api/cards" \
+  ; do
+  echo "### GET $u"
+  curl -sS -o /tmp/b.txt -D /tmp/h.txt -m 20 "$u" -H "User-Agent: curl" 2>/dev/null
+  echo "HTTP $(head -1 /tmp/h.txt 2>/dev/null)  bytes=$(wc -c < /tmp/b.txt 2>/dev/null)"
+  grep -ioE "^(HTTP/[0-9.]+ [0-9]+[^ ]*|server: .*|content-type: .*)" /tmp/h.txt 2>/dev/null | tr -d '\r' | head -4
+  echo "BODY: $(head -c 150 /tmp/b.txt 2>/dev/null)"
+  echo ""
+  sleep 1
+done
+### GET https://api.tech26.de/api/mfa/challenge
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY: 
+
+### GET https://api.tech26.de/api/me/status
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY: 
+
+### GET https://api.tech26.de/api/spaces
+HTTP HTTP/1.1 401 Unauthorized
+  bytes=211
+HTTP/1.1 401
+Content-Type: application/problem+json
+server: envoy
+BODY: {"status":401,"detail":"Invalid token","type":"error","userMessage":{"title":"Login attempt expired","detail":"That took too long, please try again."}
+
+### GET https://api.tech26.de/api/cards
+HTTP HTTP/1.1 404 Not Found
+  bytes=0
+HTTP/1.1 404
+server: envoy
+BODY:
+[0m
+STEP 1 — DELTA
+- NEW api.tech26.de: GET /oauth2/authorize → HTTP 400 `invalid_request` N26-wide custom JSON (ISO-8859-1) — first non-401/404 differential; live OAuth authorize layer confirmed (TPP fallback/dedicated flow per psd2-tpp-docs).
+- NEW api.tech26.de: GET /api/spaces → 401 len=211 invalid_token (LIVE, token-gated); GET /api/mfa/challenge, /api/me/status, /api/cards, /oauth/token, /api/v2/accounts, /api/v2/me → envoy empty-404 (v2 accounts NOT on legacy host).
+- NEW aisp.tech26.de route map complete: /api/v2/accounts + /{uuid}/transactions|balances|positions → HTTP/2 401 len=0 istio-envoy (QWAC cert gate per docs — permissive istio mTLS rejects at proxy); /api/v2/me + / + OPTIONS → 404.
+- CHANGED api.tech26.de: N26 program page + Rots/n26-api openapi retrieved — api.tech26.de documented as the in-scope API entry (Java), base /api, OAuth2 password flow `tokenUrl /oauth/token` (client `android`/`secret`, scopes read/write/trust).
+
+STEP 2 — PRIORITIZE
+- [PRIO] api.tech26.de, 6.45, a=9 b=8 t=7 g=1 c=2 f=8 — live legacy resource layer (/api/accounts|me|spaces 401, /oauth2/authorize 400) + documented OAuth flow; token-gated
+- [PRIO] aisp.tech26.de, 5.75, a=6 b=8 t=5 g=2 c=4 f=8 — live PSD2 fallback AISP route map, cert-gated at proxy
+- [PRIO] keyless auth-svc, 5.90, a=7 b=9 t=9 g=1 c=1 f=4 — unchanged, route-less, replay needs minted token
+- [PRIO] pay.n26.com, 5.20, a=7 b=9 t=5 g=1 c=4 f=3 — 401 boundary stable, key source still none
+
+STEP 3 — HYPOTHESES
+[HYP] Legacy api.tech26.de resource server: current-epoch bearer token / OSS-credential grant returns balance+PII
+class: AUTH
+asset: api.tech26.de/api/{accounts,me,spaces}
+confidence: 55
+reasoning: program docs confirm api.tech26.de = the in-scope API entry (Java, base /api); live app-layer only on /api/accounts+/api/accounts/me+/api/me+/api/spaces (401 len=211 invalid_token, custom OAuth filter, NO WWW-Authenticate) and /oauth2/authorize (400 invalid_request, OSS-wrapped flow per openapi: password grant, client android/secret, scopes read/write/trust); /oauth2/token+/oauth/token+/api/v2/* → envoy 404 (POST-only); OSS wrappers (python-n26) hardcode same base+grant.
+evidence_needed: any valid current bearer/refresh token; whether mobile/web token realm overlaps legacy API; POST /oauth2/token behavior with OSS client pair.
+verify_steps: (1) passive GET https://api.tech26.de/api/accounts (2) with token, GET /api/accounts Bearer <t> (3) if 200, GET /api/spaces — do not read balance/PII beyond presence; no mutation.
+impact: balance, IBAN/BIC, spaces PII, transfer initiation if token reuse; MEDIUM, token-gated.
+testability: AUTH_HELPED
+
+[HYP] pay.n26.com full-object Stripe BOLA on any leaked N26-bound key
+class: IDOR
+asset: pay.n26.com/v1/*
+confidence: 45
+reasoning: 401 boundary stable 4+ cycles; Stripe fingerprint headers (Stripe-Manage-Version, strict 'none' CSP); no-key 342B vs fake-key 132B delta; 0 keys in 11 bundles+CSP; GitHub code-search 401, grep.app 429, websearch surfaced only official docs + generic sk_live_ advice — no public key today.
+evidence_needed: N26-bound sk_/rk_live_ from non-indexed source.
+verify_steps: (1) with candidate, read-only GET https://pay.n26.com/v1/balance Bearer <key> (2) if 200, GET /v1/payments?limit=3 (3) no mutation/PII.
+impact: rk_/sk_live_ → customer/PII, charges/refunds; fund-level BOLA; HIGH if key, nil today.
+testability: AUTH_HELPED
+
+[HYP] aisp.tech26.de /api/v2/accounts token-only gating if QWAC check is proxy-level only
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts
+confidence: 40
+reasoning: documented QWAC-TLS requirement, but anonymous TLS handshake succeeds and istio returns 401 len=0 (permissive mTLS proxy gate, not handshake rejection); /{uuid}/transactions|balances|positions all 401 (live, unmapped to 404); /api/v2/me 404; header set x-frame-options:DENY only.
+evidence_needed: whether app layer re-validates cert claims or trusts proxy; if token+headers (device-token, x-tpp-userip) alone suffice once 401 barrier understood.
+verify_steps: passive GET /api/v2/accounts/{zero-uuid}/transactions recorded 401; with QSEAL cert+headers → 200? ; read-only.
+impact: PSD2 TPP-scope bank data if gating weak; MEDIUM, cert+token gated.
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+[PARKED] /oauth2/authorize redirect_uri/state validation: uniform 400 invalid_request across all anonymous param shapes (redirectUrl, redirect_uri+PKCE, client_id/scope) — no redirect differential observable without real TPP/user session; indistinguishable from param-contract rejection; AUTH_HELPED.
+[PARKED] flags/Braze/keyless: unchanged, retired or 401-bound.
+[FINAL] api.tech26.de legacy token-gated (55) + pay BOLA (45) + aisp cert gate (40).
+
+STEP 5 — NEXT ACTION
+[NEXT] HUMAN: authorize a tokenized replay of POST `/oauth2/token` (form grant_type=password, OSS client pair `android`/`secret`) against api.tech26.de with a test/sandbox N26 credential to test token-realm overlap with legacy /api/accounts — all three live hypotheses are credential-gated and anonymous probe surface on api.tech26.de is now mapped exhausted (/api/accounts|me|spaces 401, authorize 400, rest 404).
+
+STEP 6 — LEARNING
+- [LEARN] ACCEPTED AUTH @ api.tech26.de: hidden app-layer map complete — /api/accounts, /api/accounts/me, /api/me, /api/spaces 401 invalid_token (custom filter, no WWW-Authenticate), /oauth2/authorize 400 app-layer; /oauth/token+/oauth2/token+/api/v2/* envoy-404; program docs+openapi confirm in-scope Java API (read/write/trust scopes).
+- [LEARN] ACCEPTED AUTH @ aisp.tech26.de: permissive istio mTLS — anonymous TLS succeeds, QWAC gate is 401-at-proxy len=0, not handshake rejection; /api/v2/{accounts,me} route map matches psd2 docs patterns.
+- [LEARN] ACCEPTED AUTH @ api.tech26.de /oauth2/authorize: all anonymous GET param shapes return identical 400 invalid_request — redirect_uri validation not differentially testable anonymously; requires TPP session.
+- [LEARN] REJECTED MISCONFIG @ api.tech26.de/OAuth: /oauth2/token and /oauth/token POST-only; GET/OPTIONS return envoy empty-404 — no method/differential leak.
+
+STEP 7 — RISK
+[RISK] n26: 15 — all active surfaces 401/400-bound (no data touched); probes strictly GET/OPTIONS ≤1rps, no credentials/mutations, findings passive via bug-bounty channel; residual = next step is tokenized and must be human-authorized.

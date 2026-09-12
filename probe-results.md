@@ -395,3 +395,8 @@ https://engagementplatform.n26.com/users/export/ids -> HTTP 405
 https://pay.n26.com/v1/payments?limit=3 -> HTTP 401
 https://pay.n26.com/v1/balance -> HTTP 401
 https://pay.n26.com/v1/charges -> HTTP 401
+
+## 2026-09-12 22:35:26 UTC
+https://pay.n26.com/v1/payments?limit=3 -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401

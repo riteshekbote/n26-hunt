@@ -2321,3 +2321,36 @@ impact: fund-level BOLA (charges/refunds/PII); HIGH if key, nil now.
 testability: AUTH_HELPED
 [NEXT] PROBE: passive GET `https://aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000/transactions` and `.../balances` and `.../positions` (read-only, 1rps) to complete the NEW live PSD2 host's route map (401 vs 404 per route) — nothing else offsets prior to token acquisition.
 [RISK] n26: 15 — all four active surfaces 401-bound (no data reached), probes strictly GET/OPTIONS ≤1rps, no credentials/mutations, findings passive-only via documented channel; residual = any tokenized next step must be human-authorized.
+## 2026-09-12 22:35:10 UTC [target] (model bigpickle)
+[HYP] Legacy api.tech26.de resource server: current-epoch bearer token / OSS-credential grant returns balance+PII
+class: AUTH
+asset: api.tech26.de/api/{accounts,me,spaces}
+confidence: 55
+reasoning: program docs confirm api.tech26.de = the in-scope API entry (Java, base /api); live app-layer only on /api/accounts+/api/accounts/me+/api/me+/api/spaces (401 len=211 invalid_token, custom OAuth filter, NO WWW-Authenticate) and /oauth2/authorize (400 invalid_request, OSS-wrapped flow per openapi: password grant, client android/secret, scopes read/write/trust); /oauth2/token+/oauth/token+/api/v2/* → envoy 404 (POST-only); OSS wrappers (python-n26) hardcode same base+grant.
+evidence_needed: any valid current bearer/refresh token; whether mobile/web token realm overlaps legacy API; POST /oauth2/token behavior with OSS client pair.
+verify_steps: (1) passive GET https://api.tech26.de/api/accounts (2) with token, GET /api/accounts Bearer <t> (3) if 200, GET /api/spaces — do not read balance/PII beyond presence; no mutation.
+impact: balance, IBAN/BIC, spaces PII, transfer initiation if token reuse; MEDIUM, token-gated.
+testability: AUTH_HELPED
+[HYP] pay.n26.com full-object Stripe BOLA on any leaked N26-bound key
+class: IDOR
+asset: pay.n26.com/v1/*
+confidence: 45
+reasoning: 401 boundary stable 4+ cycles; Stripe fingerprint headers (Stripe-Manage-Version, strict 'none' CSP); no-key 342B vs fake-key 132B delta; 0 keys in 11 bundles+CSP; GitHub code-search 401, grep.app 429, websearch surfaced only official docs + generic sk_live_ advice — no public key today.
+evidence_needed: N26-bound sk_/rk_live_ from non-indexed source.
+verify_steps: (1) with candidate, read-only GET https://pay.n26.com/v1/balance Bearer <key> (2) if 200, GET /v1/payments?limit=3 (3) no mutation/PII.
+impact: rk_/sk_live_ → customer/PII, charges/refunds; fund-level BOLA; HIGH if key, nil today.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de /api/v2/accounts token-only gating if QWAC check is proxy-level only
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts
+confidence: 40
+reasoning: documented QWAC-TLS requirement, but anonymous TLS handshake succeeds and istio returns 401 len=0 (permissive mTLS proxy gate, not handshake rejection); /{uuid}/transactions|balances|positions all 401 (live, unmapped to 404); /api/v2/me 404; header set x-frame-options:DENY only.
+evidence_needed: whether app layer re-validates cert claims or trusts proxy; if token+headers (device-token, x-tpp-userip) alone suffice once 401 barrier understood.
+verify_steps: passive GET /api/v2/accounts/{zero-uuid}/transactions recorded 401; with QSEAL cert+headers → 200? ; read-only.
+impact: PSD2 TPP-scope bank data if gating weak; MEDIUM, cert+token gated.
+testability: AUTH_HELPED
+[PARKED] /oauth2/authorize redirect_uri/state validation: uniform 400 invalid_request across all anonymous param shapes (redirectUrl, redirect_uri+PKCE, client_id/scope) — no redirect differential observable without real TPP/user session; indistinguishable from param-contract rejection; AUTH_HELPED.
+[PARKED] flags/Braze/keyless: unchanged, retired or 401-bound.
+[FINAL] api.tech26.de legacy token-gated (55) + pay BOLA (45) + aisp cert gate (40).
+[NEXT] HUMAN: authorize a tokenized replay of POST `/oauth2/token` (form grant_type=password, OSS client pair `android`/`secret`) against api.tech26.de with a test/sandbox N26 credential to test token-realm overlap with legacy /api/accounts — all three live hypotheses are credential-gated and anonymous probe surface on api.tech26.de is now mapped exhausted (/api/accounts|me|spaces 401, authorize 400, rest 404).
+[RISK] n26: 15 — all active surfaces 401/400-bound (no data touched); probes strictly GET/OPTIONS ≤1rps, no credentials/mutations, findings passive via bug-bounty channel; residual = next step is tokenized and must be human-authorized.
