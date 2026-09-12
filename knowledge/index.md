@@ -258,3 +258,6 @@
 - 2026-09-12 ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
 - 2026-09-12 ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface
 - 2026-09-12 ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
+- 2026-09-12 ACCEPTED AUTH @ pay.n26.com: 401 boundary stable 4+ cycles — pure Stripe passthrough, no-key len=342 vs fake-key len=132; no N26-side key injection; anonymous surface nil.
+- 2026-09-12 REJECTED AUTH @ api.github.com: `/search/code?q=pay.n26.com` still 401 token-gated — public-repo code-search blocked; only grep.app/websearch remain for key discovery.
+- 2026-09-12 ACCEPTED MISCONFIG @ crt.sh: 502 rate-limit persisted 09-10→09-12 — passive subdomain corpus not refreshed; no fresh leaves to test.

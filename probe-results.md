@@ -355,3 +355,11 @@ https://pay.n26.com/v1/charges -> HTTP 401
 https://pay.n26.com/v1/payments -> HTTP 401
 https://pay.n26.com/v1/balance -> HTTP 401
 https://pay.n26.com/v1/charges -> HTTP 401
+
+## 2026-09-12 05:03:43 UTC
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+https://grep.app/api/search?q=pay.n26.com` -> HTTP 429
+https://pay.n26.com/v1/payments?limit=3` -> HTTP 401
+https://engagementplatform.n26.com/` -> HTTP 404
