@@ -1,1 +1,33 @@
-## 2026-09-12 16:01:26 UTC [target] (model bigpickle)
+## 2026-09-12 18:10:56 UTC [target] (model bigpickle)
+[PRIO] pay.n26.com/v1/*,    7.70, a=9 b=10 t=7 g=2 c=8 f=8  — Stripe-passthrough headers now proven; fund-level value; gated on leaked key
+[PRIO] engagementplatform,  6.30, a=7 b=8  t=7 g=1 c=4 f=6  — /users/export/ids 405→POST path exists; still key-gated (Braze-Rest-Key)
+[PRIO] keyless auth-svc,    5.90, a=7 b=9  t=9 g=1 c=1 f=4  — route-less anonymous; replay needs minted token
+[PRIO] api.tech26.de,       5.20, a=9 b=8  t=6 g=0 c=2 f=3  — python-n26/guitmz clients hardcode api.tech26.de /api/accounts|oauth2/token; my 47-path sweep envoy-empty-404 conflicts — recheck with client-real paths
+[HYP] pay.n26.com full-object Stripe BOLA on any leaked N26-bound key
+class: IDOR
+asset: pay.n26.com/v1/*
+confidence: 45
+reasoning: 23/23 /v1 routes 401; header fingerprint (Stripe-Manage-Version, X-Stripe-*-Session-Required, strict 'none' CSP) proves untouched passthrough; no-key 342B vs fake-key 132B delta; 0 keys in 11 bundles+CSP; GitHub code-search 401, grep.app 429, websearch: only docs/QWAC-only official repo — no public key today.
+evidence_needed: N26-bound sk_/rk_live_ from a non-indexed source.
+verify_steps: (1) with candidate key, read-only GET https://pay.n26.com/v1/balance Bearer <key> (2) if 200, GET /v1/payments?limit=3 (3) do NOT mutate/read PII.
+impact: rk_/sk_live_ → customers/PII, charges/refunds to attacker destination; fund-level BOLA. HIGH if key, nil today.
+testability: AUTH_HELPED
+[HYP] Braze /users/export/ids POST cross-tenant PII export once REST key obtained
+class: IDOR
+asset: engagementplatform.n26.com
+confidence: 50
+reasoning: GET /users/export/ids → 405 allow:OPTIONS,POST (new — route exists, POST verb); /events/list → 401 (key-gated not tarpit); root 400 Cloudflare; ACAO:* reflected on all routes incl. with attacker Origin header; key absent from 10 web bundles+CSP → server/mobile-only.
+evidence_needed: valid Braze REST key (Braze-Rest-Key header); 401→200 on canonical POST body.
+verify_steps: (1) passive GET https://engagementplatform.n26.com/users/export/ids (2) with key → POST /users/export/ids with Braze-Rest-Key header + valid JSON body, observe 200 vs 401 (3) cross-tenant check with second tenant key source; read-only.
+impact: cross-tenant Braze user PII (ids→attributes, segments, events); MEDIUM-HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] api.tech26.de serves legacy N26 client endpoints (oauth2/token, /api/*) despite envoy empty-404 on generic sweep
+class: AUTH
+asset: api.tech26.de
+confidence: 40
+reasoning: python-n26 + guitmz/n26 open-source clients hardcode api.tech26.de + /oauth2/token + /api/accounts|cards|transactions|spaces; my ~47 generic-path sweep returned envoy empty-404 — but client-real paths (form-data oauth2/token POST) never replayed with exact verb/Content-Type; env-var AUTH_BASE_URL suggests an alternate host too.
+evidence_needed: any non-404 response from client-real paths; x-keyless-flow-id sibling header.
+verify_steps: (1) passive GET https://api.tech26.de/api/accounts (2) POST https://api.tech26.de/oauth2/token Content-Type: application/x-www-form-urlencoded (empty body, grant_type=password) — expect 400/401 vs envoy 404 (3) OPTIONS https://api.tech26.de/oauth2/token.
+impact: if legacy endpoint live → brute/MFA-flow logic, token refresh semantics (psd2 docs: one-time-use refresh chains); MEDIUM; low confidence.
+testability: PASSIVE
+[NEXT] PROBE: OPTIONS+GET https://api.tech26.de/api/accounts and OPTIONS+POST https://api.tech26.de/oauth2/token (Content-Type: application/x-www-form-urlencoded, empty/garbage body, grant_type=password) — replay open-source-client real paths to disprove/confirm envoy empty-404; passive, <=1 rps.
