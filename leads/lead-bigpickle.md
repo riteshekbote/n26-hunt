@@ -2256,3 +2256,4 @@ evidence_needed: valid Braze REST key; ACAO reflection on data routes.
 verify_steps: (1) `GET https://engagementplatform.n26.com/` capture CORS (2) with key → `GET /users/export/ids` + `Origin: https://attacker.invalid` observe ACAO.
 impact: cross-tenant Braze PII (users, segments, events); MEDIUM-HIGH, key-gated.
 testability: AUTH_HELPED
+## 2026-09-12 12:54:39 UTC [target] (model bigpickle)
