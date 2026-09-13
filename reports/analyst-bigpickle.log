@@ -20271,3 +20271,63 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 [RISK] n26: 13 — all reachable surfaces remain 401/400-bound (no data touched); probes strictly GET/OPTIONS ≤1rps this cycle; next stage is a tokenized grant-replay that is HUMAN-authorized and must use sandbox-only credentials; residual risk is that authorized replay only.
+===== ANALYST bigpickle 2026-09-13 09:58:01 UTC =====
+[0m
+> build · big-pickle
+[0m
+STEP 1 — DELTA
+- [CHANGED] pay.n26.com: 401 boundary stable 5th cycle — all 23 /v1/* object routes identical 401 (no-key 342B / fake-key 132B), /v1/tokens 404, root 204, /v1 403 CF.
+- [CHANGED] engagementplatform.n26.com: root 400 (96B), /users/export/ids 405 (Braze-registered POST route; key-gated → no anonymous axis).
+- [CHANGED] Passive corpora all blocked: crt.sh 502 (since 09-10), grep.app 429, GitHub code-search 401 — no fresh subdomain leaves, no leaked sk_ keys this cycle.
+- Otherwise surface identical across all tracked assets → net NEW surface: none.
+
+STEP 2 — PRIORITIZE
+- [PRIO] pay.n26.com/v1/*, 6.7 (surface8/biz10/tech5/gate1/cloud6/fresh7) — highest dollar value, no anonymous in.
+- [PRIO] api.tech26.de /api/{accounts,me,spaces}, 5.7 (7/8/4/2/5/5) — legacy token realm, credential-gated.
+- [PRIO] aisp.tech26.de /api/v2/accounts, 5.4 (6/8/5/2/4/5) — PSD2 data, cert+token gated.
+- [PRIO] engagementplatform.n26.com, 4.7 — Braze, key-gated, CORS-open but key absent.
+
+STEP 3 — HYPOTHESES
+[HYP] Stripe-passthrough service/OAuth route family unmapped on pay.n26.com
+class: MISCONFIG
+asset: pay.n26.com/v1/{oauth,connect,accounts}
+confidence: 40
+reasoning: All object routes (/v1/payments,/v1/balance,/v1/charges...) uniformly 401 Stripe-format, /v1/tokens 404 (proves path-level routing is non-uniform at the passthrough); Stripe has service routes that don't always demand a bearer (oauth/connect family); N26 bundles reference `stripetopup` + `/topup/card` → Stripe integration is real, Connect/OAuth presence plausible; this family was never probed.
+evidence_needed: GET /v1/oauth/authorize returning 400/401/404 differential vs the known /v1/payments 401 — proves presence/absence only.
+verify_steps: (1) GET https://pay.n26.com/v1/oauth/authorize (2) GET https://pay.n26.com/v1/oauth/token (3) GET https://pay.n26.com/v1/connect/accounts?limit=1 — read-only, ≤1rps.
+impact: If /v1/oauth/token accepts anonymous client_secret exchange → N26 Connect OAuth token mint → BOLA on connected money-movement; HIGH but heavily gated; route-map alone is LOW.
+testability: PASSIVE
+[HYP] Legacy api.tech26.de token-realm overlap: OSS password-grant token accepted by /api resource server
+class: AUTH
+asset: api.tech26.de/api/{accounts,me,spaces}
+confidence: 55
+reasoning: surface conclusively {/api/accounts,/api/accounts/me,/api/me,/api/spaces}→401 len=211 "Invalid token" (custom filter, uniform across missing/fake/OSS-Basic `bmF0aXZld2ViOg==`); /oauth2/authorize 400 across all anonymous param shapes; /oauth2/token POST-only; python-n26 wrappers hardcode same base+password-grant+client android/secret.
+evidence_needed: 200 body shape on /api/accounts with a grant-obtained bearer; token-realm overlap mobile/web vs legacy.
+verify_steps: (1) HUMAN-authorized POST /oauth2/token (grant_type=password, android/secret, sandbox-only cred) (2) GET /api/accounts Bearer <t> (3) if 200, GET /api/me presence-check only.
+impact: balance/IBAN/PII + transfer initiation if token reused; MEDIUM, token-gated.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de /api/v2/accounts token-only gating if QWAC check is proxy-level only
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts
+confidence: 40
+reasoning: anonymous GET /{uuid}/transactions|balances|positions → 401 len=0 (istio permissive mTLS gate, not handshake rejection); /api/v2/me 404; gating requires device-token+x-tpp-userip+bearer; cert-claims re-validation unknown.
+evidence_needed: whether app layer re-validates QSEAL claims or trusts proxy-asserted identity.
+verify_steps: with TPP cert+headers, GET /api/v2/accounts/{zero-uuid}/balances — read-only.
+impact: PSD2 TPP-scope bank data if gating weak; MEDIUM, cert+token gated.
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+- [PARKED] engagementplatform Braze /users/export/ids 405: registered POST route, key-gated, anonymous axis nil — non-actionable.
+- [PARKED] SSRF-to-metadata directive: no current host takes user-supplied URLs fetched server-side (oauth2 redirect_uri already 400-uniform; Stripe/web routes are typed), so no live SSRF target this cycle — revisit on any new leaf.
+- [FINAL] pay.n26.com OAuth/service-route map (40, PASSIVE) | api.tech26.de token-realm overlap (55, AUTH_HELPED) | aisp QWAC proxy-gate (40, AUTH_HELPED).
+
+STEP 5 — NEXT ACTION
+[NEXT] PROBE: GET https://pay.n26.com/v1/oauth/authorize → then /v1/oauth/token and /v1/connect/accounts — read-only route-existence differential against the known /v1/payments 401 baseline, ≤1rps.
+
+STEP 6 — LEARNING
+- [LEARN] ACCEPTED MISCONFIG @ pay.n26.com: /v1/tokens 404 vs all other /v1/* 401 confirms path-level routing is non-uniform at the Stripe passthrough; oauth/connect family is the one unmapped sub-surface.
+- [LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users/export/ids 405 = registered Braze POST route; key-gated, no anonymous axis.
+- [LEARN] REJECTED AUTH @ passive-corpus inputs: crt.sh 502 (persists 09-10→13), grep.app 429, GitHub code-search 401 — no new leaves and no leaked keys this cycle.
+
+STEP 7 — RISK
+[RISK] n26: 15 — all live probes are read-only GET ≤1rps against 401/404 boundaries; no credentials, no customer data, no mutations; the only elevated step remains the HUMAN-authorized OAuth password-grant replay (api.tech26.de) and any future Connect-code handling — both gated on human authorization and sandbox-only credentials.

@@ -1,12 +1,30 @@
-## 2026-09-13 04:53:53 UTC [target] (model bigpickle)
+## 2026-09-13 09:57:08 UTC [target] (model bigpickle)
+[HYP] Stripe-passthrough service/OAuth route family unmapped on pay.n26.com
+class: MISCONFIG
+asset: pay.n26.com/v1/{oauth,connect,accounts}
+confidence: 40
+reasoning: All object routes (/v1/payments,/v1/balance,/v1/charges...) uniformly 401 Stripe-format, /v1/tokens 404 (proves path-level routing is non-uniform at the passthrough); Stripe has service routes that don't always demand a bearer (oauth/connect family); N26 bundles reference `stripetopup` + `/topup/card` → Stripe integration is real, Connect/OAuth presence plausible; this family was never probed.
+evidence_needed: GET /v1/oauth/authorize returning 400/401/404 differential vs the known /v1/payments 401 — proves presence/absence only.
+verify_steps: (1) GET https://pay.n26.com/v1/oauth/authorize (2) GET https://pay.n26.com/v1/oauth/token (3) GET https://pay.n26.com/v1/connect/accounts?limit=1 — read-only, ≤1rps.
+impact: If /v1/oauth/token accepts anonymous client_secret exchange → N26 Connect OAuth token mint → BOLA on connected money-movement; HIGH but heavily gated; route-map alone is LOW.
+testability: PASSIVE
 [HYP] Legacy api.tech26.de token-realm overlap: OSS password-grant token accepted by /api resource server
 class: AUTH
 asset: api.tech26.de/api/{accounts,me,spaces}
 confidence: 55
-reasoning: live surface conclusively {/api/accounts,/api/accounts/me,/api/me,/api/spaces}→401 len=211 "Invalid token" (custom filter, no WWW-Authenticate, uniform across missing/fake/OSS-Basic `bmF0aXZld2ViOg==`); oauth2/authorize→400 identical across all anonymous param shapes (this cycle re-confirmed with client_id=android:response_type=code); oauth2/token POST-only (envoy 404 on GET); OSS wrappers (python-n26) hardcode same base+password-grant+client android/secret.
+reasoning: surface conclusively {/api/accounts,/api/accounts/me,/api/me,/api/spaces}→401 len=211 "Invalid token" (custom filter, uniform across missing/fake/OSS-Basic `bmF0aXZld2ViOg==`); /oauth2/authorize 400 across all anonymous param shapes; /oauth2/token POST-only; python-n26 wrappers hardcode same base+password-grant+client android/secret.
 evidence_needed: 200 body shape on /api/accounts with a grant-obtained bearer; token-realm overlap mobile/web vs legacy.
-verify_steps: (1) HUMAN-authorized POST /oauth2/token (grant_type=password, client android/secret, sandbox cred); (2) GET /api/accounts Bearer <t>; (3) if 200, GET /api/me presence-check only; no mutation/PII read.
+verify_steps: (1) HUMAN-authorized POST /oauth2/token (grant_type=password, android/secret, sandbox-only cred) (2) GET /api/accounts Bearer <t> (3) if 200, GET /api/me presence-check only.
 impact: balance/IBAN/PII + transfer initiation if token reused; MEDIUM, token-gated.
 testability: AUTH_HELPED
-[NEXT] HUMAN: authorize tokenized replay — POST https://api.tech26.de/oauth2/token (form grant_type=password, client android/secret) with a test/sandbox N26 credential to test token-realm overlap with legacy /api/{accounts,me,spaces}; single read-only GET after token, presence-check only.
-[RISK] n26: 13 — all reachable surfaces remain 401/400-bound (no data touched); probes strictly GET/OPTIONS ≤1rps this cycle; next stage is a tokenized grant-replay that is HUMAN-authorized and must use sandbox-only credentials; residual risk is that authorized replay only.
+[HYP] aisp.tech26.de /api/v2/accounts token-only gating if QWAC check is proxy-level only
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts
+confidence: 40
+reasoning: anonymous GET /{uuid}/transactions|balances|positions → 401 len=0 (istio permissive mTLS gate, not handshake rejection); /api/v2/me 404; gating requires device-token+x-tpp-userip+bearer; cert-claims re-validation unknown.
+evidence_needed: whether app layer re-validates QSEAL claims or trusts proxy-asserted identity.
+verify_steps: with TPP cert+headers, GET /api/v2/accounts/{zero-uuid}/balances — read-only.
+impact: PSD2 TPP-scope bank data if gating weak; MEDIUM, cert+token gated.
+testability: AUTH_HELPED
+[NEXT] PROBE: GET https://pay.n26.com/v1/oauth/authorize → then /v1/oauth/token and /v1/connect/accounts — read-only route-existence differential against the known /v1/payments 401 baseline, ≤1rps.
+[RISK] n26: 15 — all live probes are read-only GET ≤1rps against 401/404 boundaries; no credentials, no customer data, no mutations; the only elevated step remains the HUMAN-authorized OAuth password-grant replay (api.tech26.de) and any future Connect-code handling — both gated on human authorization and sandbox-only credentials.
