@@ -2382,3 +2382,15 @@ evidence_needed: whether app layer re-validates QSEAL claims or trusts proxy-ass
 verify_steps: with TPP cert+headers, GET /api/v2/accounts/{zero-uuid}/balances — read-only.
 impact: PSD2 TPP-scope bank data if gating weak; MEDIUM, cert+token gated.
 testability: AUTH_HELPED
+## 2026-09-13 04:53:53 UTC [target] (model bigpickle)
+[HYP] Legacy api.tech26.de token-realm overlap: OSS password-grant token accepted by /api resource server
+class: AUTH
+asset: api.tech26.de/api/{accounts,me,spaces}
+confidence: 55
+reasoning: live surface conclusively {/api/accounts,/api/accounts/me,/api/me,/api/spaces}→401 len=211 "Invalid token" (custom filter, no WWW-Authenticate, uniform across missing/fake/OSS-Basic `bmF0aXZld2ViOg==`); oauth2/authorize→400 identical across all anonymous param shapes (this cycle re-confirmed with client_id=android:response_type=code); oauth2/token POST-only (envoy 404 on GET); OSS wrappers (python-n26) hardcode same base+password-grant+client android/secret.
+evidence_needed: 200 body shape on /api/accounts with a grant-obtained bearer; token-realm overlap mobile/web vs legacy.
+verify_steps: (1) HUMAN-authorized POST /oauth2/token (grant_type=password, client android/secret, sandbox cred); (2) GET /api/accounts Bearer <t>; (3) if 200, GET /api/me presence-check only; no mutation/PII read.
+impact: balance/IBAN/PII + transfer initiation if token reused; MEDIUM, token-gated.
+testability: AUTH_HELPED
+[NEXT] HUMAN: authorize tokenized replay — POST https://api.tech26.de/oauth2/token (form grant_type=password, client android/secret) with a test/sandbox N26 credential to test token-realm overlap with legacy /api/{accounts,me,spaces}; single read-only GET after token, presence-check only.
+[RISK] n26: 13 — all reachable surfaces remain 401/400-bound (no data touched); probes strictly GET/OPTIONS ≤1rps this cycle; next stage is a tokenized grant-replay that is HUMAN-authorized and must use sandbox-only credentials; residual risk is that authorized replay only.

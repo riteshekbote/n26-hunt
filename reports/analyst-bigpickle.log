@@ -20133,3 +20133,141 @@ testability: AUTH_HELPED
 
 ## STEP 7 — RISK
 - [RISK] n26: 15 — all active surfaces 401/400-bound (no data touched); probes strictly GET ≤1rps, no credentials/mutations, findings passive via documented channel; residual = any tokenized next step must be human-authorized.
+===== ANALYST bigpickle 2026-09-13 05:00:30 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m✱ [0mGlob "*.{yaml,yml,md,txt,json}"[90m 100 matches[0m
+[0m
+[0m$ [0mtail -80 probe-results.md
+https://app.n26.com/login -> 200 len=319204
+
+## 2026-09-11 09:59:38 UTC
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+https://app.n26.com/login -> 200 len=319204
+
+## 2026-09-11 17:45:37 UTC
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+
+## 2026-09-11 20:08:34 UTC
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+https://api.github.com/search/code?q=pay.n26.com` -> HTTP 401
+https://pay.n26.com/v1/customers` -> HTTP 404
+https://pay.n26.com/v1/payments` -> HTTP 404
+
+## 2026-09-11 22:43:39 UTC
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+
+## 2026-09-12 00:39:47 UTC
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+
+## 2026-09-12 05:03:43 UTC
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+https://grep.app/api/search?q=pay.n26.com` -> HTTP 429
+https://pay.n26.com/v1/payments?limit=3` -> HTTP 401
+https://engagementplatform.n26.com/` -> HTTP 404
+
+## 2026-09-12 09:13:07 UTC
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+https://api.github.com/search/code?q=pay.n26.com` -> HTTP 401
+https://pay.n26.com/v1/customers` -> HTTP 404
+https://pay.n26.com/v1/payments` -> HTTP 404
+https://grep.app/api/search?q=pay.n26.com` -> HTTP 429
+https://pay.n26.com/v1/payments?limit=3` -> HTTP 401
+https://engagementplatform.n26.com/` -> HTTP 404
+
+## 2026-09-12 12:56:06 UTC
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+
+## 2026-09-12 16:11:43 UTC
+https://pay.n26.com/v1/payments?limit=3 -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+
+## 2026-09-12 18:11:35 UTC
+https://pay.n26.com/v1/payments?limit=3 -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+https://engagementplatform.n26.com/users/export/ids -> HTTP 405
+
+## 2026-09-12 20:44:59 UTC
+https://pay.n26.com/v1/payments?limit=3 -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+
+## 2026-09-12 22:35:26 UTC
+https://pay.n26.com/v1/payments?limit=3 -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+
+## 2026-09-13 00:18:46 UTC
+https://pay.n26.com/v1/payments?limit=3 -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
+[0m
+[0m→ [0mRead triage/run-2026-09-13-01-24.md
+[0m
+[0m$ [0mfor u in "https://aisp.tech26.de/api/v2/accounts" "https://aisp.tech26.de/api/v2" "https://api.tech26.de/oauth2/authorize?client_id=android&response_type=code"; do echo "== $u"; curl -sk -o /tmp/r.txt -w "%{http_code} %{size_download}B %{content_type}\n" --max-time 20 "$u"; head -c 200 /tmp/r.txt; echo; done
+== https://aisp.tech26.de/api/v2/accounts
+401 0B 
+
+== https://aisp.tech26.de/api/v2
+404 0B 
+
+== https://api.tech26.de/oauth2/authorize?client_id=android&response_type=code
+400 195B application/json;charset=ISO-8859-1
+{"status":400,"detail":"bad_request","type":"invalid_request","userMessage":{"title":"Application error","detail":"Application error"},"error":"invalid_request","error_description":"bad_request"}
+[0m
+STEP 1 — DELTA
+- NO_DELTA: live surface identical to 2026-09-13 00:18 probe run — pay.n26.com/v1/{payments?limit=3,balance,charges} all 401 (auth-gated, boundary stable); no new host/endpoint/status-class anomaly this cycle.
+- CHANGED: independent re-probe this cycle — aisp.tech26.de/api/v2 404 (0B) vs /api/v2/accounts 401 (0B) confirms istio permissive-mTLS gate unchanged; api.tech26.de/oauth2/authorize?client_id=android&response_type=code → 400 invalid_request (195B, ISO-8859-1 wrapper) — no redirect differential vs prior param shapes.
+- CHANGED: triage feeder empty-LEADS persists (run-2026-09-13-01-24 "LEADS section is empty") — 4th+ consecutive empty pipeline into this analyst; analysis is self-supplied.
+
+STEP 2 — PRIORITIZE
+- [PRIO] pay.n26.com/v1/*,5.90,sa=7/sv=9/te=5/ge=1/cc=4/fr=5
+- [PRIO] api.tech26.de legacy /api+oauth2,5.05,sa=6/sv=8/te=6/ge=2/cc=3/fr=3
+- [PRIO] aisp.tech26.de/api/v2,3.85,sa=5/sv=8/te=4/ge=2/cc=2/fr=2
+
+STEP 3 — HYPOTHESES
+[HYP] Legacy api.tech26.de token-realm overlap: OSS password-grant token accepted by /api resource server
+class: AUTH
+asset: api.tech26.de/api/{accounts,me,spaces}
+confidence: 55
+reasoning: live surface conclusively {/api/accounts,/api/accounts/me,/api/me,/api/spaces}→401 len=211 "Invalid token" (custom filter, no WWW-Authenticate, uniform across missing/fake/OSS-Basic `bmF0aXZld2ViOg==`); oauth2/authorize→400 identical across all anonymous param shapes (this cycle re-confirmed with client_id=android:response_type=code); oauth2/token POST-only (envoy 404 on GET); OSS wrappers (python-n26) hardcode same base+password-grant+client android/secret.
+evidence_needed: 200 body shape on /api/accounts with a grant-obtained bearer; token-realm overlap mobile/web vs legacy.
+verify_steps: (1) HUMAN-authorized POST /oauth2/token (grant_type=password, client android/secret, sandbox cred); (2) GET /api/accounts Bearer <t>; (3) if 200, GET /api/me presence-check only; no mutation/PII read.
+impact: balance/IBAN/PII + transfer initiation if token reused; MEDIUM, token-gated.
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+- [PARKED] pay.n26.com Stripe BOLA: 401 stable 5+ cycles; every public key source closed (GitHub 401 code-search, grep.app 429, bundles/CSP clean, Stripe-Manage headers passthrough-only). Confidence 42<escalation floor absent new key source.
+- [PARKED] aisp token-only gating: anonymous barrier = istio 401 len=0 (mTLS TPP gate); no anonymous differential (this cycle re-confirmed /api/v2 404 vs /api/v2/accounts 401). Requires QSEAL cert in hand (AUTH_HELPED).
+- [FINAL] api.tech26.de legacy token-realm overlap (55) — sole survivor with a concrete, human-authorized unlock.
+- NOTE: pipeline sheds leads to this analyst (empty triage 4+ runs); anonymous surface on all in-scope hosts is mapped and gated — re-emitting parked hypotheses wastes cycles.
+
+STEP 5 — NEXT ACTION
+[NEXT] HUMAN: authorize tokenized replay — POST https://api.tech26.de/oauth2/token (form grant_type=password, client android/secret) with a test/sandbox N26 credential to test token-realm overlap with legacy /api/{accounts,me,spaces}; single read-only GET after token, presence-check only.
+
+STEP 6 — LEARNING
+- [LEARN] ACCEPTED AUTH @ aisp.tech26.de: anonymous barrier = istio 401 len=0 (permissive-mTLS gate) with zero body — /api/v2 404 vs /api/v2/accounts 401 differential re-confirmed this cycle; QWAC-gated, no anonymous surface.
+- [LEARN] REJECTED AUTH @ api.tech26.de: oauth2/authorize param variance (client_id=android&response_type=code) returns identical 400 invalid_request wrapper — no open-redirect/param-contract differential obtainable anonymously.
+- [LEARN] ACCEPTED AUTH @ pay.n26.com: 401 boundary stable across 5+ cycles (no-key 342B vs fake-key 132B) — pure Stripe passthrough, anonymous surface nil.
+
+STEP 7 — RISK
+[RISK] n26: 13 — all reachable surfaces remain 401/400-bound (no data touched); probes strictly GET/OPTIONS ≤1rps this cycle; next stage is a tokenized grant-replay that is HUMAN-authorized and must use sandbox-only credentials; residual risk is that authorized replay only.
