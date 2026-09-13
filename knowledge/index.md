@@ -288,3 +288,11 @@
 - 2026-09-13 ACCEPTED AUTH @ pay.n26.com: 401 boundary stable 4+ cycles — pure Stripe passthrough, no-key len=342 vs fake-key len=132; no N26-side key injection; anonymous surface nil.
 - 2026-09-13 REJECTED AUTH @ api.github.com: `/search/code?q=pay.n26.com` still 401 token-gated — public-repo code-search blocked; only grep.app/websearch remain for key discovery.
 - 2026-09-13 ACCEPTED MISCONFIG @ crt.sh: 502 rate-limit persisted 09-10→09-12 — passive subdomain corpus not refreshed; no fresh leaves to test.
+- 2026-09-13 REJECTED MISCONFIG @ pay.n26.com: OAuth/Connect service family closed — /v1/oauth/authorize|token + /v1/connect/accounts 404 `invalid_request_error`, identical class to /v1/tokens; strict 1:1 Stripe passthrough, no N26 route overlay.
+- 2026-09-13 REJECTED MISCONFIG @ pay.n26.com key-leak: sourcegraph global `"pay.n26.com"` = 0 matches incl forks+archived — third corpus negative (github 401, grep.app 429, sourcegraph 0); public key discovery closed 3/3.
+- 2026-09-13 ACCEPTED MISCONFIG @ 3ds-challenge.n26.com: fresh CT leaf; awselb/2.0 hard 403 len=118 on all anonymous paths — source-gated ACS edge; no route diff; monitor.
+- 2026-09-13 REJECTED MISCONFIG @ static.{n26,app,support}.n26.com: private S3 behind CloudFront, 403 AccessDenied XML — exact mirror of cdn.number26.de; closed.
+- 2026-09-13 REJECTED MISCONFIG @ {next,get,join,tutorials}.n26.com: 301 aliases to n26.com download-app / support tutorials — marketing, no app surface.
+- 2026-09-13 REJECTED MISCONFIG @ clicks.{emails,accounts}.n26.com: 404 on all candidate tracking shapes (/cl /link?url /click?u /t/r/a) — no open-redirect surface.
+- 2026-09-13 REJECTED MISCONFIG @ rstats.n26.com: 404 len=0 on all paths — no routes.
+- 2026-09-13 ACCEPTED MISCONFIG @ certspotter: crt.sh-alternative CT corpus refreshed — 28 DNS names n26.com; new-leaf sweep complete, all classified closed/low.

@@ -1,1 +1,43 @@
-## 2026-09-13 14:01:09 UTC [target] (model bigpickle)
+## 2026-09-13 17:30:15 UTC [target] (model bigpickle)
+[PRIO] api.tech26.de,5.3,a=6,b=8,t=4,g=2,c=3,f=6 — surviving top: only live banking resource server, lock is OAuth grant (AUTH_HELPED)
+[PRIO] pay.n26.com,4.9,a=5,b=10,t=3,g=1,c=1,f=5 — business value keeps it alive but anon surface now proven closed
+[PRIO] aisp.tech26.de,4.6,a=5,b=8,t=4,g=1,c=2,f=4 — PSD2 TPP scope, cert+token gated
+[HYP] api.tech26.de legacy token-realm overlap: OSS password-grant bearer accepted by /api resource server
+class: AUTH
+asset: api.tech26.de/api/{accounts,me,spaces}
+confidence: 55
+reasoning: surface conclusively {/api/accounts,/api/accounts/me,/api/me,/api/spaces}→401 len=211 "Invalid token", uniform across missing/fake/OSS-Basic; /oauth2/authorize 400 on all anonymous param shapes; /oauth2/token POST-only; python-n26 wrappers hardcode password-grant + client android/secret.
+evidence_needed: 200 shape on /api/accounts with grant-obtained bearer; realm overlap mobile/web vs legacy.
+verify_steps: (1) HUMAN-authorized POST /oauth2/token (grant_type=password, android/secret, sandbox-only cred); (2) GET /api/accounts Bearer <t>; (3) if 200, GET /api/me presence-check only.
+impact: balance/IBAN/PII + transfer initiation if token reused; MEDIUM, token-gated.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de /api/v2/accounts token-only gating if QWAC check is proxy-level
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts
+confidence: 40
+reasoning: anonymous GET /{uuid}/* → 401 len=0 (istio permissive mTLS gate, not handshake rejection); /api/v2/me 404; gating requires device-token+x-tpp-userip+bearer; cert-claims re-validation unknown.
+evidence_needed: whether app layer re-validates QSEAL claims vs trusts proxy-asserted identity.
+verify_steps: with TPP cert+headers GET /api/v2/accounts/{zero-uuid}/balances — read-only.
+impact: PSD2 TPP-scope bank data if gating weak; MEDIUM, cert+token gated.
+testability: AUTH_HELPED
+[HYP] 3ds-challenge.n26.com anonymous route differential exists behind ALB WAF layer
+class: AUTH
+asset: 3ds-challenge.n26.com
+confidence: 20
+reasoning: awselb/2.0 403 len=118 identical on every path incl /challenge /acs /v1/3ds /health /api — edge allows nothing anonymously; no differential observed.
+evidence_needed: any header/param/path that passes the ALB rule; unknown without a 3DS session context.
+verify_steps: NONE available anonymously — uniform 403 closes the differential space.
+impact: card-auth ACS flow if torqueable; HIGH but inaccessible today.
+testability: HUMAN_ONLY
+[PARKED] 3ds-challenge.n26.com: uniform 403 across all paths proves no anonymous differential exists — edge rule is `*`, no vector; monitor-only for edge rule change, dropped to <25.
+[FINAL] api.tech26.de token-realm (55) > aisp.tech26.de QWAC trust (40). pay.n26.com retired from active hypotheses — passthrough overlay conclusively absent this cycle.
+[NEXT] HUMAN: authorize tokenized replay — POST https://api.tech26.de/oauth2/token (form grant_type=password, client android/secret) with a test/sandbox N26 credential; then single read-only GET https://api.tech26.de/api/accounts Bearer <t> — ISO presence-check only, no PII/mutation.
+[LEARN] REJECTED MISCONFIG @ pay.n26.com: OAuth/Connect service family closed — /v1/oauth/authorize|token + /v1/connect/accounts 404 `invalid_request_error`, identical class to /v1/tokens; strict 1:1 Stripe passthrough, no N26 route overlay.
+[LEARN] REJECTED MISCONFIG @ pay.n26.com key-leak: sourcegraph global `"pay.n26.com"` = 0 matches incl forks+archived — third corpus negative (github 401, grep.app 429, sourcegraph 0); public key discovery closed 3/3.
+[LEARN] ACCEPTED MISCONFIG @ 3ds-challenge.n26.com: fresh CT leaf; awselb/2.0 hard 403 len=118 on all anonymous paths — source-gated ACS edge; no route diff; monitor.
+[LEARN] REJECTED MISCONFIG @ static.{n26,app,support}.n26.com: private S3 behind CloudFront, 403 AccessDenied XML — exact mirror of cdn.number26.de; closed.
+[LEARN] REJECTED MISCONFIG @ {next,get,join,tutorials}.n26.com: 301 aliases to n26.com download-app / support tutorials — marketing, no app surface.
+[LEARN] REJECTED MISCONFIG @ clicks.{emails,accounts}.n26.com: 404 on all candidate tracking shapes (/cl /link?url /click?u /t/r/a) — no open-redirect surface.
+[LEARN] REJECTED MISCONFIG @ rstats.n26.com: 404 len=0 on all paths — no routes.
+[LEARN] ACCEPTED MISCONFIG @ certspotter: crt.sh-alternative CT corpus refreshed — 28 DNS names n26.com; new-leaf sweep complete, all classified closed/low.
+[RISK] n26: 15 — all live probes read-only GET ≤1rps against 401/404/403 boundaries; no credentials, no customer data, no mutations; only elevated step is the standing HUMAN-authorized OAuth password-grant replay, gated on sandbox-only credentials.

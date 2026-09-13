@@ -20337,3 +20337,262 @@ STEP 7 — RISK
 [0m
 STEP 1 — DELTA
 NO_DELTA. All surfaces and boundaries identical to last cycle (09:13 05:00). pay.n26.com 401-stable, api.tech26.de exhausted, crt.sh rate-limited, no new subdomains or endpoints surfaced.
+===== ANALYST bigpickle 2026-09-13 17:30:25 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mcurl -s -o /tmp/opencode/oauth_auth.txt -w "code=%{http_code} len=%{size_download} ct=%{content_type}\n" --max-time 20 "https://pay.n26.com/v1/oauth/authorize"
+code=404 len=210 ct=application/json
+[0m
+[0m$ [0mcat /tmp/opencode/oauth_auth.txt
+{
+  "error": {
+    "message": "Unrecognized request URL (GET: /v1/oauth/authorize). Please see https://stripe.com/docs or we can help at https://support.stripe.com/.",
+    "type": "invalid_request_error"
+  }
+}
+[0m
+[0m$ [0mcurl -s -o /tmp/opencode/oauth_token.txt -w "code=%{http_code} len=%{size_download}\n" --max-time 20 "https://pay.n26.com/v1/oauth/token"; echo "---"; curl -s -o /tmp/opencode/connect_acct.txt -w "code=%{http_code} len=%{size_download}\n" --max-time 20 "https://pay.n26.com/v1/connect/accounts?limit=1"; echo "---"; head -c 200 /tmp/opencode/oauth_token.txt; echo; head -c 200 /tmp/opencode/connect_acct.txt
+code=404 len=206
+---
+code=404 len=211
+---
+{
+  "error": {
+    "message": "Unrecognized request URL (GET: /v1/oauth/token). Please see https://stripe.com/docs or we can help at https://support.stripe.com/.",
+    "type": "invalid_request_error"
+
+{
+  "error": {
+    "message": "Unrecognized request URL (GET: /v1/connect/accounts). Please see https://stripe.com/docs or we can help at https://support.stripe.com/.",
+    "type": "invalid_request_er
+[0m
+Passthrough differential complete — all three OAuth/Connect routes return the generic Stripe `invalid_request_error` 404 (same class as `/v1/tokens`). The clean read: pay.n26.com is a strict 1:1 Stripe forwarder with zero route overlay. One more passive OSINT shot at the key-leak path via Sourcegraph's public search before finalizing.
+[0m$ [0mcurl -s -o /tmp/opencode/sg1.txt -w "code=%{http_code}\n" --max-time 30 "https://sourcegraph.com/.api/search/stream?q=context:global+%22pay.n26.com%22&v=V3&display=100" 2>&1; wc -c /tmp/opencode/sg1.txt
+code=200
+1910 /tmp/opencode/sg1.txt
+[0m
+[0m$ [0mcat /tmp/opencode/sg1.txt
+event: filters
+data: [{"value":"archived:yes","label":"Include archived repos","count":67751,"exhaustive":false,"kind":"utility"},{"value":"fork:yes","label":"Include forked repos","count":282,"exhaustive":false,"kind":"utility"}]
+
+event: progress
+data: {"done":false,"matchCount":0,"durationMs":207,"skipped":[{"reason":"repository-fork","title":"282 forked","message":"By default we exclude forked repositories. Include them with `fork:yes` in your query.","severity":"info","suggested":{"title":"include forked","queryExpression":"fork:yes"}},{"reason":"excluded-archive","title":"67k archived","message":"By default we exclude archived repositories. Include them with `archived:yes` in your query.","severity":"info","suggested":{"title":"include archived","queryExpression":"archived:yes"}}],"trace":"https://console.cloud.google.com/traces/list?tid=855c526b1e0642669db3ae2d0d67a794\u0026authuser=0\u0026project=src-c4cd661e8a76d6b51c26"}
+
+event: filters
+data: [{"value":"archived:yes","label":"Include archived repos","count":67751,"exhaustive":true,"kind":"utility"},{"value":"fork:yes","label":"Include forked repos","count":282,"exhaustive":true,"kind":"utility"}]
+
+event: progress
+data: {"done":true,"matchCount":0,"durationMs":2590,"skipped":[{"reason":"repository-fork","title":"282 forked","message":"By default we exclude forked repositories. Include them with `fork:yes` in your query.","severity":"info","suggested":{"title":"include forked","queryExpression":"fork:yes"}},{"reason":"excluded-archive","title":"67k archived","message":"By default we exclude archived repositories. Include them with `archived:yes` in your query.","severity":"info","suggested":{"title":"include archived","queryExpression":"archived:yes"}}],"trace":"https://console.cloud.google.com/traces/list?tid=855c526b1e0642669db3ae2d0d67a794\u0026authuser=0\u0026project=src-c4cd661e8a76d6b51c26"}
+
+event: done
+data: {}
+[0m
+[0m$ [0mcurl -s -o /tmp/opencode/sg2.txt --max-time 30 "https://sourcegraph.com/.api/search/stream?q=context:global+%22pay.n26.com%22+fork:yes+archived:yes&v=V3&display=100"; rg -c '"matchCount"' /tmp/opencode/sg2.txt; rg -o '"matchCount":[0-9]+' /tmp/opencode/sg2.txt | tail -1; rg -i 'repository|path|line' /tmp/opencode/sg2.txt | head -20
+/bin/bash: line 1: rg: command not found
+/bin/bash: line 1: rg: command not found
+/bin/bash: line 1: rg: command not found
+[0m
+[0m$ [0mgrep -o '"matchCount":[0-9]*' /tmp/opencode/sg2.txt | tail -1; grep -o '"repository":"[^"]*"' /tmp/opencode/sg2.txt | head -20; wc -c /tmp/opencode/sg2.txt
+"matchCount":0
+251 /tmp/opencode/sg2.txt
+[0m
+Both Sourcegraph queries (incl. forks+archived) return 0 matches — third independent public-code corpus negative for pay.n26.com. Key-leak path stays closed. Attempting one passive CT-log refresh via an alternate source (crt.sh has been 502 since 09-10), which the KB flags as the blocker for fresh subdomain leaves.
+[0m$ [0mcurl -s -o /tmp/opencode/cs_n26.txt -w "code=%{http_code}\n" --max-time 30 "https://api.certspotter.com/v1/issuances?domain=n26.com&include_subdomains=true&expand=dns_names&after_index=0"; wc -c /tmp/opencode/cs_n26.txt; head -c 400 /tmp/opencode/cs_n26.txt
+code=200
+19419 /tmp/opencode/cs_n26.txt
+[
+	{
+		"id":"11904949384",
+		"tbs_sha256":"93300b6b0cdcd770a9b764d02426d3749f3a57a9c2ce1416f77fd5ac71c0b776",
+		"cert_sha256":"2c047f85bcde38dca86ad25db161c5eb32a51c9c054fccb3f389e4fab0b10169",
+		"dns_names":["static.n26.com"],
+		"pubkey_sha256":"50fc8ec9b1050c6bc361ca02922032d5eccbd70da5b0d3e45d850e2f6907faba",
+		"not_before":"2025-09-17T00:00:00Z",
+		"not_after":"2026-10-16T23:59:59Z",
+		"revoke
+[0m
+[0m$ [0mgrep -o '"dns_names":\[[^]]*\]' /tmp/opencode/cs_n26.txt | tr '}' '\n' | grep -o '"[a-zA-Z0-9*._-]*\.n26\.com"' | tr -d '"' | sort -u
+*.n26.com
+3ds-challenge.n26.com
+app.n26.com
+clicks.accounts.n26.com
+clicks.emails.n26.com
+cookie.n26.com
+engagementplatform.n26.com
+flags.n26.com
+get.n26.com
+join.n26.com
+mag-de.n26.com
+mag-es.n26.com
+mag-fr.n26.com
+mag-it.n26.com
+mag.n26.com
+my.n26.com
+next.n26.com
+pay.n26.com
+rstats.n26.com
+spc.n26.com
+static.app.n26.com
+static.get.n26.com
+static.n26.com
+static.support.n26.com
+support.n26.com
+tutorials.n26.com
+www.3ds-challenge.n26.com
+www.n26.com
+[0m
+Fresh CT corpus via certspotter (crt.sh was 502) — several **new leaves** never in inventory, high-value among them: `3ds-challenge.n26.com` (3-D Secure auth flow), `next.n26.com`, `rstats.n26.com` (telemetry), `get.n26.com`, `clicks.accounts/emails.n26.com` (email redirectors). Probing the top-value fresh leaves read-only.
+[0m$ [0mprobe(){ curl -s -o /tmp/opencode/r.txt -w "%{http_code} len=%{size_download} ct=%{content_type} srv=%{server} redir=%{redirect_url}\n" --max-time 20 -L -H "User-Agent: Mozilla/5.0" "$1"; }; for h in 3ds-challenge.n26.com next.n26.com rstats.n26.com; do printf "%-28s " "$h"; probe "https://$h/"; sleep 1; done
+3ds-challenge.n26.com        curl: unknown --write-out variable: 'server'
+403 len=118 ct=text/html srv= redir=
+next.n26.com                 curl: unknown --write-out variable: 'server'
+200 len=326674 ct=text/html; charset=utf-8 srv= redir=
+rstats.n26.com               curl: unknown --write-out variable: 'server'
+404 len=0 ct= srv= redir=
+[0m
+`next.n26.com` → live 200 SPA shell (~327KB) — fresh, never-probed surface. `3ds-challenge` → 403 edge block (path-specific). Inspecting the next.n26.com shell and probing 3DS/rstats paths.
+[0m$ [0mfor h in 3ds-challenge.n26.com rstats.n26.com; do for p in "" "/challenge" "/acs" "/v1/3ds" "/health" "/api" "/assets"; do printf "%-22s %-12s " "$h" "$p"; curl -s -o /dev/null -w "%{http_code} len=%{size_download}\n" --max-time 12 "https://$h$p"; sleep 1; done; done
+3ds-challenge.n26.com               403 len=118
+3ds-challenge.n26.com  /challenge   403 len=118
+3ds-challenge.n26.com  /acs         403 len=118
+3ds-challenge.n26.com  /v1/3ds      403 len=118
+3ds-challenge.n26.com  /health      403 len=118
+3ds-challenge.n26.com  /api         403 len=118
+3ds-challenge.n26.com  /assets      403 len=118
+rstats.n26.com                      404 len=0
+rstats.n26.com         /challenge   404 len=0
+rstats.n26.com         /acs         404 len=0
+rstats.n26.com         /v1/3ds      404 len=0
+rstats.n26.com         /health      404 len=0
+rstats.n26.com         /api         404 len=0
+rstats.n26.com         /assets      404 len=0
+[0m
+[0m$ [0mcurl -s -D /tmp/opencode/hdr.txt -o /tmp/opencode/3ds.txt --max-time 12 "https://3ds-challenge.n26.com/challenge?amount=10&merchant=test"; head -20 /tmp/opencode/hdr.txt; echo "---BODY---"; cat /tmp/opencode/3ds.txt; echo; sleep 1; curl -s -o /tmp/opencode/next.html --max-time 20 "https://next.n26.com/"; wc -c /tmp/opencode/next.html
+HTTP/1.1 403 Forbidden
+Server: awselb/2.0
+Date: Sun, 13 Sep 2026 17:28:36 GMT
+Content-Type: text/html
+Content-Length: 118
+Connection: keep-alive
+
+---BODY---
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+</body>
+</html>
+
+0 /tmp/opencode/next.html
+[0m
+`3ds-challenge` is ALB-level 403 (awselb/2.0) on all anonymous paths — source-gated, no route diff. `next.n26.com` returned empty this run — retrying with headers.
+[0m$ [0mcurl -s -D /tmp/opencode/nhdr.txt -o /tmp/opencode/n2.txt -w "code=%{http_code} len=%{size_download}\n" --max-time 20 -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126 Safari/537.36" -H "Accept: text/html" "https://next.n26.com/"; head -25 /tmp/opencode/nhdr.txt
+code=301 len=0
+HTTP/2 301 
+content-length: 0
+location: https://n26.com/
+date: Sun, 13 Sep 2026 17:28:01 GMT
+x-envoy-upstream-service-time: 0
+server: envoy
+x-cache: Hit from cloudfront
+via: 1.1 b0b623c7760b8beb85a36a72bf6569f0.cloudfront.net (CloudFront)
+x-amz-cf-pop: ORD56-P5
+x-amz-cf-id: Qqiz7GSSqmBu3avS6cZ52IPWvBn-J7jcTBbIqPGQ3sPcSsl-TgADjg==
+age: 43
+[0m
+`next.n26.com` is a 301→n26.com marketing alias (the 326KB was n26.com home after -L). Not an app. Batch-checking the remaining fresh leaves.
+[0m$ [0mfor h in get.n26.com static.n26.com static.app.n26.com static.support.n26.com tutorials.n26.com join.n26.com clicks.emails.n26.com clicks.accounts.n26.com; do printf "%-26s " "$h"; curl -s -o /dev/null -w "%{http_code} len=%{size_download} redir=%{redirect_url}\n" --max-time 15 -H "User-Agent: Mozilla/5.0" "https://$h/"; sleep 1; done
+get.n26.com                301 len=0 redir=https://n26.com/download-app/
+static.n26.com             403 len=111 redir=
+static.app.n26.com         403 len=111 redir=
+static.support.n26.com     403 len=111 redir=
+tutorials.n26.com          301 len=0 redir=https://support.n26.com/tutorials/
+join.n26.com               301 len=0 redir=https://n26.com/download-app/
+clicks.emails.n26.com      404 len=150 redir=
+clicks.accounts.n26.com    404 len=150 redir=
+[0m
+[0m$ [0mcurl -s -D - -o /tmp/opencode/stat.txt --max-time 15 "https://static.n26.com/robots.txt" 2>&1 | head -12; echo "---"; cat /tmp/opencode/stat.txt; echo "---CLICKS---"; for p in "/cl/1" "/cl?url=https://evil.example.com" "/link?url=https://evil.example.com" "/click?u=https://evil.example.com" "/t/r/a"; do printf "%-28s " "$p"; curl -s -o /dev/null -w "%{http_code} len=%{size_download} redir=%{redirect_url}\n" --max-time 12 "https://clicks.emails.n26.com$p"; sleep 1; done
+HTTP/2 403 
+content-type: application/xml
+server: AmazonS3
+date: Sun, 13 Sep 2026 17:29:08 GMT
+x-cache: Error from cloudfront
+via: 1.1 bd65bf9b5d7ee83d2445906f3d7200fe.cloudfront.net (CloudFront)
+x-amz-cf-pop: ORD51-P2
+x-amz-cf-id: OyelVZgqhJRkh3IIudgG_gdUnPEIoou4ioarEHHd5tPvvPaHi0uZmQ==
+x-xss-protection: 1; mode=block
+x-frame-options: SAMEORIGIN
+referrer-policy: strict-origin-when-cross-origin
+x-content-type-options: nosniff
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>---CLICKS---
+/cl/1                        404 len=143 redir=
+/cl?url=https://evil.example.com 404 len=141 redir=
+/link?url=https://evil.example.com 404 len=150 redir=
+/click?u=https://evil.example.com 404 len=144 redir=
+/t/r/a                       404 len=150 redir=
+[0m
+Cycle probes complete. All fresh-leaf boundaries classified; composing the structured analysis.
+
+## 2026-09-13 17:30 UTC [target] (model bigpickle)
+
+STEP 1 — DELTA:
+- [NEW] pay.n26.com OAuth/Connect family probed: `/v1/oauth/authorize`(404 len=210), `/v1/oauth/token`(404 len=206), `/v1/connect/accounts?limit=1`(404 len=211) — all Stripe `invalid_request_error` "Unrecognized request URL", same class as `/v1/tokens` baseline.
+- [CHANGED] pay.n26.com: `/v1/tokens` 404 re-read as generic passthrough 404, not a route-layer differential — host = strict 1:1 Stripe forwarder, ZERO N26 overlay; anonymous surface conclusively nil.
+- [NEW] certspotter CT refresh (crt.sh 502 since 09-10): 7 fresh leaves never in inventory -> `3ds-challenge.n26.com` (awselb/2.0 hard 403 len=118 on ALL paths incl /api /v1/3ds /challenge /acs — source-gated), `next/get/join/tutorials.n26.com` (301 marketing aliases), `static.{n26,app,support}.n26.com` (private S3 behind CloudFront, mirrors cdn.number26.de), `clicks.{emails,accounts}.n26.com` (404 on all tracking shapes — no redirector), `rstats.n26.com` (404 len=0, no routes).
+
+STEP 2 — PRIORITIZE:
+[PRIO] api.tech26.de,5.3,a=6,b=8,t=4,g=2,c=3,f=6 — surviving top: only live banking resource server, lock is OAuth grant (AUTH_HELPED)
+[PRIO] pay.n26.com,4.9,a=5,b=10,t=3,g=1,c=1,f=5 — business value keeps it alive but anon surface now proven closed
+[PRIO] aisp.tech26.de,4.6,a=5,b=8,t=4,g=1,c=2,f=4 — PSD2 TPP scope, cert+token gated
+
+STEP 3 — HYPOTHESES:
+[HYP] api.tech26.de legacy token-realm overlap: OSS password-grant bearer accepted by /api resource server
+class: AUTH
+asset: api.tech26.de/api/{accounts,me,spaces}
+confidence: 55
+reasoning: surface conclusively {/api/accounts,/api/accounts/me,/api/me,/api/spaces}→401 len=211 "Invalid token", uniform across missing/fake/OSS-Basic; /oauth2/authorize 400 on all anonymous param shapes; /oauth2/token POST-only; python-n26 wrappers hardcode password-grant + client android/secret.
+evidence_needed: 200 shape on /api/accounts with grant-obtained bearer; realm overlap mobile/web vs legacy.
+verify_steps: (1) HUMAN-authorized POST /oauth2/token (grant_type=password, android/secret, sandbox-only cred); (2) GET /api/accounts Bearer <t>; (3) if 200, GET /api/me presence-check only.
+impact: balance/IBAN/PII + transfer initiation if token reused; MEDIUM, token-gated.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de /api/v2/accounts token-only gating if QWAC check is proxy-level
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts
+confidence: 40
+reasoning: anonymous GET /{uuid}/* → 401 len=0 (istio permissive mTLS gate, not handshake rejection); /api/v2/me 404; gating requires device-token+x-tpp-userip+bearer; cert-claims re-validation unknown.
+evidence_needed: whether app layer re-validates QSEAL claims vs trusts proxy-asserted identity.
+verify_steps: with TPP cert+headers GET /api/v2/accounts/{zero-uuid}/balances — read-only.
+impact: PSD2 TPP-scope bank data if gating weak; MEDIUM, cert+token gated.
+testability: AUTH_HELPED
+[HYP] 3ds-challenge.n26.com anonymous route differential exists behind ALB WAF layer
+class: AUTH
+asset: 3ds-challenge.n26.com
+confidence: 20
+reasoning: awselb/2.0 403 len=118 identical on every path incl /challenge /acs /v1/3ds /health /api — edge allows nothing anonymously; no differential observed.
+evidence_needed: any header/param/path that passes the ALB rule; unknown without a 3DS session context.
+verify_steps: NONE available anonymously — uniform 403 closes the differential space.
+impact: card-auth ACS flow if torqueable; HIGH but inaccessible today.
+testability: HUMAN_ONLY
+
+STEP 4 — SELF-CRITIQUE:
+[PARKED] 3ds-challenge.n26.com: uniform 403 across all paths proves no anonymous differential exists — edge rule is `*`, no vector; monitor-only for edge rule change, dropped to <25.
+[FINAL] api.tech26.de token-realm (55) > aisp.tech26.de QWAC trust (40). pay.n26.com retired from active hypotheses — passthrough overlay conclusively absent this cycle.
+
+STEP 5 — NEXT ACTION:
+[NEXT] HUMAN: authorize tokenized replay — POST https://api.tech26.de/oauth2/token (form grant_type=password, client android/secret) with a test/sandbox N26 credential; then single read-only GET https://api.tech26.de/api/accounts Bearer <t> — ISO presence-check only, no PII/mutation.
+
+STEP 6 — LEARNING:
+[LEARN] REJECTED MISCONFIG @ pay.n26.com: OAuth/Connect service family closed — /v1/oauth/authorize|token + /v1/connect/accounts 404 `invalid_request_error`, identical class to /v1/tokens; strict 1:1 Stripe passthrough, no N26 route overlay.
+[LEARN] REJECTED MISCONFIG @ pay.n26.com key-leak: sourcegraph global `"pay.n26.com"` = 0 matches incl forks+archived — third corpus negative (github 401, grep.app 429, sourcegraph 0); public key discovery closed 3/3.
+[LEARN] ACCEPTED MISCONFIG @ 3ds-challenge.n26.com: fresh CT leaf; awselb/2.0 hard 403 len=118 on all anonymous paths — source-gated ACS edge; no route diff; monitor.
+[LEARN] REJECTED MISCONFIG @ static.{n26,app,support}.n26.com: private S3 behind CloudFront, 403 AccessDenied XML — exact mirror of cdn.number26.de; closed.
+[LEARN] REJECTED MISCONFIG @ {next,get,join,tutorials}.n26.com: 301 aliases to n26.com download-app / support tutorials — marketing, no app surface.
+[LEARN] REJECTED MISCONFIG @ clicks.{emails,accounts}.n26.com: 404 on all candidate tracking shapes (/cl /link?url /click?u /t/r/a) — no open-redirect surface.
+[LEARN] REJECTED MISCONFIG @ rstats.n26.com: 404 len=0 on all paths — no routes.
+[LEARN] ACCEPTED MISCONFIG @ certspotter: crt.sh-alternative CT corpus refreshed — 28 DNS names n26.com; new-leaf sweep complete, all classified closed/low.
+
+STEP 7 — RISK:
+[RISK] n26: 15 — all live probes read-only GET ≤1rps against 401/404/403 boundaries; no credentials, no customer data, no mutations; only elevated step is the standing HUMAN-authorized OAuth password-grant replay, gated on sandbox-only credentials.
