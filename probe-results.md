@@ -400,3 +400,8 @@ https://pay.n26.com/v1/charges -> HTTP 401
 https://pay.n26.com/v1/payments?limit=3 -> HTTP 401
 https://pay.n26.com/v1/balance -> HTTP 401
 https://pay.n26.com/v1/charges -> HTTP 401
+
+## 2026-09-13 00:18:46 UTC
+https://pay.n26.com/v1/payments?limit=3 -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401
