@@ -418,3 +418,8 @@ https://pay.n26.com/v1/charges -> HTTP 401
 https://pay.n26.com/v1/oauth/authorize -> HTTP 404
 https://pay.n26.com/v1/oauth/token -> HTTP 404
 https://pay.n26.com/v1/connect/accounts?limit=1 -> HTTP 404
+
+## 2026-09-13 14:19:11 UTC
+https://pay.n26.com/v1/payments?limit=3 -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401
+https://pay.n26.com/v1/charges -> HTTP 401

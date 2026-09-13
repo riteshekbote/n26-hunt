@@ -2424,3 +2424,4 @@ impact: PSD2 TPP-scope bank data if gating weak; MEDIUM, cert+token gated.
 testability: AUTH_HELPED
 [NEXT] PROBE: GET https://pay.n26.com/v1/oauth/authorize → then /v1/oauth/token and /v1/connect/accounts — read-only route-existence differential against the known /v1/payments 401 baseline, ≤1rps.
 [RISK] n26: 15 — all live probes are read-only GET ≤1rps against 401/404 boundaries; no credentials, no customer data, no mutations; the only elevated step remains the HUMAN-authorized OAuth password-grant replay (api.tech26.de) and any future Connect-code handling — both gated on human authorization and sandbox-only credentials.
+## 2026-09-13 14:01:09 UTC [target] (model bigpickle)
