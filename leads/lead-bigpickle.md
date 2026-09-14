@@ -3111,3 +3111,37 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ pay.n26.com: boundary stable across 9 cycles — pure Stripe passthrough, no-key len=342 vs fake-key len=132; no N26 route overlay; key discovery closed 3/3.
 [LEARN] REJECTED MISCONFIG @ api.tech26.de: /api/profile, /api/users/me, /api/cards, /api/transactions, /api/me/{addresses,cards,statements,transactions,account,profile} all 404 len=0 — no additional surface beyond confirmed 5-family.
 [RISK] n26: 30 — all live probes this cycle read-only GET at 1rps returning 401/404; no credential or customer-data touch; api.tech26.de residual legacy realm raises report value only with creds (AUTH_HELPED); no POC-able vuln without a token, so reporting stays premature.
+## 2026-09-14 16:45:41 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on /api/accounts/{id} + /api/accounts/{id}/statements with a grant-obtained bearer
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/statements
+confidence: 70
+reasoning: Fresh probes: /api/accounts/0..9 all 401 len=211 `{"status":401,"detail":"Invalid token",...invalid_token}` byte-identical to confirmed 5-member family; /api/accounts/1/statements → 401 len=212 same body — nested resource-scoped route is live (unlike /api/me/* 404). Conclusion: routing accepts arbitrary numeric IDs at the app layer and gates on Bearer only. Grant endpoints (/oauth2/token, /oauth/token, /api/oauth{,2}/token) all 404 dead, so no anonymous token path. python-n26/psd2-tpp docs (2020+) document password+MFA+device-token grant.
+evidence_needed: with a valid bearer, GET /api/accounts/{victim-id}/statements returns another account's tx history (cross-tenant BOLA); establishes whether {id} maps to per-user account or global N26 account ID.
+verify_steps: (1) AUTH_HELPED: obtain access_token via legacy grant+paired-device MFA; (2) GET /api/me Bearer → own account id; (3) GET /api/accounts/{own}/statements?from=<t-1y>&to=<t> read-only baseline; (4) GET /api/accounts/{own±1}/statements read-only — 200 own-scoped + 200 adjacent-id confirms BOLA; no mutation.
+impact: full statement/transaction history + registered address PII for any account enumerated by ID → HIGH if BOLA confirmed (financial data), MEDIUM if strictly own-account; fully gated on creds+device MFA.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded BOLA/tenant separation once a valid account key is held
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: 9+ cycles: /v1/payments?limit=3, /v1/balance, /v1/charges → 401 len=343 Stripe error JSON (no-key) vs len=132 (fake sk_live, WWW-Authenticate Basic realm="Stripe"); root 204, /v1 403 CF; OAuth/Connect family 404 invalid_request_error — strict 1:1 Stripe passthrough on N26 domain. Key discovery closed 3/3 corpora; app CSP has no pay.n26.com connect-src. Anonymous surface nil.
+evidence_needed: with a valid N26-account-scoped key, whether payment/charge/balance IDs cross tenant boundaries.
+verify_steps: (1) AUTH_HELPED: GET /v1/payments?limit=3 with account key → enumerate owned objects; (2) GET /v1/payments/{id} adjacent IDs read-only; (3) membership compare vs own account only — no mutation.
+impact: cross-tenant balance/payment disclosure on core-banking host if BOLA confirmed → HIGH but fully key-gated.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de /api/v2 app-layer QWAC/QSEAL claim re-validation vs proxy-trust
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts/{uuid}/balances
+confidence: 40
+reasoning: anonymous GET → 401 len=0 (istio permissive mTLS gate); psd2-tpp-docs mandate device-token + x-tpp-userip + Basic + TPP cert; whether the app re-validates QSEAL claims (authority/role/psu-id) vs trusting proxy-asserted identity is unobserved.
+evidence_needed: app-layer failure mode when cert-claim intermediate absent/altered under a valid mTLS tunnel.
+verify_steps: with TPP cert + device-token/x-tpp-userip/Basic, GET /api/v2/accounts/{zero-uuid}/balances read-only; vary x-tpp-* claim header only, compare response class.
+impact: PSD2 TPP-scope bank data if claim-trust weak → MEDIUM, cert+token gated.
+testability: AUTH_HELPED
+[NEXT] RAG: pull python-n26 (n26/cli.py + api.py) and psd2-tpp-docs grant request shape — exact POST /oauth2/grant form-body (grant_type=password, MFA header, device-token, x-tpp-userip, Basic `YW5kcm9pZDpzZWNyZXQ=`), plus the canonical `access_token`/`mfa_oob` response and /api/accounts/{id}/statements query-param schema — to freeze an exact AUTH_HELPED replay bundle.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: /api/accounts/{0..9} sweep all 401 len=211 byte-identical invalid_token — generic numeric-ID route Bearer-gated, not route-less; BOLA surface live at account-resource level.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: /api/accounts/1/statements → 401 len=212 — first live nested gated route (unlike /api/me/* 404 flat); statement-history BOLA target concrete once token held.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: /api/v1/accounts/1 → 404 len=1 — versioning drops Bearer gate at account-resource level; versioned family closed.
+[LEARN] ACCEPTED AUTH @ pay.n26.com: /v1/payments?limit=3 → 401 len=343 this cycle (+1B drift vs 342) — Stripe error class unchanged, boundary stable 9+ cycles.
+[RISK] n26: 30 — all probes this cycle read-only GET at <=1rps returning 401/404; no creds or customer data touched; api.tech26.de BOLA raises report value only with a grant-obtained token (AUTH_HELPED), so reporting stays premature; tech26.de ownership per program language.

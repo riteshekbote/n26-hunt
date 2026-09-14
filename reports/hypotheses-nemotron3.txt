@@ -1,18 +1,29 @@
-## 2026-09-14 10:56:49 UTC [target] (model nemotron3)
-[HYP] Stripe-forwarded BOLA/IDOR on pay.n26.com/v1/payments, /v1/balance, /v1/charges with valid auth
+## 2026-09-14 16:47:50 UTC [target] (model nemotron3)
+[NEW] api.tech26.de/api/accounts drifted 404→401 this cycle — legacy N26 v1 Bearer-gated surface actively mutating
+[NEW] api.tech26.de/api/me confirmed 401 len=211 invalid_token — 5th member of unversioned legacy family (statements, accounts{/me,/1}, addresses, me)
+[NEW] api.tech26.de/api/v1/statements 404 — versioning drops routes from Bearer gate; legacy surface is unversioned-only
+[CHANGED] pay.n26.com/v1/* boundary stable 5+ cycles (no-key 342B vs fake-key 132B); key-discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0)
+[CHANGED] engagementplatform.n26.com root 400 (96B), /users/export/ids 405 — Braze surface shifted from dashboard redirect
+[CHANGED] authentication-service.eks.core-production.keyless.technology deployment stable v26.09.07, 68+ paths "path unused" — API at custom non-standard routes
+[PRIO] pay.n26.com/v1/payments, 8.8, attack_surface=9 business_value=10 tech_exposure=7 gate_ease=2 cloud_surface=8 freshness=9
+[PRIO] api.tech26.de/api/statements, 7.2, attack_surface=8 business_value=8 tech_exposure=6 gate_ease=3 cloud_surface=7 freshness=8
+[PRIO] authentication-service.eks.core-production.keyless.technology, 6.8, attack_surface=7 business_value=9 tech_exposure=8 gate_ease=1 cloud_surface=9 freshness=7
+[PRIO] engagementplatform.n26.com/users, 6.0, attack_surface=6 business_value=8 tech_exposure=5 gate_ease=2 cloud_surface=6 freshness=7
+[PRIO] api.tech26.de/api/me, 5.8, attack_surface=7 business_value=7 tech_exposure=5 gate_ease=3 cloud_surface=6 freshness=6
+[HYP] Stripe-forwarded BOLA on pay.n26.com/v1/payments with valid auth
 class: IDOR
 asset: pay.n26.com/v1/payments
 confidence: 80
-reasoning: Live payment API confirmed (3 endpoints HTTP 401, Stripe error format, CORS-open, Cloudflare edge). Pure Stripe passthrough — no N26-side auth injection. If valid Stripe secret key (sk_live_*) obtained via mobile app, server logs, or token leakage, endpoints accept standard Stripe params (limit, pagination, customer_id). Cross-tenant payment enumeration (amounts, merchants, timestamps, card last4) and balance disclosure possible via BOLA on resource IDs.
-evidence_needed: Valid Stripe secret key for pay.n26.com Stripe account; successful GET /v1/payments?limit=100 returning payment objects; IDOR via sequential payment_id or customer_id across tenants
-verify_steps: PASSIVE: Monitor app.n26.com CSP/connect-src for pay.n26.com calls; inspect mobile app (if in scope) for embedded Stripe keys; check referral/redirect flows for token leakage. AUTH_HELPED: With valid key, GET /v1/payments?limit=3 → GET /v1/balance → GET /v1/charges?limit=3 → test BOLA via cross-tenant payment_id/customer_id
+reasoning: Live Stripe passthrough confirmed (23+ /v1/* endpoints return 401 with Stripe error JSON, WWW-Authenticate: Basic realm="Stripe", CORS-open ACAO:*). Pure passthrough — no N26-side key injection or route overlay. OAuth/Connect family closed (404 invalid_request_error). If valid N26-account Stripe key obtained (AUTH_HELPED), sequential charge_id or customer_id enumeration may yield cross-tenant payment data.
+evidence_needed: Valid Stripe secret key for N26 account on pay.n26.com; successful GET /v1/payments?limit=100 returning charge objects; BOLA via charge_id or customer_id manipulation across tenants
+verify_steps: AUTH_HELPED: GET https://pay.n26.com/v1/payments?limit=3 → GET https://pay.n26.com/v1/balance → GET https://pay.n26.com/v1/charges — confirm 401 boundary, capture WWW-Authenticate, enumerate response schema with valid key; <=1 rps
 impact: Cross-tenant payment data enumeration (amounts, merchants, timestamps, card last4), balance disclosure — HIGH/CRITICAL
 testability: AUTH_HELPED
 [HYP] Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology
 confidence: 65
-reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 68+ standard + tenant-scoped paths return `path unused` — API mounted at custom non-standard routes. "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant. WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token.
+reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 68+ standard + tenant-scoped paths return `{"code":"UNPROCESSABLE","reason":"path unused","stack":"api.\`unused\`"}` — API mounted at custom non-standard routes. "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant. WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token.
 evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; successful subprotocol handshake with signed token; token replay across sessions/challenges
 verify_steps: PASSIVE: GET https://authentication-service.eks.core-production.keyless.technology/health → GET /ready → GET /metrics → GET /actuator/health → GET /api/internal/v1/auth/n26 → GET /api/private/v1/enroll/n26 → GET /internal/auth/n26 → GET /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps
 impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
@@ -65,4 +76,10 @@ testability: AUTH_HELPED
 [LEARN] REJECTED MISCONFIG @ clicks.{emails,accounts}.n26.com: 404 on all candidate tracking shapes (/cl /link?url /click?u /t/r/a) — no open-redirect surface.
 [LEARN] REJECTED MISCONFIG @ rstats.n26.com: 404 len=0 on all paths — no routes.
 [LEARN] ACCEPTED MISCONFIG @ certspotter: crt.sh-alternative CT corpus refreshed — 28 DNS names n26.com; new-leaf sweep complete, all classified closed/low.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: legacy N26 v1 family (statements{/year}, accounts{/me,/1}, addresses) live behind app-layer Bearer check — 401 problem+json len=211 `invalid_token` vs route-less 404 len=0; Basic hits separate `invalid_client` realm (len=209); grant endpoints removed (/oauth2/token, /api/oauth/* 404, /oauth2/authorize 400); no anonymous bypass, AUTH_HELPED.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: token-gated route set drifted this cycle (/api/accounts 404→401) — legacy surface still mutating, worth one refresh before AUTH_HELPED handoff.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: /api/me joins legacy family (401 len=211 invalid_token, identical shape to statements/accounts/addresses); sub-routes /api/me/* all 404 — flat unversioned-only surface, 5 members total.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: /api/v1/statements 404 confirms versioning drops routes from Bearer gate — unversioned-only legacy surface; grant endpoints /oauth2|oauth|api/oauth{,2}/token all 404 confirmed dead again this cycle.
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: boundary stable across 9 cycles — pure Stripe passthrough, no-key len=342 vs fake-key len=132; no N26 route overlay; key discovery closed 3/3.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: /api/profile, /api/users/me, /api/cards, /api/transactions, /api/me/{addresses,cards,statements,transactions,account,profile} all 404 len=0 — no additional surface beyond confirmed 5-family.
 [RISK] N26 Bank AG: 88 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO); api.tech26.de/beta-api/fpt exhausted/placeholder

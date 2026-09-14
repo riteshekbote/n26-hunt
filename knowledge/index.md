@@ -373,3 +373,7 @@
 - 2026-09-14 ACCEPTED AUTH @ api.tech26.de: /api/v1/statements 404 confirms versioning drops routes from Bearer gate — unversioned-only legacy surface; grant endpoints /oauth2|oauth|api/oauth{,2}/token all 404 confirmed dead again this cycle.
 - 2026-09-14 ACCEPTED MISCONFIG @ pay.n26.com: boundary stable across 9 cycles — pure Stripe passthrough, no-key len=342 vs fake-key len=132; no N26 route overlay; key discovery closed 3/3.
 - 2026-09-14 REJECTED MISCONFIG @ api.tech26.de: /api/profile, /api/users/me, /api/cards, /api/transactions, /api/me/{addresses,cards,statements,transactions,account,profile} all 404 len=0 — no additional surface beyond confirmed 5-family.
+- 2026-09-14 ACCEPTED AUTH @ api.tech26.de: /api/accounts/{0..9} sweep all 401 len=211 byte-identical invalid_token — generic numeric-ID route Bearer-gated, not route-less; BOLA surface live at account-resource level.
+- 2026-09-14 ACCEPTED AUTH @ api.tech26.de: /api/accounts/1/statements → 401 len=212 — first live nested gated route (unlike /api/me/* 404 flat); statement-history BOLA target concrete once token held.
+- 2026-09-14 REJECTED MISCONFIG @ api.tech26.de: /api/v1/accounts/1 → 404 len=1 — versioning drops Bearer gate at account-resource level; versioned family closed.
+- 2026-09-14 ACCEPTED AUTH @ pay.n26.com: /v1/payments?limit=3 → 401 len=343 this cycle (+1B drift vs 342) — Stripe error class unchanged, boundary stable 9+ cycles.

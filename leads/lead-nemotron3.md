@@ -4532,3 +4532,88 @@ testability: AUTH_HELPED
 [LEARN] REJECTED MISCONFIG @ rstats.n26.com: 404 len=0 on all paths — no routes.
 [LEARN] ACCEPTED MISCONFIG @ certspotter: crt.sh-alternative CT corpus refreshed — 28 DNS names n26.com; new-leaf sweep complete, all classified closed/low.
 [RISK] N26 Bank AG: 88 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO); api.tech26.de/beta-api/fpt exhausted/placeholder
+## 2026-09-14 16:47:50 UTC [target] (model nemotron3)
+[NEW] api.tech26.de/api/accounts drifted 404→401 this cycle — legacy N26 v1 Bearer-gated surface actively mutating
+[NEW] api.tech26.de/api/me confirmed 401 len=211 invalid_token — 5th member of unversioned legacy family (statements, accounts{/me,/1}, addresses, me)
+[NEW] api.tech26.de/api/v1/statements 404 — versioning drops routes from Bearer gate; legacy surface is unversioned-only
+[CHANGED] pay.n26.com/v1/* boundary stable 5+ cycles (no-key 342B vs fake-key 132B); key-discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0)
+[CHANGED] engagementplatform.n26.com root 400 (96B), /users/export/ids 405 — Braze surface shifted from dashboard redirect
+[CHANGED] authentication-service.eks.core-production.keyless.technology deployment stable v26.09.07, 68+ paths "path unused" — API at custom non-standard routes
+[PRIO] pay.n26.com/v1/payments, 8.8, attack_surface=9 business_value=10 tech_exposure=7 gate_ease=2 cloud_surface=8 freshness=9
+[PRIO] api.tech26.de/api/statements, 7.2, attack_surface=8 business_value=8 tech_exposure=6 gate_ease=3 cloud_surface=7 freshness=8
+[PRIO] authentication-service.eks.core-production.keyless.technology, 6.8, attack_surface=7 business_value=9 tech_exposure=8 gate_ease=1 cloud_surface=9 freshness=7
+[PRIO] engagementplatform.n26.com/users, 6.0, attack_surface=6 business_value=8 tech_exposure=5 gate_ease=2 cloud_surface=6 freshness=7
+[PRIO] api.tech26.de/api/me, 5.8, attack_surface=7 business_value=7 tech_exposure=5 gate_ease=3 cloud_surface=6 freshness=6
+[HYP] Stripe-forwarded BOLA on pay.n26.com/v1/payments with valid auth
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 80
+reasoning: Live Stripe passthrough confirmed (23+ /v1/* endpoints return 401 with Stripe error JSON, WWW-Authenticate: Basic realm="Stripe", CORS-open ACAO:*). Pure passthrough — no N26-side key injection or route overlay. OAuth/Connect family closed (404 invalid_request_error). If valid N26-account Stripe key obtained (AUTH_HELPED), sequential charge_id or customer_id enumeration may yield cross-tenant payment data.
+evidence_needed: Valid Stripe secret key for N26 account on pay.n26.com; successful GET /v1/payments?limit=100 returning charge objects; BOLA via charge_id or customer_id manipulation across tenants
+verify_steps: AUTH_HELPED: GET https://pay.n26.com/v1/payments?limit=3 → GET https://pay.n26.com/v1/balance → GET https://pay.n26.com/v1/charges — confirm 401 boundary, capture WWW-Authenticate, enumerate response schema with valid key; <=1 rps
+impact: Cross-tenant payment data enumeration (amounts, merchants, timestamps, card last4), balance disclosure — HIGH/CRITICAL
+testability: AUTH_HELPED
+[HYP] Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 65
+reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 68+ standard + tenant-scoped paths return `{"code":"UNPROCESSABLE","reason":"path unused","stack":"api.\`unused\`"}` — API mounted at custom non-standard routes. "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant. WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token.
+evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; successful subprotocol handshake with signed token; token replay across sessions/challenges
+verify_steps: PASSIVE: GET https://authentication-service.eks.core-production.keyless.technology/health → GET /ready → GET /metrics → GET /actuator/health → GET /api/internal/v1/auth/n26 → GET /api/private/v1/enroll/n26 → GET /internal/auth/n26 → GET /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps
+impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
+testability: AUTH_HELPED
+[HYP] Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token
+class: IDOR
+asset: engagementplatform.n26.com/users
+confidence: 55
+reasoning: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary confirmed. Identified as Braze REST API (dashboard-02.braze.eu). Web-side Bearer key embedding negative across app CSP + 10 bundles → server/mobile-only. Root now returns 400 (shifted from Braze dashboard redirect), /users/export/ids returns 405. If token acquired (mobile app, server logs, token leakage), /users/{id} or pagination params may allow cross-tenant PII dump.
+evidence_needed: Valid Bearer token for engagementplatform.n26.com; successful /users call returning user objects; IDOR via sequential user_id or email params
+verify_steps: PASSIVE: Monitor app.n26.com CSP/connect-src for engagementplatform endpoints; inspect mobile app (if in scope) for embedded tokens; check referral/redirect flows for token leakage. AUTH_HELPED: With valid token, GET /users?limit=100 → GET /users/{id} → test BOLA via cross-tenant id
+impact: Cross-tenant user PII enumeration (email, phone, KYC status, engagement metrics) — HIGH if token obtained
+testability: AUTH_HELPED
+[PARKED] app.n26.com/graphql GraphQL introspection/mutation bypass: WAF tarpit confirmed identical on support.n26.com across 20+ cycles, no differential ingress, all POST Content-Types blocked, GET query param connection reset — transport class closed anonymously.
+[PARKED] api.tech26.de GraphQL/gRPC-web/OpenAPI at untested versioned paths: awselb/2.0 WAF blocks all anonymous probes, no prior signal of live API beyond headers; high false-positive risk on generic path brute. Legacy endpoints now 404 route-less.
+[PARKED] spc.n26.com versioned endpoints as payment API: REJECTED-class (confirmed 1x1 GIF tracking pixels len=43 across 10+ cycles) — permanently invalidated.
+[PARKED] flags.n26.com server-key escalation: REJECTED-class (full bundle sweep found only public client key, no server/secret keys) — no escalation path.
+[FINAL] 1) pay.n26.com/v1/payments Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth (confidence 80) — AUTH_HELPED testable, NEW live payment API with 401 boundary, core banking value
+[FINAL] 2) Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw (confidence 65) — AUTH_HELPED testable, high-value target, live service confirmed, deployment rotated v26.09.07
+[FINAL] 3) Braze REST API /users endpoint yields cross-tenant user PII enumeration with valid Bearer token (confidence 55) — AUTH_HELPED, distinct 401 boundary confirmed, Cloudflare fronted
+[NEXT] PROBE: GET https://pay.n26.com/v1/payments?limit=3 → GET https://pay.n26.com/v1/balance → GET https://pay.n26.com/v1/charges — confirm 401 auth boundary, capture WWW-Authenticate header, enumerate response schema; <=1 rps, passive read-only
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: live payment API with versioned /v1/payments, /v1/balance, /v1/charges endpoints returning HTTP 401 (auth-gated, not tarpit) — NEW attack surface, core banking value
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header; all 68+ standard + tenant-scoped paths return "path unused" — API at custom routes
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: POST `/v1/initialize` + canonical SDK payload + public client key returns 200 with full flag/config disclosure — reclassified as by-design client SDK behavior (INFO)
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: RBAC boundary = initialize(POST+body)→200+data, sdk_exception→202, download_config_specs→401, all GET config→403
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+[LEARN] ACCEPTED MISCONFIG @ flags.n26.com: Envoy RBAC route map fully enumerated — only sdk_exception/download_config_specs bypass; all config routes return 403
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 `AccessDenied` (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+[LEARN] ACCEPTED MISCONFIG @ n26.com: marketing on Envoy+CloudFront with wildcard CSP; `cookie.n26.com` 404 leaf — low-logic static content, INFO ceiling only
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+[LEARN] REJECTED MISCONFIG @ pisp.tech26.de: reposcan `android:secret` Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
+[LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: `NoSuchBucket` — bucket deleted, no surface
+[LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all `path unused`; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+[LEARN] ACCEPTED MISCONFIG @ engagementplatform.n26.com: hardened Braze REST instance, CORS-open but REST key absent from all 10 web bundles + CSP → server/mobile-only; key-gated 401 boundary confirmed, no anonymous path
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface
+[LEARN] ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
+[LEARN] ACCEPTED AUTH @ pay.n26.com: 401 boundary stable 4+ cycles — pure Stripe passthrough, no-key len=342 vs fake-key len=132; no N26-side key injection; anonymous surface nil.
+[LEARN] REJECTED AUTH @ api.github.com: `/search/code?q=pay.n26.com` still 401 token-gated — public-repo code-search blocked; only grep.app/websearch remain for key discovery.
+[LEARN] ACCEPTED MISCONFIG @ crt.sh: 502 rate-limit persisted 09-10→09-12 — passive subdomain corpus not refreshed; no fresh leaves to test.
+[LEARN] REJECTED MISCONFIG @ pay.n26.com: OAuth/Connect service family closed — /v1/oauth/authorize|token + /v1/connect/accounts 404 `invalid_request_error`, identical class to /v1/tokens; strict 1:1 Stripe passthrough, no N26 route overlay.
+[LEARN] REJECTED MISCONFIG @ pay.n26.com key-leak: sourcegraph global `"pay.n26.com"` = 0 matches incl forks+archived — third corpus negative (github 401, grep.app 429, sourcegraph 0); public key discovery closed 3/3.
+[LEARN] ACCEPTED MISCONFIG @ 3ds-challenge.n26.com: fresh CT leaf; awselb/2.0 hard 403 len=118 on all anonymous paths — source-gated ACS edge; no route diff; monitor.
+[LEARN] REJECTED MISCONFIG @ static.{n26,app,support}.n26.com: private S3 behind CloudFront, 403 AccessDenied XML — exact mirror of cdn.number26.de; closed.
+[LEARN] REJECTED MISCONFIG @ {next,get,join,tutorials}.n26.com: 301 aliases to n26.com download-app / support tutorials — marketing, no app surface.
+[LEARN] REJECTED MISCONFIG @ clicks.{emails,accounts}.n26.com: 404 on all candidate tracking shapes (/cl /link?url /click?u /t/r/a) — no open-redirect surface.
+[LEARN] REJECTED MISCONFIG @ rstats.n26.com: 404 len=0 on all paths — no routes.
+[LEARN] ACCEPTED MISCONFIG @ certspotter: crt.sh-alternative CT corpus refreshed — 28 DNS names n26.com; new-leaf sweep complete, all classified closed/low.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: legacy N26 v1 family (statements{/year}, accounts{/me,/1}, addresses) live behind app-layer Bearer check — 401 problem+json len=211 `invalid_token` vs route-less 404 len=0; Basic hits separate `invalid_client` realm (len=209); grant endpoints removed (/oauth2/token, /api/oauth/* 404, /oauth2/authorize 400); no anonymous bypass, AUTH_HELPED.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: token-gated route set drifted this cycle (/api/accounts 404→401) — legacy surface still mutating, worth one refresh before AUTH_HELPED handoff.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: /api/me joins legacy family (401 len=211 invalid_token, identical shape to statements/accounts/addresses); sub-routes /api/me/* all 404 — flat unversioned-only surface, 5 members total.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: /api/v1/statements 404 confirms versioning drops routes from Bearer gate — unversioned-only legacy surface; grant endpoints /oauth2|oauth|api/oauth{,2}/token all 404 confirmed dead again this cycle.
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: boundary stable across 9 cycles — pure Stripe passthrough, no-key len=342 vs fake-key len=132; no N26 route overlay; key discovery closed 3/3.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: /api/profile, /api/users/me, /api/cards, /api/transactions, /api/me/{addresses,cards,statements,transactions,account,profile} all 404 len=0 — no additional surface beyond confirmed 5-family.
+[RISK] N26 Bank AG: 88 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO); api.tech26.de/beta-api/fpt exhausted/placeholder
