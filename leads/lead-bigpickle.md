@@ -2993,3 +2993,29 @@ evidence_needed: app-layer rejection/failure mode when cert-claim intermediate i
 verify_steps: with TPP cert + device-token/x-tpp-userip/Basic, GET /api/v2/accounts/{zero-uuid}/balances read-only; vary x-tpp-* claim header only (no PII) and compare response class.
 impact: PSD2 TPP-scope bank data if claim-trust is weak; MEDIUM, cert+token gated.
 testability: AUTH_HELPED
+## 2026-09-14 00:03:34 UTC [target] (model bigpickle)
+[PRIO] my.n26.com,2.1,attack_surface=3,business_value=5,tech_exposure=2,gate_ease=4,cloud_surface=3,freshness=5
+[PRIO] n26.com/www.n26.com,1.5,attack_surface=2,business_value=4,tech_exposure=1,gate_ease=9,cloud_surface=2,freshness=5
+[HYP] GraphQL WAF bypass via GET query param smuggling
+class: AUTH
+asset: app.n26.com/graphql
+confidence: 70
+reasoning: POST /graphql and /api/graphql return 403 (WAF block); GET with query param returned HTTP 000 (connection reset) suggesting different code path; cookie-based auth
+[HYP] api.tech26.de residual OAuth2 token realm — /api/statements + /api/addresses still execute statement/PII logic behind bearer gate
+class: AUTH
+asset: api.tech26.de/api/statements
+confidence: 55
+reasoning: anonymous GET /api/statements, /api/statements/page0, /api/addresses, /api/accounts/me → 401 len=211 {"status":401,"detail":"Invalid token","type":"error"} while sibling /api/accounts|transactions|cards → 404 len=0 — token middleware firewalls only a residual route subset (edge path-rule differential). Non-GET methods → 404 (GET-only surface). /oauth2/token + /oauth2/authorize still live (OAuth2 JSON error shape). OSS python-n26 + n26/psd2-tpp-docs (2020+) document the full password-grant + mfa_oob/otp + device-token flow producing access_token (expires_in 1799) for `Authorization: Bearer`.
+evidence_needed: 200 with statement/address JSON on a grant-obtained bearer; whether /api/statements returns full transaction history incl. balance.
+verify_steps: (1) HUMAN: POST /oauth2/token (form grant_type=password, sandbox-only cred; headers device-token + x-tpp-userip + Basic YW5kcm9pZDpzZWNyZXQ=) → mfa_oob/otp → access_token; (2) GET /api/statements?from=<today-1y>&to=<today> Bearer <t> — read-only; (3) GET /api/addresses Bearer <t> presence-check only, no mutation.
+impact: full statement/transaction history + registered home address PII if token valid; MEDIUM, fully gated on user creds + paired-device MFA.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de /api/v2/accounts — app layer QWAC/QSEAL claim re-validation vs proxy-trust
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts/{uuid}/balances
+confidence: 40
+reasoning: anonymous GET /api/v2/accounts/{uuid}/balances → 401 len=0 (istio permissive mTLS gate, not handshake rejection); psd2-tpp-docs require device-token + x-tpp-userip + Basic client + TPP cert; whether the app re-validates QSEAL claims (tpp-cert authority, role, psu id from claims) vs trusting proxy-asserted identity is unobserved.
+evidence_needed: app-layer rejection/failure mode when cert-claim intermediate is missing/altered under a valid mTLS tunnel.
+verify_steps: with TPP cert + device-token/x-tpp-userip/Basic, GET /api/v2/accounts/{zero-uuid}/balances read-only; vary x-tpp-* claim header only (no PII) and compare response class.
+impact: PSD2 TPP-scope bank data if claim-trust is weak; MEDIUM, cert+token gated.
+testability: AUTH_HELPED
