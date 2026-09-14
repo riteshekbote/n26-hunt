@@ -1,26 +1,39 @@
-## 2026-09-14 00:03:34 UTC [target] (model bigpickle)
-[PRIO] my.n26.com,2.1,attack_surface=3,business_value=5,tech_exposure=2,gate_ease=4,cloud_surface=3,freshness=5
-[PRIO] n26.com/www.n26.com,1.5,attack_surface=2,business_value=4,tech_exposure=1,gate_ease=9,cloud_surface=2,freshness=5
-[HYP] GraphQL WAF bypass via GET query param smuggling
-class: AUTH
-asset: app.n26.com/graphql
-confidence: 70
-reasoning: POST /graphql and /api/graphql return 403 (WAF block); GET with query param returned HTTP 000 (connection reset) suggesting different code path; cookie-based auth
-[HYP] api.tech26.de residual OAuth2 token realm — /api/statements + /api/addresses still execute statement/PII logic behind bearer gate
+## 2026-09-14 05:05:41 UTC [target] (model bigpickle)
+[PRIO] pay.n26.com,6.9,attack_surface=7,business_value=9,tech_exposure=7,gate_ease=2,cloud_surface=5,freshness=10
+[PRIO] api.tech26.de,5.7,attack_surface=5,business_value=7,tech_exposure=6,gate_ease=3,cloud_surface=4,freshness=9
+[PRIO] aisp.tech26.de,5.1,attack_surface=4,business_value=6,tech_exposure=7,gate_ease=2,cloud_surface=6,freshness=6
+[HYP] api.tech26.de residual legacy N26 v1 OAuth2 realm — statements/accounts/addresses routed behind Bearer gate, grant endpoints dead
 class: AUTH
 asset: api.tech26.de/api/statements
-confidence: 55
-reasoning: anonymous GET /api/statements, /api/statements/page0, /api/addresses, /api/accounts/me → 401 len=211 {"status":401,"detail":"Invalid token","type":"error"} while sibling /api/accounts|transactions|cards → 404 len=0 — token middleware firewalls only a residual route subset (edge path-rule differential). Non-GET methods → 404 (GET-only surface). /oauth2/token + /oauth2/authorize still live (OAuth2 JSON error shape). OSS python-n26 + n26/psd2-tpp-docs (2020+) document the full password-grant + mfa_oob/otp + device-token flow producing access_token (expires_in 1799) for `Authorization: Bearer`.
-evidence_needed: 200 with statement/address JSON on a grant-obtained bearer; whether /api/statements returns full transaction history incl. balance.
-verify_steps: (1) HUMAN: POST /oauth2/token (form grant_type=password, sandbox-only cred; headers device-token + x-tpp-userip + Basic YW5kcm9pZDpzZWNyZXQ=) → mfa_oob/otp → access_token; (2) GET /api/statements?from=<today-1y>&to=<today> Bearer <t> — read-only; (3) GET /api/addresses Bearer <t> presence-check only, no mutation.
-impact: full statement/transaction history + registered home address PII if token valid; MEDIUM, fully gated on user creds + paired-device MFA.
+confidence: 60
+reasoning: This cycle: /api/statements, /api/statements/2020, /api/accounts, /api/accounts/me, /api/accounts/1, /api/addresses → 401 len=211 application/problem+json `invalid_token` "Invalid token"; route-less baseline /api/transactions, /api/cards, /api/nonexistent-xyz, /api/v2 → 404 len=0. Basic-permutation → 401 len=209 `invalid_client`/`bad_credentials` (separate realm). /oauth2/token, /api/oauth/*, /api/auth/token → 404 removed; /oauth2/authorize GET → 400 invalid_request. Matches python-n26 legacy route family; grant flow requires password+MFA+device-token (gone anonymously) so only Bearer-protected read routes remain live.
+evidence_needed: 200 with statement/address JSON when a valid mobile/server-issued Bearer is supplied; confirmation /api/statements returns full transaction history.
+verify_steps: (1) HUMAN: obtain token via live app flow; (2) GET /api/statements?from=<today-1y>&to=<today> Bearer <t> — read-only; (3) GET /api/addresses Bearer <t> presence-check, no mutation; (4) GET /api/accounts/{uuid} swap-uuid check for cross-account access (BOLA) only if a token is held.
+impact: full statement/transaction history + home-address PII for the owning account if token valid; MEDIUM, fully gated on user creds + paired-device MFA; cross-account BOLA would raise to HIGH.
 testability: AUTH_HELPED
-[HYP] aisp.tech26.de /api/v2/accounts — app layer QWAC/QSEAL claim re-validation vs proxy-trust
+[HYP] pay.n26.com Stripe-forwarded BOLA/tenant separation once a valid account key is held
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: 8+ cycles: /v1/payments?limit=3, /v1/balance, /v1/charges → 401 len=342 Stripe error (no-key) vs len=132 (fake sk_live key, WWW-Authenticate: Basic realm="Stripe"); root 204, /v1 403 CF; OAuth/Connect family 404 invalid_request_error — strict 1:1 Stripe passthrough on N26 domain. Key discovery closed 3/3 corpora (github 401, grep.app 429, sourcegraph 0). Anonymous surface nil; exploit gated on an N26-issued Stripe key.
+evidence_needed: with a valid N26-account-scoped key, whether resource IDs (payment/charge/balance-object) cross tenant boundaries.
+verify_steps: (1) AUTH_HELPED: GET /v1/payments?limit=3 with account key → enumerate owned objects; (2) try adjacent payment IDs via GET /v1/payments/{id} read-only; (3) compare response membership vs own account only — no mutation.
+impact: cross-tenant balance/payment disclosure on a core-banking host if BOLA confirmed; HIGH but fully key-gated.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de /api/v2 app-layer QWAC/QSEAL claim re-validation vs proxy-trust
 class: AUTH
 asset: aisp.tech26.de/api/v2/accounts/{uuid}/balances
 confidence: 40
-reasoning: anonymous GET /api/v2/accounts/{uuid}/balances → 401 len=0 (istio permissive mTLS gate, not handshake rejection); psd2-tpp-docs require device-token + x-tpp-userip + Basic client + TPP cert; whether the app re-validates QSEAL claims (tpp-cert authority, role, psu id from claims) vs trusting proxy-asserted identity is unobserved.
-evidence_needed: app-layer rejection/failure mode when cert-claim intermediate is missing/altered under a valid mTLS tunnel.
-verify_steps: with TPP cert + device-token/x-tpp-userip/Basic, GET /api/v2/accounts/{zero-uuid}/balances read-only; vary x-tpp-* claim header only (no PII) and compare response class.
-impact: PSD2 TPP-scope bank data if claim-trust is weak; MEDIUM, cert+token gated.
+reasoning: anonymous GET → 401 len=0 (istio permissive mTLS gate, not handshake rejection); psd2-tpp-docs mandate device-token + x-tpp-userip + Basic + TPP cert; whether the app re-validates QSEAL claims (authority/role/psu-id) vs trusting proxy-asserted identity is unobserved.
+evidence_needed: app-layer failure mode when cert-claim intermediate is absent/altered under a valid mTLS tunnel.
+verify_steps: with TPP cert + device-token/x-tpp-userip/Basic, GET /api/v2/accounts/{zero-uuid}/balances read-only; vary x-tpp-* header only, compare response class.
+impact: PSD2 TPP-scope bank data if claim-trust weak; MEDIUM, cert+token gated.
 testability: AUTH_HELPED
+[PARKED] GraphQL WAF bypass via GET query param smuggling: KB invalidates across 10+ cycles — GET query-param returns connection reset, all POST Content-Types 403 (WAF inspects body structure), support.n26.com shares Envoy tarpit; no differential ingress. Conf 70 → 0.
+[PARKED] aisp.tech26.de QWAC claim-trust: conf 40 at floor, cert+token gated, no new evidence this cycle; holder for AUTH_HELPED.
+[FINAL] api.tech26.de residual legacy realm (conf 60) — re-verified live with fresh request-level evidence this cycle.
+[FINAL] pay.n26.com Stripe-forwarded BOLA (conf 60) — top cross-model [80], boundary stable, key-gated.
+[NEXT] PROBE: GET https://api.tech26.de/api/me — membership check (401 len=211 vs 404 len=0) to bound the residual token-gated legacy family for an AUTH_HELPED run.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: legacy N26 v1 family (statements{/year}, accounts{/me,/1}, addresses) live behind app-layer Bearer check — 401 problem+json len=211 `invalid_token` vs route-less 404 len=0; Basic hits separate `invalid_client` realm (len=209); grant endpoints removed (/oauth2/token, /api/oauth/* 404, /oauth2/authorize 400); no anonymous bypass, AUTH_HELPED.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: token-gated route set drifted this cycle (/api/accounts 404→401) — legacy surface still mutating, worth one refresh before AUTH_HELPED handoff.
+[RISK] n26: 35 — all live probes this cycle were GET-only read-only and returned 401/404; residual legacy OAuth2 surface raises report value only with creds (AUTH_HELPED); tech26.de ownership assumed in-scope per program language; no POC-able vuln without a token, so reporting is premature.

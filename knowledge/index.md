@@ -367,3 +367,5 @@
 - 2026-09-14 REJECTED MISCONFIG @ clicks.{emails,accounts}.n26.com: 404 on all candidate tracking shapes (/cl /link?url /click?u /t/r/a) — no open-redirect surface.
 - 2026-09-14 REJECTED MISCONFIG @ rstats.n26.com: 404 len=0 on all paths — no routes.
 - 2026-09-14 ACCEPTED MISCONFIG @ certspotter: crt.sh-alternative CT corpus refreshed — 28 DNS names n26.com; new-leaf sweep complete, all classified closed/low.
+- 2026-09-14 ACCEPTED AUTH @ api.tech26.de: legacy N26 v1 family (statements{/year}, accounts{/me,/1}, addresses) live behind app-layer Bearer check — 401 problem+json len=211 `invalid_token` vs route-less 404 len=0; Basic hits separate `invalid_client` realm (len=209); grant endpoints removed (/oauth2/token, /api/oauth/* 404, /oauth2/authorize 400); no anonymous bypass, AUTH_HELPED.
+- 2026-09-14 ACCEPTED AUTH @ api.tech26.de: token-gated route set drifted this cycle (/api/accounts 404→401) — legacy surface still mutating, worth one refresh before AUTH_HELPED handoff.

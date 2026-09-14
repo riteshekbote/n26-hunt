@@ -1,34 +1,36 @@
-## 2026-09-14 00:04:28 UTC [target] (model nemotron3)
+## 2026-09-14 05:08:07 UTC [target] (model nemotron3)
 [NEW] engagementplatform.n26.com/ root shifted from Braze dashboard redirect → HTTP 400 (96B text/html); /users/export/ids returns HTTP 405
 [NEW] 3ds-challenge.n26.com fresh CT leaf; awselb/2.0 hard 403 len=118 on all anonymous paths — source-gated ACS edge
 [NEW] static.{n26,app,support}.n26.com confirmed private S3 behind CloudFront, 403 AccessDenied XML — mirror of cdn.number26.de
 [NEW] {next,get,join,tutorials}.n26.com confirmed 301 aliases to n26.com marketing pages — no app surface
-[NEW] clicks.{emails,accounts}.n26.com return 404 on all candidate tracking shapes — no open redirect
+[NEW] clicks.{emails,accounts}.n26.com return 404 on all candidate tracking shapes (/cl, /link?url, /click?u, /t/r/a) — no open redirect
 [NEW] rstats.n26.com returns 404 len=0 on all paths — no routes
 [NEW] certspotter CT corpus refreshed — 28 DNS names n26.com; new-leaf sweep complete, all classified closed/low
-[CHANGED] pay.n26.com/v1/* Stripe-passthrough 401 boundary stable 4+ cycles (no-key len=342 vs fake-key len=132)
-[CHANGED] authentication-service.eks.core-production.keyless.technology deployment stable v26.09.07, all 68+ paths "path unused"
+[CHANGED] pay.n26.com/v1/* Stripe-passthrough 401 boundary stable 4+ cycles (no-key len=342 vs fake-key len=132 "Invalid API Key provided: sk_live_****0000")
+[CHANGED] authentication-service.eks.core-production.keyless.technology deployment stable v26.09.07, all 68+ standard+tenant paths "path unused" — API at custom routes
 [CHANGED] crt.sh/%25.n26.com & %25.tech26.de HTTP 502 rate-limit persists since 2026-09-10 — passive subdomain corpus stale
 [CHANGED] grep.app/api/search?q=pay.n26.com HTTP 429 — passive key-leak search throttled
-[PRIO] pay.n26.com/v1/payments,8.5,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=3,cloud_surface=7,freshness=9
-[PRIO] authentication-service.eks.core-production.keyless.technology,7.8,attack_surface=8,business_value=9,tech_exposure=9,gate_ease=2,cloud_surface=8,freshness=8
-[PRIO] engagementplatform.n26.com/users,6.9,attack_surface=7,business_value=8,tech_exposure=6,gate_ease=2,cloud_surface=7,freshness=8
-[PRIO] app.n26.com/graphql,4.2,attack_surface=5,business_value=8,tech_exposure=7,gate_ease=1,cloud_surface=5,freshness=2
-[PRIO] api.tech26.de,3.5,attack_surface=4,business_value=5,tech_exposure=5,gate_ease=1,cloud_surface=6,freshness=2
+[PRIO] pay.n26.com/v1/payments,score=8.8,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=9
+[PRIO] authentication-service.eks.core-production.keyless.technology,score=7.8,attack_surface=8,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=8
+[PRIO] engagementplatform.n26.com/users,score=7.2,attack_surface=7,business_value=8,tech_exposure=7,gate_ease=2,cloud_surface=7,freshness=7
+[PRIO] app.n26.com/graphql,score=4.5,attack_surface=5,business_value=7,tech_exposure=6,gate_ease=1,cloud_surface=5,freshness=3
+[PRIO] flags.n26.com,score=3.2,attack_surface=4,business_value=3,tech_exposure=4,gate_ease=5,cloud_surface=4,freshness=2
+[PRIO] api.tech26.de,score=2.8,attack_surface=3,business_value=4,tech_exposure=3,gate_ease=1,cloud_surface=4,freshness=2
+[PRIO] spc.n26.com,score=1.5,attack_surface=2,business_value=2,tech_exposure=2,gate_ease=5,cloud_surface=2,freshness=1
 [HYP] pay.n26.com Stripe-forwarded BOLA on /v1/payments, /v1/balance, /v1/charges
 class: IDOR
 asset: pay.n26.com/v1/payments
 confidence: 80
-reasoning: Live Stripe-forwarded payment API confirmed (23+ endpoints HTTP 401 with Stripe error format); pagination param accepted (limit=3 returns 401); CORS-open (ACAO: *); WWW-Authenticate: Basic realm="Stripe"; no N26-side key injection observed; pure Stripe passthrough on N26 domain
-evidence_needed: Valid N26-account Stripe key (sk_live_*) to test cross-tenant payment enumeration; successful /v1/payments?limit=100 returning payment objects with amount, merchant, timestamp, card_last4; BOLA via payment_id manipulation across tenants
-verify_steps: PASSIVE: GET https://pay.n26.com/v1/payments?limit=3 → GET https://pay.n26.com/v1/balance → GET https://pay.n26.com/v1/charges — confirm 401 auth boundary, capture WWW-Authenticate header, enumerate response schema; <=1 rps, read-only. AUTH_HELPED: with valid key, GET /v1/payments?limit=100 → test BOLA via sequential payment_id
+reasoning: Live Stripe-forwarded payment API confirmed (23+ endpoints, all HTTP 401 with Stripe error format). CORS-open (ACAO: *), Cloudflare edge, WWW-Authenticate: Basic realm="Stripe". Pagination param (?limit=3) accepted. No N26-side key injection — pure Stripe passthrough. Web app CSP lacks pay.n26.com in connect-src → likely mobile/server-only client. Auth boundary is valid Stripe key, not tarpit.
+evidence_needed: Valid Stripe secret key (sk_live_*) for N26 account; successful GET /v1/payments?limit=100 returning payment objects with amount, currency, merchant, card_last4, created timestamps; BOLA via payment_id manipulation across tenants
+verify_steps: PASSIVE: GET https://pay.n26.com/v1/payments?limit=3 → capture WWW-Authenticate header, response schema (Stripe error JSON). AUTH_HELPED: with valid sk_live key, GET /v1/payments?limit=100 → GET /v1/balance → GET /v1/charges → test BOLA via payment_id/charge_id enumeration
 impact: Cross-tenant payment data enumeration (amounts, merchants, timestamps, card last4), balance disclosure — HIGH/CRITICAL
 testability: AUTH_HELPED
 [HYP] Keyless WS signed-token subprotocol replay reveals token reuse / challenge-binding flaw
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology
 confidence: 65
-reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 68+ standard + tenant-scoped paths return `path unused` — API mounted at custom non-standard routes. "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant. WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token
+reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version `authentication-service-2/v26.09.07 eks-production`, custom `x-keyless-flow-id` header. All 68+ standard + tenant-scoped paths return `path unused` — API mounted at custom non-standard routes. "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant. WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token.
 evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; successful subprotocol handshake with signed token; token replay across sessions/challenges
 verify_steps: PASSIVE: GET https://authentication-service.eks.core-production.keyless.technology/health → GET /ready → GET /metrics → GET /actuator/health → GET /api/internal/v1/auth/n26 → GET /api/private/v1/enroll/n26 → GET /internal/auth/n26 → GET /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps
 impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
@@ -37,7 +39,7 @@ testability: AUTH_HELPED
 class: IDOR
 asset: engagementplatform.n26.com/users
 confidence: 55
-reasoning: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary confirmed. Identified as Braze REST API (dashboard-02.braze.eu). Web-side Bearer key embedding negative across app CSP + 10 bundles → server/mobile-only. Root now returns 400 (shifted from Braze dashboard redirect), /users/export/ids returns 405. If token acquired (mobile app, server logs, token leakage), /users/{id} or pagination params may allow cross-tenant PII dump
+reasoning: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary confirmed. Identified as Braze REST API (dashboard-02.braze.eu). Web-side Bearer key embedding negative across app CSP + 10 bundles → server/mobile-only. Root now returns 400 (shifted from Braze dashboard redirect), /users/export/ids returns 405. If token acquired (mobile app, server logs, token leakage), /users/{id} or pagination params may allow cross-tenant PII dump.
 evidence_needed: Valid Bearer token for engagementplatform.n26.com; successful /users call returning user objects; IDOR via sequential user_id or email params
 verify_steps: PASSIVE: monitor app.n26.com CSP/connect-src for engagementplatform endpoints; inspect mobile app (if in scope) for embedded tokens; check referral/redirect flows for token leakage. AUTH_HELPED: with valid token, GET /users?limit=100 → GET /users/{id} → test BOLA via cross-tenant id
 impact: Cross-tenant user PII enumeration (email, phone, KYC status, engagement metrics) — HIGH if token obtained
