@@ -3285,3 +3285,4 @@ testability: AUTH_HELPED
 [LEARN] REJECTED MISCONFIG @ api.tech26.de: GET /oauth2/token + /oauth/token on api and aisp all 404 len=0 — no live anonymous grant route; token requires paired-device flow.
 [LEARN] ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments?limit=3 → 401 len=342 no drift — Stripe passthrough stable 10 cycles.
 [RISK] n26: 32 — all live probes read-only GET <=1rps returning 401/404; no creds or customer data touched; BOLA proof breadth-complete but gated on a token (AUTH_HELPED); reporting premature without POC; +2 on newly enumerated surface breadth.
+## 2026-09-14 23:39:30 UTC [target] (model bigpickle)
