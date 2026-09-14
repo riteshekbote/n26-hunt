@@ -377,3 +377,14 @@
 - 2026-09-14 ACCEPTED AUTH @ api.tech26.de: /api/accounts/1/statements → 401 len=212 — first live nested gated route (unlike /api/me/* 404 flat); statement-history BOLA target concrete once token held.
 - 2026-09-14 REJECTED MISCONFIG @ api.tech26.de: /api/v1/accounts/1 → 404 len=1 — versioning drops Bearer gate at account-resource level; versioned family closed.
 - 2026-09-14 ACCEPTED AUTH @ pay.n26.com: /v1/payments?limit=3 → 401 len=343 this cycle (+1B drift vs 342) — Stripe error class unchanged, boundary stable 9+ cycles.
+- 2026-09-14 ACCEPTED AUTH @ api.tech26.de: account-scoped nested routes /api/accounts/{id}/{addresses,bookings,cards}, /api/statements/{year}, /api/accounts/{id}/statements?from&to all 401 len=211 ID-independent — BOLA target set = statements+addresses PII+cards+bookings, breadth proven.
+- 2026-09-14 REJECTED MISCONFIG @ api.tech26.de: GET /oauth2/token + /oauth/token on api and aisp all 404 len=0 — no live anonymous grant route in legacy family; token requires paired-device flow.
+- 2026-09-14 ACCEPTED MISCONFIG @ pay.n26.com: boundary stable 10 cycles, 401 len=342 no drift — Stripe passthrough unchanged.
+- 2026-09-14 ACCEPTED AUTH @ api.tech26.de: /api/accounts/{id}/{addresses,bookings,cards}, /api/statements/{year}, /api/accounts/{id}/statements?from&to all 401 len=211 ID-independent — BOLA breadth (statements+address PII+cards+bookings) proven.
+- 2026-09-14 REJECTED MISCONFIG @ api.tech26.de: GET /oauth2/token + /oauth/token on api and aisp all 404 len=0 — no live anonymous grant route; token requires paired-device flow.
+- 2026-09-14 ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments?limit=3 → 401 len=342 no drift — Stripe passthrough stable 10 cycles.
+- 2026-09-14 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version authentication-service-2/v26.09.07 eks-production, custom x-keyless-flow-id header; all 68+ standard + tenant-scoped paths return "path unused" — API at custom routes
+- 2026-09-14 REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+- 2026-09-14 REJECTED MISCONFIG @ pisp.tech26.de: reposcan android:secret Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
+- 2026-09-14 REJECTED MISCONFIG @ consumercredit-staging S3: NoSuchBucket — bucket deleted, no surface
+- 2026-09-14 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
