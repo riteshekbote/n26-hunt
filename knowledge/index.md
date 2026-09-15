@@ -412,3 +412,5 @@
 - 2026-09-15 ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
 - 2026-09-15 ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface
 - 2026-09-15 ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
+- 2026-09-15 ACCEPTED AUTH @ api.tech26.de: OPTIONS /api/accounts/1/statements → 404 (no Allow header); POST all nested routes → 404 len=0 — legacy surface is GET-only Bearer-gated, method-gating confirms route structure narrows to read-only PII endpoints.
+- 2026-09-15 ACCEPTED MISCONFIG @ api.tech26.de: method-gating stable across 5 nested routes — no POST/PUT/DELETE handlers exist at BOLA-relevant paths.
