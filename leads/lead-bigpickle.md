@@ -3428,3 +3428,4 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED AUTH @ api.tech26.de: re-probed /api/accounts/{1,2}/statements + /api/me this cycle — all 401 len=211 byte-identical (cmp verified), ID-independent gate stable; no family drift.
 [LEARN] ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments?limit=3 → 401 len=342 reconfirmed — Stripe passthrough boundary stable 10+ cycles, no drift.
 [RISK] n26: 33 — all live probes read-only GET ≤1rps returning 401/404; no creds or customer data touched; BOLA proof breadth+method-complete but still gated on a token (AUTH_HELPED); confidence on byte-identical ID-independence marginally reinforced this cycle without new risk.
+## 2026-09-15 20:25:43 UTC [target] (model bigpickle)
