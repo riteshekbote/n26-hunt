@@ -327,3 +327,12 @@ TARGET_ORG not configured for n26; skipping public-org deep scan.
 TARGET_ORG not configured for n26; skipping public-org deep scan.
 ## REPOSCAN 2026-09-15 00:41:46 UTC
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-15 05:48:55 UTC
+[HYP] <title>
+class: SECRET|MISCONFIG|IDOR|SSRF|OTHER
+asset: n26/<repo>/<path>
+confidence: <0-100>
+reasoning: <facts>
+impact: <severity>
+verify_steps: <passive confirmation steps>
+TARGET_ORG not configured for n26; skipping public-org deep scan.
