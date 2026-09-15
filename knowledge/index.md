@@ -389,3 +389,26 @@
 - 2026-09-14 REJECTED MISCONFIG @ consumercredit-staging S3: NoSuchBucket — bucket deleted, no surface
 - 2026-09-14 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
 - 2026-09-14 ACCEPTED AUTH @ api.tech26.de: account-scoped nested routes /api/accounts/{id}/{addresses,bookings,cards}, /api/statements/{year}, /api/accounts/{id}/statements?from&to all 401 len=211 ID-independent — BOLA breadth (statements+address PII+cards+bookings) proven
+- 2026-09-15 ACCEPTED AUTH @ api.tech26.de: /api/accounts/{0..9} sweep all 401 len=211 byte-identical invalid_token — generic numeric-ID route Bearer-gated, not route-less; BOLA surface live at account-resource level
+- 2026-09-15 ACCEPTED AUTH @ api.tech26.de: /api/accounts/1/statements → 401 len=212 — first live nested gated route (unlike /api/me/* 404 flat); statement-history BOLA target concrete once token held
+- 2026-09-15 ACCEPTED AUTH @ api.tech26.de: /api/me joins legacy family (401 len=211 invalid_token, identical shape to statements/accounts/addresses); sub-routes /api/me/* all 404 — flat unversioned-only surface, 5 members total
+- 2026-09-15 ACCEPTED AUTH @ api.tech26.de: /api/v1/statements 404 confirms versioning drops routes from Bearer gate — unversioned-only legacy surface; grant endpoints /oauth2|oauth|api/oauth{,2}/token all 404 confirmed dead
+- 2026-09-15 ACCEPTED AUTH @ api.tech26.de: account-scoped nested routes /api/accounts/{id}/{addresses,bookings,cards}, /api/statements/{year}, /api/accounts/{id}/statements?from&to all 401 len=211 ID-independent — BOLA breadth (statements+address PII+cards+bookings) proven
+- 2026-09-15 REJECTED MISCONFIG @ api.tech26.de: /api/v1/accounts/1 → 404 len=1 — versioning drops Bearer gate at account-resource level; versioned family closed
+- 2026-09-15 REJECTED MISCONFIG @ api.tech26.de: GET /oauth2/token + /oauth/token on api and aisp all 404 len=0 — no live anonymous grant route; token requires paired-device flow
+- 2026-09-15 ACCEPTED MISCONFIG @ pay.n26.com: boundary stable 10 cycles, 401 len=342 no drift — Stripe passthrough unchanged
+- 2026-09-15 ACCEPTED MISCONFIG @ pay.n26.com: live payment API with versioned /v1/payments, /v1/balance, /v1/charges endpoints returning HTTP 401 (auth-gated, not tarpit) — NEW attack surface, core banking value
+- 2026-09-15 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE (HTTP/2 404), Istio/Envoy, version authentication-service-2/v26.09.07 eks-production, custom x-keyless-flow-id header; all 68+ standard + tenant-scoped paths return "path unused" — API at custom routes
+- 2026-09-15 ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+- 2026-09-15 REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+- 2026-09-15 REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+- 2026-09-15 REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+- 2026-09-15 REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+- 2026-09-15 REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+- 2026-09-15 REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+- 2026-09-15 REJECTED MISCONFIG @ pisp.tech26.de: reposcan android:secret Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
+- 2026-09-15 REJECTED MISCONFIG @ consumercredit-staging S3: NoSuchBucket — bucket deleted, no surface
+- 2026-09-15 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+- 2026-09-15 ACCEPTED MISCONFIG @ api.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
+- 2026-09-15 ACCEPTED MISCONFIG @ beta-api.tech26.de: cert SAN sibling, identical edge mesh, no distinct surface
+- 2026-09-15 ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation

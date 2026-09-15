@@ -3286,3 +3286,4 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments?limit=3 → 401 len=342 no drift — Stripe passthrough stable 10 cycles.
 [RISK] n26: 32 — all live probes read-only GET <=1rps returning 401/404; no creds or customer data touched; BOLA proof breadth-complete but gated on a token (AUTH_HELPED); reporting premature without POC; +2 on newly enumerated surface breadth.
 ## 2026-09-14 23:39:30 UTC [target] (model bigpickle)
+## 2026-09-15 01:54:31 UTC [target] (model bigpickle)
