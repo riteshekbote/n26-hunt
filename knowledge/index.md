@@ -414,3 +414,6 @@
 - 2026-09-15 ACCEPTED MISCONFIG @ fpt.tech26.de: fixed-response ALB — HTTP/2 200 empty text/plain (CL=0, awselb/2.0) on all methods+paths, no WAF, no routing — placeholder stub for not-yet-registered service; INFO; monitor for activation
 - 2026-09-15 ACCEPTED AUTH @ api.tech26.de: OPTIONS /api/accounts/1/statements → 404 (no Allow header); POST all nested routes → 404 len=0 — legacy surface is GET-only Bearer-gated, method-gating confirms route structure narrows to read-only PII endpoints.
 - 2026-09-15 ACCEPTED MISCONFIG @ api.tech26.de: method-gating stable across 5 nested routes — no POST/PUT/DELETE handlers exist at BOLA-relevant paths.
+- 2026-09-15 ACCEPTED AUTH @ api.tech26.de: re-probed /api/accounts/{1,2}/statements + /api/me this cycle — all 401 len=211 byte-identical (cmp verified), ID-independent gate stable; no family drift.
+- 2026-09-15 ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments?limit=3 → 401 len=342 reconfirmed — Stripe passthrough boundary stable 10+ cycles, no drift.
+- 2026-09-15 ACCEPTED AUTH @ api.tech26.de: /api/accounts/2/statements → 401 len=211 byte-identical error schema — ID-independent gating confirmed for second account ID
