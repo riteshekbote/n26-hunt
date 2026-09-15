@@ -488,3 +488,6 @@ https://pay.n26.com/v1/charges -> HTTP 401
 
 ## 2026-09-15 20:31:44 UTC
 
+
+## 2026-09-15 23:14:37 UTC
+https://pay.n26.com/v1/payments?limit=3 -> HTTP 401

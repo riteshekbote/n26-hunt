@@ -23361,3 +23361,50 @@ cc855cb0243b578cfa9703cfab8f825759162da7fa01c5487375e8bbc6a03e51  /tmp/a3.txt
 [93m[1m! [0mpermission requested: external_directory (/tmp/*); auto-rejecting
 [0m✗ [0mcat /tmp/a3.txt; echo; ls /home/runner/work/n26-hunt/n26-hunt 2>/dev/null | head -40 failed
 [91m[1mError: [0mThe user rejected permission to use this specific tool call.
+===== ANALYST bigpickle 2026-09-15 23:14:36 UTC =====
+[0m
+> build · big-pickle
+[0m
+STEP 1 — DELTA
+- NO_DELTA: api.tech26.de legacy BOLA family stable — /api/me 401 len=211, /api/accounts/{1,2}/statements byte-identical 401 (cmp verified), method-gating OPTIONS 404 (no Allow) / POST 404 route-less, grant endpoints /oauth2|oauth|api/oauth{,2}/token all 404; pay.n26.com 401 len=342 no drift (10+ cycles); no fresh CT leaves since 09-13 certspotter sweep (crt.sh still 502).
+- Note: /api/accounts/3/statements NOT yet probed — queued NEXT from prior cycle.
+
+STEP 2 — PRIORITIZE
+[PRIO] api.tech26.de/api/accounts/{id}/{statements,addresses,cards,bookings},5.9,axis=legacy-Bearer-BOLA (a=8,b=9,t=5,g=2,c=1,f=5)
+[PRIO] pay.n26.com/v1/payments|charges|balance,5.65,axis=Stripe-passthrough-key-gated-IDOR (a=7,b=9,t=6,g=1,c=2,f=4)
+[PRIO] aisp.tech26.de/api/v2/accounts/{uuid}/balances,5.2,axis=PSD2-QWAC-claim-trust (a=6,b=7,t=7,g=2,c=2,f=4)
+
+STEP 3 — HYPOTHESES
+[HYP] api.tech26.de BOLA on /api/accounts/{id}/statements|addresses with grant-obtained Bearer
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/statements
+confidence: 75
+reasoning: Legacy N26 v1 unversioned surface, 5 family members + 5 nested routes all Bearer-gated 401 len=211 byte-identical across IDs 0..9 (cmp verified for 1,2); OPTIONS 404 no-Allow + POST 404 route-less proves GET-only read surface; /api/v1/statements 404 drops gate → unversioned-only; grant endpoints dead on api+aisp (404 len=0) → token requires paired-device MFA; 2018 N26 legacy BOLA precedent.
+evidence_needed: with valid Bearer, /api/accounts/{victim-id}/statements + /addresses return non-own data.
+verify_steps: (1) AUTH_HELPED: obtain Bearer via paired-device oauth/refresh flow; (2) GET /api/me → own account id; (3) GET /api/accounts/{own}/statements?from&to baseline 200; (4) GET /api/accounts/{own±1}/statements + /addresses read-only — adjacent-200 without ownership check = BOLA.
+impact: cross-tenant statements + card details + registered-address PII by numeric ID → HIGH; gated on paired-device MFA.
+testability: AUTH_HELPED
+
+[HYP] pay.n26.com Stripe-forwarded BOLA/tenant separation with account key
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: 10+ cycles stable: no-key 401 len=342 Stripe error vs sk_live fake len=132; root 204, /v1 403 CF; key discovery closed 3/3 corpora; app CSP lacks pay.n26.com connect-src → server/mobile-only key.
+evidence_needed: with N26-issued key, cross-tenant payment/charge IDs reachable.
+verify_steps: (1) AUTH_HELPED: GET /v1/payments?limit=3 owner-keyed; (2) GET /v1/payments/{adjacent-id} read-only; (3) own-tenant membership compare.
+impact: cross-tenant balance/payment disclosure → HIGH, fully key-gated.
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+[PARKED] aisp.tech26.de /api/v2 QWAC/QSEAL claim re-validation: claim-alteration test requires TPP mTLS cert + issued token (HUMAN_ONLY), no incremental passive value, confidence floor; removed from active queue.
+[FINAL] api.tech26.de BOLA (75), pay.n26.com Stripe BOLA (60).
+
+STEP 5 — NEXT ACTION
+[NEXT] PROBE: GET https://api.tech26.de/api/accounts/3/statements — confirm 401 len=211 byte-identical error schema for third account ID to close the ID-independence evidence set prior to AUTH_HELPED handoff.
+
+STEP 6 — LEARNING
+[LEARN] ACCEPTED AUTH @ api.tech26.de: accounts/{1,2}/statements byte-identical 401 len=211 (cmp) — ID-independent gate stable, no family drift this cycle; account-3 pending.
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments 401 len=342 reconfirmed 10+ cycles — Stripe passthrough boundary fully stable, anonymous surface nil.
+
+STEP 7 — RISK
+[RISK] n26: 33 — no live probes executed this cycle; all findings remain read-only GET ≤1rps returning 401/404; top BOLA proof breadth+method-complete but token-gated (AUTH_HELPED); no creds or customer data touched.

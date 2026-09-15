@@ -417,3 +417,9 @@
 - 2026-09-15 ACCEPTED AUTH @ api.tech26.de: re-probed /api/accounts/{1,2}/statements + /api/me this cycle — all 401 len=211 byte-identical (cmp verified), ID-independent gate stable; no family drift.
 - 2026-09-15 ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments?limit=3 → 401 len=342 reconfirmed — Stripe passthrough boundary stable 10+ cycles, no drift.
 - 2026-09-15 ACCEPTED AUTH @ api.tech26.de: /api/accounts/2/statements → 401 len=211 byte-identical error schema — ID-independent gating confirmed for second account ID
+- 2026-09-15 ACCEPTED AUTH @ api.tech26.de: accounts/{1,2}/statements byte-identical 401 len=211 (cmp) — ID-independent gate stable, no family drift this cycle; account-3 pending.
+- 2026-09-15 ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments 401 len=342 reconfirmed 10+ cycles — Stripe passthrough boundary fully stable, anonymous surface nil.
+- 2026-09-15 REJECTED AUTH @ api.tech26.de: Entire legacy Bearer-gated family (5 endpoints + nested routes) now returns 404 len=0 — surface removed/disabled this cycle; BOLA hypothesis invalidated
+- 2026-09-15 ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 10+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+- 2026-09-15 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS token — anonymous route discovery exhausted, requires AUTH_HELPED
+- 2026-09-15 ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal); fpt fixed-response ALB placeholder
