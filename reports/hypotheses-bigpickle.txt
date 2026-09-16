@@ -1,4 +1,4 @@
-## 2026-09-16 20:14:05 UTC [target] (model bigpickle)
+## 2026-09-16 23:01:11 UTC [target] (model bigpickle)
 [HYP] api.tech26.de BOLA on /api/accounts/{id}/tans|approvals|transactions with grant-obtained Bearer
 class: IDOR
 asset: api.tech26.de/api/accounts/{id}/tans
@@ -28,3 +28,32 @@ impact: TPP-scope bank data if claim-trust weak; MEDIUM.
 testability: HUMAN_ONLY
 [NEXT] HUMAN: api.tech26.de BOLA upgraded to top priority with 10-member evidence set (statements/addresses/tans/transactions/approvals/cards/bookings/cosmetics/limits + /api/me). Request from coordinator: paired-device OAuth session or scoped sandbox account for one read-only validation — GET /api/accounts/{own±1}/tans + /approvals after own-id baseline. No anonymous probe can advance past this KEY_GATED boundary.
 [RISK] n26: 35/100 — 10-member BOLA family fully mapped and cmp-proven ID-independent this cycle via read-only GETs (≤1rps, all 401/404); TAN+approvals targets materially raise business-value of the still-token-gated hypothesis; no credentials/customer data touched; no reportable finding in hand without AUTH_HELPED.
+[HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/* (tans|approvals|statements|transfers|beneficiaries|devices|cosmetics|limits)
+confidence: 85
+reasoning: this-cycle 20-path sweep: gate is prefix-glob on /api/accounts/statements/addresses/me only; unknown-resource paths under the prefix still 401 len=211 md5-identical, so auth is a pre-route firewall and per-resource authorization lives behind it in the legacy app and is anonymous-unobservable; body says device-login session token class; grant endpoints 404 → token only via paired-device flow; OPTIONS 404 / POST 404 → GET-only read surface.
+evidence_needed: one valid legacy token reads own data at 200 and any other account id at {200 (BOLA) vs 401/403 (per-route authz)}.
+verify_steps: AUTH_HELPED — (1) GET /api/me → own id; (2) GET /api/accounts/{own}/statements + /tans baseline 200; (3) GET /api/accounts/{own±1}/tans, /approvals, /transfers read-only; (4) no mutations.
+impact: cross-tenant statements + TAN + pending-approval + transfer-list disclosure → payment-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 10+ cycles (no-key 401 len=342 vs fake-key len=132, WWW-Authenticate Basic realm="Stripe"); key discovery closed 3/3 corpora; CORS ACAO:* but pay absent from app CSP connect-src → server/mobile-only key.
+evidence_needed: N26-issued Stripe key reading adjacent payment/charge IDs.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de PSD2 TPP claim-trust revalidation
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts/{uuid}/balances
+confidence: 40
+reasoning: docs mandate x-tpp-userip + QWAC; claim revalidation unobserved; needs live TPP mTLS.
+evidence_needed: altered x-tpp-* under valid cert changes authz class.
+verify_steps: HUMAN_ONLY — vary x-tpp-* only under valid cert.
+impact: TPP-scope bank data if claim-trust weak; MEDIUM.
+testability: HUMAN_ONLY
+[NEXT] HUMAN: Request from coordinator for api.tech26.de — (a) scoped legacy device-login session token or sandbox account pairing, and (b) written confirmation that read-only GET of second account-id resources at /api/accounts/{id}/tans+approvals+transfers is in scope. Execution once granted: GET /api/me → own id → GET /api/accounts/{own±1}/{tans,approvals,transfers,statements} with per-request cmp of HTTP class. This is the only step that can yield the reportable finding; anonymous surface on this asset is now exhausted (gate fully mapped, 4 prefixes, no bypass).
+[RISK] n26: 33/100 — This cycle executed 20+ read-only GETs on api.tech26.de (≤1.1s spacing, all responses static 401/404 error bodies, md5-verified identical, zero customer data touched); gate map completeness improved but no bypass, no new surface, no reportable finding. Remaining HIGH-value paths are 100% token-gated (AUTH_HELPED): api.tech26.de BOLA and pay.n26.com Stripe BOLA. Risk ceiling is re-probing stability of the same 401/404 classes, which yields no delta — programme asks for auth assistance or the effort plateaus at KEY_GATED.

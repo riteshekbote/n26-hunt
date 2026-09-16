@@ -2382,3 +2382,7 @@
 ## RANKED HYPOTHESES 2026-09-16 20:14:18 UTC
 - [85] api.tech26.de/api/accounts/{id}/tans: api.tech26.de BOLA on /api/accounts/{id}/tans|approvals|transactions with grant-obtained Bearer (from art/lead_bigpickle.txt)
 - NEXT(hypotheses-bigpickle.txt): HUMAN: api.tech26.de BOLA upgraded to top priority with 10-member evidence set (statements/addresses/tans/transactions/approvals/cards/bookings/cosmetics/limits
+
+## RANKED HYPOTHESES 2026-09-16 23:04:18 UTC
+- [85] api.tech26.de/api/accounts/{id}/tans: api.tech26.de BOLA on /api/accounts/{id}/tans|approvals|transactions with grant-obtained Bearer (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: api.tech26.de BOLA upgraded to top priority with 10-member evidence set (statements/addresses/tans/transactions/approvals/cards/bookings/cosmetics/limits
