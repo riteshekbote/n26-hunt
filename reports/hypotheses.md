@@ -2378,3 +2378,7 @@
 - LEARN: REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous
 - LEARN: ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upg
 - LEARN: CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/stat
+
+## RANKED HYPOTHESES 2026-09-16 20:14:18 UTC
+- [85] api.tech26.de/api/accounts/{id}/tans: api.tech26.de BOLA on /api/accounts/{id}/tans|approvals|transactions with grant-obtained Bearer (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: api.tech26.de BOLA upgraded to top priority with 10-member evidence set (statements/addresses/tans/transactions/approvals/cards/bookings/cosmetics/limits

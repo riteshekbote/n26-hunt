@@ -1,42 +1,30 @@
-## 2026-09-16 17:16:23 UTC [target] (model bigpickle)
-[PRIO] api.tech26.de/api/accounts/{id}/statements,8.0,a=8,b=9,t=3,g=1,c=4,f=4 — Legacy N26 v1 Bearer-gated PII surface; 5-family + nested routes confirmed; BOLA breadth proven; but gate_ease=1 (paired-device MFA required), no anonymous path
-[PRIO] pay.n26.com/v1/payments,6.0,a=6,b=8,t=2,g=1,c=3,f=4 — Stripe passthrough, 401 key-gated, boundary stable 10+ cycles; gate_ease=1, key discovery closed 3/3 corpora
-[PRIO] aisp.tech26.de/api/v2,4.0,a=4,b=5,t=3,g=1,c=3,f=3 — PSD2 TPP endpoint, mTLS+token required; gate_ease=1, HUMAN_ONLY
-[HYP] api.tech26.de BOLA on /api/accounts/{id}/statements|addresses with grant-obtained Bearer
+## 2026-09-16 20:14:05 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on /api/accounts/{id}/tans|approvals|transactions with grant-obtained Bearer
 class: IDOR
-asset: api.tech26.de/api/accounts/{id}/statements
-confidence: 80
-reasoning: CORRECTION restores legacy surface as LIVE; 5 family members (/api/me, /api/statements, /api/accounts{/me,/1}, /api/addresses) all 401 len=211 invalid_token byte-identical; statement-nested IDs {1,2,3} probe-complete this cycle (dst=401 len=211 each) — ID-independent app-layer gate proven; OPTIONS 404 no-Allow + POST 404 confirms GET-only read surface; /api/v1/* 404 drops gate = unversioned-only; grant endpoints dead on api+aisp → paired-device token required; 2018 N26 legacy BOLA precedent.
-evidence_needed: with valid Bearer, /api/accounts/{victim-id}/statements + /addresses return non-own data.
-verify_steps: (1) AUTH_HELPED: obtain Bearer via paired-device oauth/refresh; (2) GET /api/me → own account id baseline; (3) GET /api/accounts/{own}/statements?from&to baseline 200; (4) GET /api/accounts/{own±1}/statements + /addresses read-only — adjacent-200 without ownership check = BOLA. No mutation.
-impact: cross-tenant statements + card details + registered-address PII by numeric ID → HIGH; gated on paired-device MFA.
+asset: api.tech26.de/api/accounts/{id}/tans
+confidence: 85
+reasoning: this-cycle cmp proofs: /api/statements=/api/accounts/1/statements=/tans{1,2,me}=/transactions=/approvals=/cosmetics=/limits all 401 len=211 byte-identical; /api/tans 404 top-level proves account-scoping; /api/v2/statements 404 proves versioned lines drop the gate; prior cycles: OPTIONS 404 no-Allow, POST 404, GET-only. TAN = transaction authorization codes, approvals = pending-payment/limit items — direct fraud surface if adjacent-account read succeeds.
+evidence_needed: valid Bearer for own account A reads owned data at /api/accounts/{A}/... but also returns 200 (not 401) at /api/accounts/{A±1}/...
+verify_steps: AUTH_HELPED — (1) GET /api/me → own account id; (2) GET /api/accounts/{own}/statements&tans baseline 200; (3) GET /api/accounts/{own±1}/tans + /approvals read-only, compare; (4) no POST/approve (no mutation).
+impact: cross-tenant statement + TAN + pending-approval disclosure → transaction-fraud/account-takeover chain; HIGH.
 testability: AUTH_HELPED
-[HYP] pay.n26.com Stripe-forwarded BOLA/tenant separation with account key
+[HYP] pay.n26.com Stripe-forwarded BOLA/tenant-separation
 class: IDOR
 asset: pay.n26.com/v1/payments
 confidence: 60
-reasoning: Stripe-passthrough boundary stable 10+ cycles (no-key 401 len=342 vs fake-key len=132; WWW-Authenticate Basic realm="Stripe"); root 204, /v1 403 CF; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); app CSP lacks pay.n26.com connect-src → server/mobile-only key; pagination param accepted (REST semantics live).
-evidence_needed: with N26-issued key, cross-tenant payment/charge IDs reachable.
-verify_steps: (1) AUTH_HELPED: GET /v1/payments?limit=3 owner-keyed; (2) GET /v1/payments/{adjacent-id} read-only; (3) own-tenant membership compare.
-impact: cross-tenant balance/payment disclosure → HIGH, fully key-gated.
+reasoning: boundary stable 10+ cycles (no-key 401 len=342 vs fake-key len=132, WWW-Authenticate Basic realm="Stripe"); key discovery closed 3/3 corpora; CORS-open ACAO:* but no pay.n26.com in app CSP connect-src → server/mobile-only key.
+evidence_needed: N26-issued key reading adjacent payment/charge IDs.
+verify_steps: AUTH_HELPED — (1) GET /v1/payments?limit=3 owner-keyed; (2) GET /v1/payments/{adjacent-id}; (3) tenant membership compare.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
 testability: AUTH_HELPED
-[HYP] aisp.tech26.de PSD2 TPP claim trust on /api/v2/accounts balance
+[HYP] aisp.tech26.de PSD2 TPP claim-trust revalidation
 class: AUTH
 asset: aisp.tech26.de/api/v2/accounts/{uuid}/balances
 confidence: 40
-reasoning: anonymous GET → 401 len=0; psd2-tpp-docs mandate device-token + x-tpp-userip + Basic + QWAC; claim re-validation unobserved.
-evidence_needed: app-layer behavior when x-tpp-* claim altered under valid mTLS.
-verify_steps: with TPP cert+token, GET /api/v2/accounts/{zero-uuid}/balances; vary x-tpp-* only, compare class. No PII.
-impact: PSD2 TPP-scope bank data if claim-trust weak → MEDIUM.
-testability: AUTH_HELPED
-[PARKED] aisp.tech26.de PSD2 claim trust (40): borderline confidence, HUMAN_ONLY (requires TPP mTLS cert), no incremental passive value — retired from active queue.
-[FINAL] 1) api.tech26.de BOLA (80) — highest confidence, strongest evidence set, AUTH_HELPED only barrier
-[FINAL] 2) pay.n26.com Stripe BOLA (60) — stable boundary, fully key-gated, key discovery closed
-[NEXT] HUMAN: All three surviving hypotheses are AUTH_HELPED — no anonymous probe can advance any of them. Request from program coordinator: (1) scoped test account or paired-device OAuth session for api.tech26.de BOLA validation; (2) N26-issued Stripe key for pay.n26.com tenant-separation test; (3) written scope ruling on vendor-owned keyless.technology asset. Without auth assistance, the entire surface is cornered at KEY_GATED boundary with no reportable finding.
-[LEARN] ACCEPTED AUTH @ api.tech26.de: /api/accounts/{0..9} sweep all 401 len=211 byte-identical invalid_token — generic numeric-ID route Bearer-gated, not route-less; BOLA surface live at account-resource level.
-[LEARN] ACCEPTED AUTH @ api.tech26.de: /api/accounts/1/statements → 401 len=212 — first live nested gated route (unlike /api/me/* 404 flat); statement-history BOLA target concrete once token held.
-[LEARN] ACCEPTED AUTH @ api.tech26.de: /api/me joins legacy family (401 len=211 invalid_token, identical shape to statements/accounts/addresses); sub-routes /api/me/* all 404 — flat unversioned-only surface, 5 members total.
-[LEARN] ACCEPTED AUTH @ api.tech26.de: /api/v1/statements 404 confirms versioning drops routes from Bearer gate — unversioned-only legacy surface; grant endpoints /oauth2|oauth|api/oauth{,2}/token all 404 confirmed dead.
-[LEARN] ACCEPTED AUTH @ api.tech26.de: account-scoped nested routes /api/accounts/{id}/{addresses,bookings,cards}, /api/statements/{year}, /api/accounts/{id}/statements?from&to all 401 len=211 ID-independent — BOLA breadth (statements+address PII+cards+bookings) proven.
-[LEARN] CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/statements, /api/accounts/1, /api/statements, /api/addresses, /api/me all return 401 (Bearer-gated), only versioned /api/v1/statements returns 404; legacy surface ACTIVE and mutating.
-[RISK] n26: 33/100 — No live probes executed this cycle; all findings remain read-only GET ≤1rps returning 401/404. Top BOLA proof breadth+method-complete but token-gated (AUTH_HELPED). No credentials or customer data touched. Surface fully mapped across 13+ cycles; remaining HIGH-value paths (api.tech26.de BOLA, pay.n26.com Stripe BOLA) require auth assistance to advance. No reportable finding in hand.
+reasoning: docs mandate x-tpp-userip + QWAC; claim revalidation unobserved; needs live mTLS.
+evidence_needed: altered x-tpp-* under valid cert changes authz class.
+verify_steps: HUMAN_ONLY — with TPP cert, vary x-tpp-* only.
+impact: TPP-scope bank data if claim-trust weak; MEDIUM.
+testability: HUMAN_ONLY
+[NEXT] HUMAN: api.tech26.de BOLA upgraded to top priority with 10-member evidence set (statements/addresses/tans/transactions/approvals/cards/bookings/cosmetics/limits + /api/me). Request from coordinator: paired-device OAuth session or scoped sandbox account for one read-only validation — GET /api/accounts/{own±1}/tans + /approvals after own-id baseline. No anonymous probe can advance past this KEY_GATED boundary.
+[RISK] n26: 35/100 — 10-member BOLA family fully mapped and cmp-proven ID-independent this cycle via read-only GETs (≤1rps, all 401/404); TAN+approvals targets materially raise business-value of the still-token-gated hypothesis; no credentials/customer data touched; no reportable finding in hand without AUTH_HELPED.
