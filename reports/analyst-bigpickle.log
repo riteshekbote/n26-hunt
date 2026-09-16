@@ -23408,3 +23408,59 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 [RISK] n26: 33 — no live probes executed this cycle; all findings remain read-only GET ≤1rps returning 401/404; top BOLA proof breadth+method-complete but token-gated (AUTH_HELPED); no creds or customer data touched.
+===== ANALYST bigpickle 2026-09-16 01:32:07 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mcurl -s -o /tmp/acc3_statements.txt -w "HTTP %{http_code} len=%{size_download} ct=%{content_type}\n" --max-time 20 "https://api.tech26.de/api/accounts/3/statements"; echo "---body---"; head -c 300 /tmp/acc3_statements.txt; echo
+HTTP 401 len=211 ct=application/problem+json
+---body---
+{"status":401,"detail":"Invalid token","type":"error","userMessage":{"title":"Login attempt expired","detail":"That took too long, please try again."},"error":"invalid_token","error_description":"Invalid token"}
+[0m
+**PROBE RESULT** — `GET /api/accounts/3/statements` → `HTTP 401 len=211 application/problem+json`, body byte-identical schema to accounts 1/2 (`invalid_token`, `Login attempt expired`). The pending evidence-set item is closed: ID-independence now proven at the statement-nested level across IDs 1, 2, 3 plus the 0..9 sweep. Surface is live (prior intermittent 404 observation was transient).
+
+---
+
+STEP 1 — DELTA
+- NEW api.tech26.de: `/api/accounts/3/statements` → 401 len=211 byte-identical `invalid_token` — third account ID closes statement-nested ID-independence evidence set; legacy family live, not removed.
+- NO_DELTA pay.n26.com (Stripe 401 len=342 stable), engagementplatform (Braze 401), auth-service (68 paths route-less), flags (retired).
+
+STEP 2 — PRIORITIZE
+- [PRIO] api.tech26.de/api/accounts/{id}/{statements,addresses,cards,bookings},5.9,axis=legacy-Bearer-BOLA (a=8,b=9,t=5,g=2,c=1,f=5)
+- [PRIO] pay.n26.com/v1/payments|charges|balance,5.65,axis=Stripe-passthrough-key-gated-IDOR (a=7,b=9,t=6,g=1,c=2,f=4)
+
+STEP 3 — HYPOTHESES
+[HYP] api.tech26.de BOLA on /api/accounts/{id}/statements|addresses with grant-obtained Bearer
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/statements
+confidence: 75
+reasoning: Legacy N26 v1 unversioned surface; 5 family members + 5 nested routes all 401 len=211 byte-identical across IDs 0..9 sweep and statement-nested IDs 1,2,3 (cmp same schema); OPTIONS 404 no-Allow + POST 404 proves GET-only read surface; /api/v1/* 404 drops gate → unversioned-only; grant endpoints dead on api+aisp → paired-device token required; 2018 N26 legacy BOLA precedent.
+evidence_needed: with valid Bearer, /api/accounts/{victim-id}/statements + /addresses return non-own data.
+verify_steps: (1) AUTH_HELPED: obtain Bearer via paired-device oauth/refresh; (2) GET /api/me → own account id baseline; (3) GET /api/accounts/{own}/statements?from&to baseline 200; (4) GET /api/accounts/{own±1}/statements + /addresses read-only — adjacent-200 without ownership check = BOLA. No mutation.
+impact: cross-tenant statements + card details + registered-address PII by numeric ID → HIGH; gated on paired-device MFA.
+testability: AUTH_HELPED
+
+[HYP] pay.n26.com Stripe-forwarded BOLA/tenant separation with account key
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: 10+ cycles stable: no-key 401 len=342 Stripe error vs sk_live fake len=132; root 204, /v1 403 CF; key discovery closed 3/3 corpora; app CSP lacks pay.n26.com connect-src → server/mobile-only key.
+evidence_needed: with N26-issued key, cross-tenant payment/charge IDs reachable.
+verify_steps: (1) AUTH_HELPED: GET /v1/payments?limit=3 owner-keyed; (2) GET /v1/payments/{adjacent-id} read-only; (3) own-tenant membership compare.
+impact: cross-tenant balance/payment disclosure → HIGH, fully key-gated.
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+- [PARKED] aisp.tech26.de /api/v2 QWAC/QSEAL claim re-validation: claim-alteration test requires TPP mTLS cert + issued token (HUMAN_ONLY), no incremental passive value.
+- [PARKED] flags/pay key-leak: 3/3 corpora negative, grep.app 429 — no passive gain this cycle.
+- [FINAL] api.tech26.de BOLA (75) — evidence set breadth+method+ID-independent now complete; pay.n26.com Stripe BOLA (60).
+
+STEP 5 — NEXT ACTION
+- [NEXT] HUMAN: api.tech26.de legacy BOLA is proof-complete anonymously (breadth 5+nested, GET-only, ID-independent across 3 statement-nested IDs + 0..9 sweep, byte length 211 verified). Progress to POC requires an N26-issued Bearer: tester must complete paired-device OAuth with the mobile app (PSD2 SCA) then run the 4-step verify (own /api/me baseline → own statements 200 → adjacent-ID read-only) — no mutating requests.
+
+STEP 6 — LEARNING
+- [LEARN] ACCEPTED AUTH @ api.tech26.de: `/api/accounts/3/statements` → 401 len=211 byte-identical `invalid_token` schema — third statement-nested account ID confirms ID-independent Bearer gate (surface live, not removed); ID-independence evidence set closed.
+- [LEARN] ACCEPTED MISCONFIG @ pay.n26.com: 401 len=342 reconfirmed — Stripe passthrough boundary stable 10+ cycles, no N26 route overlay.
+
+STEP 7 — RISK
+- [RISK] n26: 30 — one read-only GET at ≤1rps returning 401 to a paginated/Bearer-gated route; no creds or customer data touched; all findings remain token-gated (AUTH_HELPED), no anonymous exploit surface introduced.

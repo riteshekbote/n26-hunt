@@ -3457,3 +3457,22 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED AUTH @ api.tech26.de: accounts/{1,2}/statements byte-identical 401 len=211 (cmp) — ID-independent gate stable, no family drift this cycle; account-3 pending.
 [LEARN] ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments 401 len=342 reconfirmed 10+ cycles — Stripe passthrough boundary fully stable, anonymous surface nil.
 [RISK] n26: 33 — no live probes executed this cycle; all findings remain read-only GET ≤1rps returning 401/404; top BOLA proof breadth+method-complete but token-gated (AUTH_HELPED); no creds or customer data touched.
+## 2026-09-16 01:28:29 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on /api/accounts/{id}/statements|addresses with grant-obtained Bearer
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/statements
+confidence: 75
+reasoning: Legacy N26 v1 unversioned surface; 5 family members + 5 nested routes all 401 len=211 byte-identical across IDs 0..9 sweep and statement-nested IDs 1,2,3 (cmp same schema); OPTIONS 404 no-Allow + POST 404 proves GET-only read surface; /api/v1/* 404 drops gate → unversioned-only; grant endpoints dead on api+aisp → paired-device token required; 2018 N26 legacy BOLA precedent.
+evidence_needed: with valid Bearer, /api/accounts/{victim-id}/statements + /addresses return non-own data.
+verify_steps: (1) AUTH_HELPED: obtain Bearer via paired-device oauth/refresh; (2) GET /api/me → own account id baseline; (3) GET /api/accounts/{own}/statements?from&to baseline 200; (4) GET /api/accounts/{own±1}/statements + /addresses read-only — adjacent-200 without ownership check = BOLA. No mutation.
+impact: cross-tenant statements + card details + registered-address PII by numeric ID → HIGH; gated on paired-device MFA.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded BOLA/tenant separation with account key
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: 10+ cycles stable: no-key 401 len=342 Stripe error vs sk_live fake len=132; root 204, /v1 403 CF; key discovery closed 3/3 corpora; app CSP lacks pay.n26.com connect-src → server/mobile-only key.
+evidence_needed: with N26-issued key, cross-tenant payment/charge IDs reachable.
+verify_steps: (1) AUTH_HELPED: GET /v1/payments?limit=3 owner-keyed; (2) GET /v1/payments/{adjacent-id} read-only; (3) own-tenant membership compare.
+impact: cross-tenant balance/payment disclosure → HIGH, fully key-gated.
+testability: AUTH_HELPED

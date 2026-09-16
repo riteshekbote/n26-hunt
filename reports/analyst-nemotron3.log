@@ -12109,3 +12109,153 @@ testability: AUTH_HELPED
 
 **STEP 7 — RISK**
 [RISK] N26 Bank AG: 88 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface REMOVED this cycle (was 92, now reduced); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO)
+===== ANALYST nemotron3 2026-09-16 01:32:07 UTC =====
+[0m
+> build · nemotron-3-ultra-free
+[0m
+[0m$ [0mls -la
+total 468
+drwxr-xr-x 12 runner runner   4096 Sep 16 01:27 .
+drwxr-xr-x  3 runner runner   4096 Sep 16 01:27 ..
+drwxr-xr-x  7 runner runner   4096 Sep 16 01:27 .git
+drwxr-xr-x  3 runner runner   4096 Sep 16 01:27 .github
+-rw-r--r--  1 runner runner   1844 Sep 16 01:27 README.md
+-rw-r--r--  1 runner runner     43 Sep 16 01:27 analyst-out.txt
+-rw-r--r--  1 runner runner 184692 Sep 16 01:27 analyst-prompt.txt
+-rw-r--r--  1 runner runner 180822 Sep 16 01:27 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 16 01:27 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 16 01:27 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 16 01:27 leads
+-rw-r--r--  1 runner runner  17255 Sep 16 01:27 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 16 01:27 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 16 01:27 reports
+drwxr-xr-x  2 runner runner   4096 Sep 16 01:27 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 16 01:27 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 16 01:27 scripts
+-rw-r--r--  1 runner runner     33 Sep 16 01:27 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 16 01:27 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 16 01:27 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 16 01:27 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 16 01:27 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 16 01:27 state_nemotron3.json
+drwxr-xr-x  2 runner runner   4096 Sep 16 01:27 triage
+[0m
+[0m→ [0mRead state_nemotron3.json
+[0m→ [0mRead probe-results.md[90m [limit=100][0m
+[0m→ [0mRead probe-results.md[90m [offset=300, limit=200][0m
+[0m→ [0mRead scope.yml
+[0m
+[0m$ [0mcurl -s -o /dev/null -w "%{http_code} %{content_length}" -H "Accept: application/json" "https://pay.n26.com/v1/payments?limit=3" --max-time 10
+curl: unknown --write-out variable: 'content_length'
+401
+[0m
+[0m$ [0mcurl -s -D - -o /dev/null "https://pay.n26.com/v1/payments?limit=3" --max-time 10
+HTTP/2 401 
+date: Wed, 16 Sep 2026 01:29:02 GMT
+content-type: application/json
+content-length: 342
+server: cloudflare
+access-control-allow-credentials: true
+access-control-allow-methods: GET, HEAD, PUT, PATCH, POST, DELETE
+access-control-allow-origin: *
+access-control-expose-headers: Request-Id, Stripe-Manage-Version, Stripe-Should-Retry, X-Stripe-External-Auth-Required, X-Stripe-Privileged-Session-Required
+access-control-max-age: 300
+cache-control: no-cache, no-store
+content-security-policy: base-uri 'none'; default-src 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+vary: Origin
+www-authenticate: Basic realm="Stripe"
+x-robots-tag: none
+x-wc: 383
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+cf-cache-status: DYNAMIC
+cf-ray: a3bc190d19e515e4-IAD
+[0m
+[0m$ [0mcurl -s -o /dev/null -w "%{http_code} %{content_length}" "https://api.tech26.de/api/accounts/1/statements" --max-time 10
+curl: unknown --write-out variable: 'content_length'
+401
+[0m
+[0m$ [0mcurl -s -o /dev/null -w "%{http_code}" "https://api.tech26.de/api/accounts/1/statements" --max-time 10 && echo ""
+401
+[0m
+[0m$ [0mcurl -s -o /dev/null -w "%{http_code} " "https://api.tech26.de/api/accounts/1" --max-time 10 && curl -s -o /dev/null -w "%{http_code} " "https://api.tech26.de/api/statements" --max-time 10 && curl -s -o /dev/null -w "%{http_code} " "https://api.tech26.de/api/addresses" --max-time 10 && curl -s -o /dev/null -w "%{http_code} " "https://api.tech26.de/api/me" --max-time 10 && echo ""
+401 401 401 401
+[0m
+[0m$ [0mcurl -s -o /dev/null -w "%{http_code} " "https://api.tech26.de/api/v1/statements" --max-time 10 && echo ""
+404
+[0m
+[0m$ [0mcurl -s -o /dev/null -w "%{http_code} " "https://authentication-service.eks.core-production.keyless.technology/health" --max-time 10 && echo ""
+404
+[0m
+**STEP 1 — DELTA**
+- [CHANGED] pay.n26.com/v1/payments?limit=3 → HTTP 401 (342B Stripe JSON, WWW-Authenticate: Basic realm="Stripe", ACAO:*) — boundary stable 10+ cycles, REST semantics confirmed
+- [CHANGED] api.tech26.de/api/accounts/1/statements → HTTP 401 (not 404) — legacy Bearer-gated family ACTIVE, contradicts prior LEARN claiming surface removed; unversioned endpoints (/api/accounts/1, /api/statements, /api/addresses, /api/me) all 401; versioned /api/v1/statements 404
+- [CHANGED] authentication-service.eks.core-production.keyless.technology/health → HTTP 404 ("path unused") — 68+ standard/tenant paths route-less, API at custom routes, requires AUTH_HELPED
+- [CHANGED] engagementplatform.n26.com/ → HTTP 400 (96B), /users/export/ids → 405 — Braze REST surface shifted from dashboard redirect, 401 key-gated boundary stable
+- [NO_DELTA] flags.n26.com RBAC boundary stable (POST /v1/initialize 200 by-design, GET 403, sdk_exception 202, download_config_specs 401) — retired
+- [NO_DELTA] spc.n26.com/v1/* → 200 len=43 (1x1 GIF) — IDOR permanently invalidated
+- [NO_DELTA] app.n26.com/graphql → timeout/WAF tarpit — transport class closed
+- [NO_DELTA] cdn.number26.de/static.* → 403 AccessDenied — private S3, class closed
+
+**STEP 2 — PRIORITIZE**
+[PRIO] pay.n26.com/v1/*,8.5,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=7
+[PRIO] api.tech26.de/api/accounts/{id}/statements,7.8,attack_surface=8,business_value=9,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=8
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.0,attack_surface=6,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=6
+[PRIO] engagementplatform.n26.com/users,5.5,attack_surface=5,business_value=7,tech_exposure=5,gate_ease=2,cloud_surface=6,freshness=6
+
+**STEP 3 — HYPOTHESES**
+[HYP] pay.n26.com Stripe-forwarded payment API BOLA on charges/balance with valid auth
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 80
+reasoning: 23+ /v1/* endpoints return 401 with Stripe error JSON (len=342 no-key, len=132 fake-key "Invalid API Key provided: sk_live_****0000"); /v1/payments?limit=3 accepts pagination confirming REST semantics; WWW-Authenticate: Basic realm="Stripe"; CORS-open (ACAO: *); pure Stripe passthrough on N26 domain — no N26-side key injection; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); app CSP lacks pay.n26.com connect-src (mobile/server-only)
+evidence_needed: Valid Stripe secret key for pay.n26.com (sk_live_...); successful GET /v1/payments returning payment objects; IDOR via payment_id/charge_id traversal across accounts
+verify_steps: PASSIVE: GET /v1/payments?limit=3 → capture WWW-Authenticate header + error schema. AUTH_HELPED: With valid key, GET /v1/payments → GET /v1/charges/{id} → GET /v1/balance → test BOLA via cross-account payment_id
+impact: Cross-account payment/charge/balance enumeration, potential payment manipulation — CRITICAL (core banking)
+testability: AUTH_HELPED
+
+[HYP] api.tech26.de BOLA on /api/accounts/{id}/statements|addresses with grant-obtained Bearer
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/statements
+confidence: 75
+reasoning: Legacy unversioned family (5 endpoints: /api/statements, /api/accounts{/me,/1}, /api/addresses, /api/me) all return 401 len=211 byte-identical invalid_token; nested routes /api/accounts/{id}/{statements,addresses,bookings,cards}, /api/statements/{year}, /api/accounts/{id}/statements?from&to all 401 ID-independent; OPTIONS/POST on nested routes → 404 len=0 (GET-only read surface); /api/v1/* versioned family 404 confirms versioning drops Bearer gate; grant endpoints (/oauth2/token, /oauth/token, /api/oauth/*) all 404 — token requires paired-device flow
+evidence_needed: Valid Bearer token via paired-device grant; successful GET /api/accounts/1/statements returning statement objects; IDOR via account_id traversal across tenants
+verify_steps: PASSIVE: GET /api/accounts/3/statements → confirm 401 len=211 byte-identical error schema for third account ID. AUTH_HELPED: With valid token, GET /api/accounts/1/statements → GET /api/accounts/2/statements → test BOLA via cross-account account_id
+impact: Cross-tenant statement history, address PII, cards, bookings enumeration — HIGH (banking PII + financial data)
+testability: AUTH_HELPED
+
+[HYP] authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay reveals token reuse/challenge-binding flaw
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 65
+reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version authentication-service-2/v26.09.07 eks-production, custom x-keyless-flow-id header; all 68+ standard + tenant-scoped paths return {"code":"UNPROCESSABLE","reason":"path unused"}; WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token; "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant
+evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; successful subprotocol handshake with signed token; token replay across sessions/challenges
+verify_steps: PASSIVE: GET /health → /ready → /metrics → /actuator/health → /api/internal/v1/auth/n26 → /api/private/v1/enroll/n26 → /internal/auth/n26 → /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps. AUTH_HELPED: WS handshake with valid credential → test token replay
+impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
+testability: AUTH_HELPED
+
+**STEP 4 — SELF-CRITIQUE**
+[PARKED] engagementplatform.n26.com Braze REST API cross-tenant user PII enumeration with valid Bearer token: confidence 55 < 60 threshold; key only in server/mobile, no web leak path; engagementplatform root shifted to 400 (reduced surface visibility)
+[FINAL] 1) pay.n26.com/v1/payments Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth (confidence 80) — AUTH_HELPED testable, NEW live payment API with 401 boundary, core banking value
+[FINAL] 2) api.tech26.de/api/accounts/{id}/statements BOLA on legacy Bearer-gated family with grant-obtained token (confidence 75) — AUTH_HELPED testable, surface ACTIVE (401 not 404), ID-independent gating proven, nested routes breadth confirmed
+[FINAL] 3) authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay reveals token reuse/challenge-binding flaw (confidence 65) — AUTH_HELPED testable, high-value target, live service confirmed, deployment rotated v26.09.07
+
+**STEP 5 — NEXT ACTION**
+[NEXT] PROBE: GET https://api.tech26.de/api/accounts/3/statements — confirm 401 len=211 byte-identical error schema for third account ID to close the ID-independence evidence loop; <=1 rps, passive read-only
+
+**STEP 6 — LEARNING**
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 10+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS token — anonymous route discovery exhausted, requires AUTH_HELPED
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+[LEARN] REJECTED MISCONFIG @ pisp.tech26.de: reposcan android:secret Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
+[LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: NoSuchBucket — bucket deleted, no surface
+[LEARN] CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/statements, /api/accounts/1, /api/statements, /api/addresses, /api/me all return 401 (Bearer-gated), only versioned /api/v1/statements returns 404; legacy surface ACTIVE and mutating
+
+**STEP 7 — RISK**
+[RISK] N26 Bank AG: 88 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE with numeric ID BOLA surface (statements/addresses/cards/bookings nested routes confirmed, breadth proven); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO)
