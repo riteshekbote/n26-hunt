@@ -435,3 +435,5 @@
 - 2026-09-16 REJECTED MISCONFIG @ pisp.tech26.de: reposcan android:secret Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
 - 2026-09-16 REJECTED MISCONFIG @ consumercredit-staging S3: NoSuchBucket — bucket deleted, no surface
 - 2026-09-16 CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/statements, /api/accounts/1, /api/statements, /api/addresses, /api/me all return 401 (Bearer-gated), only versioned /api/v1/statements returns 404; legacy surface ACTIVE and mutating
+- 2026-09-16 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+- 2026-09-16 ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal); fpt fixed-response ALB placeholder

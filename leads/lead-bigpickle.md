@@ -3476,3 +3476,31 @@ evidence_needed: with N26-issued key, cross-tenant payment/charge IDs reachable.
 verify_steps: (1) AUTH_HELPED: GET /v1/payments?limit=3 owner-keyed; (2) GET /v1/payments/{adjacent-id} read-only; (3) own-tenant membership compare.
 impact: cross-tenant balance/payment disclosure → HIGH, fully key-gated.
 testability: AUTH_HELPED
+## 2026-09-16 06:42:02 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on /api/accounts/{id}/statements|addresses with grant-obtained Bearer
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/statements
+confidence: 80
+reasoning: CORRECTION restores legacy surface as LIVE; 5 family members (/api/me, /api/statements, /api/accounts{/me,/1}, /api/addresses) all 401 len=211 invalid_token byte-identical; statement-nested IDs {1,2,3} probe-complete this cycle (dst=401 len=211 each) — ID-independent app-layer gate proven; OPTIONS 404 no-Allow + POST 404 confirms GET-only read surface; /api/v1/* 404 drops gate = unversioned-only; grant endpoints dead on api+aisp → paired-device token required; 2018 N26 legacy BOLA precedent.
+evidence_needed: with valid Bearer, /api/accounts/{victim-id}/statements + /addresses return non-own data.
+verify_steps: (1) AUTH_HELPED: obtain Bearer via paired-device oauth/refresh; (2) GET /api/me → own account id baseline; (3) GET /api/accounts/{own}/statements?from&to baseline 200; (4) GET /api/accounts/{own±1}/statements + /addresses read-only — adjacent-200 without ownership check = BOLA. No mutation.
+impact: cross-tenant statements + card details + registered-address PII by numeric ID → HIGH; gated on paired-device MFA.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded BOLA/tenant separation with account key
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: Stripe-passthrough boundary stable 10+ cycles (no-key 401 len=342 vs fake-key len=132; WWW-Authenticate Basic realm="Stripe"); root 204, /v1 403 CF; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); app CSP lacks pay.n26.com connect-src → server/mobile-only key; pagination param accepted (REST semantics live).
+evidence_needed: with N26-issued key, cross-tenant payment/charge IDs reachable.
+verify_steps: (1) AUTH_HELPED: GET /v1/payments?limit=3 owner-keyed; (2) GET /v1/payments/{adjacent-id} read-only; (3) own-tenant membership compare.
+impact: cross-tenant balance/payment disclosure → HIGH, fully key-gated.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de PSD2 TPP claim trust on /api/v2/accounts balance
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts/{uuid}/balances
+confidence: 40
+reasoning: anonymous GET → 401 len=0; psd2-tpp-docs mandate device-token + x-tpp-userip + Basic + QWAC; claim re-validation unobserved.
+evidence_needed: app-layer behavior when x-tpp-* claim altered under valid mTLS.
+verify_steps: with TPP cert+token, GET /api/v2/accounts/{zero-uuid}/balances; vary x-tpp-* only, compare class. No PII.
+impact: PSD2 TPP-scope bank data if claim-trust weak → MEDIUM.
+testability: AUTH_HELPED

@@ -1,4 +1,4 @@
-## 2026-09-16 01:31:59 UTC [target] (model nemotron3)
+## 2026-09-16 06:43:47 UTC [target] (model nemotron3)
 [PRIO] pay.n26.com/v1/*,8.5,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=7
 [PRIO] api.tech26.de/api/accounts/{id}/statements,7.8,attack_surface=8,business_value=9,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=8
 [PRIO] authentication-service.eks.core-production.keyless.technology,7.0,attack_surface=6,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=6
@@ -46,5 +46,7 @@ testability: AUTH_HELPED
 [LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
 [LEARN] REJECTED MISCONFIG @ pisp.tech26.de: reposcan android:secret Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
 [LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: NoSuchBucket — bucket deleted, no surface
+[LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal); fpt fixed-response ALB placeholder
 [LEARN] CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/statements, /api/accounts/1, /api/statements, /api/addresses, /api/me all return 401 (Bearer-gated), only versioned /api/v1/statements returns 404; legacy surface ACTIVE and mutating
 [RISK] N26 Bank AG: 88 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE with numeric ID BOLA surface (statements/addresses/cards/bookings nested routes confirmed, breadth proven); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO)
