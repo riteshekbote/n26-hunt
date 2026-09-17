@@ -2418,3 +2418,51 @@
 - LEARN: REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous
 - LEARN: ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upg
 - LEARN: CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/stat
+
+## RANKED HYPOTHESES 2026-09-17 11:49:44 UTC
+- [88] api.tech26.de/api/accounts/{id}/(statements|addresses|bookings|cards|tans|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics): api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family with grant-obtained token (from art/lead_nemotron3.txt)
+- [60] pay.n26.com/v1/payments: aisp.tech26.de PSD2 TPP claim-trust revalidation (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: api.tech26.de BOLA is the sole reportable path and is 100% token-gated — request from coordinator (a) a scoped legacy device-login Bearer token or sandbo
+- NEXT(hypotheses-nemotron3.txt): HUMAN: All three surviving hypotheses are AUTH_HELPED — no anonymous probe can advance any of them. Request from program coordinator: (1) scoped test account or
+- LEARN: ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/stateme
+- LEARN: REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), ga
+- LEARN: REJECTED AUTH @ api.tech26.de: query-param token acceptance closed — /api/me?{access_token,token,api_key,auth}=zzz all 401 len=211 md5 d585... byte-identical; g
+- LEARN: ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live 2026-09-17 — /api/me + /api/accounts/2/tans 401 len=211 md5-identical; 10-member family + query-param immu
+- LEARN: ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/stateme
+- LEARN: REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), ga
+- LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 10+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+- LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS to
+- LEARN: ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative acros
+- LEARN: REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalati
+- LEARN: REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+- LEARN: REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+- LEARN: REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class cl
+- LEARN: REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+- LEARN: REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+- LEARN: REJECTED MISCONFIG @ pisp.tech26.de: reposcan android:secret Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/chal
+- LEARN: REJECTED MISCONFIG @ consumercredit-staging S3: NoSuchBucket — bucket deleted, no surface
+- LEARN: REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous
+- LEARN: ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upg
+- LEARN: CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/stat
+- LEARN: ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/stateme
+- LEARN: REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), ga
+- LEARN: REJECTED AUTH @ api.tech26.de: query-param token acceptance closed — /api/me?{access_token,token,api_key,auth}=zzz all 401 len=211 md5 d585... byte-identical; g
+- LEARN: ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live 2026-09-17 — /api/me + /api/accounts/2/tans 401 len=211 md5-identical; 10-member family + query-param immu
+- LEARN: ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/stateme
+- LEARN: REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), ga
+- LEARN: REJECTED AUTH @ api.tech26.de: query-param token acceptance closed — /api/me?{access_token,token,api_key,auth}=zzz all 401 len=211 md5 d585... byte-identical; g
+- LEARN: ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live 2026-09-17 — /api/me + /api/accounts/2/tans 401 len=211 md5-identical; 10-member family + query-param immu
+- LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 10+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+- LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS to
+- LEARN: ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative acros
+- LEARN: REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalati
+- LEARN: REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+- LEARN: REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+- LEARN: REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class cl
+- LEARN: REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+- LEARN: REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+- LEARN: REJECTED MISCONFIG @ pisp.tech26.de: reposcan android:secret Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/chal
+- LEARN: REJECTED MISCONFIG @ consumercredit-staging S3: NoSuchBucket — bucket deleted, no surface
+- LEARN: REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous
+- LEARN: ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upg
+- LEARN: CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/stat
