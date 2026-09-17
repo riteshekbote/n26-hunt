@@ -5386,3 +5386,4 @@ testability: AUTH_HELPED
 [RISK] N26 Bank AG: 88 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, HIGH/CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE with numeric ID BOLA surface (statements/addresses/cards/bookings nested routes confirmed, breadth proven); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO)
 ## 2026-09-16 20:13:11 UTC [target] (model nemotron3)
 ## 2026-09-16 23:00:22 UTC [target] (model nemotron3)
+## 2026-09-17 01:13:02 UTC [target] (model nemotron3)

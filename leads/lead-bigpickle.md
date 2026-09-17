@@ -3677,3 +3677,32 @@ impact: TPP-scope bank data if claim-trust weak; MEDIUM.
 testability: HUMAN_ONLY
 [NEXT] HUMAN: Request from coordinator for api.tech26.de — (a) scoped legacy device-login session token or sandbox account pairing, and (b) written confirmation that read-only GET of second account-id resources at /api/accounts/{id}/tans+approvals+transfers is in scope. Execution once granted: GET /api/me → own id → GET /api/accounts/{own±1}/{tans,approvals,transfers,statements} with per-request cmp of HTTP class. This is the only step that can yield the reportable finding; anonymous surface on this asset is now exhausted (gate fully mapped, 4 prefixes, no bypass).
 [RISK] n26: 33/100 — This cycle executed 20+ read-only GETs on api.tech26.de (≤1.1s spacing, all responses static 401/404 error bodies, md5-verified identical, zero customer data touched); gate map completeness improved but no bypass, no new surface, no reportable finding. Remaining HIGH-value paths are 100% token-gated (AUTH_HELPED): api.tech26.de BOLA and pay.n26.com Stripe BOLA. Risk ceiling is re-probing stability of the same 401/404 classes, which yields no delta — programme asks for auth assistance or the effort plateaus at KEY_GATED.
+## 2026-09-17 01:12:17 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate — re-confirmed
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(tans|approvals|statements|transfer|beneficiaries|devices|limits|cosmetics|cards|bookings)
+confidence: 88
+reasoning: live probes 2026-09-17: /api/me, /api/statements, /api/accounts/{1,4,9}/tans, /api/accounts/1/statements, /api/addresses all 401 len=211 byte-identical invalid_token (cmp-verified) — auth is a prefix-firewall; /api/tans top-level 404 proves account scoping; /api/v1/* 404 proves versioned line drops the gate; OPTIONS 404 no-Allow + POST 404 earlier → GET-only; TAN=transaction-auth codes, approvals=pending-payment items → live fraud surface if adjacent-account read succeeds.
+evidence_needed: valid Bearer for own account A returns 200 at /api/accounts/{A}/tans but also 200 (not 401) at /api/accounts/{A±1}/tans.
+verify_steps: AUTH_HELPED — (1) GET /api/me → own id; (2) GET /api/accounts/{own}/statements+tans baseline 200; (3) GET /api/accounts/{own±1}/tans + /approvals read-only, per-request cmp; (4) no POST/mutation.
+impact: cross-tenant statements + TAN + pending-approval + transfer-list disclosure → transaction-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles (no-key 401 len=342 vs fake-key len=132, WWW-Authenticate Basic realm="Stripe"); key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); CORS ACAO:* but pay absent from app CSP connect-src → server/mobile-only key.
+evidence_needed: N26-issued key reads adjacent payment/charge IDs.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de PSD2 TPP claim-trust revalidation
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts/{uuid}/balances
+confidence: 40
+reasoning: docs mandate x-tpp-userip + QWAC; claim revalidation unobserved; requires live TPP mTLS.
+impact: TPP-scope bank data if claim-trust weak; MEDIUM.
+testability: HUMAN_ONLY
+[NEXT] HUMAN: api.tech26.de BOLA is the sole reportable path and is 100% token-gated — request from coordinator (a) a scoped legacy device-login Bearer token or sandbox-account pairing, and (b) written in-scope confirmation for read-only GET of second-account resources at /api/accounts/{id}/{tans,approvals,transfers,statements}. Execution plan ready: GET /api/me → own id → GET /api/accounts/{own±1}/{tans,approvals,statements} with per-request cmp, zero mutation. No anonymous probe can advance past this KEY_GATED boundary.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/statements all 401 len=211 cmp-identical invalid_token; tans sub-route Join confirms 10-member flat GET-only family; ID-independent prefix-firewall stable this session.
+[LEARN] REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), gate intact.
+[RISK] n26: 36/100 — Re-confirmed 401 len=211 boundary (6 probes ≤1rps, cmp-verified, zero customer data touched); legacy family evidence now spans 10 read routes with TAN+approvals raising the business-value of the still-anonymous-untestable BOLA hypothesis. No reportable finding without AUTH_HELPED; continued anonymous re-probing of identical 401/404 classes yields no delta and should stop.

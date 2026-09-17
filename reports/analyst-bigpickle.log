@@ -24238,3 +24238,70 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 [RISK] n26: 33/100 — This cycle executed 20+ read-only GETs on api.tech26.de (≤1.1s spacing, all responses static 401/404 error bodies, md5-verified identical, zero customer data touched); gate map completeness improved but no bypass, no new surface, no reportable finding. Remaining HIGH-value paths are 100% token-gated (AUTH_HELPED): api.tech26.de BOLA and pay.n26.com Stripe BOLA. Risk ceiling is re-probing stability of the same 401/404 classes, which yields no delta — programme asks for auth assistance or the effort plateaus at KEY_GATED.
+===== ANALYST bigpickle 2026-09-17 01:13:14 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mfor p in "/api/me" "/api/statements" "/api/accounts/1" "/api/accounts/1/statements" "/api/accounts/4/tans" "/api/addresses"; do printf '%-32s ' "$p"; curl -s -o /dev/null -w "%{http_code} %{size_download}\n" --max-time 20 -H "Accept: application/json" "https://api.tech26.de$p"; sleep 1.1; done
+/api/me                          401 211
+/api/statements                  401 211
+/api/accounts/1                  401 211
+/api/accounts/1/statements       401 211
+/api/accounts/4/tans             401 211
+/api/addresses                   401 211
+[0m
+[0m$ [0ma=$(curl -s --max-time 20 -H "Accept: application/json" "https://api.tech26.de/api/accounts/1/statements" -o /tmp/a.bin -w "%{http_code} %{size_download}"); b=$(curl -s --max-time 20 -H "Accept: application/json" "https://api.tech26.de/api/accounts/9/tans" -o /tmp/b.bin -w "%{http_code} %{size_download}"); echo "a=$a"; echo "b=$b"; cmp -s /tmp/a.bin /tmp/b.bin && echo "BODIES_IDENTICAL" || echo "BODIES_DIFFER"
+a=401 211
+b=401 211
+BODIES_IDENTICAL
+[0m
+STEP 1 — DELTA:
+- PROBE CONFIRMED @ api.tech26.de: /api/accounts/{1,4,9}/tans + /api/me + /api/statements + /api/addresses all 401 len=211, bodies cmp-identical — Bearer-gated legacy family ACTIVE, no drift, ID-independent gate re-proven incl new /tans sub-route.
+- NO_DELTA elsewhere: pay.n26.com boundary stable; engagementplatform/auth-service/other corpora unchanged this cycle.
+
+STEP 2 — PRIORITIZE:
+- [PRIO] api.tech26.de legacy /api/accounts BOLA,3.1,(surface2,value4,tech2,gate1,cloud0,fresh0)
+- [PRIO] pay.n26.com Stripe-passthrough BOLA,2.2,(surface2,value4,tech2,gate0,cloud0,fresh0)
+- [PRIO] aisp.tech26.de PSD2 TPP claim trust,1.1,(surface1,value3,tech2,gate0,cloud0,fresh0)
+
+STEP 3 — HYPOTHESES:
+[HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate — re-confirmed
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(tans|approvals|statements|transfer|beneficiaries|devices|limits|cosmetics|cards|bookings)
+confidence: 88
+reasoning: live probes 2026-09-17: /api/me, /api/statements, /api/accounts/{1,4,9}/tans, /api/accounts/1/statements, /api/addresses all 401 len=211 byte-identical invalid_token (cmp-verified) — auth is a prefix-firewall; /api/tans top-level 404 proves account scoping; /api/v1/* 404 proves versioned line drops the gate; OPTIONS 404 no-Allow + POST 404 earlier → GET-only; TAN=transaction-auth codes, approvals=pending-payment items → live fraud surface if adjacent-account read succeeds.
+evidence_needed: valid Bearer for own account A returns 200 at /api/accounts/{A}/tans but also 200 (not 401) at /api/accounts/{A±1}/tans.
+verify_steps: AUTH_HELPED — (1) GET /api/me → own id; (2) GET /api/accounts/{own}/statements+tans baseline 200; (3) GET /api/accounts/{own±1}/tans + /approvals read-only, per-request cmp; (4) no POST/mutation.
+impact: cross-tenant statements + TAN + pending-approval + transfer-list disclosure → transaction-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles (no-key 401 len=342 vs fake-key len=132, WWW-Authenticate Basic realm="Stripe"); key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); CORS ACAO:* but pay absent from app CSP connect-src → server/mobile-only key.
+evidence_needed: N26-issued key reads adjacent payment/charge IDs.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] aisp.tech26.de PSD2 TPP claim-trust revalidation
+class: AUTH
+asset: aisp.tech26.de/api/v2/accounts/{uuid}/balances
+confidence: 40
+reasoning: docs mandate x-tpp-userip + QWAC; claim revalidation unobserved; requires live TPP mTLS.
+impact: TPP-scope bank data if claim-trust weak; MEDIUM.
+testability: HUMAN_ONLY
+
+STEP 4 — SELF-CRITIQUE:
+- aisp dropped <40 confidence threshold? No — at 40; moved to PARKED (HUMAN_ONLY, no route evidence, weakest of three).
+- [PARKED] aisp.tech26.de TPP claim-trust: no scrape of scope rules x-tpp-* interplay; HUMAN_ONLY mTLS; lowest ROI.
+- [FINAL1] api.tech26.de BOLA /api/accounts/{id}/tans+approvals — 88.
+- [FINAL2] pay.n26.com Stripe BOLA — 60.
+
+STEP 5 — NEXT ACTION:
+[NEXT] HUMAN: api.tech26.de BOLA is the sole reportable path and is 100% token-gated — request from coordinator (a) a scoped legacy device-login Bearer token or sandbox-account pairing, and (b) written in-scope confirmation for read-only GET of second-account resources at /api/accounts/{id}/{tans,approvals,transfers,statements}. Execution plan ready: GET /api/me → own id → GET /api/accounts/{own±1}/{tans,approvals,statements} with per-request cmp, zero mutation. No anonymous probe can advance past this KEY_GATED boundary.
+
+STEP 6 — LEARNING:
+[LEARN] ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/statements all 401 len=211 cmp-identical invalid_token; tans sub-route Join confirms 10-member flat GET-only family; ID-independent prefix-firewall stable this session.
+[LEARN] REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), gate intact.
+
+STEP 7 — RISK:
+[RISK] n26: 36/100 — Re-confirmed 401 len=211 boundary (6 probes ≤1rps, cmp-verified, zero customer data touched); legacy family evidence now spans 10 read routes with TAN+approvals raising the business-value of the still-anonymous-untestable BOLA hypothesis. No reportable finding without AUTH_HELPED; continued anonymous re-probing of identical 401/404 classes yields no delta and should stop.

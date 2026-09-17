@@ -2386,3 +2386,9 @@
 ## RANKED HYPOTHESES 2026-09-16 23:04:18 UTC
 - [85] api.tech26.de/api/accounts/{id}/tans: api.tech26.de BOLA on /api/accounts/{id}/tans|approvals|transactions with grant-obtained Bearer (from art/lead_bigpickle.txt)
 - NEXT(hypotheses-bigpickle.txt): HUMAN: api.tech26.de BOLA upgraded to top priority with 10-member evidence set (statements/addresses/tans/transactions/approvals/cards/bookings/cosmetics/limits
+
+## RANKED HYPOTHESES 2026-09-17 01:13:14 UTC
+- [88] api.tech26.de/api/accounts/{id}/(tans|approvals|statements|transfer|beneficiaries|devices|limits|cosmetics|cards|bookings): api.tech26.de BOLA on account-scoped family under coarse-namespace gate — re-confirmed (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: api.tech26.de BOLA is the sole reportable path and is 100% token-gated — request from coordinator (a) a scoped legacy device-login Bearer token or sandbo
+- LEARN: ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/stateme
+- LEARN: REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), ga
