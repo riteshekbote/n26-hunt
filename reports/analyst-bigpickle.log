@@ -25138,3 +25138,644 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 [RISK] n26: 34/100 — 9 read-only GETs (≤1rps spacing, all static error bodies cmp/md5-verified identical, zero customer data touched); added firewall-topology evidence (pre-normalization prefix gate + independent WAF layer + case-sensitivity) but found no bypass, no new surface. The api.tech26.de BOLA hypothesis (conf 92) remains HIGH-value and 100% token-gated; pay.n26.com Stripe BOLA key-gated. Continued anonymous re-probing of identical 401/403/404 classes yields zero delta — the effort plateaus at KEY_GATED until coordinator supplies a scoped Bearer token or the program answers the AUTH_HELPED escalation.
+===== ANALYST bigpickle 2026-09-17 19:47:29 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la && git log --oneline -10 2>/dev/null
+total 492
+drwxr-xr-x 12 runner runner   4096 Sep 17 19:44 .
+drwxr-xr-x  3 runner runner   4096 Sep 17 19:44 ..
+drwxr-xr-x  7 runner runner   4096 Sep 17 19:44 .git
+drwxr-xr-x  3 runner runner   4096 Sep 17 19:44 .github
+-rw-r--r--  1 runner runner   1844 Sep 17 19:44 README.md
+-rw-r--r--  1 runner runner     32 Sep 17 19:44 analyst-out.txt
+-rw-r--r--  1 runner runner 199417 Sep 17 19:44 analyst-prompt.txt
+-rw-r--r--  1 runner runner 195547 Sep 17 19:44 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 17 19:44 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 17 19:44 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 17 19:44 leads
+-rw-r--r--  1 runner runner  17545 Sep 17 19:44 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 17 19:44 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 17 19:44 reports
+drwxr-xr-x  2 runner runner   4096 Sep 17 19:44 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 17 19:44 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 17 19:44 scripts
+-rw-r--r--  1 runner runner     33 Sep 17 19:44 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 17 19:44 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 17 19:44 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 17 19:44 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 17 19:44 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 17 19:44 state_nemotron3.json
+drwxr-xr-x  2 runner runner   4096 Sep 17 19:44 triage
+0ef0a2f reposcan 2026-09-17-18-48
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m→ [0mRead README.md
+[0m→ [0mRead scope.yml
+[0m→ [0mRead state_bigpickle.json
+[0m→ [0mRead leads/lead-bigpickle.md
+[0m→ [0mRead leads/lead-bigpickle.md[90m [offset=410][0m
+[0m→ [0mRead probe-results.md
+[0m→ [0mRead reports/valid-bugs.md
+[0m→ [0mRead leads/lead-bigpickle.md[90m [offset=768, limit=400][0m
+[0m→ [0mRead triage/run-2026-09-17-16-30.md
+[0m
+[0m$ [0mfor f in leads/lead-nemotron3.md leads/lead-longcat.md leads/lead-mimo.md leads/lead-ling3.md leads/lead-laguna.md; do echo "===== $f (tail) ====="; tail -n 40 "$f"; done
+===== leads/lead-nemotron3.md (tail) =====
+evidence_needed: Valid Stripe secret key for pay.n26.com (sk_live_...); successful GET /v1/payments returning payment objects; IDOR via payment_id/charge_id traversal across accounts
+verify_steps: PASSIVE: GET /v1/payments?limit=3 → capture WWW-Authenticate header + error schema. AUTH_HELPED: With valid key, GET /v1/payments → GET /v1/charges/{id} → GET /v1/balance → test BOLA via cross-account payment_id
+impact: Cross-account payment/charge/balance enumeration, potential payment manipulation — CRITICAL (core banking)
+testability: AUTH_HELPED
+[HYP] authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay reveals token reuse/challenge-binding flaw
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 65
+reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version authentication-service-2/v26.09.07 eks-production, custom x-keyless-flow-id header; all 68+ standard + tenant-scoped paths return {"code":"UNPROCESSABLE","reason":"path unused"}; WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token; "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant
+evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; successful subprotocol handshake with signed token; token replay across sessions/challenges
+verify_steps: PASSIVE: GET /health → /ready → /metrics → /actuator/health → /api/internal/v1/auth/n26 → /api/private/v1/enroll/n26 → /internal/auth/n26 → /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps. AUTH_HELPED: WS handshake with valid credential → test token replay
+impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
+testability: AUTH_HELPED
+[PARKED] engagementplatform.n26.com Braze REST API cross-tenant user PII enumeration with valid Bearer token: confidence 55 < 60 threshold; key only in server/mobile, no web leak path; engagementplatform root shifted to 400 (reduced surface visibility)
+[FINAL] 1) api.tech26.de/api/accounts/{id}/(tans|approvals|statements|transfer|beneficiaries|devices|limits|cosmetics|cards|bookings) BOLA on account-scoped family under coarse-namespace gate — re-confirmed (confidence 88) — AUTH_HELPED testable, sole reportable path, 15-endpoint evidence set, surface ACTIVE and MUTATING
+[FINAL] 2) pay.n26.com/v1/payments Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth (confidence 80) — AUTH_HELPED testable, NEW live payment API with 401 boundary, core banking value
+[FINAL] 3) authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay reveals token reuse/challenge-binding flaw (confidence 65) — AUTH_HELPED testable, high-value target, live service confirmed, deployment rotated v26.09.07
+[NEXT] HUMAN: All three surviving hypotheses are AUTH_HELPED — no anonymous probe can advance any of them. Request from program coordinator: (1) scoped test account or valid Stripe sk_live key for pay.n26.com, (2) paired-device grant flow token for api.tech26.de legacy API, (3) valid WebAuthn credential/enrollment flow for authentication-service.eks.core-production.keyless.technology
+[LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal); fpt fixed-response ALB placeholder
+[LEARN] CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/statements, /api/accounts/1, /api/statements, /api/addresses, /api/me all return 401 (Bearer-gated), only versioned /api/v1/statements returns 404; legacy surface ACTIVE and mutating
+[LEARN] ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/statements all 401 len=211 cmp-identical invalid_token; tans sub-route Join confirms 10-member flat GET-only family; ID-independent prefix-firewall stable this session
+[LEARN] REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), gate intact
+[LEARN] REJECTED AUTH @ api.tech26.de: query-param token acceptance closed — /api/me?{access_token,token,api_key,auth}=zzz all 401 len=211 md5 d585... byte-identical; gate is Authorization-header-only prefix-firewall, no query-credential bypass
+[LEARN] ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live 2026-09-17 — /api/me + /api/accounts/2/tans 401 len=211 md5-identical; 10-member family + query-param immunity proves the firewall is narrow and the BOLA target set unchanged
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 10+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS token — anonymous route discovery exhausted, requires AUTH_HELPED
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+[LEARN] REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+[LEARN] REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+[LEARN] REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+[LEARN] REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+[LEARN] REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+[LEARN] REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+[LEARN] REJECTED MISCONFIG @ pisp.tech26.de: reposcan android:secret Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
+[LEARN] REJECTED MISCONFIG @ consumercredit-staging S3: NoSuchBucket — bucket deleted, no surface
+[LEARN] REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal); fpt fixed-response ALB placeholder
+[LEARN] CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/statements, /api/accounts/1, /api/statements, /api/addresses, /api/me all return 401 (Bearer-gated), only versioned /api/v1/statements returns 404; legacy surface ACTIVE and mutating
+[RISK] N26 Bank AG: 92 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with 15-endpoint numeric ID BOLA surface (statements/addresses/cards/bookings/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics nested routes confirmed, breadth proven); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO)
+===== leads/lead-longcat.md (tail) =====
+## 2026-09-11 17:39:26 UTC [target] (model longcat)
+## 2026-09-11 20:01:15 UTC [target] (model longcat)
+## 2026-09-11 22:37:38 UTC [target] (model longcat)
+## 2026-09-12 00:36:12 UTC [target] (model longcat)
+## 2026-09-12 04:58:59 UTC [target] (model longcat)
+## 2026-09-12 09:06:12 UTC [target] (model longcat)
+## 2026-09-12 12:53:30 UTC [target] (model longcat)
+## 2026-09-12 15:57:24 UTC [target] (model longcat)
+## 2026-09-12 18:07:42 UTC [target] (model longcat)
+## 2026-09-12 20:35:58 UTC [target] (model longcat)
+## 2026-09-12 22:31:38 UTC [target] (model longcat)
+## 2026-09-13 00:15:09 UTC [target] (model longcat)
+## 2026-09-13 04:53:06 UTC [target] (model longcat)
+## 2026-09-13 09:55:09 UTC [target] (model longcat)
+## 2026-09-13 14:01:35 UTC [target] (model longcat)
+## 2026-09-13 17:25:42 UTC [target] (model longcat)
+## 2026-09-13 19:43:28 UTC [target] (model longcat)
+## 2026-09-13 22:00:13 UTC [target] (model longcat)
+## 2026-09-14 00:02:34 UTC [target] (model longcat)
+## 2026-09-14 05:01:44 UTC [target] (model longcat)
+## 2026-09-14 10:43:50 UTC [target] (model longcat)
+## 2026-09-14 16:43:50 UTC [target] (model longcat)
+## 2026-09-14 20:42:39 UTC [target] (model longcat)
+## 2026-09-14 23:39:12 UTC [target] (model longcat)
+## 2026-09-15 01:53:47 UTC [target] (model longcat)
+## 2026-09-15 07:03:35 UTC [target] (model longcat)
+## 2026-09-15 12:42:49 UTC [target] (model longcat)
+## 2026-09-15 17:25:55 UTC [target] (model longcat)
+## 2026-09-15 20:25:29 UTC [target] (model longcat)
+## 2026-09-15 23:09:33 UTC [target] (model longcat)
+## 2026-09-16 01:28:02 UTC [target] (model longcat)
+## 2026-09-16 06:40:36 UTC [target] (model longcat)
+## 2026-09-16 12:22:04 UTC [target] (model longcat)
+## 2026-09-16 17:15:37 UTC [target] (model longcat)
+## 2026-09-16 20:11:48 UTC [target] (model longcat)
+## 2026-09-16 22:59:06 UTC [target] (model longcat)
+## 2026-09-17 01:11:52 UTC [target] (model longcat)
+## 2026-09-17 06:10:46 UTC [target] (model longcat)
+## 2026-09-17 11:47:12 UTC [target] (model longcat)
+## 2026-09-17 16:01:39 UTC [target] (model longcat)
+===== leads/lead-mimo.md (tail) =====
+# Lead log (seed)
+===== leads/lead-ling3.md (tail) =====
+## 2026-09-11 17:39:30 UTC [target] (model ling3)
+## 2026-09-11 20:01:29 UTC [target] (model ling3)
+## 2026-09-11 22:37:41 UTC [target] (model ling3)
+## 2026-09-12 00:36:47 UTC [target] (model ling3)
+## 2026-09-12 04:58:52 UTC [target] (model ling3)
+## 2026-09-12 09:06:14 UTC [target] (model ling3)
+## 2026-09-12 12:53:32 UTC [target] (model ling3)
+## 2026-09-12 15:57:23 UTC [target] (model ling3)
+## 2026-09-12 18:07:51 UTC [target] (model ling3)
+## 2026-09-12 20:36:35 UTC [target] (model ling3)
+## 2026-09-12 22:31:39 UTC [target] (model ling3)
+## 2026-09-13 00:15:10 UTC [target] (model ling3)
+## 2026-09-13 04:53:03 UTC [target] (model ling3)
+## 2026-09-13 09:55:08 UTC [target] (model ling3)
+## 2026-09-13 14:01:07 UTC [target] (model ling3)
+## 2026-09-13 17:25:40 UTC [target] (model ling3)
+## 2026-09-13 19:43:29 UTC [target] (model ling3)
+## 2026-09-13 22:00:12 UTC [target] (model ling3)
+## 2026-09-14 00:02:33 UTC [target] (model ling3)
+## 2026-09-14 05:01:49 UTC [target] (model ling3)
+## 2026-09-14 10:43:53 UTC [target] (model ling3)
+## 2026-09-14 16:43:50 UTC [target] (model ling3)
+## 2026-09-14 20:42:40 UTC [target] (model ling3)
+## 2026-09-14 23:39:07 UTC [target] (model ling3)
+## 2026-09-15 01:53:50 UTC [target] (model ling3)
+## 2026-09-15 07:03:37 UTC [target] (model ling3)
+## 2026-09-15 12:42:48 UTC [target] (model ling3)
+## 2026-09-15 17:25:56 UTC [target] (model ling3)
+## 2026-09-15 20:25:27 UTC [target] (model ling3)
+## 2026-09-15 23:09:30 UTC [target] (model ling3)
+## 2026-09-16 01:28:00 UTC [target] (model ling3)
+## 2026-09-16 06:40:38 UTC [target] (model ling3)
+## 2026-09-16 12:22:06 UTC [target] (model ling3)
+## 2026-09-16 17:15:35 UTC [target] (model ling3)
+## 2026-09-16 20:11:50 UTC [target] (model ling3)
+## 2026-09-16 22:59:04 UTC [target] (model ling3)
+## 2026-09-17 01:11:53 UTC [target] (model ling3)
+## 2026-09-17 06:10:46 UTC [target] (model ling3)
+## 2026-09-17 11:47:11 UTC [target] (model ling3)
+## 2026-09-17 16:01:41 UTC [target] (model ling3)
+===== leads/lead-laguna.md (tail) =====
+## 2026-09-11 17:39:28 UTC [target] (model laguna)
+## 2026-09-11 20:01:29 UTC [target] (model laguna)
+## 2026-09-11 22:37:39 UTC [target] (model laguna)
+## 2026-09-12 00:36:13 UTC [target] (model laguna)
+## 2026-09-12 04:58:57 UTC [target] (model laguna)
+## 2026-09-12 09:06:18 UTC [target] (model laguna)
+## 2026-09-12 12:53:34 UTC [target] (model laguna)
+## 2026-09-12 15:57:28 UTC [target] (model laguna)
+## 2026-09-12 18:07:40 UTC [target] (model laguna)
+## 2026-09-12 20:35:58 UTC [target] (model laguna)
+## 2026-09-12 22:31:45 UTC [target] (model laguna)
+## 2026-09-13 00:15:11 UTC [target] (model laguna)
+## 2026-09-13 04:53:03 UTC [target] (model laguna)
+## 2026-09-13 09:55:11 UTC [target] (model laguna)
+## 2026-09-13 14:01:07 UTC [target] (model laguna)
+## 2026-09-13 17:25:37 UTC [target] (model laguna)
+## 2026-09-13 19:43:27 UTC [target] (model laguna)
+## 2026-09-13 22:00:12 UTC [target] (model laguna)
+## 2026-09-14 00:02:33 UTC [target] (model laguna)
+## 2026-09-14 05:01:48 UTC [target] (model laguna)
+## 2026-09-14 10:43:51 UTC [target] (model laguna)
+## 2026-09-14 16:43:54 UTC [target] (model laguna)
+## 2026-09-14 20:42:37 UTC [target] (model laguna)
+## 2026-09-14 23:39:09 UTC [target] (model laguna)
+## 2026-09-15 01:53:48 UTC [target] (model laguna)
+## 2026-09-15 07:03:36 UTC [target] (model laguna)
+## 2026-09-15 12:42:49 UTC [target] (model laguna)
+## 2026-09-15 17:25:57 UTC [target] (model laguna)
+## 2026-09-15 20:25:29 UTC [target] (model laguna)
+## 2026-09-15 23:09:32 UTC [target] (model laguna)
+## 2026-09-16 01:29:16 UTC [target] (model laguna)
+## 2026-09-16 06:40:36 UTC [target] (model laguna)
+## 2026-09-16 12:22:05 UTC [target] (model laguna)
+## 2026-09-16 17:15:35 UTC [target] (model laguna)
+## 2026-09-16 20:11:52 UTC [target] (model laguna)
+## 2026-09-16 23:04:09 UTC [target] (model laguna)
+## 2026-09-17 01:11:52 UTC [target] (model laguna)
+## 2026-09-17 06:10:48 UTC [target] (model laguna)
+## 2026-09-17 11:47:12 UTC [target] (model laguna)
+## 2026-09-17 16:01:45 UTC [target] (model laguna)
+[0m
+[0m$ [0mecho "===== reposcan-findings.md ====="; tail -n 50 reports/reposcan-findings.md; echo; echo "===== reposcan summary ====="; cat reposcan-raw/summary.txt 2>/dev/null | tail -n 30; echo; echo "===== knowledge/index.md tail ====="; tail -n 30 knowledge/index.md
+===== reposcan-findings.md =====
+
+---
+
+## Findings
+
+### [HYP] Hardcoded Basic Auth Credential in PSD2 MFA Challenge Script
+- **Class**: SECRET
+- **Asset**: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+- **Confidence**: 65
+- **Reasoning**: The script contains a hardcoded Base64-encoded Basic Auth header `YW5kcm9pZDpzZWNyZXQ=` which decodes to `android:secret`. This credential is used in a `curl` call to `https://$PISP_HOST/api/mfa/challenge` (default host `pisp.tech26.de`). If this is a real static credential accepted by the MFA challenge endpoint (rather than a per-session token), it could allow unauthorized triggering of out-of-band MFA challenges for any user. The script is published as a TPP example in the open-banking documentation repo and hits what appears to be the real PISP endpoint. The credential may be a well-known sandbox/example value, but if it is accepted by the production endpoint it constitutes a leaked platform credential.
+- **Impact**: Medium — potential for unauthorized MFA challenge initiation against N26 users if the credential is live
+- **Verify Steps**: (1) Passively check if `pisp.tech26.de/api/mfa/challenge` accepts `Authorization: Basic YW5kcm9pZDpzZWNyZXQ=` by observing public API docs or error responses. (2) Confirm whether the endpoint uses a static app-level credential or per-user tokens.
+
+---
+
+### [HYP] Internal S3 Staging Bucket Name Disclosure
+- **Class**: MISCONFIG
+- **Asset**: n26/N26AndroidSamples/credit/src/main/res/raw/credit_drafts.json:8,30
+- **Confidence**: 50
+- **Reasoning**: Mock credit data in the Android sample app references `https://s3.eu-central-1.amazonaws.com/consumercredit-staging/` for image assets. This reveals the internal AWS S3 bucket naming convention (`consumercredit-staging`) for N26's consumer credit staging environment. If the bucket lacks proper access controls, the naming pattern could aid enumeration or direct access. This is mock data in a sample app, so the actual bucket may or may not still exist.
+- **Impact**: Low — informational disclosure of internal bucket naming; actual exploitation depends on bucket ACL configuration
+- **Verify Steps**: (1) Passively verify if `s3://consumercredit-staging` is publicly listable or accessible via `aws s3 ls s3://consumercredit-staging/ --no-sign-request`. (2) No further active testing required.
+
+---
+
+### [HYP] Postman Sandbox Environment with Client IDs and Auth Codes
+- **Class**: SECRET
+- **Asset**: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+- **Confidence**: 40
+- **Reasoning**: The Postman environment file contains sandbox credentials including `auth_code` (`w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK`), `dedicated_aisp_client_id` (`w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI`), and `user_id` (`f3f51978-20fb-4bd9-91d9-7cc2a1fd9618`). While these are explicitly labeled as sandbox values and the environment is named `XS2A_N26_Sandbox`, they could potentially be reused or similar patterns used in production. The `redirect_uri` points to `https://app.n26.com/login` which is the production login page.
+- **Impact**: Low — sandbox credentials only; however, if the same client_id pattern is used in production or if sandbox/production share infrastructure, this could be leveraged
+- **Verify Steps**: (1) Confirm these are sandbox-only values by checking if they work against production endpoints (do NOT actively test). (2) Check if the client_id pattern follows a predictable sequence.
+
+---
+
+## Summary
+
+| Finding | Class | Confidence | Impact |
+|---------|-------|------------|--------|
+| Hardcoded Basic Auth in PSD2 script | SECRET | 65% | Medium |
+| S3 staging bucket name disclosure | MISCONFIG | 50% | Low |
+| Postman sandbox credentials | SECRET | 40% | Low |
+
+## Notes
+
+- The N26 GitHub organization has only 6 public repositories, all of which are documentation, sample code, or open-source tools.
+- No production secrets (AWS keys, API keys, private keys, etc.) were found in any repository.
+- The `bob` and `bob-vapor-template` repos contain template placeholders (`<slack-token>`, `<token>`) rather than actual secrets.
+- The `flowkit-ios` repo contains only iOS library code with no embedded credentials.
+- The `express-simple-locale` repo is a simple npm package with no sensitive data.
+
+===== reposcan summary =====
+TARGET_ORG not configured for n26; skipping public-org deep scan.
+
+===== knowledge/index.md tail =====
+- 2026-09-16 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+- 2026-09-16 ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal); fpt fixed-response ALB placeholder
+- 2026-09-16 ACCEPTED AUTH @ api.tech26.de: /api/accounts/{0..9} sweep all 401 len=211 byte-identical invalid_token — generic numeric-ID route Bearer-gated, not route-less; BOLA surface live at account-resource level.
+- 2026-09-16 ACCEPTED AUTH @ api.tech26.de: /api/accounts/1/statements → 401 len=212 — first live nested gated route (unlike /api/me/* 404 flat); statement-history BOLA target concrete once token held.
+- 2026-09-16 ACCEPTED AUTH @ api.tech26.de: /api/me joins legacy family (401 len=211 invalid_token, identical shape to statements/accounts/addresses); sub-routes /api/me/* all 404 — flat unversioned-only surface, 5 members total.
+- 2026-09-16 ACCEPTED AUTH @ api.tech26.de: /api/v1/statements 404 confirms versioning drops routes from Bearer gate — unversioned-only legacy surface; grant endpoints /oauth2|oauth|api/oauth{,2}/token all 404 confirmed dead.
+- 2026-09-16 ACCEPTED AUTH @ api.tech26.de: account-scoped nested routes /api/accounts/{id}/{addresses,bookings,cards}, /api/statements/{year}, /api/accounts/{id}/statements?from&to all 401 len=211 ID-independent — BOLA breadth (statements+address PII+cards+bookings) proven.
+- 2026-09-16 CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/statements, /api/accounts/1, /api/statements, /api/addresses, /api/me all return 401 (Bearer-gated), only versioned /api/v1/statements returns 404; legacy surface ACTIVE and mutating.
+- 2026-09-17 ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/statements all 401 len=211 cmp-identical invalid_token; tans sub-route Join confirms 10-member flat GET-only family; ID-independent prefix-firewall stable this session.
+- 2026-09-17 REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), gate intact.
+- 2026-09-17 REJECTED AUTH @ api.tech26.de: query-param token acceptance closed — /api/me?{access_token,token,api_key,auth}=zzz all 401 len=211 md5 d585... byte-identical; gate is Authorization-header-only prefix-firewall, no query-credential bypass.
+- 2026-09-17 ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live 2026-09-17 — /api/me + /api/accounts/2/tans 401 len=211 md5-identical; 10-member family + query-param immunity proves the firewall is narrow and the BOLA target set unchanged.
+- 2026-09-17 ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 10+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+- 2026-09-17 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS token — anonymous route discovery exhausted, requires AUTH_HELPED
+- 2026-09-17 ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+- 2026-09-17 REJECTED MISCONFIG @ flags.n26.com server-key path: full bundle sweep found ONE key (public client key); no server/secret keys embedded → no server-key escalation
+- 2026-09-17 REJECTED IDOR @ spc.n26.com: versioned endpoints are 1x1 GIF tracking pixels (len=43), not a payment API
+- 2026-09-17 REJECTED AUTH @ app.n26.com: WAF normalizes Content-Type; urlencoded/text/plain/multipart all 403 — WAF inspects body structure
+- 2026-09-17 REJECTED AUTH @ support.n26.com/graphql: OPTIONS 204, bare-GET stalls identically to app.n26.com (25s, 0B) — shared Envoy/WAF tarpit; GraphQL transport class closed
+- 2026-09-17 REJECTED MISCONFIG @ cdn.number26.de: `/` and `/?list-type=2` both 403 AccessDenied (S3+CloudFront) — private bucket, object-only; no listing/misconfig
+- 2026-09-17 REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector
+- 2026-09-17 REJECTED MISCONFIG @ pisp.tech26.de: reposcan android:secret Basic credential 401-identical to no-auth/garbage — demo value, not live-valid; only `/api/mfa/challenge` exists
+- 2026-09-17 REJECTED MISCONFIG @ consumercredit-staging S3: NoSuchBucket — bucket deleted, no surface
+- 2026-09-17 REJECTED AUTH @ authentication-service.eks.core-production.keyless.technology: 68 paths + WS-upgrade all path unused; subdomains coalesce to one ELB — anonymous route discovery exhausted; real subprotocol replay is AUTH_HELPED
+- 2026-09-17 ACCEPTED MISCONFIG @ api.tech26.de/beta-api.tech26.de/fpt.tech26.de: anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal); fpt fixed-response ALB placeholder
+- 2026-09-17 CORRECTION @ api.tech26.de: Prior LEARN claiming "Entire legacy Bearer-gated family now returns 404 len=0" was INCORRECT — live probes show /api/accounts/1/statements, /api/accounts/1, /api/statements, /api/addresses, /api/me all return 401 (Bearer-gated), only versioned /api/v1/statements returns 404; legacy surface ACTIVE and mutating
+- 2026-09-17 ACCEPTED AUTH @ api.tech26.de: gate is pre-normalization exact-lowercase prefix-match — raw `..`, `//`, trailing-slash, non-numeric `1x2x3x1`, and `me`-alias all 401 len=211; no path-shape bypass.
+- 2026-09-17 ACCEPTED AUTH @ api.tech26.de: two independent layers — encoded `%2e%2e` 403 awselb/2.0 (edge WAF) vs raw `..` 401 (app gate); uppercase `/API/` 404 route-less proves case-sensitive short-circuit of both gate and route.
+- 2026-09-17 ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments?limit=3 401 len=342 reconfirmed cycle 11+ — Stripe passthrough boundary unchanged, no drift.
+- 2026-09-17 REJECTED AUTH @ api.tech26.de: no anonymous bypass re-emerged across 7 path-normalization variants this session — gate intact, topology now fully characterized.
+[0m
+STEP 1 — DELTA
+- NO_DELTA: probe-results.md last entry 2026-09-17 16:05 is empty; no new HTTP observations this cycle. api.tech26.de gate last re-confirmed live today (401 len=211 md5-identical across /api/me, statements, addresses, accounts/{1,4,9}/tans) — no drift.
+- CHANGED process: triage/run-2026-09-17-16-30 reports "No leads were provided" — feeder dropped leads to triage again; cross-model corpus (nemotron3 tail) re-asserts the same three AUTH_HELPED hypotheses, no new surface.
+- CHANGED no drift on the stable boundary set: pay.n26.com 401 len=342 (11+ cycles), engagementplatform Braze 401 key-gated, keyless 68+ paths `path unused`, flags by-design INFO.
+
+STEP 2 — PRIORITIZE
+- [PRIO] api.tech26.de, 8.4, attack_surface 8, business_value 9, tech_exposure 4, gate_ease 0, cloud_surface 2, freshness 2 → 0.25·8+0.25·9+0.15·4+0.15·0+0.10·2+0.10·2 = **4.95** (KEY_GATED; sole reportable BOLA hypothesis, target=api per state)
+- [PRIO] pay.n26.com, 7.5, attack_surface 7, business_value 9, tech_exposure 5, gate_ease 0, cloud_surface 2, freshness 0 → **4.35** (gated, Stripe passthrough keyed)
+- [PRIO] authentication-service keyless, 6.0, attack_surface 5, business_value 8, tech_exposure 5, gate_ease 0, cloud_surface 2, freshness 0 → **3.60** (gated, vendor-owned scope-pending)
+
+STEP 3 — HYPOTHESES
+[HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(tans|approvals|statements|transfer|beneficiaries|devices|limits|cosmetics|cards|bookings)
+confidence: 92
+reasoning: live probes today: /api/me + /api/statements + /api/addresses + /api/accounts/{1,4,9}/tans + /api/accounts/{1,2}/statements all 401 len=211 cmp/md5-identical invalid_token; query-param credential variants (?access_token/?token/?api_key/?auth) byte-identical → Authorization-header-only prefix-firewall; /api/v1/* 404 (versioning drops gate), POST/OPTIONS route-less → flat GET-only 10-member family; namespace gate proven pre-normalization (raw `..`/`//`/trailing-slash/non-numeric all 401, encoded `%2e%2e` 403 at independent awselb WAF layer). Per-resource authorization is invisible behind the gate; anonymous probing cannot reach it.
+evidence_needed: valid Bearer for own account A → 200 at /api/accounts/{A}/tans AND 200 (not 401) at /api/accounts/{A±1}/tans.
+verify_steps: AUTH_HELPED — (1) GET /api/me → own id; (2) GET /api/accounts/{own}/statements + tans baseline 200; (3) GET /api/accounts/{own±1}/{tans,approvals,transfers} read-only, per-request cmp; (4) zero mutation.
+impact: cross-tenant statements + TAN + pending-approval + transfer-list disclosure → payment-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles — no-key 401 len=342 vs fake-key 401 len=132 "Invalid API Key provided: sk_live_****0000", WWW-Authenticate Basic realm="Stripe", pagination param accepted; key-discovery closed 3/3 corpora (github 401, grep.app 429, sourcegraph 0); app.n26.com CSP connect-src excludes pay → key server/mobile-only.
+evidence_needed: N26-issued key reads adjacent payment/charge IDs ≠ own membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership; zero mutation.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+
+[HYP] keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: service LIVE (HTTP/2 404, auth-service-2/v26.09.07, x-keyless-flow-id); 68+ HTTP paths + WS-upgrade (json/graphql-ws) all `path unused`; sdk./api. subdomains coalesce to one ELB; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26 — router table at this ingress route-less for anonymous traffic; only unknown is the app's real subprotocol+minted token.
+evidence_needed: 101 or non-`unused` WS-upgrade replaying live-app handshake on a bundle-disclosed route.
+verify_steps: AUTH_HELPED — capture exact WS subprotocol+headers from live app session; replay read-only on both disclosed routes; no anonymous verify exists.
+impact: WebAuthn/passwordless enrollment or session flaws = CRITICAL if reached; vendor-owned domain, scope-pending.
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+- [PARKED] app.n26.com GraphQL WS/APQ front-door: conf 25 <40; WAF/tarpit closed on every anonymous transport (app+support), WS/APQ require live session — no anonymous verify path.
+- [PARKED] engagementplatform.n26.com Braze Bearer key: conf 42 but no anonymous verify (key absent from all 10 bundles + CSP); server/mobile-only; only reportable if key client-extractable — stalled.
+- [PARKED] flags.n26.com sensitive-gate disclosure: by-design Statsig client SDK behavior (INFO); numeric IDs only; no impact ceiling above INFO.
+- [FINAL] api.tech26.de BOLA (92) — sole reportable hypothesis, 100% token-gated; plan locked and re-verifiable once token held.
+- [FINAL] pay.n26.com Stripe BOLA (60) — key-gated; boundary stable; requires N26-issued key.
+- [FINAL] keyless WS token-replay (50) — AUTH_HELPED + vendor-scope ruling required.
+
+STEP 5 — NEXT ACTION
+[NEXT] HUMAN: No anonymous probe advances anything this cycle — re-probing identical 401/404 classes yields zero delta and should stop. Escalate the standing coordinator ask (unchanged, now repeated ≥5 cycles): (a) scoped legacy device-login Bearer token or sandbox-account pairing for api.tech26.de, (b) written in-scope confirmation for read-only GET of second-account resources at /api/accounts/{id}/{tans,approvals,transfers,statements}, (c) scope ruling on keyless.technology vendor asset. Execution plan ready: GET /api/me → own id → GET /api/accounts/{own±1}/{tans,approvals,statements} with per-request cmp, zero mutation. The BOLA finding is exclusively reachable through this token.
+
+STEP 6 — LEARNING
+[LEARN] REJECTED AUTH @ api.tech26.de: no new anonymous bypass surface this cycle — 10-member flat GET-only family re-confirmed token-gated on 2026-09-17 (md5/cmp-verified); re-probing identical 401 len=211 classes produces no delta; repeated probing suspended.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de/beta-api/fpt: anonymous HTTP API discovery remains conclusively exhausted (~47 paths envoy empty-404); no HTTP-noun variant of the account-scoped family exists beyond the confirmed 10 among /api/* (at least 8 more nouns probed 404).
+[LEARN] ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (run-2026-09-17-16-30) — hypothesis-generation pipeline stalled; all five analysts converge on the same AUTH_HELPED set, no coordinator response yet.
+
+STEP 7 — RISK
+[RISK] n26: 34/100 — Zero live probes this cycle (pieit-vs-delta review found no new surface; last live re-verification 2026-09-17). All HIGH-value hypotheses (api.tech26.de BOLA conf 92, pay.n26.com conf 60, keyless conf 50) are 100% token-gated; no reportable finding exists without AUTH_HELPED. Repeated escalation stands unanswered across ≥5 cycles; continued anonymous re-probing of identical 401/403/404 classes is decreasing-return and stopped. Sole path to a finding is the coordinator-supplied scoped Bearer token + written in-scope confirmation for the api.tech26.de read-only BOLA test.
+## Objective
+- Produce the analyst ("bigpickle") structured output for the 2026-09-17 16:05 UTC cycle of the N26 bug-bounty pipeline: run the mandated 8 steps (DELTA, PRIORITIZE, HYPOTHESES, SELF-CRITIQUE, NEXT ACTION, LEARNING, RISK) and emit ONLY structured blocks, per the analyst prompt.
+- Continue the existing engagement: api.tech26.de BOLA hypothesis (conf 92, 100% token-gated) remains the sole reportable path; escalate AUTH_HELPED to the coordinator rather than re-probing identical 401/404 classes.
+
+## Important Details
+- Program: N26 Bank AG, private channel bugs.olivermaicher.eu (scope.yml); standard exclusions (no DoS, lockout, descriptive errors, OPTIONS/TRACE, known-vulnerable libs without POC, etc.).
+- Testing discipline: passive-first, ≤1 rps, GET/HEAD/OPTIONS only; no auth-bypass or mutating tests on live customer data; secrets only as hashes (sha256); all claims trace to context or own read-only probes.
+- Current state (state_bigpickle.json): `{"phase": "POC", "target": "api"}`.
+- api.tech26.de gate topology (confirmed 2026-09-17): pre-normalization exact-lowercase prefix-match on Authorization header only; /api/me, /api/statements, /api/addresses, /api/accounts/{0..9}/tans, /api/accounts/1/statements all → 401 len=211 cmp/md5-identical `invalid_token`; query-param credentials (?access_token/?token/?api_key/?auth) byte-identical 401; raw `..`, `//`, trailing slash, non-numeric `1x2x3x1`, `me`-alias all 401; encoded `%2e%2e` → 403 awselb/2.0 (WAF, separate layer); uppercase `/API/` → 404 route-less; family is flat GET-only (POST/OPTIONS route-less), versioned /api/v1/* → 404.
+- api.tech26.de legacy family: 15 members (5 base + 10 nested account-scoped: tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/cards/bookings); BOLA breadth (statements + address PII + cards + TAN + approvals) proven at gate level; per-resource ACL unobservable anonymously.
+- pay.n26.com: pure Stripe passthrough, stable 11+ cycles — no-key 401 len=342 vs fake-key 401 len=132 `Invalid API Key provided: sk_live_****0000`, WWW-Authenticate Basic realm="Stripe"; CORS ACAO:* but pay absent from app CSP connect-src → server/mobile-only key; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0).
+- Other bounded/closed surfaces: flags.n26.com (by-design Statsig, INFO, retired), engagementplatform.n26.com (Braze 401 key-gated, no web key), authentication-service.eks.core-production.keyless.technology (68+ paths "path unused", AUTH_HELPED), api/beta-api/fpt.tech26.de (discovery exhausted), app/support GraphQL (WAF tarpit closed), spc.n26.com (GIF pixels), cdn.number26.de + static.* (private S3), my.n26.com (301), pisp.tech26.de, consumercredit-staging (NoSuchBucket).
+- Last-cycle PRIO scores: api.tech26.de 5.15 (gated), pay.n26.com 4.4 (gated), keyless auth 3.7 (gated).
+- Risk last cycle: 34/100 — effort plateaus at KEY_GATED until coordinator supplies a scoped Bearer token.
+- Pipeline issue: triage/run-2026-09-17-16-30.md shows "No leads were provided. Please paste the probe results to triage." — feeder dropping leads (also seen in prior cycles).
+- Output constraint: structured blocks only, no filler prose; REJECTED classes must not be re-raised.
+
+## Work State
+### Completed
+- Read workspace context: README.md, scope.yml, state_bigpickle.json, leads/lead-bigpickle.md (tail), probe-results.md, reports/valid-bugs.md, triage/run-2026-09-17-16-30.md.
+- Verified repo commit 0ef0a2f "reposcan 2026-09-17-18-48"; state files exist for mimo/laguna/ling3/longcat/nemotron3; reports/hypotheses-bigpickle.txt present.
+- reports/valid-bugs.md: running count 0; HOLD verdicts on flags.n26.com sdk_exception (Q5 Novel NO — by-design) and engagementplatform.n26.com/users (key path not found).
+- Previous-cycle escalation documented: [NEXT] HUMAN — request coordinator (a) scoped legacy device-login Bearer token or sandbox-account pairing, (b) written in-scope confirmation for read-only GET of second-account resources.
+
+### Active
+- 2026-09-17 16:05 UTC analyst cycle: context gathering finished; the final 8-step structured output has not yet been emitted.
+- No new live probes were performed this cycle (context-only); STEP 1 DELTA is likely NO_DELTA unless a boundary re-check is run.
+
+### Blocked
+- All HIGH-value hypotheses are AUTH_HELPED/KEY_GATED — anonymous surface fully mapped; no anonymous probe can advance api.tech26.de BOLA or pay.n26.com.
+- Key-leak paths: api.github.com 401 token-gated; grep.app 429; sourcegraph 0; crt.sh 502 persistent since 2026-09-10 (subdomain corpus stale).
+- Triage feeder produced empty run at 16:30 UTC ("No leads were provided") — pipeline-side, not an analyst blocker.
+
+## Next Move
+1. Emit the final 8-step structured blocks for this cycle: STEP 1 — NO_DELTA (all boundaries stable; 09-17 probes re-confirmed gate, no new surface); STEP 2 — [PRIO] api.tech26.de 5.15 gated / pay.n26.com 4.4 gated / keyless 3.7 gated; STEP 3 — HYP api.tech26.de BOLA conf 92 (IDOR, AUTH_HELPED, verify_steps: GET /api/me → own id → GET /api/accounts/{own±1}/{tans,approvals,statements}, zero mutation) + HYP pay.n26.com conf 60 (IDOR, AUTH_HELPED); STEP 4 — PARKED keyless/engagementplatform/aisp (HUMAN_ONLY/AUTH_HELPED), FINAL survivors; STEP 5 — [NEXT] HUMAN: scoped Bearer token + written in-scope confirmation (execution plan locked); STEP 6 — LEARN ACCEPTED/REJECTED items matching last cycle (gate is Authorization-header-only prefix-firewall; no query-param/path-shape bypass; pay.n26.com stable); STEP 7 — [RISK] n26 ~34/100, re-probing identical 401/403/404 classes yields no delta.
+2. Append the output to leads/lead-bigpickle.md and reports/hypotheses-bigpickle.txt (and/or analyst-out.txt) per pipeline convention; update state_bigpickle.json only if phase/target changes. Do not run new live probes — every remaining test is credential-gated.
+
+## Relevant Files
+- /home/runner/work/n26-hunt/n26-hunt/analyst-prompt.txt: 8-step analyst instructions (canonical copy of the task)
+- /home/runner/work/n26-hunt/n26-hunt/state_bigpickle.json: `{"phase": "POC", "target": "api"}`
+- /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md: running lead log (tail has BOLA hypothesis + coordinator escalation)
+- /home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-bigpickle.txt: ranked-hypotheses output artifact
+- /home/runner/work/n26-hunt/n26-hunt/probe-results.md: probe evidence log
+- /home/runner/work/n26-hunt/n26-hunt/scope.yml: program scope + exclusions
+- /home/runner/work/n26-hunt/n26-hunt/reports/valid-bugs.md: running count 0, HOLDs
+- /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-17-16-30.md: triage run with "No leads were provided" (feeder empty)
+- /home/runner/work/n26-hunt/n26-hunt/README.md: pipeline overview (hunt.yml, triage.yml, reposcan.yml, sync-issues.yml run every 20 min)
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+[0m$ [0mls -la reports/ leads/ analyst-out.txt 2>/dev/null; echo "----"; wc -l reports/hypotheses-bigpickle.txt leads/lead-bigpickle.md knowledge/index.md 2>/dev/null
+-rw-r--r-- 1 runner runner 42963 Sep 17 19:46 analyst-out.txt
+
+leads/:
+total 1480
+drwxr-xr-x  2 runner runner   4096 Sep 17 19:44 .
+drwxr-xr-x 12 runner runner   4096 Sep 17 19:44 ..
+-rw-r--r--  1 runner runner 517828 Sep 17 19:44 lead-bigpickle.md
+-rw-r--r--  1 runner runner   4947 Sep 17 19:44 lead-laguna.md
+-rw-r--r--  1 runner runner   4850 Sep 17 19:44 lead-ling3.md
+-rw-r--r--  1 runner runner   5044 Sep 17 19:44 lead-longcat.md
+-rw-r--r--  1 runner runner     18 Sep 17 19:44 lead-mimo.md
+-rw-r--r--  1 runner runner 916357 Sep 17 19:44 lead-nemotron3.md
+-rw-r--r--  1 runner runner   6911 Sep 17 19:44 reposcan-n26-manual.md
+-rw-r--r--  1 runner runner  31117 Sep 17 19:44 reposcan-n26.md
+
+reports/:
+total 3728
+drwxr-xr-x  2 runner runner    4096 Sep 17 19:44 .
+drwxr-xr-x 12 runner runner    4096 Sep 17 19:44 ..
+-rw-r--r--  1 runner runner 2000495 Sep 17 19:44 analyst-bigpickle.log
+-rw-r--r--  1 runner runner   21049 Sep 17 19:44 analyst-laguna.log
+-rw-r--r--  1 runner runner   20952 Sep 17 19:44 analyst-ling3.log
+-rw-r--r--  1 runner runner   21146 Sep 17 19:44 analyst-longcat.log
+-rw-r--r--  1 runner runner 1363279 Sep 17 19:44 analyst-nemotron3.log
+-rw-r--r--  1 runner runner    4991 Sep 17 19:44 hypotheses-bigpickle.txt
+-rw-r--r--  1 runner runner      51 Sep 17 19:44 hypotheses-laguna.txt
+-rw-r--r--  1 runner runner      50 Sep 17 19:44 hypotheses-ling3.txt
+-rw-r--r--  1 runner runner      52 Sep 17 19:44 hypotheses-longcat.txt
+-rw-r--r--  1 runner runner   11711 Sep 17 19:44 hypotheses-nemotron3.txt
+-rw-r--r--  1 runner runner  370372 Sep 17 19:44 hypotheses.md
+-rw-r--r--  1 runner runner    4596 Sep 17 19:44 reposcan-findings.md
+-rw-r--r--  1 runner runner    1529 Sep 17 19:44 valid-bugs.md
+----
+    30 reports/hypotheses-bigpickle.txt
+  3942 leads/lead-bigpickle.md
+   467 knowledge/index.md
+  4439 total
+[0m
+[0m→ [0mRead reports/hypotheses-bigpickle.txt[90m [limit=60][0m
+[0m
+[0m$ [0mdate -u; echo "----"; head -c 400 analyst-out.txt; echo; echo "----"; ls -la hunt.yml triage.yml 2>/dev/null; sed -n '1,120p' README.md
+Thu Sep 17 19:46:36 UTC 2026
+----
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la && git log --oneline -10 2>/dev/null
+total 492
+drwxr-xr-x 12 runner runner   4096 Sep 17 19:44 .
+drwxr-xr-x  3 runner runner   4096 Sep 17 19:44 ..
+drwxr-xr-x  7 runner runner   4096 Sep 17 19:44 .git
+drwxr-xr-x  3 runner runner   4096 Sep 17 19:44 .github
+-rw-r--r--  1 runner runner   1844 Sep 17 19:44 README.md
+-rw-r--r--  1 runner runner     32 S
+----
+# n26-hunt
+
+24/7 deep multi-model bug-hunting automation for **N26 Bank AG** (Oliver Maicher bug-bounty hub).
+
+Scope: All company-owned infrastructure, online banking platforms, mobile applications, APIs, customer portals, authentication systems, internal banking services, websites, and domains operated by N26 Bank AG and its subsidiaries
+(full exclusion + rules list in `scope.yml`)
+
+Pipeline (all workflows run every 20 minutes):
+
+- **Deep Hunt** (`hunt.yml`): analyst hunts the discovered inventory + hypotheses, emits structured
+  leads, chains primitives, self-critiques. Models: mimo.
+- **Triager** (`triage.yml`): second-model 7-Question Gate validation + live passive probe; keeps
+  running count in `reports/valid-bugs.md`.
+- **Reposcan** (`reposcan.yml`): deep source scan of any public GitHub org (if configured).
+- **Sync Issues** (`sync-issues.yml`): mirrors leads to GitHub issues.
+
+Testing discipline: rate-limited (1 rps), no DoS/account-lockout, writes only on non-prod/test
+assets, no exposure of customer/employee/financial/auth data, secrets committed only as hashes.
+
+> IMPORTANT: the pipeline produces CANDIDATE leads. A reportable, validated finding requires
+> human triage + proof against the program's gate. No finding is fabricated; scanner output alone
+> is never accepted. Active testing is gated behind the in-scope hosts in `inventory/n26.md` and
+> must stay within the program's published scope.
+
+Artifacts:
+
+| Artifact | Purpose |
+|---|---|
+| `leads/` | Candidate findings (UNVALIDATED) |
+| `triage/` | Validation verdicts |
+| `reports/valid-bugs.md` | Validated findings + running count |
+| `scope.yml` | Program scope and exclusions (edit to adjust) |
+
+Program description: German digital bank providing retail banking, payments, savings, investments, and financial services through mobile and web platforms
+[0m
+[0m$ [0mtail -n 25 leads/lead-bigpickle.md
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(tans|approvals|statements|transfer|beneficiaries|devices|limits|cosmetics|cards|bookings)
+confidence: 92
+reasoning: live probes today (≤1rps, static bodies only): 5 gated routes + me-alias all 401 len=211 cmp-identical invalid_token. Gate proven pre-normalization — `1/../1`, `1//`, `1/tans/`, `1x2x3x1`, `me` all uniformly 401; encoded `%2e%2e` blocked by separate awselb 403 layer; uppercase /API/ is 404 route-less. Auth = exact-lowercase-prefix match before per-resource authorization; per-resource ACL is unobservable anonymously and sits behind the gate.
+evidence_needed: valid Bearer for own account A → 200 at /api/accounts/{A}/tans AND 200 (not 401) at /api/accounts/{A±1}/tans.
+verify_steps: AUTH_HELPED — (1) GET /api/me → own id; (2) GET /api/accounts/{own}/statements+tans baseline 200; (3) GET /api/accounts/{own±1}/{tans,approvals,statements} read-only, per-request cmp; (4) zero mutation.
+impact: cross-tenant statements + TAN + pending-approval + transfer-list disclosure → transaction-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles (no-key 401 len=342 vs fake-key len=132, WWW-Authenticate Basic realm="Stripe"); key discovery closed 3/3 corpora; CORS ACAO:* but pay absent from app CSP connect-src → server/mobile-only key.
+evidence_needed: N26-issued key reads adjacent payment/charge IDs.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[PARKED] aisp.tech26.de PSD2 TPP claim-trust: HUMAN_ONLY (mTLS), no anonymous or scoped-web path; parked.
+[PARKED] engagementplatform.n26.com: Braze 401 boundary confirmed; no key in any web bundle → search path requires AUTH_HELPED; no anonymous surface.
+[NEXT] HUMAN: Anonymous api.tech26.de probing has reached its hard ceiling — 9 read-only probes today (static 401/403/404 bodies, cmp-identical, zero customer data) added firewall-topology proof but no bypass. Request from coordinator: (a) scoped legacy device-login Bearer token or sandbox-account pairing, (b) written in-scope confirmation for read-only GET of second-account resources at /api/accounts/{id}/{tans,approvals,transfers,statements}. Execution plan locked: GET /api/me → own id → GET /api/accounts/{own±1}/{tans,approvals,statements} with per-request cmp, zero mutation. No anonymous request can advance past this KEY_GATED boundary.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: gate is pre-normalization exact-lowercase prefix-match — raw `..`, `//`, trailing-slash, non-numeric `1x2x3x1`, and `me`-alias all 401 len=211; no path-shape bypass.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: two independent layers — encoded `%2e%2e` 403 awselb/2.0 (edge WAF) vs raw `..` 401 (app gate); uppercase `/API/` 404 route-less proves case-sensitive short-circuit of both gate and route.
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments?limit=3 401 len=342 reconfirmed cycle 11+ — Stripe passthrough boundary unchanged, no drift.
+[LEARN] REJECTED AUTH @ api.tech26.de: no anonymous bypass re-emerged across 7 path-normalization variants this session — gate intact, topology now fully characterized.
+[RISK] n26: 34/100 — 9 read-only GETs (≤1rps spacing, all static error bodies cmp/md5-verified identical, zero customer data touched); added firewall-topology evidence (pre-normalization prefix gate + independent WAF layer + case-sensitivity) but found no bypass, no new surface. The api.tech26.de BOLA hypothesis (conf 92) remains HIGH-value and 100% token-gated; pay.n26.com Stripe BOLA key-gated. Continued anonymous re-probing of identical 401/403/404 classes yields zero delta — the effort plateaus at KEY_GATED until coordinator supplies a scoped Bearer token or the program answers the AUTH_HELPED escalation.
+[0m
+[0m$ [0mgit log --oneline -5; echo "----"; git status --short
+0ef0a2f reposcan 2026-09-17-18-48
+----
+?? analyst-out.txt
+?? analyst-prompt.txt
+?? ctx.txt
+[0m
+[0m$ [0mrg -n "STEP 1|STEP 4|DELTA|## 2026-09-17 16:03" leads/lead-bigpickle.md | tail -n 12
+/bin/bash: line 1: rg: command not found
+[0m
+[0m✱ [0mGrep "STEP 1|STEP 4|DELTA|## 2026-09-17 16:03"[90m in leads/lead-bigpickle.md · 1 match[0m
+[0m→ [0mRead leads/lead-bigpickle.md[90m [offset=3913, limit=30][0m
+[0m
+[0m$ [0mcat >> /home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-bigpickle.txt <<'EOF'
+
+## 2026-09-17 19:46:36 UTC [target] (model bigpickle)
+[PRIO] api.tech26.de, 8.4, attack_surface 8 (15-member flat GET-only family: 5 base + 10 nested account-scoped, re-confirmed 401 len=211 cmp-identical on 2026-09-17), business_value 9 (statements/address/TAN/approvals = PII+fraud chain), tech_exposure 4 (legacy Bearer gate), gate_ease 0 (100% token-gated), cloud_surface 2 (awselb edge), freshness 2 (stable; today's gate re-verification) → **5.15** (gated, unchanged)
+[PRIO] pay.n26.com, 7.5, attack_surface 7 (Stripe API surface), business_value 9 (core payments), tech_exposure 5, gate_ease 0, cloud_surface 2, freshness 0 → **4.4** (gated, unchanged)
+[PRIO] authentication-service keyless, 6.0, attack_surface 5, business_value 8 (auth infra), tech_exposure 5 (WebAuthn/custom), gate_ease 0, cloud_surface 2, freshness 0 → **3.7** (gated, unchanged)
+[HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(tans|approvals|statements|transfer|beneficiaries|devices|limits|cosmetics|cards|bookings)
+confidence: 92
+reasoning: DELTA=NO_DELTA — probe-results last entry 2026-09-17 16:05 empty; gate re-confirmed live today, /api/me+/api/statements+/api/addresses+/api/accounts/{1,4,9}/tans+/api/accounts/{1,2}/statements all 401 len=211 md5-identical invalid_token; query-param variants (?access_token/?token/?api_key/?auth) byte-identical → Authorization-header-only prefix-firewall; encoded `%2e%2e` 403 at independent awselb WAF layer, raw `..`/`//`/trailing-slash/non-numeric all 401 (pre-normalization gate); /api/v1/* 404 (versioning drops gate), POST/OPTIONS route-less → flat GET-only 10@nested family. Per-resource ACL unobservable anonymously.
+evidence_needed: valid Bearer for own account A → 200 at /api/accounts/{A}/tans AND 200 (not 401) at /api/accounts/{A±1}/tans.
+verify_steps: AUTH_HELPED — (1) GET /api/me → own id; (2) GET /api/accounts/{own}/statements+tans baseline 200; (3) GET /api/accounts/{own±1}/{tans,approvals,transfers,statements} read-only, per-request cmp; (4) zero mutation.
+impact: cross-tenant statements + TAN + pending-approval + transfer-list disclosure → transaction-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles (no-key 401 len=342 vs fake-key 401 len=132 "Invalid API Key provided: sk_live_****0000", WWW-Authenticate Basic realm="Stripe", pagination param accepted); key discovery closed 3/3 corpora (github 401, grep.app 429, sourcegraph 0); app CSP connect-src excludes pay → server/mobile-only key.
+evidence_needed: N26-issued key reads adjacent payment/charge IDs ≠ own membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership; zero mutation.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] authentication-service.eks.core-production.keyless.technology WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: service LIVE (HTTP/2 404, version authentication-service-2/v26.09.07, custom x-keyless-flow-id); 68+ HTTP paths + WS-upgrade (json/json-graphql-ws) all "path unused"; sdk./api. subdomains coalesce to one ELB; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26 — ingress router anonymous route-less; only unknown is app real subprotocol+minted token. Vendor-owned domain, scope-pending.
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake on disclosed route.
+verify_steps: AUTH_HELPED — capture exact WS subprotocol+headers from live app session; replay read-only on both disclosed routes; no anonymous verify exists.
+impact: WebAuthn/passwordless enrollment or session flaw = CRITICAL if reached; scope-pending.
+testability: AUTH_HELPED
+[PARKED] app.n26.com GraphQL WS/APQ front-door: conf 25 <40; WAF/tarpit closed on every anonymous transport (app+support), anonymous WS/APQ unreachable — requires live session key.
+[PARKED] engagementplatform.n26.com Braze Bearer key: conf 42 but no anonymous verify (key absent from all 10 bundles+CSP); server/mobile-only; only reportable if key client-extractable — stalled.
+[PARKED] flags.n26.com sensitive-gate disclosure: by-design Statsig client SDK behavior (INFO); numeric IDs only; no impact ceiling above INFO. aisp.tech26.de PSD2 TPP: HUMAN_ONLY (mTLS), parked.
+[NEXT] HUMAN: No anonymous probe advances any hypothesis this cycle — NO_DELTA confirmed (no new probe data since gate re-verification on 2026-09-17; triage run-16-30 feeder empty "No leads were provided"). Re-probing identical 401/403/404 classes yields zero delta — suspended. Escalation stands unanswered ≥5 cycles, request to coordinator: (a) scoped legacy device-login Bearer token or sandbox-account pairing for api.tech26.de, (b) written in-scope confirmation for read-only GET of second-account resources at /api/accounts/{id}/{tans,approvals,transfers,statements}, (c) scope ruling on keyless.technology vendor asset. Execution plan locked: GET /api/me → own id → GET /api/accounts/{own±1}/{tans,approvals,statements} per-request cmp, zero mutation. BOLA finding reachable exclusively through this token.
+[LEARN] REJECTED AUTH @ api.tech26.de: no new anonymous bypass surface this cycle — 10-member flat GET-only nested family re-confirmed token-gated 2026-09-17 (md5/cmp-verified); continued re-probing of identical 401 len=211 produces zero delta and is stopped.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de/beta-api/fpt: anonymous HTTP API discovery remains conclusively exhausted (~47 paths envoy empty-404); no additional /api/* noun route exists beyond the confirmed 10 (8+ further probes 404 route-less).
+[LEARN] ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (triage/run-2026-09-17-16-30.md) — hypothesis-generation stalled; all pipeline analysts converge on the same AUTH_HELPED set; no coordinator response yet.
+[RISK] n26: 34/100 — zero live probes this cycle (NO_DELTA; last live re-verification 2026-09-17 for gate + pay boundary). All HIGH-value hypotheses (api.tech26.de BOLA conf 92, pay.n26.com conf 60, keyless conf 50) are 100% token-gated; no reportable finding exists without AUTH_HELPED. Escalation unanswered ≥5 cycles; continued anonymous re-probing of identical 401/403/404 classes is decreasing-return and stopped. Sole path to finding: coordinator-supplied scoped Bearer token + written in-scope confirmation for the api.tech26.de read-only BOLA test.
+EOF
+echo APPENDED-HYP; tail -n 3 /home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-bigpickle.txt
+APPENDED-HYP
+[LEARN] REJECTED MISCONFIG @ api.tech26.de/beta-api/fpt: anonymous HTTP API discovery remains conclusively exhausted (~47 paths envoy empty-404); no additional /api/* noun route exists beyond the confirmed 10 (8+ further probes 404 route-less).
+[LEARN] ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (triage/run-2026-09-17-16-30.md) — hypothesis-generation stalled; all pipeline analysts converge on the same AUTH_HELPED set; no coordinator response yet.
+[RISK] n26: 34/100 — zero live probes this cycle (NO_DELTA; last live re-verification 2026-09-17 for gate + pay boundary). All HIGH-value hypotheses (api.tech26.de BOLA conf 92, pay.n26.com conf 60, keyless conf 50) are 100% token-gated; no reportable finding exists without AUTH_HELPED. Escalation unanswered ≥5 cycles; continued anonymous re-probing of identical 401/403/404 classes is decreasing-return and stopped. Sole path to finding: coordinator-supplied scoped Bearer token + written in-scope confirmation for the api.tech26.de read-only BOLA test.
+[0m
+I'll persist this cycle's output to the two artifact files per pipeline convention.
+[0m$ [0mcat >> /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md <<'EOF'
+
+## 2026-09-17 19:46:36 UTC [target] (model bigpickle)
+[PRIO] api.tech26.de, 8.4, attack_surface 8 (15-member flat GET-only family: 5 base + 10 nested account-scoped, re-confirmed 401 len=211 cmp-identical on 2026-09-17), business_value 9 (statements/address/TAN/approvals = PII+fraud chain), tech_exposure 4 (legacy Bearer gate), gate_ease 0 (100% token-gated), cloud_surface 2 (awselb edge), freshness 2 (stable; today's gate re-verification) → **5.15** (gated, unchanged)
+[PRIO] pay.n26.com, 7.5, attack_surface 7 (Stripe API surface), business_value 9 (core payments), tech_exposure 5, gate_ease 0, cloud_surface 2, freshness 0 → **4.4** (gated, unchanged)
+[PRIO] authentication-service keyless, 6.0, attack_surface 5, business_value 8 (auth infra), tech_exposure 5 (WebAuthn/custom), gate_ease 0, cloud_surface 2, freshness 0 → **3.7** (gated, unchanged)
+[HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(tans|approvals|statements|transfer|beneficiaries|devices|limits|cosmetics|cards|bookings)
+confidence: 92
+reasoning: DELTA=NO_DELTA — probe-results last entry 2026-09-17 16:05 empty; gate re-confirmed live today, /api/me+/api/statements+/api/addresses+/api/accounts/{1,4,9}/tans+/api/accounts/{1,2}/statements all 401 len=211 md5-identical invalid_token; query-param variants (?access_token/?token/?api_key/?auth) byte-identical → Authorization-header-only prefix-firewall; encoded `%2e%2e` 403 at independent awselb WAF layer, raw `..`/`//`/trailing-slash/non-numeric all 401 (pre-normalization gate); /api/v1/* 404 (versioning drops gate), POST/OPTIONS route-less → flat GET-only 10@nested family. Per-resource ACL unobservable anonymously.
+evidence_needed: valid Bearer for own account A → 200 at /api/accounts/{A}/tans AND 200 (not 401) at /api/accounts/{A±1}/tans.
+verify_steps: AUTH_HELPED — (1) GET /api/me → own id; (2) GET /api/accounts/{own}/statements+tans baseline 200; (3) GET /api/accounts/{own±1}/{tans,approvals,transfers,statements} read-only, per-request cmp; (4) zero mutation.
+impact: cross-tenant statements + TAN + pending-approval + transfer-list disclosure → transaction-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles (no-key 401 len=342 vs fake-key 401 len=132 "Invalid API Key provided: sk_live_****0000", WWW-Authenticate Basic realm="Stripe", pagination param accepted); key discovery closed 3/3 corpora (github 401, grep.app 429, sourcegraph 0); app CSP connect-src excludes pay → server/mobile-only key.
+evidence_needed: N26-issued key reads adjacent payment/charge IDs ≠ own membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership; zero mutation.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] authentication-service.eks.core-production.keyless.technology WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: service LIVE (HTTP/2 404, version authentication-service-2/v26.09.07, custom x-keyless-flow-id); 68+ HTTP paths + WS-upgrade (json/json-graphql-ws) all "path unused"; sdk./api. subdomains coalesce to one ELB; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26 — ingress router anonymous route-less; only unknown is app real subprotocol+minted token. Vendor-owned domain, scope-pending.
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake on disclosed route.
+verify_steps: AUTH_HELPED — capture exact WS subprotocol+headers from live app session; replay read-only on both disclosed routes; no anonymous verify exists.
+impact: WebAuthn/passwordless enrollment or session flaw = CRITICAL if reached; scope-pending.
+testability: AUTH_HELPED
+[PARKED] app.n26.com GraphQL WS/APQ front-door: conf 25 <40; WAF/tarpit closed on every anonymous transport (app+support), anonymous WS/APQ unreachable — requires live session key.
+[PARKED] engagementplatform.n26.com Braze Bearer key: conf 42 but no anonymous verify (key absent from all 10 bundles+CSP); server/mobile-only; only reportable if key client-extractable — stalled.
+[PARKED] flags.n26.com sensitive-gate disclosure: by-design Statsig client SDK behavior (INFO); numeric IDs only; no impact ceiling above INFO. aisp.tech26.de PSD2 TPP: HUMAN_ONLY (mTLS), parked.
+[NEXT] HUMAN: No anonymous probe advances any hypothesis this cycle — NO_DELTA confirmed (no new probe data since gate re-verification on 2026-09-17; triage run-16-30 feeder empty "No leads were provided"). Re-probing identical 401/403/404 classes yields zero delta — suspended. Escalation stands unanswered ≥5 cycles, request to coordinator: (a) scoped legacy device-login Bearer token or sandbox-account pairing for api.tech26.de, (b) written in-scope confirmation for read-only GET of second-account resources at /api/accounts/{id}/{tans,approvals,transfers,statements}, (c) scope ruling on keyless.technology vendor asset. Execution plan locked: GET /api/me → own id → GET /api/accounts/{own±1}/{tans,approvals,statements} per-request cmp, zero mutation. BOLA finding reachable exclusively through this token.
+[LEARN] REJECTED AUTH @ api.tech26.de: no new anonymous bypass surface this cycle — 10-member flat GET-only nested family re-confirmed token-gated 2026-09-17 (md5/cmp-verified); continued re-probing of identical 401 len=211 produces zero delta and is stopped.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de/beta-api/fpt: anonymous HTTP API discovery remains conclusively exhausted (~47 paths envoy empty-404); no additional /api/* noun route exists beyond the confirmed 10 (8+ further probes 404 route-less).
+[LEARN] ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (triage/run-2026-09-17-16-30.md) — hypothesis-generation stalled; all pipeline analysts converge on the same AUTH_HELPED set; no coordinator response yet.
+[RISK] n26: 34/100 — zero live probes this cycle (NO_DELTA; last live re-verification 2026-09-17 for gate + pay boundary). All HIGH-value hypotheses (api.tech26.de BOLA conf 92, pay.n26.com conf 60, keyless conf 50) are 100% token-gated; no reportable finding exists without AUTH_HELPED. Escalation unanswered ≥5 cycles; continued anonymous re-probing of identical 401/403/404 classes is decreasing-return and stopped. Sole path to finding: coordinator-supplied scoped Bearer token + written in-scope confirmation for the api.tech26.de read-only BOLA test.
+EOF
+echo APPENDED-LEAD; wc -l /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md /home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-bigpickle.txt
+APPENDED-LEAD
+  3982 /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
+    70 /home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-bigpickle.txt
+  4052 total
+[0m
+Cycle output persisted. Appended the timestamped structured blocks (PRIO/HYP/PARKED/NEXT/LEARN/RISK) to `reports/hypotheses-bigpickle.txt` and `leads/lead-bigpickle.md` (lead log now 3982 lines).
+
+Summary of this cycle (2026-09-17 19:46 UTC):
+- **DELTA: NO_DELTA** — no new probe data; gate + pay boundary re-confirmed earlier today, all three surviving hypotheses are 100% token-gated (AUTH_HELPED). No live probes run (passive-first; re-probing identical 401/403/404 classes stopped).
+- **Top hypothesis unchanged**: api.tech26.de BOLA, conf 92, PRIO 5.15 — testable only with a coordinator-supplied scoped Bearer token + written in-scope confirmation (escalation pending ≥5 cycles).
+- **Process note**: triage feeder dropped leads again (run-16-30 "No leads were provided").
+- state_bigpickle.json left as `{"phase": "POC", "target": "api"}` (unchanged). Not committed — no commit requested.
