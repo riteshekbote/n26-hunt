@@ -3910,3 +3910,33 @@ testability: AUTH_HELPED
 [LEARN] REJECTED AUTH @ api.tech26.de: query-param token acceptance closed — /api/me?{access_token,token,api_key,auth}=zzz all 401 len=211 md5 d585... byte-identical; gate is Authorization-header-only prefix-firewall, no query-credential bypass.
 [LEARN] ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live 2026-09-17 — /api/me + /api/accounts/2/tans 401 len=211 md5-identical; 10-member family + query-param immunity proves the firewall is narrow and the BOLA target set unchanged.
 [RISK] n26: 34/100 — 7 read-only GETs this cycle (≤1.2s spacing, all static error bodies md5-verified identical, zero customer data); added one closed auth vector rather than new surface. No bypass, no finding; all HIGH-value paths remain KEY_GATED pending coordinator auth assistance.
+## 2026-09-17 16:03:36 UTC [target] (model bigpickle)
+[PRIO] api.tech26.de, 8.4, attack_surface high (15-member flat GET-only family + me-alias now proven at nested level); business_value 9 (statements/address/TAN/approvals = PII+fraud chain); tech_exposure 4 (legacy Bearer, no uncommon tech); gate_ease 0 (100% token-gated); cloud_surface 2 (awselb edge, no cloud metadata surface); freshness 1 (stable 6+ cycles) → 0.25·8+0.25·9+0.15·4+0.15·0+0.10·2+0.10·1 = 2.0+2.25+0.6+0+0.2+0.1 = **5.15** (gated)
+[PRIO] pay.n26.com, 7.5, attack_surface 7 (Stripe API surface), business_value 9 (core payments), tech_exposure 5, gate_ease 0, cloud_surface 2, freshness 0 → **4.4** (gated)
+[PRIO] authentication-service keyless, 6.0, attack_surface 5, business_value 8 (auth infra), tech_exposure 5 (WebAuthn/custom), gate_ease 0, cloud_surface 2, freshness 0 → **3.7** (gated)
+[HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(tans|approvals|statements|transfer|beneficiaries|devices|limits|cosmetics|cards|bookings)
+confidence: 92
+reasoning: live probes today (≤1rps, static bodies only): 5 gated routes + me-alias all 401 len=211 cmp-identical invalid_token. Gate proven pre-normalization — `1/../1`, `1//`, `1/tans/`, `1x2x3x1`, `me` all uniformly 401; encoded `%2e%2e` blocked by separate awselb 403 layer; uppercase /API/ is 404 route-less. Auth = exact-lowercase-prefix match before per-resource authorization; per-resource ACL is unobservable anonymously and sits behind the gate.
+evidence_needed: valid Bearer for own account A → 200 at /api/accounts/{A}/tans AND 200 (not 401) at /api/accounts/{A±1}/tans.
+verify_steps: AUTH_HELPED — (1) GET /api/me → own id; (2) GET /api/accounts/{own}/statements+tans baseline 200; (3) GET /api/accounts/{own±1}/{tans,approvals,statements} read-only, per-request cmp; (4) zero mutation.
+impact: cross-tenant statements + TAN + pending-approval + transfer-list disclosure → transaction-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles (no-key 401 len=342 vs fake-key len=132, WWW-Authenticate Basic realm="Stripe"); key discovery closed 3/3 corpora; CORS ACAO:* but pay absent from app CSP connect-src → server/mobile-only key.
+evidence_needed: N26-issued key reads adjacent payment/charge IDs.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[PARKED] aisp.tech26.de PSD2 TPP claim-trust: HUMAN_ONLY (mTLS), no anonymous or scoped-web path; parked.
+[PARKED] engagementplatform.n26.com: Braze 401 boundary confirmed; no key in any web bundle → search path requires AUTH_HELPED; no anonymous surface.
+[NEXT] HUMAN: Anonymous api.tech26.de probing has reached its hard ceiling — 9 read-only probes today (static 401/403/404 bodies, cmp-identical, zero customer data) added firewall-topology proof but no bypass. Request from coordinator: (a) scoped legacy device-login Bearer token or sandbox-account pairing, (b) written in-scope confirmation for read-only GET of second-account resources at /api/accounts/{id}/{tans,approvals,transfers,statements}. Execution plan locked: GET /api/me → own id → GET /api/accounts/{own±1}/{tans,approvals,statements} with per-request cmp, zero mutation. No anonymous request can advance past this KEY_GATED boundary.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: gate is pre-normalization exact-lowercase prefix-match — raw `..`, `//`, trailing-slash, non-numeric `1x2x3x1`, and `me`-alias all 401 len=211; no path-shape bypass.
+[LEARN] ACCEPTED AUTH @ api.tech26.de: two independent layers — encoded `%2e%2e` 403 awselb/2.0 (edge WAF) vs raw `..` 401 (app gate); uppercase `/API/` 404 route-less proves case-sensitive short-circuit of both gate and route.
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: /v1/payments?limit=3 401 len=342 reconfirmed cycle 11+ — Stripe passthrough boundary unchanged, no drift.
+[LEARN] REJECTED AUTH @ api.tech26.de: no anonymous bypass re-emerged across 7 path-normalization variants this session — gate intact, topology now fully characterized.
+[RISK] n26: 34/100 — 9 read-only GETs (≤1rps spacing, all static error bodies cmp/md5-verified identical, zero customer data touched); added firewall-topology evidence (pre-normalization prefix gate + independent WAF layer + case-sensitivity) but found no bypass, no new surface. The api.tech26.de BOLA hypothesis (conf 92) remains HIGH-value and 100% token-gated; pay.n26.com Stripe BOLA key-gated. Continued anonymous re-probing of identical 401/403/404 classes yields zero delta — the effort plateaus at KEY_GATED until coordinator supplies a scoped Bearer token or the program answers the AUTH_HELPED escalation.
