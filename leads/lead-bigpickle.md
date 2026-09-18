@@ -4289,3 +4289,41 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ tech26.de internal tier: CT refresh exposes SonarQube CI ALB, Backstage portal SAN, Mambu core-banking cluster (6 hosts) on public DNS — all source-gated (connect-timeout), zero anonymous reachability.
 [LEARN] ACCEPTED MISCONFIG @ process: triage feeder empty leads ≥6 cycles; all pipeline analysts converge on identical AUTH_HELPED set; coordinator response required to unblock.
 [RISK] n26: 38/100 — declining. Zero live probes this cycle (only DNS liveness re-verified). All HIGH-value hypotheses (api BOLA 92, pay 60) are 100% token-gated; the only reportable finding requires coordinator-supplied credentials + written in-scope confirmation, unanswered ≥6 cycles. Key corpora all closed 3/3; crt.sh stale since 09-10 (502). Internal tier newly surfaced but source-gated. Continued anonymous re-probing of identical 401/403/404 classes produces zero delta and remains suspended. Without coordinator response, probability of any reportable finding this cycle trends to nil.
+## 2026-09-18 17:51:58 UTC [target] (model bigpickle)
+[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9,attack_surface=9|business_value=10|tech_exposure=8|gate_ease=8|cloud_surface=6|freshness=7
+[PRIO] pay.n26.com/v1/{payments,balance,charges},5,attack_surface=6|business_value=9|tech_exposure=4|gate_ease=3|cloud_surface=5|freshness=8
+[PRIO] authentication-service.eks.core-production.keyless.technology/v1/{auth,enroll}/n26,5,attack_surface=5|business_value=10|tech_exposure=7|gate_ease=3|cloud_surface=7|freshness=7
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family with grant-obtained token
+class: IDOR
+asset: api.tech26.com/api/accounts/{id}/{tans|statements|addresses|bookings|cards}
+confidence: 92
+reasoning: Gate re-confirmed 09-17/09-18 — 15-member flat GET-only family, all 401 len=211 md5-identical invalid_token; query-param creds, path-shape, method variants all closed; /api/v1/* drops gate (404); per-account ACL unobservable anonymously; CORRECTION (09-16) confirmed surface ACTIVE/MUTATING
+evidence_needed: valid Bearer token → 200 at /api/accounts/{own}/tans AND 200 at /api/accounts/{own±1}/tans; body cmp per request
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own}/{tans,statements} baseline 200; GET /api/accounts/{own±1}/{tans,approvals,transfers,statements} read-only; zero mutation
+impact: cross-tenant statement + TAN + pending-approval + transfer-list disclosure → transfer-fraud/ATO chain; HIGH
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation failure
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles, TLS-rotated 09-17 zero drift; no-key 401 len=342 vs fake-key len=132 "Invalid API Key provided: sk_live_****0000"; app CSP excludes pay → key mobile/server-only; key discovery closed 3/3 corpora
+evidence_needed: N26-issued key reads payment/charge IDs beyond own membership
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership; zero mutation
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated
+testability: AUTH_HELPED
+[HYP] authentication-service keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: service LIVE (authn-service-2/v26.09.07, x-keyless-flow-id); 68+ HTTP paths + WS-upgrade all "path unused"; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26; anonymous route-less proven; unknown = live subprotocol + minted token
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake on disclosed routes
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only on both disclosed routes
+impact: WebAuthn/passwordless enrollment or session flaw = CRITICAL if reached
+testability: AUTH_HELPED
+[FINAL] api.tech26.de BOLA: 92 — strongest survivor; gate topology fully characterized; breadth (statements+TANs+addresses+bookings+cards) HIGH; advancement 100% token-gated.
+[FINAL] pay.n26.com Stripe passthrough: 60 — boundary stable 11+ cycles; key discovery closed 3/3; cannot advance without mobile/server-side Stripe key.
+[FINAL] authentication-service WS subprotocol: 50 — route-less proof exhaustive (68+); subprotocol replay speculative without live-session capture.
+[PARKED] tech26.de internal tier (SonarQube/Backstage/Mambu): source-gated on all egress paths; no anonymous test exists; only actionable from authorized network — retained as HUMAN target list.
+[NEXT] HUMAN: Re-escalate coordinator ask (pending ≥6 cycles, unanswered) — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans = financial data), (2) two scoped Bearer tokens {own, own±1} to execute the 92-confidence verify_steps, (3) note source-gated internal tier (SonarQube CI ALB, Backstage/platform26 portal, Mambu cluster) as authorized-network test candidates. No anonymous probe can advance any hypothesis; identical-401/403/404 re-probing remains suspended.
+[LEARN] ACCEPTED MISCONFIG @ process: no coordinator response across ≥6 cycles despite identical AUTH_HELPED convergence from all analysts; anonymous testing plateaued — program-relevant progress is blocked on credential/scope supply, not on further probing.
+[RISK] n26: 35/100 — declining. Zero live probes this cycle; all HIGH-value hypotheses (api BOLA 92, pay 60) are 100% token-gated and coordinator ask unanswered ≥6 cycles; key corpora closed 3/3; crt.sh stale since 09-10 (502); no anonymous surface left untested. Reportable-finding probability this cycle ~nil absent coordinator credential/scope supply.

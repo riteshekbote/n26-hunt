@@ -494,3 +494,4 @@
 - 2026-09-18 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: 68+ paths "path unused", deployment stable v26.09.07; anonymous route discovery exhausted across 3 analysts; subprotocol replay AUTH_HELPED.
 - 2026-09-18 ACCEPTED MISCONFIG @ tech26.de internal tier: CT refresh exposes SonarQube CI ALB, Backstage portal SAN, Mambu core-banking cluster (6 hosts) on public DNS — all source-gated (connect-timeout), zero anonymous reachability.
 - 2026-09-18 ACCEPTED MISCONFIG @ process: triage feeder empty leads ≥6 cycles; all pipeline analysts converge on identical AUTH_HELPED set; coordinator response required to unblock.
+- 2026-09-18 ACCEPTED MISCONFIG @ process: no coordinator response across ≥6 cycles despite identical AUTH_HELPED convergence from all analysts; anonymous testing plateaued — program-relevant progress is blocked on credential/scope supply, not on further probing.
