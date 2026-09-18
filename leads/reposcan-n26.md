@@ -434,3 +434,5 @@ reasoning: The Postman environment file contains sandbox credentials: `dedicated
 impact: Informational — sandbox-only documentation values; `xs2a.tech26.de` is a real endpoint (returns 401)
 verify_steps: (1) Already confirmed `xs2a.tech26.de` is live (returns 401 for unauthenticated requests). (2) Verify the client_id values are sandbox-scoped only.
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-18 19:41:36 UTC
+TARGET_ORG not configured for n26; skipping public-org deep scan.
