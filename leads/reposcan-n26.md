@@ -388,3 +388,5 @@ reasoning: The bash script contains a hardcoded Base64-encoded Basic Auth header
 impact: Low — sandbox example credential, not production
 verify_steps: Check if `pisp.tech26.de` is a public sandbox endpoint; verify `android:secret` is documented as a sample credential
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-18 13:08:13 UTC
+TARGET_ORG not configured for n26; skipping public-org deep scan.
