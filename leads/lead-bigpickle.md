@@ -4145,3 +4145,31 @@ evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake on 
 verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only on both disclosed routes; no anonymous verify exists.
 impact: WebAuthn/passwordless enrollment or session flaw = CRITICAL if reached; scope-pending.
 testability: AUTH_HELPED
+## 2026-09-18 00:46:01 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(tans|approvals|transfers|statements|addresses|bookings|cards|devices|limits|cosmetics|beneficiaries|transactions)
+confidence: 92
+reasoning: gate re-confirmed live 2026-09-18 — /api/me + /api/accounts/1/tans 401 len=211 md5 d58528c9 identical; /api/v1/statements 404 (versioning drops gate); 15-member flat GET-only family, prefix-firewall on Authorization header alone (query-param creds, path-shape, method variants all closed prior cycles); per-resource ACL unobservable anonymously.
+evidence_needed: valid Bearer → 200 at /api/accounts/{own}/tans AND 200 (not 401) at /api/accounts/{own±1}/tans; body cmp per-request.
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own}/{tans,statements} baseline 200; GET /api/accounts/{own±1}/{tans,approvals,transfers,statements} read-only, per-request cmp; zero mutation.
+impact: cross-tenant statement + TAN + pending-approval + transfer-list disclosure → transfer-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles, re-confirmed 2026-09-18 — no-key 401 len=342 md5 e7d47e75 vs fake-key len=132 "Invalid API Key provided: sk_live_****0000", WWW-Authenticate Basic realm="Stripe", ?limit=3 accepted; app CSP connect-src excludes pay → server/mobile-only key; key discovery closed 3/3 corpora.
+evidence_needed: N26-issued key reads payment/charge IDs beyond own membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership; zero mutation.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] authentication-service keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: service LIVE (HTTP/2 404, authn-service-2/v26.09.07, x-keyless-flow-id); 68+ HTTP paths + WS-upgrade all "path unused"; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26; anonymous route-less proven; unknown = live subprotocol + minted token. Vendor-owned domain, scope-pending.
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake on disclosed routes.
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only on both disclosed routes; no anonymous verify exists.
+impact: WebAuthn/passwordless enrollment or session flaw = CRITICAL if reached; scope-pending.
+testability: AUTH_HELPED
