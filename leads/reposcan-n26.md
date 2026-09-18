@@ -372,3 +372,19 @@ TARGET_ORG not configured for n26; skipping public-org deep scan.
 TARGET_ORG not configured for n26; skipping public-org deep scan.
 ## REPOSCAN 2026-09-18 03:11:22 UTC
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-18 08:35:22 UTC
+[HYP] Hardcoded Sandbox Client ID and Auth Code in Postman Environment
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+confidence: 35
+reasoning: The Postman environment file contains hardcoded `client_id` (`PSDDE-BAFIN-000001`), `auth_code` (`w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK`), and a sample IBAN (`DE15100110012627633320`). However, these are explicitly documented sandbox/test values — the docs state these are sample PKCE flows with `code_verifier="foobar"` and the client_id is labeled as a sample TPP ID. The environment is named "XS2A_N26_Sandbox".
+impact: Low — these are intentionally public sandbox test credentials, not production secrets
+verify_steps: Confirm `xs2a.tech26.de/sandbox` is indeed a public sandbox (not production) by accessing it; verify `PSDDE-BAFIN-000001` is a documented sample client ID in the PSD2 docs
+[HYP] Hardcoded Basic Auth Header in Example Script
+class: SECRET
+asset: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+confidence: 30
+reasoning: The bash script contains a hardcoded Base64-encoded Basic Auth header: `Authorization:Basic YW5kcm9pZDpzZWNyZXQ=` which decodes to `android:secret`. This is used in a sandbox example for MFA challenge flow. However, this appears to be a sample/example credential for the sandbox environment, not a production secret.
+impact: Low — sandbox example credential, not production
+verify_steps: Check if `pisp.tech26.de` is a public sandbox endpoint; verify `android:secret` is documented as a sample credential
+TARGET_ORG not configured for n26; skipping public-org deep scan.
