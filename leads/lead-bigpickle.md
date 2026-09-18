@@ -4327,3 +4327,37 @@ testability: AUTH_HELPED
 [NEXT] HUMAN: Re-escalate coordinator ask (pending ≥6 cycles, unanswered) — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans = financial data), (2) two scoped Bearer tokens {own, own±1} to execute the 92-confidence verify_steps, (3) note source-gated internal tier (SonarQube CI ALB, Backstage/platform26 portal, Mambu cluster) as authorized-network test candidates. No anonymous probe can advance any hypothesis; identical-401/403/404 re-probing remains suspended.
 [LEARN] ACCEPTED MISCONFIG @ process: no coordinator response across ≥6 cycles despite identical AUTH_HELPED convergence from all analysts; anonymous testing plateaued — program-relevant progress is blocked on credential/scope supply, not on further probing.
 [RISK] n26: 35/100 — declining. Zero live probes this cycle; all HIGH-value hypotheses (api BOLA 92, pay 60) are 100% token-gated and coordinator ask unanswered ≥6 cycles; key corpora closed 3/3; crt.sh stale since 09-10 (502); no anonymous surface left untested. Reportable-finding probability this cycle ~nil absent coordinator credential/scope supply.
+## 2026-09-18 20:16:40 UTC [target] (model bigpickle)
+[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9,unchanged
+[PRIO] pay.n26.com/v1/{payments,balance,charges},5,unchanged
+[PRIO] authentication-service.eks.core-production.keyless.technology/v1/{auth,enroll}/n26,5,unchanged
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family with grant-obtained token
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals}
+confidence: 92
+reasoning: NO_DELTA — gate topology fully characterized (pre-normalization lowercase prefix-match, Authorization-header-only, query-param/path-shape/method bypasses all closed); 15-member GET-only family; per-account ACL unobservable anonymously
+evidence_needed: valid Bearer → 200 at /api/accounts/{own}/tans AND 200 at {own±1}/tans, body cmp
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals} read-only; zero mutation
+impact: cross-tenant statement+TAN+pending-approval disclosure → transfer-fraud chain; HIGH
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation failure
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: NO_DELTA — 401 len=342 stable 11+ cycles; key discovery closed 3/3 corpora; anonymous surface nil
+evidence_needed: N26-issued key reads payment IDs beyond own membership
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated
+testability: AUTH_HELPED
+[HYP] authentication-service keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: NO_DELTA — route-less proof exhaustive (68+ paths); live subprotocol + minted token unknown
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only
+impact: WebAuthn/passwordless enrollment flaw; CRITICAL if reached
+testability: AUTH_HELPED
+[NEXT] HUMAN: Re-escalate coordinator for the 7th consecutive cycle — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans = financial data), (2) two scoped Bearer tokens {own, own±1} to execute the 92-confidence verify_steps, (3) note source-gated internal tier as authorized-network candidates. No anonymous probe exists that can advance any hypothesis; identical-401/403/404 re-probing stays suspended.
+[LEARN] ACCEPTED MISCONFIG @ process: NO_DELTA cycle 2026-09-18 17:5x — surface identical to 10:07/14:35/17:51 runs; analyst-only re-verification of unchanged 401/403/404 boundaries yields zero signal; testing is 100% blocked on coordinator credential/scope supply, not on further probing.
+[RISK] n26: 35/100 — flat/declining. Zero delta, zero new surface, zero live probes (all suspended). Every HIGH-value hypothesis (api BOLA 92, pay 60, keyless WS 50) remains fully AUTH_HELPED; coordinator ask unanswered ≥6 cycles; corpora closed 3/3; crt.sh stale since 09-10 (502). Probability of any reportable finding this cycle is nil absent credential/scope supply.
