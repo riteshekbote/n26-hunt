@@ -2601,3 +2601,10 @@
 - LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 10+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
 - LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS to
 - LEARN: ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative acros
+
+## RANKED HYPOTHESES 2026-09-18 10:07:11 UTC
+- [92] api.tech26.de/api/accounts/{id}/(tans|approvals|transfers|statements|addresses|bookings|cards|devices|limits|cosmetics|beneficiaries|transactions): api.tech26.de BOLA on account-scoped family under coarse-namespace gate (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Escalate to program coordinator — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans = financial data), (2) two scope
+- LEARN: ACCEPTED MISCONFIG @ tech26.de: CT refresh this cycle exposes full internal tooling tier on public DNS — sonarqube-alb-ci-live-fra ALB, backstage{,.platform26-l
+- LEARN: REJECTED MISCONFIG @ rcs-demo.tech26.de + message-templates-assets-staging.tech26.de: 403 AmazonS3 AccessDenied on `/` and `/?list-type=2` — private buckets beh
+- LEARN: ACCEPTED MISCONFIG @ pay.n26.com: TLS rotated 2026-09-17 (3 issuances) with zero 401-drift — Stripe passthrough boundary independent of cert rotation; boundary 

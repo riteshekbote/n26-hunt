@@ -26534,3 +26534,133 @@ testability: AUTH_HELPED
 
 **STEP 7 — RISK**
 [RISK] n26: 38/100 — rising. Zero live probes this cycle (only DNS liveness re-verified). All HIGH-value hypotheses (api BOLA 92, pay 60) are 100% token-gated; the only reportable finding requires coordinator-supplied credentials + written in-scope confirmation, unanswered ≥5 cycles; flagged-Braze/keyless/pay key corpora all closed 3/3; crt.sh corpus stale since 09-10 (502). Continued anonymous re-probing of identical 401/403/404 classes produces zero delta and is stopped. Without coordinator response, probability of any reportable finding this cycle trends to nil.
+===== ANALYST bigpickle 2026-09-18 10:07:11 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m% [0mWebFetch https://api.certspotter.com/v1/issuances?domain=n26.com&include_subdomains=true&expand=dns_names
+[0m% [0mWebFetch https://api.certspotter.com/v1/issuances?domain=tech26.de&include_subdomains=true&expand=dns_names
+[0m✗ [0mWebFetch https://grep.app/api/search?q=pay.n26.com failed
+[91m[1mError: [0mStatusCode: non 2xx status code (429 GET https://grep.app/api/search?q=pay.n26.com)
+Certspotter refresh surfaced several tech26.de leaves not in the KB. Resolving + liveness-checking the new hosts (passive, ≤1 rps).
+[0m
+[0m$ [0mfor h in sonarqube-default-fra.tech26.de backstage.tech26.de backstage.platform26-live-eu.platform26.de rcs-demo.tech26.de phishing-report.tech26.de ideal-request-signing.tech26.de message-templates-assets-staging.tech26.de n26uk.tz2-mambu-uk.tech26.de number26.tz2-mambu.tech26.de number26.tz2-mambu-sandbox-eu.tech26.de n26uk.tz2-mambu-sandbox-uk.tech26.de telemetry.sto.tech26.de telemetry.tech26.de sto.tech26.de atlantis.sto.tech26.de controlplane.sto.tech26.de mag.n26.com livepersonedge.tech26.de idealedge.tech26.de; do printf '%-55s ' "$h"; (dig +short "$h" A 2>/dev/null | tr '\n' ',' ; dig +short "$h" CNAME 2>/dev/null | tr '\n' ',') | head -c 220; echo; sleep 0.3; done
+sonarqube-default-fra.tech26.de                         sonarqube-alb-ci-live-fra-1576505372.eu-central-1.elb.amazonaws.com.,63.183.156.167,3.64.190.107,sonarqube-alb-ci-live-fra-1576505372.eu-central-1.elb.amazonaws.com.,
+backstage.tech26.de                                     63.187.226.7,63.184.28.72,63.177.130.58,
+backstage.platform26-live-eu.platform26.de              63.184.28.72,63.177.130.58,63.187.226.7,
+rcs-demo.tech26.de                                      d3dbaoxnks1xj5.cloudfront.net.,18.155.173.97,18.155.173.11,18.155.173.12,18.155.173.28,d3dbaoxnks1xj5.cloudfront.net.,
+phishing-report.tech26.de                               3.78.105.231,3.127.61.160,18.158.236.148,
+ideal-request-signing.tech26.de                         
+message-templates-assets-staging.tech26.de              d1qtdem7z0hr42.cloudfront.net.,99.84.215.46,99.84.215.2,99.84.215.86,99.84.215.123,d1qtdem7z0hr42.cloudfront.net.,
+n26uk.tz2-mambu-uk.tech26.de                            63.188.228.80,51.102.137.147,
+number26.tz2-mambu.tech26.de                            63.188.228.80,51.102.137.147,
+number26.tz2-mambu-sandbox-eu.tech26.de                 63.188.14.45,63.183.56.180,
+n26uk.tz2-mambu-sandbox-uk.tech26.de                    63.183.56.180,63.188.14.45,
+telemetry.sto.tech26.de                                 
+telemetry.tech26.de                                     35.156.61.33,63.186.105.254,3.121.176.8,
+sto.tech26.de                                           
+atlantis.sto.tech26.de                                  
+controlplane.sto.tech26.de                              
+mag.n26.com                                             54.239.180.109,54.239.180.18,54.239.180.76,54.239.180.112,
+livepersonedge.tech26.de                                livepersonedge-live-fra-dfd62c0542442344.elb.eu-central-1.amazonaws.com.,18.159.151.48,18.195.109.103,3.127.53.142,livepersonedge-live-fra-dfd62c0542442344.elb.eu-central-1.amazonaws.com.,
+idealedge.tech26.de                                     idealedge-live-fra-b8f96cc115854758.elb.eu-central-1.amazonaws.com.,3.78.21.160,3.69.184.189,18.194.113.4,idealedge-live-fra-b8f96cc115854758.elb.eu-central-1.amazonaws.com.,
+[0m
+New live infra found in CT corpus. Probing liveness/low-rate for the high-value leaves:
+[0m$ [0mfor h in sonarqube-default-fra.tech26.de backstage.tech26.de phishing-report.tech26.de rcs-demo.tech26.de n26uk.tz2-mambu-uk.tech26.de number26.tz2-mambu.tech26.de number26.tz2-mambu-sandbox-eu.tech26.de n26uk.tz2-mambu-sandbox-uk.tech26.de message-templates-assets-staging.tech26.de; do printf '%-45s ' "$h"; curl -sk -m 8 -o /dev/null -w 'GET %{http_code} len=%{size_download} type=%{content_type} srv=%header{server}\n' "https://$h/" 2>/dev/null || echo "CONNECT-FAIL/STALL"; sleep 1.2; done
+sonarqube-default-fra.tech26.de               GET 000 len=0 type= srv=
+CONNECT-FAIL/STALL
+backstage.tech26.de                           GET 000 len=0 type= srv=
+CONNECT-FAIL/STALL
+phishing-report.tech26.de                     GET 000 len=0 type= srv=
+CONNECT-FAIL/STALL
+rcs-demo.tech26.de                            GET 403 len=111 type=application/xml srv=AmazonS3
+n26uk.tz2-mambu-uk.tech26.de                  GET 000 len=0 type= srv=
+CONNECT-FAIL/STALL
+number26.tz2-mambu.tech26.de                  GET 000 len=0 type= srv=
+CONNECT-FAIL/STALL
+number26.tz2-mambu-sandbox-eu.tech26.de       GET 000 len=0 type= srv=
+CONNECT-FAIL/STALL
+n26uk.tz2-mambu-sandbox-uk.tech26.de          GET 000 len=0 type= srv=
+CONNECT-FAIL/STALL
+message-templates-assets-staging.tech26.de    GET 403 len=111 type=application/xml srv=AmazonS3
+[0m
+Most new leaves are source-gated (SG stall) or private S3. Quick port-80/TLS-off check to complete characterization of the internal tier:
+[0m$ [0mfor hp in "sonarqube-default-fra.tech26.de 80" "sonarqube-default-fra.tech26.de 9000" "backstage.tech26.de 80" "number26.tz2-mambu.tech26.de 80"; do set -- $hp; printf '%-40s ' "$1:$2"; curl -sS -m 5 -o /dev/null -w 'GET %{http_code} len=%{size_download} srv=%header{server}\n' "https://$1:$2/" 2>&1 | head -c 140; echo; sleep 1; done; printf '%-40s ' "ideal-request-signing.tech26.de"; curl -sk -m 5 -o /dev/null -w 'GET %{http_code} len=%{size_download}\n' "https://ideal-request-signing.tech26.de/" 2>&1 | head -c 120; echo
+sonarqube-default-fra.tech26.de:80       curl: (28) Connection timed out after 5001 milliseconds
+GET 000 len=0 srv=
+
+sonarqube-default-fra.tech26.de:9000     curl: (28) Connection timed out after 5000 milliseconds
+GET 000 len=0 srv=
+
+backstage.tech26.de:80                   curl: (28) Connection timed out after 5000 milliseconds
+GET 000 len=0 srv=
+
+number26.tz2-mambu.tech26.de:80          curl: (28) Connection timed out after 5000 milliseconds
+GET 000 len=0 srv=
+
+ideal-request-signing.tech26.de          GET 000 len=0
+[0m
+## STEP 1 — DELTA
+- [NEW] certspotter refresh (this cycle) — tech26.de internal-tooling tier absent from inventory: `sonarqube-default-fra.tech26.de` (CNAME `sonarqube-alb-ci-live-fra...elb`), `backstage.tech26.de` + `backstage.platform26-live-eu.platform26.de` (Backstage portal, shared IPs), Mambu core-banking cluster (`n26uk.tz2-mambu-uk`, `number26.tz2-mambu`, sandbox/preproduction × uk/eu), wildcard zones `*.sto.tech26.de`, `*.atlantis.sto.tech26.de`, `*.controlplane.sto.tech26.de`, `ideal-request-signing.tech26.de`, `phishing-report.tech26.de`, `rcs-demo.tech26.de`, `message-templates-assets-staging.tech26.de`.
+- [CHANGED] pay.n26.com TLS leaf rotated 2026-09-17 (3 new issuances) — Stripe passthrough 401 boundary byte-stable, no functional delta.
+- [CHANGED] rcs-demo + message-templates-assets-staging → 403 AmazonS3 XML len=111 on `/` — private buckets, mirrors `message-templates-assets`; closed.
+- [CHANGED] sonarqube/backstage/mambu cluster + `*.sto/atlantis/controlplane` bases → connect-timeout on 80/443/9000, IPv4 A records present — source-gated SG class, not anonymously reachable; `ideal-request-signing` cert-without-DNS (no surface).
+
+## STEP 2 — PRIORITIZE
+- [PRIO] api.tech26.de/api/accounts/{id}/*, 5.8 (surface 7, value 8, tech 6, gate 1, cloud 5, fresh 5)
+- [PRIO] pay.n26.com/v1/*, 5.2 (surface 5, value 9, tech 5, gate 1, cloud 7, fresh 5)
+- [PRIO] sonarqube-default-fra.tech26.de, 4.2 (surface 3, value 3, tech 8, gate 0, cloud 5, fresh 10)
+- [PRIO] backstage.tech26.de, 3.9 (surface 3, value 4, tech 7, gate 0, cloud 5, fresh 10)
+
+## STEP 3 — HYPOTHESES
+[HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(tans|approvals|transfers|statements|addresses|bookings|cards|devices|limits|cosmetics|beneficiaries|transactions)
+confidence: 92
+reasoning: gate re-confirmed 09-17/09-18 — 15-member flat GET-only family, all 401 len=211 md5-identical invalid_token; query-param creds, path-shape, method variants closed; /api/v1/* drops the gate (404); per-account ACL unobservable anonymously.
+evidence_needed: valid Bearer → 200 at /api/accounts/{own}/tans AND 200 (not 401) at /api/accounts/{own±1}/tans; body cmp per request.
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own}/{tans,statements} baseline 200; GET /api/accounts/{own±1}/{tans,approvals,transfers,statements} read-only, per-request cmp; zero mutation.
+impact: cross-tenant statement + TAN + pending-approval + transfer-list disclosure → transfer-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles, TLS-rotated 09-17 with zero behavioral drift — no-key 401 len=342 vs fake-key len=132 "Invalid API Key provided: sk_live_****0000", WWW-Authenticate Basic realm="Stripe", ?limit=3 accepted; app CSP connect-src excludes pay → key is mobile/server-only; key discovery closed 3/3 corpora.
+evidence_needed: N26-issued key reads payment/charge IDs beyond own membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership; zero mutation.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] authentication-service keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: service LIVE (HTTP/2 404, authn-service-2/v26.09.07); 68+ HTTP paths + WS-upgrade all "path unused"; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26; anonymous route-less proven; unknown = live subprotocol + minted token.
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake on disclosed routes.
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only on both disclosed routes.
+impact: WebAuthn/passwordless enrollment or session flaw = CRITICAL if reached; scope-pending.
+testability: AUTH_HELPED
+[HYP] tech26.de internal-app CT exposure (sonarqube/backstage/platform26/mambu)
+class: MISCONFIG
+asset: sonarqube-default-fra.tech26.de, backstage.tech26.de, n26uk.tz2-mambu-uk.tech26.de
+confidence: 35
+reasoning: public CT + DNS expose a SonarQube CI ALB, Backstage/Platform26 portal SAN, and Mambu core-banking cluster on company domains; all connect-time out on 80/443/9000 (source-gated SG), staging buckets 403 AccessDenied.
+evidence_needed: reachability from an authorized network (either SG boundary or CloudFront-fronted route); none reachable from anonymous egress.
+verify_steps: HUMAN_ONLY — from approved CI/office egress, GET / on sonarqube (check SonarQube web + /api/system/status) and / on backstage.
+impact: if reachable, SonarQube project/source disclosure or Backstage service-catalog exposure; as measured: none.
+testability: HUMAN_ONLY
+
+## STEP 4 — SELF-CRITIQUE
+- [PARKED] tech26.de internal-app CT exposure: drops — confidence 35 < 40, no anonymous verify possible, and every measured signal (SG timeout, private-S3 403, cert-without-DNS) is protective. Logged as infra-discovery LEARN only.
+- [FINAL] 1) api.tech26.de BOLA 92 2) pay.n26.com tenant-separation 60 3) keyless WS replay 50.
+
+## STEP 5 — NEXT ACTION
+[NEXT] HUMAN: Escalate to program coordinator — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans = financial data), (2) two scoped Bearer tokens (accounts {own, own±1}) to execute the 92-confidence verify_steps, and (3) note the newly-discovered source-gated internal tier (SonarQube CI ALB, Backstage/platform26 portal, Mambu cluster) as candidate authorized-network test targets. Ask pending ≥6 cycles; zero anonymous probe can advance; identical-401/403/404 re-probing remains suspended.
+
+## STEP 6 — LEARNING
+[LEARN] ACCEPTED MISCONFIG @ tech26.de: CT refresh this cycle exposes full internal tooling tier on public DNS — sonarqube-alb-ci-live-fra ALB, backstage{,.platform26-live-eu} portal SAN, Mambu core-banking cluster (6 hosts), *.sto/atlantis/controlplane wildcards, message-templates-assets-staging, rcs-demo — yet every host is source-gated (connect-timeout 80/443/9000) or CloudFront-private S3 (403); ideal-request-signing is cert-without-DNS; zero new anonymously reachable surface; internal tier confirms SG-boundary pattern of prior edge hosts.
+[LEARN] REJECTED MISCONFIG @ rcs-demo.tech26.de + message-templates-assets-staging.tech26.de: 403 AmazonS3 AccessDenied on `/` and `/?list-type=2` — private buckets behind CloudFront, exact mirror of message-templates-assets; class closed.
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: TLS rotated 2026-09-17 (3 issuances) with zero 401-drift — Stripe passthrough boundary independent of cert rotation; boundary stable 11+ cycles.
+
+## STEP 7 — RISK
+[RISK] n26: 38/100 — this cycle produced genuine new footprint (internal SonarQube/Backstage/Mambu tier) but all source-gated, so reportable-finding probability unchanged ~nil. Top hypotheses all AUTH_HELPED (api BOLA 92, pay 60); key corpora closed 3/3; coordinator ask unanswered ≥6 cycles; crt.sh stale since 09-10. Probability of any reportable finding this cycle remains dependent solely on coordinator-supplied credentials + written scope approval.

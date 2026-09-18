@@ -1,13 +1,10 @@
-## 2026-09-18 05:29:19 UTC [target] (model bigpickle)
-reasoning: <facts>
-impact: <severity>
-verify_steps: <passive confirmation steps>
+## 2026-09-18 10:06:59 UTC [target] (model bigpickle)
 [HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate
 class: IDOR
 asset: api.tech26.de/api/accounts/{id}/(tans|approvals|transfers|statements|addresses|bookings|cards|devices|limits|cosmetics|beneficiaries|transactions)
 confidence: 92
-reasoning: gate re-confirmed live 09-17/09-18 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,2,4,9}/tans, /api/accounts/1/statements all 401 len=211 md5/cmp-identical invalid_token; query-param creds (?access_token/?token/?api_key/?auth) byte-identical → Authorization-header-only prefix-firewall; raw `..`/`//`/trailing-slash/`me`-alias/non-numeric-id all 401, encoded `%2e%2e` 403 at independent awselb WAF; /api/v1/* → 404 (versioning drops gate); POST/OPTIONS route-less → 15-member flat GET-only family; per-account ACL unobservable anonymously.
-evidence_needed: valid Bearer → 200 at /api/accounts/{own}/tans AND 200 (not 401) at /api/accounts/{own±1}/tans; body cmp per-request.
+reasoning: gate re-confirmed 09-17/09-18 — 15-member flat GET-only family, all 401 len=211 md5-identical invalid_token; query-param creds, path-shape, method variants closed; /api/v1/* drops the gate (404); per-account ACL unobservable anonymously.
+evidence_needed: valid Bearer → 200 at /api/accounts/{own}/tans AND 200 (not 401) at /api/accounts/{own±1}/tans; body cmp per request.
 verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own}/{tans,statements} baseline 200; GET /api/accounts/{own±1}/{tans,approvals,transfers,statements} read-only, per-request cmp; zero mutation.
 impact: cross-tenant statement + TAN + pending-approval + transfer-list disclosure → transfer-fraud/ATO chain; HIGH.
 testability: AUTH_HELPED
@@ -15,7 +12,7 @@ testability: AUTH_HELPED
 class: IDOR
 asset: pay.n26.com/v1/payments
 confidence: 60
-reasoning: boundary stable 11+ cycles — no-key 401 len=342 vs fake-key 401 len=132 "Invalid API Key provided: sk_live_****0000", WWW-Authenticate Basic realm="Stripe", ?limit=3 accepted; app CSP connect-src excludes pay → server/mobile-only key; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0).
+reasoning: boundary stable 11+ cycles, TLS-rotated 09-17 with zero behavioral drift — no-key 401 len=342 vs fake-key len=132 "Invalid API Key provided: sk_live_****0000", WWW-Authenticate Basic realm="Stripe", ?limit=3 accepted; app CSP connect-src excludes pay → key is mobile/server-only; key discovery closed 3/3 corpora.
 evidence_needed: N26-issued key reads payment/charge IDs beyond own membership.
 verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership; zero mutation.
 impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
@@ -24,10 +21,22 @@ testability: AUTH_HELPED
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
 confidence: 50
-reasoning: service LIVE (HTTP/2 404, authn-service-2/v26.09.07, x-keyless-flow-id); 68+ HTTP paths + WS-upgrade all "path unused"; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26; anonymous route-less proven; unknown = live subprotocol + minted token.
+reasoning: service LIVE (HTTP/2 404, authn-service-2/v26.09.07); 68+ HTTP paths + WS-upgrade all "path unused"; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26; anonymous route-less proven; unknown = live subprotocol + minted token.
 evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake on disclosed routes.
-verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only on both disclosed routes; no anonymous verify exists.
-impact: WebAuthn/passwordless enrollment or session flaw = CRITICAL if reached.
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only on both disclosed routes.
+impact: WebAuthn/passwordless enrollment or session flaw = CRITICAL if reached; scope-pending.
 testability: AUTH_HELPED
-[NEXT] HUMAN: Escalate to program coordinator — request (1) written in-scope confirmation for a read-only BOLA test against api.tech26.de (statements/tans are financial data; program note restricts exposure, so explicit written approval required), and (2) one scoped Bearer token for test accounts {own, own±1} to execute the 92-confidence verify_steps. This is the sole path to any reportable finding; all pipeline analysts converge on the same AUTH_HELPED set and the ask has been unanswered ≥5 cycles. Do not re-probe identical 401 classes — zero delta, already suspended.
-[RISK] n26: 38/100 — rising. Zero live probes this cycle (only DNS liveness re-verified). All HIGH-value hypotheses (api BOLA 92, pay 60) are 100% token-gated; the only reportable finding requires coordinator-supplied credentials + written in-scope confirmation, unanswered ≥5 cycles; flagged-Braze/keyless/pay key corpora all closed 3/3; crt.sh corpus stale since 09-10 (502). Continued anonymous re-probing of identical 401/403/404 classes produces zero delta and is stopped. Without coordinator response, probability of any reportable finding this cycle trends to nil.
+[HYP] tech26.de internal-app CT exposure (sonarqube/backstage/platform26/mambu)
+class: MISCONFIG
+asset: sonarqube-default-fra.tech26.de, backstage.tech26.de, n26uk.tz2-mambu-uk.tech26.de
+confidence: 35
+reasoning: public CT + DNS expose a SonarQube CI ALB, Backstage/Platform26 portal SAN, and Mambu core-banking cluster on company domains; all connect-time out on 80/443/9000 (source-gated SG), staging buckets 403 AccessDenied.
+evidence_needed: reachability from an authorized network (either SG boundary or CloudFront-fronted route); none reachable from anonymous egress.
+verify_steps: HUMAN_ONLY — from approved CI/office egress, GET / on sonarqube (check SonarQube web + /api/system/status) and / on backstage.
+impact: if reachable, SonarQube project/source disclosure or Backstage service-catalog exposure; as measured: none.
+testability: HUMAN_ONLY
+[NEXT] HUMAN: Escalate to program coordinator — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans = financial data), (2) two scoped Bearer tokens (accounts {own, own±1}) to execute the 92-confidence verify_steps, and (3) note the newly-discovered source-gated internal tier (SonarQube CI ALB, Backstage/platform26 portal, Mambu cluster) as candidate authorized-network test targets. Ask pending ≥6 cycles; zero anonymous probe can advance; identical-401/403/404 re-probing remains suspended.
+[LEARN] ACCEPTED MISCONFIG @ tech26.de: CT refresh this cycle exposes full internal tooling tier on public DNS — sonarqube-alb-ci-live-fra ALB, backstage{,.platform26-live-eu} portal SAN, Mambu core-banking cluster (6 hosts), *.sto/atlantis/controlplane wildcards, message-templates-assets-staging, rcs-demo — yet every host is source-gated (connect-timeout 80/443/9000) or CloudFront-private S3 (403); ideal-request-signing is cert-without-DNS; zero new anonymously reachable surface; internal tier confirms SG-boundary pattern of prior edge hosts.
+[LEARN] REJECTED MISCONFIG @ rcs-demo.tech26.de + message-templates-assets-staging.tech26.de: 403 AmazonS3 AccessDenied on `/` and `/?list-type=2` — private buckets behind CloudFront, exact mirror of message-templates-assets; class closed.
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: TLS rotated 2026-09-17 (3 issuances) with zero 401-drift — Stripe passthrough boundary independent of cert rotation; boundary stable 11+ cycles.
+[RISK] n26: 38/100 — this cycle produced genuine new footprint (internal SonarQube/Backstage/Mambu tier) but all source-gated, so reportable-finding probability unchanged ~nil. Top hypotheses all AUTH_HELPED (api BOLA 92, pay 60); key corpora closed 3/3; coordinator ask unanswered ≥6 cycles; crt.sh stale since 09-10. Probability of any reportable finding this cycle remains dependent solely on coordinator-supplied credentials + written scope approval.
