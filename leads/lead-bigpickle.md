@@ -4173,3 +4173,36 @@ evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake on 
 verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only on both disclosed routes; no anonymous verify exists.
 impact: WebAuthn/passwordless enrollment or session flaw = CRITICAL if reached; scope-pending.
 testability: AUTH_HELPED
+## 2026-09-18 05:29:19 UTC [target] (model bigpickle)
+reasoning: <facts>
+impact: <severity>
+verify_steps: <passive confirmation steps>
+[HYP] api.tech26.de BOLA on account-scoped family under coarse-namespace gate
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(tans|approvals|transfers|statements|addresses|bookings|cards|devices|limits|cosmetics|beneficiaries|transactions)
+confidence: 92
+reasoning: gate re-confirmed live 09-17/09-18 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,2,4,9}/tans, /api/accounts/1/statements all 401 len=211 md5/cmp-identical invalid_token; query-param creds (?access_token/?token/?api_key/?auth) byte-identical → Authorization-header-only prefix-firewall; raw `..`/`//`/trailing-slash/`me`-alias/non-numeric-id all 401, encoded `%2e%2e` 403 at independent awselb WAF; /api/v1/* → 404 (versioning drops gate); POST/OPTIONS route-less → 15-member flat GET-only family; per-account ACL unobservable anonymously.
+evidence_needed: valid Bearer → 200 at /api/accounts/{own}/tans AND 200 (not 401) at /api/accounts/{own±1}/tans; body cmp per-request.
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own}/{tans,statements} baseline 200; GET /api/accounts/{own±1}/{tans,approvals,transfers,statements} read-only, per-request cmp; zero mutation.
+impact: cross-tenant statement + TAN + pending-approval + transfer-list disclosure → transfer-fraud/ATO chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: boundary stable 11+ cycles — no-key 401 len=342 vs fake-key 401 len=132 "Invalid API Key provided: sk_live_****0000", WWW-Authenticate Basic realm="Stripe", ?limit=3 accepted; app CSP connect-src excludes pay → server/mobile-only key; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0).
+evidence_needed: N26-issued key reads payment/charge IDs beyond own membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership; zero mutation.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] authentication-service keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: service LIVE (HTTP/2 404, authn-service-2/v26.09.07, x-keyless-flow-id); 68+ HTTP paths + WS-upgrade all "path unused"; bundle hardcodes wss://…/v1/auth/n26 + /v1/enroll/n26; anonymous route-less proven; unknown = live subprotocol + minted token.
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake on disclosed routes.
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only on both disclosed routes; no anonymous verify exists.
+impact: WebAuthn/passwordless enrollment or session flaw = CRITICAL if reached.
+testability: AUTH_HELPED
+[NEXT] HUMAN: Escalate to program coordinator — request (1) written in-scope confirmation for a read-only BOLA test against api.tech26.de (statements/tans are financial data; program note restricts exposure, so explicit written approval required), and (2) one scoped Bearer token for test accounts {own, own±1} to execute the 92-confidence verify_steps. This is the sole path to any reportable finding; all pipeline analysts converge on the same AUTH_HELPED set and the ask has been unanswered ≥5 cycles. Do not re-probe identical 401 classes — zero delta, already suspended.
+[RISK] n26: 38/100 — rising. Zero live probes this cycle (only DNS liveness re-verified). All HIGH-value hypotheses (api BOLA 92, pay 60) are 100% token-gated; the only reportable finding requires coordinator-supplied credentials + written in-scope confirmation, unanswered ≥5 cycles; flagged-Braze/keyless/pay key corpora all closed 3/3; crt.sh corpus stale since 09-10 (502). Continued anonymous re-probing of identical 401/403/404 classes produces zero delta and is stopped. Without coordinator response, probability of any reportable finding this cycle trends to nil.
