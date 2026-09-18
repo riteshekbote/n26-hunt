@@ -390,3 +390,47 @@ verify_steps: Check if `pisp.tech26.de` is a public sandbox endpoint; verify `an
 TARGET_ORG not configured for n26; skipping public-org deep scan.
 ## REPOSCAN 2026-09-18 13:08:13 UTC
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-18 17:08:38 UTC
+[HYP] Hardcoded Basic Auth credential `android:secret` in PSD2 MFA challenge script
+class: SECRET
+asset: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+confidence: 75
+reasoning: Line 26 contains a hardcoded Base64-encoded Basic Auth header `YW5kcm9pZDpzZWNyZXQ=` which decodes to `android:secret`. This static credential is used in a curl POST to `https://$PISP_HOST/api/mfa/challenge` (default host `pisp.tech26.de`, confirmed live via HTTP 404). If the credential is accepted by the production MFA endpoint, it could allow unauthorized out-of-band MFA challenge initiation for any user.
+impact: Medium — potential unauthorized MFA challenge trigger if credential is live on production PISP
+verify_steps: (1) Passively confirm `pisp.tech26.de/api/mfa/challenge` accepts `Basic YW5kcm9pZDpzZWNyZXQ=` by observing public API docs or error responses. (2) Verify `android:secret` is documented as a sandbox-only credential in N26 PSD2 developer docs.
+[HYP] Internal S3 staging bucket name disclosure
+class: MISCONFIG
+asset: n26/N26AndroidSamples/credit/src/main/res/raw/credit_drafts.json:8,30
+confidence: 65
+reasoning: Two mock credit entries reference `https://s3.eu-central-1.amazonaws.com/consumercredit-staging/` for image assets, exposing the internal AWS S3 bucket naming convention (`consumercredit-staging`) for N26's consumer credit staging environment. The bucket currently returns 403/NoSuchBucket (confirmed via passive recon), but the naming pattern reveals internal infrastructure naming that could aid enumeration if staging buckets are recreated.
+impact: Low — bucket appears non-public/deleted; informational naming convention leak only
+verify_steps: (1) Already confirmed bucket is non-public via cdn.number26.de probes. (2) No further action needed unless staging bucket is recreated.
+[HYP] Internal PSD2 API hostnames exposed in public documentation
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/sandbox.md, n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh
+confidence: 70
+reasoning: Multiple files expose internal PSD2 API hostnames (`xs2a.tech26.de`, `pisp.tech26.de`, `aisp.tech26.de`). These are real endpoints (confirmed reachable via HTTP 404/401 responses). Combined with the hardcoded `android:secret` credential, this provides a complete attack surface for the MFA challenge flow.
+impact: Low — hostnames alone are not directly exploitable; combined with credential findings increases attack surface
+verify_steps: (1) Already confirmed hostnames resolve and respond (HTTP 404/401). (2) Check if hosts serve other endpoints beyond documented paths.
+[HYP] Slack bot token transmitted via URL query parameter
+class: MISCONFIG
+asset: n26/bob/Sources/Bob/Core/Slack/SlackClient.swift:31
+confidence: 60
+reasoning: The bob Slack bot passes the API token as a URL query parameter (`token=...`) to the deprecated Slack RTM API endpoint `https://slack.com/api/rtm.start`. Tokens in URL query strings appear in server logs, proxy logs, browser history, and HTTP Referer headers. The token is loaded from config at runtime (not hardcoded), but the transmission pattern is an insecure practice per OWASP.
+impact: Low — token is not hardcoded (loaded from config at runtime); insecure transmission pattern only; bot is archived
+verify_steps: (1) Verify no token values are committed in the repo's config files or .env. (2) Confirm the bot is no longer actively deployed (repo is archived since 2020).
+[HYP] Internal Artifactory registry URL disclosed in public npm lockfile
+class: MISCONFIG
+asset: n26/express-simple-locale/package-lock.json:1518,2429,3391,3571,7527
+confidence: 45
+reasoning: The package-lock.json contains resolved URLs pointing to an internal N26 Artifactory instance at `artifactory.cd-tech26.de:443`. This reveals the internal artifact registry hostname. The endpoint is not publicly reachable (connection refused/timeout), suggesting it is VPN-internal only.
+impact: Informational — internal hostname disclosure; Artifactory is not publicly accessible
+verify_steps: (1) Already confirmed Artifactory is not publicly reachable (connection timeout). (2) No further action needed.
+[HYP] Sandbox OAuth client IDs and internal hostname in Postman environment
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+confidence: 35
+reasoning: The Postman environment file contains sandbox credentials: `dedicated_aisp_client_id=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI`, `auth_code`, sandbox IBAN `DE15100110012627633320`, and internal hostname `xs2a.tech26.de` (confirmed live — returns HTTP 401). While explicitly labeled "sandbox," these values reveal the internal PSD2 API hostname and OAuth registration format.
+impact: Informational — sandbox-only documentation values; `xs2a.tech26.de` is a real endpoint (returns 401)
+verify_steps: (1) Already confirmed `xs2a.tech26.de` is live (returns 401 for unauthenticated requests). (2) Verify the client_id values are sandbox-scoped only.
+TARGET_ORG not configured for n26; skipping public-org deep scan.
