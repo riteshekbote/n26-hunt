@@ -2608,3 +2608,22 @@
 - LEARN: ACCEPTED MISCONFIG @ tech26.de: CT refresh this cycle exposes full internal tooling tier on public DNS — sonarqube-alb-ci-live-fra ALB, backstage{,.platform26-l
 - LEARN: REJECTED MISCONFIG @ rcs-demo.tech26.de + message-templates-assets-staging.tech26.de: 403 AmazonS3 AccessDenied on `/` and `/?list-type=2` — private buckets beh
 - LEARN: ACCEPTED MISCONFIG @ pay.n26.com: TLS rotated 2026-09-17 (3 issuances) with zero 401-drift — Stripe passthrough boundary independent of cert rotation; boundary 
+
+## RANKED HYPOTHESES 2026-09-18 14:35:30 UTC
+- [92] api.tech26.de/api/accounts/{id}/(statements|addresses|bookings|cards|tans|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics): api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family with grant-obtained token (from art/lead_nemotron3.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Escalate to program coordinator — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans are financial data; program note
+- NEXT(hypotheses-nemotron3.txt): HUMAN: All three surviving hypotheses are AUTH_HELPED — no anonymous probe can advance any of them. Request from program coordinator: (1) scoped test account or
+- LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 11+ cycles; TLS rotated 09-17 with zero 401-drift; key-discovery closed 3/3 corpora.
+- LEARN: ACCEPTED AUTH @ api.tech26.de: gate fully characterized 09-17 — pre-normalization exact-lowercase prefix-match, Authorization-header-only, query-param immune, p
+- LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: 68+ paths "path unused", deployment stable v26.09.07; anonymous route discov
+- LEARN: ACCEPTED MISCONFIG @ tech26.de internal tier: CT refresh exposes SonarQube CI ALB, Backstage portal SAN, Mambu core-banking cluster (6 hosts) on public DNS — al
+- LEARN: ACCEPTED MISCONFIG @ process: triage feeder empty leads ≥6 cycles; all pipeline analysts converge on identical AUTH_HELPED set; coordinator response required to
+- LEARN: REJECTED AUTH @ api.tech26.de: no new anonymous bypass surface this cycle — 10-member flat GET-only nested family re-confirmed token-gated 2026-09-17 (md5/cmp-v
+- LEARN: REJECTED MISCONFIG @ api.tech26.de/beta-api/fpt: anonymous HTTP API discovery remains conclusively exhausted (~47 paths envoy empty-404); no additional /api/* n
+- LEARN: ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (triage/run-2026-09-17-16-30.md) — hypothesis-generation stalled; all pipeline analysts c
+- LEARN: ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/stateme
+- LEARN: REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), ga
+- LEARN: REJECTED AUTH @ api.tech26.de: query-param token acceptance closed — /api/me?{access_token,token,api_key,auth}=zzz all 401 len=211 md5 d585... byte-identical; g
+- LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 10+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+- LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS to
+- LEARN: ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative acros

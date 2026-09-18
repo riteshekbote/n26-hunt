@@ -13215,3 +13215,95 @@ Wrote file successfully.
 Now I have a complete picture. Let me execute the 8 steps.
 [0m→ [0mRead analyst-out.txt
 Done. The 8-step analysis is complete and written to `analyst-out.txt`. All three surviving hypotheses are AUTH_HELPED requiring coordinator-provided credentials — no anonymous probe can advance them.
+===== ANALYST nemotron3 2026-09-18 14:35:30 UTC =====
+[0m
+> build · nemotron-3-ultra-free
+[0m
+[0m$ [0mdate -u +"%Y-%m-%d %H:%M:%S UTC"
+2026-09-18 14:32:42 UTC
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/
+total 516
+drwxr-xr-x 12 runner runner   4096 Sep 18 14:32 .
+drwxr-xr-x  3 runner runner   4096 Sep 18 14:32 ..
+drwxr-xr-x  7 runner runner   4096 Sep 18 14:32 .git
+drwxr-xr-x  3 runner runner   4096 Sep 18 14:32 .github
+-rw-r--r--  1 runner runner   1844 Sep 18 14:32 README.md
+-rw-r--r--  1 runner runner    115 Sep 18 14:32 analyst-out.txt
+-rw-r--r--  1 runner runner 212054 Sep 18 14:32 analyst-prompt.txt
+-rw-r--r--  1 runner runner 208184 Sep 18 14:32 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 18 14:32 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 18 14:32 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 18 14:32 leads
+-rw-r--r--  1 runner runner  17690 Sep 18 14:32 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 18 14:32 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 18 14:32 reports
+drwxr-xr-x  2 runner runner   4096 Sep 18 14:32 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 18 14:32 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 18 14:32 scripts
+-rw-r--r--  1 runner runner     33 Sep 18 14:32 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 18 14:32 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 18 14:32 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 18 14:32 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 18 14:32 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 18 14:32 state_nemotron3.json
+drwxr-xr-x  2 runner runner   4096 Sep 18 14:32 triage
+[0m
+[0m→ [0mRead probe-results.md
+[NEW] No new probe results since 2026-09-18 10:07:11 UTC — surface unchanged
+[CHANGED] None — all three FINAL hypotheses remain AUTH_HELPED with no anonymous advancement path
+[CHANGED] triage feeder still reporting empty leads (run-2026-09-17-16-30.md) — hypothesis pipeline stalled, all analysts converged on same AUTH_HELPED set
+
+[PRIO] api.tech26.de/api/accounts/{id}/(tans|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics|cards|bookings),9.20,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=2,cloud_surface=8,freshness=9
+[PRIO] pay.n26.com/v1/payments,8.50,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.10,attack_surface=7,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=7
+
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family with grant-obtained token
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/(statements|addresses|bookings|cards|tans|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics)
+confidence: 92
+reasoning: 15 endpoints confirmed live (5 base: /api/me, /api/statements, /api/accounts{/me,/1}, /api/addresses + 10 nested under /api/accounts/{id}/) all return 401 len=211 byte-identical invalid_token; ID-independent prefix firewall stable across account IDs 1,2,3,4,9; versioned /api/v1/* returns 404; GET-only surface (OPTIONS/POST return 404 route-less); gate is pre-normalization exact-lowercase Authorization-header-only prefix match; query-param credential bypass closed; surface ACTIVE and MUTATING (api/accounts drifted 404→401 this cycle)
+evidence_needed: Valid Bearer token via paired-device grant; successful GET /api/accounts/1/statements returning statement objects; IDOR via account_id traversal across tenants
+verify_steps: PASSIVE: GET /api/accounts/6/statements → confirm 401 len=211 byte-identical error schema for sixth account ID. AUTH_HELPED: With valid token, GET /api/accounts/1/statements → GET /api/accounts/2/statements → GET /api/accounts/1/tans → GET /api/accounts/2/tans → test BOLA via cross-account account_id across all 10 nested resources
+impact: Cross-tenant statement history, address PII, cards, bookings, TANs, approvals, transactions, transfer records, beneficiaries, registered devices, limits, cosmetics enumeration — CRITICAL (banking PII + financial data + transaction authorization artifacts)
+testability: AUTH_HELPED
+
+[HYP] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA on charges/balance with valid auth
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 23+ /v1/* endpoints return 401 with Stripe error JSON (len=342 no-key, len=132 fake-key "Invalid API Key provided: sk_live_****0000"); /v1/payments?limit=3 accepts pagination confirming REST semantics; WWW-Authenticate: Basic realm="Stripe"; CORS-open (ACAO: *); pure Stripe passthrough on N26 domain — no N26-side key injection; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); app CSP lacks pay.n26.com connect-src (mobile/server-only); boundary stable 11+ cycles with no drift
+evidence_needed: Valid Stripe secret key for pay.n26.com (sk_live_...); successful GET /v1/payments returning payment objects; IDOR via payment_id/charge_id traversal across accounts
+verify_steps: PASSIVE: GET /v1/payments?limit=3 → capture WWW-Authenticate header + error schema. AUTH_HELPED: With valid key, GET /v1/payments → GET /v1/charges/{id} → GET /v1/balance → test BOLA via cross-account payment_id
+impact: Cross-account payment/charge/balance enumeration, potential payment manipulation — CRITICAL (core banking)
+testability: AUTH_HELPED
+
+[HYP] authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay reveals token reuse/challenge-binding flaw
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 70
+reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version authentication-service-2/v26.09.07 eks-production, custom x-keyless-flow-id header; all 68+ standard + tenant-scoped paths return {"code":"UNPROCESSABLE","reason":"path unused"}; WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token; "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant; deployment rotated v26.09.07
+evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; successful subprotocol handshake with signed token; token replay across sessions/challenges
+verify_steps: PASSIVE: GET /health → /ready → /metrics → /actuator/health → /api/internal/v1/auth/n26 → /api/private/v1/enroll/n26 → /internal/auth/n26 → /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps. AUTH_HELPED: WS handshake with valid credential → test token replay
+impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
+testability: AUTH_HELPED
+
+[PARKED] engagementplatform.n26.com Braze REST API cross-tenant user PII enumeration with valid Bearer token: confidence 55 < 60 threshold; key only in server/mobile, no web leak path; engagementplatform root shifted to 400 (reduced surface visibility)
+
+[FINAL] 1) api.tech26.de/api/accounts/{id}/(tans|approvals|transfers|statements|addresses|bookings|cards|devices|limits|cosmetics|beneficiaries|transactions): api.tech26.de BOLA on account-scoped family under coarse-namespace gate — re-confirmed (confidence 92) — AUTH_HELPED testable, sole reportable path, 15-endpoint evidence set, surface ACTIVE and MUTATING
+[FINAL] 2) pay.n26.com/v1/payments Stripe-forwarded payment API exposes BOLA/IDOR on charges/balance with valid auth (confidence 85) — AUTH_HELPED testable, NEW live payment API with 401 boundary, core banking value
+[FINAL] 3) authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay reveals token reuse/challenge-binding flaw (confidence 70) — AUTH_HELPED testable, high-value target, live service confirmed, deployment rotated v26.09.07
+
+[NEXT] HUMAN: All three surviving hypotheses are AUTH_HELPED — no anonymous probe can advance any of them. Request from program coordinator: (1) scoped test account or valid Stripe sk_live key for pay.n26.com, (2) paired-device grant flow token for api.tech26.de legacy API, (3) valid WebAuthn credential/enrollment flow for authentication-service.eks.core-production.keyless.technology
+
+[LEARN] REJECTED AUTH @ api.tech26.de: no new anonymous bypass surface this cycle — 10-member flat GET-only nested family re-confirmed token-gated 2026-09-17 (md5/cmp-verified); continued re-probing of identical 401 len=211 produces zero delta and is stopped
+[LEARN] REJECTED MISCONFIG @ api.tech26.de/beta-api/fpt: anonymous HTTP API discovery remains conclusively exhausted (~47 paths envoy empty-404); no additional /api/* noun route exists beyond the confirmed 10 (8+ further probes 404 route-less)
+[LEARN] ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (triage/run-2026-09-17-16-30.md) — hypothesis-generation stalled; all pipeline analysts converge on the same AUTH_HELPED set; no coordinator response yet
+[LEARN] ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/statements all 401 len=211 cmp-identical invalid_token; tans sub-route Join confirms 10-member flat GET-only family; ID-independent prefix-firewall stable this session
+[LEARN] REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans this session — GET/401 uniform, POST/OPTIONS route-less (prior cycles), gate intact
+[LEARN] REJECTED AUTH @ api.tech26.de: query-param token acceptance closed — /api/me?{access_token,token,api_key,auth}=zzz all 401 len=211 md5 d585... byte-identical; gate is Authorization-header-only prefix-firewall, no query-credential bypass
+[LEARN] ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 10+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+[LEARN] ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS token — anonymous route discovery exhausted, requires AUTH_HELPED
+[LEARN] ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+
+[RISK] N26 Bank AG: 92 — NEW pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with 15-endpoint numeric ID BOLA surface (statements/addresses/cards/bookings/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics nested routes confirmed, breadth proven); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com client SDK behavior by-design (INFO)
