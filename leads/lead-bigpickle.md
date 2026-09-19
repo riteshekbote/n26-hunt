@@ -4400,3 +4400,31 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ process: NO_DELTA again this cycle (20:19 UTC) — zero new surface across 10:07/14:35/17:51/20:19; all three hypotheses unchanged; coordinator credential/scope supply is the sole unblock.
 [LEARN] REJECTED AUTH @ all: no anonymous experiment was run this cycle by design — identical-boundary re-probing yields zero signal and is suspended per prior-canon; passive corpora (crt.sh/CT/github/grep.app/sourcegraph) all exhausted or rate-limited.
 [RISK] n26: 35/100 — flat/declining. Zero delta, zero new surface, zero live probes (all suspended). Every HIGH-value hypothesis (api BOLA 92, pay 60, keyless WS 50) remains fully AUTH_HELPED; coordinator ask unanswered ≥6 cycles; key corpora closed 3/3; crt.sh stale since 09-10 (502). Probability of a reportable finding this cycle is nil absent credential/scope supply.
+## 2026-09-19 00:40:22 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family with grant-obtained token
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals}
+confidence: 92
+reasoning: NO_DELTA — gate fully characterized (pre-normalization exact-lowercase prefix-match, Authorization-header-only, query/path-shape/method bypasses closed); 15-member GET-only family; per-account ACL unobservable anonymously
+evidence_needed: valid Bearer → 200 at /api/accounts/{own}/tans AND 200 at {own±1}/tans, body cmp
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals} read-only; zero mutation
+impact: cross-tenant statement+TAN+pending-approval disclosure → transfer-fraud chain; HIGH
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation failure
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: NO_DELTA — 401 len=342 stable 11+ cycles, TLS-rotated 09-17 zero drift; key discovery closed 3/3 corpora; anonymous surface nil
+evidence_needed: N26-issued key reads payment IDs beyond own membership
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated
+testability: AUTH_HELPED
+[HYP] authentication-service keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: NO_DELTA — route-less proof exhaustive (68+ paths); live subprotocol + minted token unknown
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only
+impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached
+testability: AUTH_HELPED
