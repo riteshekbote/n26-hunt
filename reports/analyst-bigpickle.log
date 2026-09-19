@@ -27606,3 +27606,185 @@ testability: AUTH_HELPED
 
 **STEP 7 — RISK**
 - [RISK] n26: 35/100 — flat. crt.sh recovery produced no new reachable surface; every tested new leaf (staging, mag, 3 source-gated) classified closed. All three HIGH hypotheses remain fully AUTH_HELPED; coordinator ask unanswered ≥7 cycles; probability of a reportable finding this cycle remains nil absent credential/scope supply.
+===== ANALYST bigpickle 2026-09-19 05:01:39 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mcurl -s -m 20 -o /tmp/opencode/grepapp.json -w "HTTP %{http_code} size=%{size_download}\n" 'https://grep.app/api/search?q=pay.n26.com' ; head -c 300 /tmp/opencode/grepapp.json
+HTTP 429 size=33943
+<!DOCTYPE html><html lang="en" data-astro-cid-4wdtffzm><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#000"><title>Vercel Security Checkpoint</title><style>.spinner[data-astro-cid-ijmsm3te]{flex-direction:column;justi
+[0m
+[0m$ [0mcurl -s -m 20 -o /tmp/opencode/crtsh.json -w "HTTP %{http_code} size=%{size_download}\n" 'https://crt.sh/?q=%25.n26.com&output=json' ; head -c 300 /tmp/opencode/crtsh.json
+HTTP 200 size=140527
+[{"issuer_ca_id":262355,"issuer_name":"C=NL, O=QuoVadis Trustlink B.V., organizationIdentifier=NTRNL-30237459, CN=DigiCert QuoVadis G3 Qualified TLS RSA4096 SHA256 2023 CA1","common_name":"n26.com","name_value":"n26.com","id":29302762564,"not_before":"2026-09-08T00:00:00","not_after":"2027-03-25T23:
+[0m
+crt.sh recovered (was 502 since 09-10) — fresh CT corpus. grep.app still 429. Let me mine the fresh corpus for new leaves.
+[0m$ [0mpython3 -c "
+import json
+data=json.load(open('/tmp/opencode/crtsh.json'))
+names={}
+for e in data:
+    for n in (e.get('name_value') or '').split('\n'):
+        n=n.strip().lower()
+        if n: names[n]=e.get('not_before','')
+print(len(data),'certs,',len(names),'unique names')
+"
+435 certs, 49 unique names
+[0m
+[0m$ [0mpython3 -c "
+import json
+data=json.load(open('/tmp/opencode/crtsh.json'))
+names={}
+for e in data:
+    for n in (e.get('name_value') or '').split('\n'):
+        n=n.strip().lower()
+        if n: names.setdefault(n,e.get('not_before',''))
+for n in sorted(names):
+    print(names[n][:10], n)
+"
+2026-01-14 *.n26.com
+2025-12-12 3ds-challenge.n26.com
+2019-03-13 app--n26.com
+2025-11-11 app.n26.com
+2024-08-11 click.email.n26.com
+2024-11-28 clicks-new.emails.n26.com
+2026-08-25 clicks.accounts.n26.com
+2026-06-10 clicks.emails.n26.com
+2026-06-01 cookie.n26.com
+2026-02-12 engagementplatform.n26.com
+2025-12-29 flags.n26.com
+2026-08-12 get.n26.com
+2018-10-17 help.n26.com
+2026-08-12 join.n26.com
+2026-08-12 mag-de.n26.com
+2026-08-12 mag-es.n26.com
+2026-08-12 mag-fr.n26.com
+2026-08-12 mag-it.n26.com
+2026-08-12 mag.n26.com
+2019-03-13 mail.app--n26.com
+2016-12-05 migration.n26.com
+2025-11-11 my.n26.com
+2026-09-08 n26.com
+2026-08-12 next.n26.com
+2026-07-20 pay.n26.com
+2024-08-09 pub.email.n26.com
+2026-07-06 rstats.n26.com
+2017-04-24 s.n26.com
+2017-04-24 smy.n26.com
+2026-02-08 spc.n26.com
+2025-09-08 staging-n26.com
+2026-08-18 static.app.n26.com
+2025-09-18 static.get.n26.com
+2026-08-18 static.n26.com
+2026-08-19 static.support.n26.com
+2017-04-24 stutorials.n26.com
+2025-11-11 support.n26.com
+2025-05-11 tech.n26.com
+2025-11-11 tutorials.n26.com
+2024-08-11 view.email.n26.com
+2025-12-12 www.3ds-challenge.n26.com
+2019-03-13 www.app--n26.com
+2021-02-16 www.mag-de.n26.com
+2021-02-17 www.mag-es.n26.com
+2021-02-16 www.mag-fr.n26.com
+2021-02-16 www.mag-it.n26.com
+2021-10-15 www.mag.n26.com
+2026-08-12 www.n26.com
+2017-08-08 xyz.n26.com
+[0m
+Fresh corpus (49 names, recovered 09-19). Chesapeake: several never-classifed leaves — `clicks-new.emails.n26.com`, `migration.n26.com`, `click.email.n26.com`, `pub.email.n26.com`, `view.email.n26.com`, `mag.n26.com`. Low-rate passive GET sweep of the genuinely-new ones.
+[0m$ [0mfor h in clicks-new.emails.n26.com migration.n26.com mag.n26.com click.email.n26.com pub.email.n26.com view.email.n26.com; do
+  code=$(curl -s -m 15 -o /tmp/opencode/probe_body -w "%{http_code}" -L --max-redirs 3 -H 'User-Agent: Mozilla/5.0' "https://$h/")
+  loc=$(curl -s -m 15 -o /dev/null -w "%{redirect_url}" -H 'User-Agent: Mozilla/5.0' "https://$h/")
+  sz=$(wc -c < /tmp/opencode/probe_body)
+  echo "$h  code=$code size=$sz loc=$loc"
+  sleep 1.5
+done
+/bin/bash: line 4: /tmp/opencode/probe_body: No such file or directory
+clicks-new.emails.n26.com  code=000 size= loc=
+/bin/bash: line 4: /tmp/opencode/probe_body: No such file or directory
+migration.n26.com  code=000 size= loc=
+mag.n26.com  code=200 size=1370354 loc=https://n26.com/en-eu/blog
+click.email.n26.com  code=000 size=1370354 loc=
+pub.email.n26.com  code=000 size=1370354 loc=
+view.email.n26.com  code=000 size=1370354 loc=
+[0m
+[0m$ [0mfor h in clicks-new.emails.n26.com migration.n26.com click.email.n26.com pub.email.n26.com view.email.n26.com; do
+  b="/tmp/opencode/b_$h"
+  out=$(curl -s -m 15 -o "$b" -w "code=%{http_code} size=%{size_download} loc=%{redirect_url} time=%{time_total}" -H 'User-Agent: Mozilla/5.0' "https://$h/")
+  echo "$h $out"
+  sleep 1.5
+done
+clicks-new.emails.n26.com code=000 size=0 loc= time=0.031385
+migration.n26.com code=000 size=0 loc= time=0.031696
+click.email.n26.com code=000 size=0 loc= time=0.015315
+pub.email.n26.com code=000 size=0 loc= time=0.015316
+view.email.n26.com code=000 size=0 loc= time=0.015272
+[0m
+[0m$ [0mfor h in clicks-new.emails.n26.com migration.n26.com click.email.n26.com pub.email.n26.com view.email.n26.com mag.n26.com; do
+  r=$(getent ahosts "$h" 2>/dev/null | head -1 | awk '{print $1}')
+  echo "$h -> ${r:-NXDOMAIN-no-record}"
+  sleep 0.3
+done
+clicks-new.emails.n26.com -> NXDOMAIN-no-record
+migration.n26.com -> NXDOMAIN-no-record
+click.email.n26.com -> NXDOMAIN-no-record
+pub.email.n26.com -> NXDOMAIN-no-record
+view.email.n26.com -> NXDOMAIN-no-record
+mag.n26.com -> 65.8.20.109
+[0m
+All 5 new leaves are NXDOMAIN (cert-only, retired). Only mag.n26.com live → 301 marketing blog. Zero new reachable surface. Structured output:
+
+STEP 1 — DELTA
+- [CHANGED] crt.sh recovered 2026-09-19 (502 since 09-10) → 49-name fresh CT corpus; refresh sweep of 5 new leaves (clicks-new.emails, click/pub/view.email, migration.n26.com) all NXDOMAIN cert-only, mag.n26.com 301→blog. NO_DELTA in anonymously-reachable attack surface.
+
+STEP 2 — PRIORITIZE
+- [PRIO] api.tech26.de, 0.25*2+0.25*9+0.15*3+0.15*1+0.10*8+0.10*1 = 3.85, b=9 business (15-family financial BOLA) t=3 g=1 c=8 f=1
+- [PRIO] pay.n26.com, 0.25*2+0.25*10+0.15*2+0.15*1+0.10*7+0.10*1 = 4.00, b=10 core-banking payment passthrough, t=2 g=1 c=7 f=1
+- [PRIO] authentication-service.eks.core-production.keyless.technology, 0.25*1+0.25*8+0.15*4+0.15*1+0.10*6+0.10*1 = 3.15, b=8 auth infra, t=4 WS-subprotocol, c=6 f=1
+
+STEP 3 — HYPOTHESES
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals}
+confidence: 92
+reasoning: gate fully characterized (pre-normalization lowercase prefix-match, Authorization-header-only, query/path-shape/method bypass closed); 15-member GET-only family; per-account ACL unobservable anonymously; gate stable across 09-14..09-19 probes per KB
+evidence_needed: valid Bearer → 200 at {own}/tans AND 200 at {own±1}/tans, body cmp
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals,addresses} read-only; zero mutation
+impact: cross-tenant statement+TAN+pending-approval disclosure → transfer-fraud chain; HIGH
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation failure
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 60
+reasoning: 401 len=342 stable 11+ cycles, TLS-rotated 09-17 zero drift; pure Stripe passthrough (no-key 342B vs fake-key 132B); key discovery closed 3/3 corpora; grep.app still 429 this cycle
+evidence_needed: N26-issued key reads payment IDs beyond own membership
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated
+testability: AUTH_HELPED
+[HYP] authentication-service keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: route-less proof exhaustive (68+ paths + WS-upgrade all "path unused"); deployment stable v26.09.07; live subprotocol unknown
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only
+impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+- [PARKED] email-tracking fleet refresh (click/pub/view.email, clicks-new.emails): all NXDOMAIN cert-only — DNS indicates fleet retired; no surface, consistent with prior clicks.* 404 class.
+- [PARKED] staging-n26.com / app--n26.com: separately-registrable lookalikes (not n26.com subdomains), ownership unconfirmed; out-of-scope pending coordinator ownership determination.
+- [FINAL] api.tech26.de BOLA: 92 — survivor; 15-member family, HIGH breadth; advancement 100% token-gated.
+- [FINAL] pay.n26.com Stripe passthrough: 60 — boundary stable 11+ cycles; key discovery closed 3/3.
+- [FINAL] authentication-service WS subprotocol: 50 — route-less proof conclusive; subprotocol replay speculative.
+
+STEP 5 — NEXT ACTION
+- [NEXT] HUMAN: Re-escalate coordinator for 8th consecutive cycle — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans = financial data), (2) two scoped Bearer tokens {own, own±1} for the 92-confidence verify_steps, (3) ownership determination for staging-n26.com/app--n26.com lookalikes. Only new passive data this cycle (CT recovery) yielded zero reachable surface; all new leaves NXDOMAIN; identical-401/403/404 re-probing remains suspended.
+
+STEP 6 — LEARNING
+- [LEARN] ACCEPTED MISCONFIG @ process: crt.sh CT corpus recovered 2026-09-19 after 9-day 502; 49-name refresh produced 5 new-leaf candidates all NXDOMAIN cert-only (email-tracking fleet click/pub/view.email + clicks-new).emails + migration retired from DNS); single live new leaf mag.n26.com 301→blog (marketing, INFO).
+- [LEARN] REJECTED MISCONFIG @ {click,pub,view,clicks-new}.emails.n26.com + migration.n26.com: NXDOMAIN on public DNS — cert-issued, no host; no open-redirect/tracking surface; class closed consistent with prior clicks.* classification.
+
+STEP 7 — RISK
+- [RISK] n26: 35/100 — flat/declining. Only fresh passive corpus (CT) yielded zero reachable surface; every HIGH-value hypothesis (api BOLA 92, pay 60, keyless WS 50) remains AUTH_HELPED; coordinator ask unanswered ≥7 cycles; grep.app still 429. Probability of reportable finding this cycle remains nil absent credential/scope supply.

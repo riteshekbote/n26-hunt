@@ -1,18 +1,18 @@
-## 2026-09-19 00:40:22 UTC [target] (model bigpickle)
-[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family with grant-obtained token
+## 2026-09-19 05:01:16 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
 class: IDOR
 asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals}
 confidence: 92
-reasoning: NO_DELTA — gate fully characterized (pre-normalization exact-lowercase prefix-match, Authorization-header-only, query/path-shape/method bypasses closed); 15-member GET-only family; per-account ACL unobservable anonymously
-evidence_needed: valid Bearer → 200 at /api/accounts/{own}/tans AND 200 at {own±1}/tans, body cmp
-verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals} read-only; zero mutation
+reasoning: gate fully characterized (pre-normalization lowercase prefix-match, Authorization-header-only, query/path-shape/method bypass closed); 15-member GET-only family; per-account ACL unobservable anonymously; gate stable across 09-14..09-19 probes per KB
+evidence_needed: valid Bearer → 200 at {own}/tans AND 200 at {own±1}/tans, body cmp
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals,addresses} read-only; zero mutation
 impact: cross-tenant statement+TAN+pending-approval disclosure → transfer-fraud chain; HIGH
 testability: AUTH_HELPED
 [HYP] pay.n26.com Stripe-forwarded tenant-separation failure
 class: IDOR
 asset: pay.n26.com/v1/payments
 confidence: 60
-reasoning: NO_DELTA — 401 len=342 stable 11+ cycles, TLS-rotated 09-17 zero drift; key discovery closed 3/3 corpora; anonymous surface nil
+reasoning: 401 len=342 stable 11+ cycles, TLS-rotated 09-17 zero drift; pure Stripe passthrough (no-key 342B vs fake-key 132B); key discovery closed 3/3 corpora; grep.app still 429 this cycle
 evidence_needed: N26-issued key reads payment IDs beyond own membership
 verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership
 impact: cross-tenant payment/balance disclosure; HIGH, key-gated
@@ -21,7 +21,7 @@ testability: AUTH_HELPED
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
 confidence: 50
-reasoning: NO_DELTA — route-less proof exhaustive (68+ paths); live subprotocol + minted token unknown
+reasoning: route-less proof exhaustive (68+ paths + WS-upgrade all "path unused"); deployment stable v26.09.07; live subprotocol unknown
 evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake
 verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only
 impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached
