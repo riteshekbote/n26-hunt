@@ -438,3 +438,69 @@ TARGET_ORG not configured for n26; skipping public-org deep scan.
 TARGET_ORG not configured for n26; skipping public-org deep scan.
 ## REPOSCAN 2026-09-18 22:16:52 UTC
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-19 12:00:00 UTC (manual fresh audit — all 5 N26 public repos)
+[HYP] Hardcoded PKCE code_verifier defeats OAuth2 CSRF protection
+class: SECRET
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_collection.json:250-252
+confidence: 80
+reasoning: The Postman sandbox collection hardcodes code_verifier="foobar" (lines 250-252) paired with code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI (same value as dedicated_aisp_client_id, lines 99-100). PKCE relies on a random, unguessable code_verifier per authorization request; a static value eliminates the CSRF interception protection PKCE was designed to provide. Although labeled "sandbox," this collection is the official TPP onboarding reference — TPPs copying this pattern into production integrations will ship a broken PKCE flow. If N26's production xs2a.tech26.de accepts code_verifier="foobar" for any registered TPP, the authorization code interception protection is void.
+impact: Medium — breaks PKCE security guarantee for any TPP following this sample; could enable authorization code interception if combined with other flaws
+verify_steps: (1) Passively verify whether xs2a.tech26.de/sandbox/oauth2/token rejects requests with code_verifier="foobar" when code_challenge doesn't match. (2) Check if production xs2a endpoint enforces strict PKCE code_challenge verification. (3) Confirm this code_challenge is indeed the SHA-256 hash of "foobar" or a separate static value.
+[HYP] Production N26 login URL in sandbox Postman environment
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json:81-82
+confidence: 55
+reasoning: The sandbox Postman environment contains redirect_uri=https://app.n26.com/login — a production N26 web app URL — as the default OAuth2 redirect target for all sandbox authorization flows. If TPPs use this environment configuration against the production xs2a.tech26.de endpoint (instead of /sandbox), OAuth2 authorization codes and tokens could be redirected through the live N26 login page, potentially leaking tokens in browser history or enabling redirect-based token interception.
+impact: Low — redirect_uri is likely restricted per-TPP in production; sandbox env is explicitly for sandbox use only; but it reveals the production redirect surface
+verify_steps: (1) Confirm xs2a.tech26.de enforces registered redirect_uri per TPP (passive: check API error responses). (2) Verify app.n26.com/login handles OAuth2 callbacks safely (no token in URL fragment).
+## REPOSCAN 2026-09-19 00:31:11 UTC
+[HYP] Hardcoded PKCE code_verifier defeats OAuth2 CSRF protection
+class: SECRET
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_collection.json:250-252
+confidence: 80
+reasoning: The Postman sandbox collection hardcodes code_verifier="foobar" (lines 250-252) paired with code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI (the same value as dedicated_aisp_client_id, lines 99-100). PKCE relies on a random, unguessable code_verifier per authorization request; a static value eliminates the CSRF interception protection PKCE was designed to provide. Although labeled "sandbox," this collection is the official TPP onboarding reference — TPPs copying this pattern into production integrations will ship a broken PKCE flow. If N26's production xs2a.tech26.de accepts code_verifier="foobar" for any registered TPP, the authorization code interception protection is void.
+impact: Medium — breaks PKCE security guarantee for any TPP following this sample; could enable authorization code interception if combined with other flaws
+verify_steps: (1) Passively verify whether xs2a.tech26.de/sandbox/oauth2/token rejects requests with code_verifier="foobar" when code_challenge doesn't match. (2) Check if production xs2a endpoint enforces strict PKCE code_challenge verification. (3) Confirm this code_challenge is indeed the SHA-256 hash of "foobar" or a separate static value.
+[HYP] Production N26 login URL in sandbox Postman environment
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json:81-82
+confidence: 55
+reasoning: The sandbox Postman environment contains redirect_uri=https://app.n26.com/login — a production N26 web app URL — as the default OAuth2 redirect target for all sandbox authorization flows. If TPPs use this environment configuration against the production xs2a.tech26.de endpoint (instead of /sandbox), OAuth2 authorization codes and tokens could be redirected through the live N26 login page, potentially leaking tokens in browser history or enabling redirect-based token interception.
+impact: Low — redirect_uri is likely restricted per-TPP in production; sandbox env is explicitly for sandbox use only; but it reveals the production redirect surface
+verify_steps: (1) Confirm xs2a.tech26.de enforces registered redirect_uri per TPP (passive: check API error responses). (2) Verify app.n26.com/login handles OAuth2 callbacks safely (no token in URL fragment).
+[HYP] Hardcoded Basic Auth credential android:secret in PSD2 MFA challenge script
+class: SECRET
+asset: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+confidence: 75
+reasoning: Line 26 contains hardcoded Base64-encoded header Authorization:Basic YW5kcm9pZDpzZWNyZXQ= (decodes to android:secret) in a curl POST to https://$PISP_HOST/api/mfa/challenge (default host pisp.tech26.de, confirmed live via HTTP 404). Static app-level OAuth credential, not per-user token. If accepted by production PISP, enables unauthorized MFA challenge initiation.
+impact: Medium — potential unauthorized MFA challenge trigger if credential is live on production PISP
+verify_steps: (1) Passively confirm whether pisp.tech26.de/api/mfa/challenge accepts Basic YW5kcm9pZDpzZWNyZXQ= by observing error response differences with/without header. (2) Verify android:secret is documented as sandbox-only in N26 PSD2 developer docs.
+[HYP] Internal S3 bucket name consumercredit-staging disclosed in Android sample data
+class: MISCONFIG
+asset: n26/N26AndroidSamples/credit/src/main/res/raw/credit_drafts.json:8,30
+confidence: 60
+reasoning: Two mock credit entries reference https://s3.eu-central-1.amazonaws.com/consumercredit-staging/ for image assets. Exposes internal AWS S3 bucket naming convention for N26 consumer credit staging in eu-central-1. Bucket returns 403/NoSuchBucket (passive recon confirmed), but naming pattern aids enumeration.
+impact: Low — bucket non-public/deleted (404/403 confirmed); informational naming convention leak only
+verify_steps: (1) Already confirmed bucket non-public via HEAD request. (2) No further action needed unless staging bucket is recreated.
+[HYP] Slack bot token transmitted via URL query parameter
+class: MISCONFIG
+asset: n26/bob/Sources/Bob/Core/Slack/SlackClient.swift:31
+confidence: 65
+reasoning: The bob Slack bot passes API token as URL query parameter (token=...) to deprecated Slack RTM endpoint https://slack.com/api/rtm.start. Tokens in query strings appear in server logs, proxy logs, browser history, and HTTP Referer headers. Token is loaded from config at runtime (not hardcoded), but transmission pattern is insecure per OWASP. Bob is archived since 2020.
+impact: Low — token not hardcoded (loaded from config); insecure transmission pattern only; bot archived
+verify_steps: (1) Verify no token values committed in repo config/.env. (2) Confirm bot no longer actively deployed. (3) If still deployed, rotate token and migrate to Socket Mode.
+[HYP] Internal Artifactory registry URL disclosed in public npm lockfile
+class: MISCONFIG
+asset: n26/express-simple-locale/package-lock.json:1518,2429,3391,3571,7527
+confidence: 45
+reasoning: package-lock.json contains resolved URLs pointing to internal N26 Artifactory at artifactory.cd-tech26.de:443 (e.g., https://artifactory.cd-tech26.de:443/artifactory/api/npm/npm/lodash/-/lodash-4.17.21.tgz). Reveals internal artifact registry hostname. Not publicly reachable (connection timeout confirmed).
+impact: Informational — internal hostname disclosure; Artifactory not publicly accessible
+verify_steps: (1) Already confirmed Artifactory not publicly reachable (connection timeout). (2) No further action needed.
+[HYP] Internal PSD2 API hostnames exposed in public documentation
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/sandbox.md, n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh
+confidence: 70
+reasoning: Multiple files expose internal PSD2 API hostnames: xs2a.tech26.de, pisp.tech26.de, aisp.tech26.de. All confirmed reachable (HTTP 404/401). Hostnames reveal internal PSD2 API naming convention and infrastructure. Combined with android:secret credential, provides complete attack surface for MFA challenge flow.
+impact: Low — hostnames alone not directly exploitable; combined with credential findings increases attack surface
+verify_steps: (1) Already confirmed hostnames resolve and respond. (2) Check if hosts serve other endpoints beyond documented paths.
+TARGET_ORG not configured for n26; skipping public-org deep scan.
