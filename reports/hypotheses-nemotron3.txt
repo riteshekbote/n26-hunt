@@ -1,16 +1,7 @@
-## 2026-09-19 13:14:28 UTC [target] (model nemotron3)
-[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.20,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=2,cloud_surface=8,freshness=9
+## 2026-09-19 16:37:12 UTC [target] (model nemotron3)
 [PRIO] pay.n26.com/v1/payments,8.50,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},8.30,attack_surface=9,business_value=10,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=9
 [PRIO] authentication-service.eks.core-production.keyless.technology,7.10,attack_surface=7,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=7
-[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
-class: IDOR
-asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
-confidence: 92
-reasoning: 15 endpoints confirmed live (5 base: /api/me, /api/statements, /api/accounts{/me,/1}, /api/addresses + 10 nested under /api/accounts/{id}/) all return 401 len=211 byte-identical invalid_token; ID-independent prefix firewall stable across account IDs 1,2,3,4,9; versioned /api/v1/* returns 404; GET-only surface (OPTIONS/POST return 404 route-less); gate is pre-normalization exact-lowercase Authorization-header-only prefix match; query-param credential bypass closed; surface ACTIVE and MUTATING (api/accounts drifted 404→401 this cycle)
-evidence_needed: Valid Bearer token via paired-device grant; successful GET /api/accounts/1/statements returning statement objects; IDOR via account_id traversal across tenants
-verify_steps: PASSIVE: GET /api/accounts/6/statements → confirm 401 len=211 byte-identical error schema for sixth account ID. AUTH_HELPED: With valid token, GET /api/accounts/1/statements → GET /api/accounts/2/statements → GET /api/accounts/1/tans → GET /api/accounts/2/tans → test BOLA via cross-account account_id across all 10 nested resources
-impact: Cross-tenant statement history, address PII, cards, bookings, TANs, approvals, transactions, transfer records, beneficiaries, registered devices, limits, cosmetics enumeration — CRITICAL (banking PII + financial data + transaction authorization artifacts)
-testability: AUTH_HELPED
 [HYP] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA
 class: IDOR
 asset: pay.n26.com/v1/payments
@@ -19,6 +10,15 @@ reasoning: 23+ /v1/* endpoints return 401 with Stripe error JSON (len=342 no-key
 evidence_needed: Valid Stripe secret key for pay.n26.com (sk_live_...); successful GET /v1/payments returning payment objects; IDOR via payment_id/charge_id traversal across accounts
 verify_steps: PASSIVE: GET /v1/payments?limit=3 → capture WWW-Authenticate header + error schema. AUTH_HELPED: With valid key, GET /v1/payments → GET /v1/charges/{id} → GET /v1/balance → test BOLA via cross-account payment_id
 impact: Cross-account payment/charge/balance enumeration, potential payment manipulation — CRITICAL (core banking)
+testability: AUTH_HELPED
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15 endpoints confirmed live (5 base: /api/me, /api/statements, /api/accounts{/me,/1}, /api/addresses + 10 nested under /api/accounts/{id}/) all return 401 len=211 byte-identical invalid_token; ID-independent prefix firewall stable across account IDs 1,2,3,4,9; versioned /api/v1/* returns 404; GET-only surface (OPTIONS/POST return 404 route-less); gate is pre-normalization exact-lowercase Authorization-header-only prefix match; query-param credential bypass closed; surface ACTIVE and MUTATING (api/accounts drifted 404→401 this cycle)
+evidence_needed: Valid Bearer token via paired-device grant; successful GET /api/accounts/1/statements returning statement objects; IDOR via account_id traversal across tenants
+verify_steps: PASSIVE: GET /api/accounts/6/statements → confirm 401 len=211 byte-identical error schema for sixth account ID. AUTH_HELPED: With valid token, GET /api/accounts/1/statements → GET /api/accounts/2/statements → GET /api/accounts/1/tans → GET /api/accounts/2/tans → test BOLA via cross-account account_id across all 10 nested resources
+impact: Cross-tenant statement history, address PII, cards, bookings, TANs, approvals, transactions, transfer records, beneficiaries, registered devices, limits, cosmetics enumeration — CRITICAL (banking PII + financial data + transaction authorization artifacts)
 testability: AUTH_HELPED
 [HYP] authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay
 class: AUTH
@@ -29,7 +29,15 @@ evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; succe
 verify_steps: PASSIVE: GET /health → /ready → /metrics → /actuator/health → /api/internal/v1/auth/n26 → /api/private/v1/enroll/n26 → /internal/auth/n26 → /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps. AUTH_HELPED: WS handshake with valid credential → test token replay
 impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
 testability: AUTH_HELPED
-[NEXT] HUMAN: Re-escalate coordinator for 9th consecutive cycle — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans/approvals = financial records), (2) scoped test account or valid Stripe sk_live key for pay.n26.com, (3) paired-device grant flow token for api.tech26.de legacy API, (4) valid WebAuthn credential/enrollment flow for authentication-service.eks.core-production.keyless.technology
+[PARKED] app.n26.com/graphql GraphQL WAF bypass: Confidence <40 — WAF inspects body structure across all Content-Types (urlencoded/text/plain/multipart all 403), GET query param returns connection reset, support.n26.com identical tarpit — transport class closed anonymously after 20+ cycles
+[PARKED] spc.n26.com IDOR: REJECTED-class — endpoints are 1x1 GIF tracking pixels (len=43), not payment API — permanently invalidated
+[PARKED] flags.n26.com server-key escalation: REJECTED-class — full bundle sweep found ONE key (public client key); no server/secret keys embedded
+[PARKED] my.n26.com subdomain takeover: REJECTED-class — server-side 301 redirect, not dangling DNS
+[PARKED] cdn.number26.de S3 misconfig: REJECTED-class — private bucket, object-only behind CloudFront
+[FINAL] 1) api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (confidence 92) — AUTH_HELPED
+[FINAL] 2) pay.n26.com/v1/payments Stripe-forwarded payment API BOLA (confidence 85) — AUTH_HELPED
+[FINAL] 3) authentication-service.eks.core-production.keyless.technology WS token replay (confidence 70) — AUTH_HELPED
+[NEXT] HUMAN: Re-escalate coordinator for 10th consecutive cycle — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans/approvals = financial records), (2) scoped test account or valid Stripe sk_live key for pay.n26.com, (3) paired-device grant flow token for api.tech26.de legacy API, (4) valid WebAuthn credential/enrollment flow for authentication-service.eks.core-production.keyless.technology
 [LEARN] REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora (crt.sh/CT/github/grep.app/sourcegraph) all exhausted or rate-limited
 [LEARN] REJECTED AUTH @ api.tech26.de: no new anonymous bypass surface — 10-member flat GET-only nested family re-confirmed token-gated 2026-09-17 (md5/cmp-verified); continued re-probing of identical 401 len=211 produces zero delta and is stopped
 [LEARN] REJECTED MISCONFIG @ api.tech26.de/beta-api/fpt: anonymous HTTP API discovery remains conclusively exhausted (~47 paths envoy empty-404); no additional /api/* noun route beyond confirmed 10 (8+ further probes 404 route-less)
