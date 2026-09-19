@@ -504,3 +504,5 @@ reasoning: Multiple files expose internal PSD2 API hostnames: xs2a.tech26.de, pi
 impact: Low — hostnames alone not directly exploitable; combined with credential findings increases attack surface
 verify_steps: (1) Already confirmed hostnames resolve and respond. (2) Check if hosts serve other endpoints beyond documented paths.
 TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-19 05:00:18 UTC
+TARGET_ORG not configured for n26; skipping public-org deep scan.
