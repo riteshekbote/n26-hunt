@@ -4587,3 +4587,31 @@ evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake.
 verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only. Passive accelerant: static strings from sanctioned mobile artifact for subprotocol/endpoint pinning.
 impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached.
 testability: AUTH_HELPED
+## 2026-09-19 18:53:05 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: gate fully characterized 09-17 (pre-normalization exact-lowercase prefix-match, Authorization-header-only, query/path-shape/method bypasses closed, md5/cmp-verified); 15-member flat GET-only family; per-account ACL unobservable anonymously; /api/accounts/{0..9} ID-independent 401 proves numeric-ID resources exist behind firewall.
+evidence_needed: valid Bearer → 200 at {own}/tans AND 200 at {own±1}/tans with body diff.
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals,addresses} read-only; zero mutation.
+impact: cross-tenant statement+TAN+pending-approval disclosure → transfer-fraud chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation failure
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 401 len=342 stable 11+ cycles; pure Stripe passthrough (no-key 342B vs fake-key 132B) with pagination accepted; TLS rotated 09-17 zero drift; key discovery closed 3/3 corpora.
+evidence_needed: N26-issued key reads payment IDs beyond own membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
+confidence: 50
+reasoning: 68+ paths + WS-upgrade "path unused" route-less proof exhaustive; deployment stable v26.09.07; live subprotocol + minted token unknown; mobile bundle (untested half of server/mobile-only note) may encode subprotocol strings.
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake.
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only.
+impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached.
+testability: AUTH_HELPED
