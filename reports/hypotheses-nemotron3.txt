@@ -1,7 +1,4 @@
-## 2026-09-19 18:53:14 UTC [target] (model nemotron3)
-[NEW] No new hosts/endpoints since 2026-09-13 certspotter sweep (28 DNS names, all closed/low)
-[NEW] NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs across all in-scope assets
-[CHANGED] Coordinator credential/scope supply remains sole unblock for 10th consecutive cycle
+## 2026-09-19 21:14:54 UTC [target] (model nemotron3)
 [PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.20,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=2,cloud_surface=8,freshness=10
 [PRIO] pay.n26.com/v1/payments,8.50,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=8
 [PRIO] authentication-service.eks.core-production.keyless.technology,7.10,attack_surface=7,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=7
@@ -29,7 +26,7 @@ asset: authentication-service.eks.core-production.keyless.technology
 confidence: 70
 reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version authentication-service-2/v26.09.07 eks-production, custom x-keyless-flow-id header; all 68+ standard + tenant-scoped paths return {"code":"UNPROCESSABLE","reason":"path unused"}; WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token; "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant; deployment rotated v26.09.07
 evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; successful subprotocol handshake with signed token; token replay across sessions/challenges
-verify_steps: PASSIVE: GET /health → /ready → /metrics → /actuator/health → /api/internal/v1/auth/n26 → /api/private/v1/enroll/n26 → /internal/auth/n26 → /private/auth/n26 — passive enumeration of non-standard infra/admin/auth paths on live EKS service; <=1 rps. AUTH_HELPED: WS handshake with valid credential → test token replay
+verify_steps: PASSIVE: GET /health → /ready → /metrics → /actuator/health → /api/internal/v1/auth/n26 → /api/private/v1/enroll/n
 impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
 testability: AUTH_HELPED
 [PARKED] app.n26.com/graphql GraphQL WAF bypass: Confidence <40 — WAF inspects body structure across all Content-Types (urlencoded/text/plain/multipart all 403), GET query param returns connection reset, support.n26.com identical tarpit — transport class closed anonymously after 20+ cycles
