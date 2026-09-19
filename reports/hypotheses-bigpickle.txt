@@ -1,28 +1,36 @@
-## 2026-09-19 05:01:16 UTC [target] (model bigpickle)
+## 2026-09-19 09:20:11 UTC [target] (model bigpickle)
+[PRIO] api.tech26.de,5.75,gate_ease=1(Bearer-only),business=core-banking,attack=15-member BOLA surface
+[PRIO] pay.n26.com,5.25,gate_ease=1(Stripe key),business=payments,attack=/v1/* passthrough
+[PRIO] authentication-service.eks...,5.05,gate_ease=1(minted WS token),business=auth,attack=unknown custom routes
 [HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
 class: IDOR
 asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals}
 confidence: 92
-reasoning: gate fully characterized (pre-normalization lowercase prefix-match, Authorization-header-only, query/path-shape/method bypass closed); 15-member GET-only family; per-account ACL unobservable anonymously; gate stable across 09-14..09-19 probes per KB
-evidence_needed: valid Bearer → 200 at {own}/tans AND 200 at {own±1}/tans, body cmp
-verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals,addresses} read-only; zero mutation
-impact: cross-tenant statement+TAN+pending-approval disclosure → transfer-fraud chain; HIGH
+reasoning: gate fully characterized (pre-normalization exact-lowercase prefix-match, Authorization-header-only, query/path-shape/method bypasses closed); 15-member GET-only family; per-account ACL unobservable anonymously; gate stable across all 09-14..09-19 cycles.
+evidence_needed: valid Bearer → 200 at {own}/tans AND 200 at {own±1}/tans, body cmp.
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals,addresses} read-only; zero mutation.
+impact: cross-tenant statement+TAN+pending-approval disclosure → transfer-fraud chain; HIGH.
 testability: AUTH_HELPED
 [HYP] pay.n26.com Stripe-forwarded tenant-separation failure
 class: IDOR
 asset: pay.n26.com/v1/payments
 confidence: 60
-reasoning: 401 len=342 stable 11+ cycles, TLS-rotated 09-17 zero drift; pure Stripe passthrough (no-key 342B vs fake-key 132B); key discovery closed 3/3 corpora; grep.app still 429 this cycle
-evidence_needed: N26-issued key reads payment IDs beyond own membership
-verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership
-impact: cross-tenant payment/balance disclosure; HIGH, key-gated
+reasoning: 401 len=342 stable 11+ cycles, TLS-rotated 09-17 zero drift; pure Stripe passthrough (no-key 342B vs fake-key 132B); key discoverability closed 3/3 corpora.
+evidence_needed: N26-issued key reads payment IDs beyond own membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-keyed; GET /v1/payments/{adjacent-id}; compare membership.
+impact: cross-tenant payment/balance disclosure; HIGH, key-gated.
 testability: AUTH_HELPED
-[HYP] authentication-service keyless WS minted-token subprotocol replay
+[HYP] keyless WS minted-token subprotocol replay
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology/v1/auth/n26
 confidence: 50
-reasoning: route-less proof exhaustive (68+ paths + WS-upgrade all "path unused"); deployment stable v26.09.07; live subprotocol unknown
-evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake
-verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only
-impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached
+reasoning: route-less proof exhaustive (68+ paths + WS-upgrade "path unused"); deployment stable v26.09.07; live subprotocol + minted token unknown.
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake.
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app session; replay read-only.
+impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached.
 testability: AUTH_HELPED
+[FINAL] api BOLA (92) > pay Stripe tenant-separation (60) > keyless WS replay (50). All AUTH_HELPED — no anonymous advancement path exists.
+[NEXT] HUMAN: Re-escalate coordinator for the 9th consecutive cycle — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans/approvals = financial data), (2) two scoped Bearer tokens {own, own±1} to execute the verify_steps, (3) flag source-gated internal tier (SonarQube CI ALB, Backstage/platform26 portal, Mambu cluster, tech26.de CT tier 09-18) as authorized-network test candidates. Anonymous re-probing remains suspended per prior-canon — it produces zero signal on unchanged 401/403/404 boundaries.
+[LEARN] REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal and is suspended per prior-canon; passive corpora (crt.sh/CT/github/grep.app/sourcegraph/websearch) all exhausted or rate-limited; no delta available without credentials.
+[LEARN] ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 8+ consecutive cycles.
+[RISK] n26: 35/100 — flat/declining. Zero delta, zero new surface, zero live probes (all suspended). Every HIGH-value hypothesis (api BOLA 92, pay 60, keyless WS 50) remains fully AUTH_HELPED; coordinator ask unanswered 8+ cycles; key corpora closed 3/3; crt.sh stale (502 since 09-10). Probability of a reportable finding this cycle is nil absent credential/scope supply.
