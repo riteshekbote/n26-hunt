@@ -2779,3 +2779,17 @@
 - LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
 - LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS to
 - LEARN: ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative acros
+
+## RANKED HYPOTHESES 2026-09-19 23:11:21 UTC
+- [92] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}: api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (from art/lead_nemotron3.txt)
+- NEXT(hypotheses-nemotron3.txt): HUMAN: Re-escalate coordinator for 10th consecutive cycle — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans/approvals = f
+- LEARN: REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive cor
+- LEARN: REJECTED AUTH @ api.tech26.de: no new anonymous bypass surface — 10-member flat GET-only nested family re-confirmed token-gated 2026-09-17 (md5/cmp-verified); c
+- LEARN: REJECTED MISCONFIG @ api.tech26.de/beta-api/fpt: anonymous HTTP API discovery remains conclusively exhausted (~47 paths envoy empty-404); no additional /api/* n
+- LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator cre
+- LEARN: ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/stateme
+- LEARN: REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans — GET/401 uniform, POST/OPTIONS route-less (prior cycles), gate intact
+- LEARN: REJECTED AUTH @ api.tech26.de: query-param token acceptance closed — /api/me?{access_token,token,api_key,auth}=zzz all 401 len=211 md5 d585... byte-identical; g
+- LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+- LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS to
+- LEARN: ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative acros
