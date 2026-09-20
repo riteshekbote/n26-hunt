@@ -522,3 +522,7 @@
 - 2026-09-20 ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
 - 2026-09-20 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS token — anonymous route discovery exhausted, requires AUTH_HELPED
 - 2026-09-20 ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+- 2026-09-20 ACCEPTED MISCONFIG @ phishing-report.tech26.de: fresh CT leaf (post-09-13), AWS A-records, connect-timeout 25s/443 15s/80 0B — joins source-gated internal tier (matches fpadedge/mambuedge + 09-18 backstage/Mambu SG pattern); HUMAN_ONLY, INFO monitor.
+- 2026-09-20 REJECTED MISCONFIG @ mag{,-de,-es,-fr,-it}.n26.com: all 301→ n26.com */blog (envoy) — pure marketing-alias class, no surface, closed.
+- 2026-09-20 ACCEPTED MISCONFIG @ process: certspotter re-sweep after 7d (prior sweep 09-13) yielded 2 fresh leaves — "passive corpora exhausted" was stale for the CT corpus; periodic low-rate CT refresh still produces signal even inside NO_DELTA runs.
+- 2026-09-20 ACCEPTED MISCONFIG @ process: triage feeder empty again (run-2026-09-20-14-16, 14th+ consecutive no-lead); probe-results frozen at 11:49:36; pipeline fully dependent on coordinator credential supply.

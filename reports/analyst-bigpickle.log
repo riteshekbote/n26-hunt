@@ -29454,3 +29454,172 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 - [RISK] N26 Bank AG: 92 — flat (no new evidence either direction this cycle). Persistent exposure if credentials are ever provisioned: api.tech26.de active mutating 15-endpoint BOLA family (HIGH, statements/TAN/approvals), pay.n26.com core-banking Stripe passthrough (CRITICAL if key leaks, key-discovery closed 3/3 but server/mobile-only keys uncheckable), keyless auth WS (CRITICAL if reaches subprotocol). Anonymous attack surface remains nil-beyond-401 across all in-scope assets; risk to N26 unchanged but real, gated solely on credential supply that the coordinator has not provided across 12+ cycles.
+===== ANALYST bigpickle 2026-09-20 15:19:08 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -dt triage probe-results.md leads hypotheses.md hypotheses-*.txt 2>/dev/null | head -20; echo ---; ls -t triage/ 2>/dev/null | head -10
+triage
+leads
+probe-results.md
+---
+run-2026-09-20-00-22.md
+run-2026-09-20-05-25.md
+run-2026-09-20-10-05.md
+run-2026-09-20-14-16.md
+run-2026-09-14-22-44.md
+run-2026-09-15-01-16.md
+run-2026-09-15-06-13.md
+run-2026-09-15-11-53.md
+run-2026-09-15-16-32.md
+run-2026-09-15-19-49.md
+[0m
+[0m✱ [0mGlob "triage/run-*.md"[90m 100 matches[0m
+[0m✱ [0mGlob "{leads,probe-results*,hypotheses*}.{md,txt}"[90m 7 matches[0m
+[0m→ [0mRead triage/run-2026-09-20-14-16.md
+[0m→ [0mRead probe-results.md[90m [limit=120][0m
+[0m→ [0mRead probe-results.md[90m [offset=470][0m
+[0m
+[0m$ [0mcurl -s --max-time 25 "https://api.certspotter.com/v1/issuances?domain=tech26.de&include_subdomains=true&expand=dns_names&after_index=0" -o /tmp/opencode/cs-tech26.json -w "HTTP %{http_code}\n"; curl -s --max-time 25 "https://api.certspotter.com/v1/issuances?domain=n26.com&include_subdomains=true&expand=dns_names&after_index=0" -o /tmp/opencode/cs-n26.json -w "HTTP %{http_code}\n"
+HTTP 200
+HTTP 200
+[0m
+[0m$ [0mpython3 - <<'EOF'
+import json
+for f,dom in [("/tmp/opencode/cs-tech26.json","tech26.de"),("/tmp/opencode/cs-n26.json","n26.com")]:
+    try:
+        d=json.load(open(f))
+    except Exception as e:
+        print(dom,"ERR",e); continue
+    names=set()
+    for e in d:
+        for n in e.get("dns_names",[]):
+            names.add(n.lower())
+    print(dom, "issuances:",len(d),"names:",len(names))
+    print(sorted(names))
+    print("---")
+EOF
+tech26.de issuances: 60 names: 39
+['*.atlantis.sto.tech26.de', '*.controlplane.sto.tech26.de', '*.sto.tech26.de', '*.tech26.de', 'aigw.tech26.de', 'aisp-staging.tech26.de', 'aisp.tech26.de', 'api.tech26.de', 'backstage.platform26-live-eu.platform26.de', 'backstage.tech26.de', 'beta-api.tech26.de', 'epiedge.tech26.de', 'esign-staging.tech26.de', 'fpadedge.tech26.de', 'fpt.tech26.de', 'ideal-request-signing.tech26.de', 'idealedge.tech26.de', 'livepersonedge.tech26.de', 'mambuedge.tech26.de', 'message-templates-assets-staging.tech26.de', 'message-templates-assets.tech26.de', 'n26uk.tz2-mambu-preproduction-uk.tech26.de', 'n26uk.tz2-mambu-sandbox-uk.tech26.de', 'n26uk.tz2-mambu-uk.tech26.de', 'number26.tz2-mambu-preproduction-eu.tech26.de', 'number26.tz2-mambu-sandbox-eu.tech26.de', 'number26.tz2-mambu.tech26.de', 'phishing-report.tech26.de', 'pisp-staging.tech26.de', 'pisp.tech26.de', 'rcs-demo.tech26.de', 'sapi.tech26.de', 'sonarqube-default-fra.tech26.de', 'taktileedge.tech26.de', 'tech26.de', 'telemetry.sto.tech26.de', 'telemetry.tech26.de', 'xs2a-staging.tech26.de', 'xs2a.tech26.de']
+---
+n26.com issuances: 41 names: 85
+['*.n26.com', '3ds-challenge.n26.com', 'app.n26.com', 'clicks.accounts.n26.com', 'clicks.emails.n26.com', 'cookie.n26.com', 'engagementplatform.n26.com', 'flags.n26.com', 'get.n26.com', 'join.n26.com', 'mag-de.n26.com', 'mag-es.n26.com', 'mag-fr.n26.com', 'mag-it.n26.com', 'mag.n26.com', 'my.n26.com', 'n26.at', 'n26.ch', 'n26.cl', 'n26.co.uk', 'n26.co.za', 'n26.com', 'n26.de', 'n26.design', 'n26.es', 'n26.eu', 'n26.fr', 'n26.gr', 'n26.it', 'n26.kr', 'n26.li', 'n26.me', 'n26.nl', 'n26.pt', 'n26.rocks', 'n26.se', 'next.n26.com', 'number26.ch', 'number26.de', 'number26.eu', 'number26.fr', 'number26.it', 'number26.nl', 'number26.rocks', 'number26.se', 'number26.uk', 'pay.n26.com', 'rstats.n26.com', 'spc.n26.com', 'static.app.n26.com', 'static.get.n26.com', 'static.n26.com', 'static.support.n26.com', 'support.n26.com', 'tutorials.n26.com', 'www.3ds-challenge.n26.com', 'www.n26.at', 'www.n26.ch', 'www.n26.cl', 'www.n26.co.uk', 'www.n26.co.za', 'www.n26.com', 'www.n26.de', 'www.n26.design', 'www.n26.es', 'www.n26.eu', 'www.n26.fr', 'www.n26.gr', 'www.n26.it', 'www.n26.kr', 'www.n26.li', 'www.n26.me', 'www.n26.nl', 'www.n26.pt', 'www.n26.rocks', 'www.n26.se', 'www.number26.ch', 'www.number26.de', 'www.number26.eu', 'www.number26.fr', 'www.number26.it', 'www.number26.nl', 'www.number26.rocks', 'www.number26.se', 'www.number26.uk']
+---
+[0m
+Fresh certspotter corpus (7 days past last sweep) exposes two genuinely untested leaves: `phishing-report.tech26.de` and the `mag*.n26.com` cluster. Checking DNS + read-only HTTP.
+[0m$ [0mfor h in mag.n26.com mag-de.n26.com mag-es.n26.com mag-fr.n26.com mag-it.n26.com phishing-report.tech26.de www.3ds-challenge.n26.com static.get.n26.com; do echo -n "$h -> "; (getent hosts "$h" || echo NXDOMAIN) | head -1; done
+mag.n26.com -> 108.138.85.112  mag.n26.com
+mag-de.n26.com -> 108.138.85.110  mag-de.n26.com
+mag-es.n26.com -> 108.138.85.110  mag-es.n26.com
+mag-fr.n26.com -> 108.138.85.110  mag-fr.n26.com
+mag-it.n26.com -> 18.160.200.122  mag-it.n26.com
+phishing-report.tech26.de -> 18.158.236.148  phishing-report.tech26.de
+www.3ds-challenge.n26.com -> NXDOMAIN
+static.get.n26.com -> NXDOMAIN
+[0m
+[0m$ [0mfor u in "https://mag.n26.com/" "https://mag-de.n26.com/" "https://mag-es.n26.com/" "https://mag-fr.n26.com/" "https://mag-it.n26.com/"; do echo "== $u"; curl -s --max-time 20 -A "Mozilla/5.0" -o /dev/null -D - "$u" | rg -i "HTTP/|location:|server:|content-type:|x-powered" | head -6; sleep 1.2; done
+== https://mag.n26.com/
+/bin/bash: line 1: rg: command not found
+== https://mag-de.n26.com/
+/bin/bash: line 1: rg: command not found
+== https://mag-es.n26.com/
+/bin/bash: line 1: rg: command not found
+== https://mag-fr.n26.com/
+/bin/bash: line 1: rg: command not found
+== https://mag-it.n26.com/
+/bin/bash: line 1: rg: command not found
+[0m
+[0m$ [0mfor u in "https://mag.n26.com/" "https://mag-de.n26.com/" "https://mag-es.n26.com/" "https://mag-fr.n26.com/" "https://mag-it.n26.com/"; do echo "== $u"; curl -s --max-time 20 -A "Mozilla/5.0" -o /dev/null -D - "$u" | grep -iE "HTTP/|location:|server:|content-type:|x-powered" | head -6; sleep 1.2; done
+== https://mag.n26.com/
+HTTP/2 301 
+location: https://n26.com/en-eu/blog
+server: envoy
+== https://mag-de.n26.com/
+HTTP/2 301 
+location: https://n26.com/de-de/blog
+server: envoy
+== https://mag-es.n26.com/
+HTTP/2 301 
+location: https://n26.com/es-es/blog
+server: envoy
+== https://mag-fr.n26.com/
+HTTP/2 301 
+location: https://n26.com/fr-fr/blog
+server: envoy
+== https://mag-it.n26.com/
+HTTP/2 301 
+location: https://n26.com/it-it/blog
+server: envoy
+[0m
+`mag*.n26.com` cluster = pure 301 aliases to the n26.com blog — same marketing-alias class as `{next,get,join,tutorials}`, closed. Now the one genuinely fresh leaf:
+[0m$ [0mecho "== phishing-report.tech26.de/"; curl -s --max-time 20 -A "Mozilla/5.0" -D - "https://phishing-report.tech26.de/" -o /tmp/opencode/php-body.html -w "BODY_BYTES %{size_download}\n"; echo "== body head"; head -c 1200 /tmp/opencode/php-body.html
+== phishing-report.tech26.de/
+BODY_BYTES 0
+== body head
+head: cannot open '/tmp/opencode/php-body.html' for reading: No such file or directory
+[0m
+[0m$ [0mcurl -sv --max-time 25 -A "Mozilla/5.0" "https://phishing-report.tech26.de/" -o /tmp/opencode/php-body.html 2>/tmp/opencode/php-curl.log; echo "exit=$?"; ls -la /tmp/opencode/php-body.html 2>/dev/null; grep -iE "connected|SSL|HTTP/|error|timed" /tmp/opencode/php-curl.log | head -12
+exit=28
+* Connection timed out after 25001 milliseconds
+[0m
+[0m$ [0mcurl -sv --max-time 15 "http://phishing-report.tech26.de/" -o /dev/null 2>&1 | grep -iE "connected|HTTP/|error|timed" | head -5
+* Connection timed out after 15002 milliseconds
+[0m
+STEP 1 — DELTA
+[NEW] mag.n26.com + mag-{de,es,fr,it}.n26.com: fresh CT leaves (post `certspotter` sweep), all 301→`n26.com/{en-eu,de-de,es-es,fr-fr,it-it}/blog`, server envoy — marketing-alias class identical to {next,get,join,tutorials}; no surface.
+[NEW] phishing-report.tech26.de: fresh CT leaf absent from all KB/inventory, A-records in AWS range (18.158.236.148), connect-timeout 25s (443) and 15s (80), 0 bytes — source-gated SG pattern (same class as fpadedge/mambuedge and the 09-18 backstage/Mambu internal tier); not anonymously reachable.
+[CHANGED] triage feeder run-2026-09-20-14-16 = "No leads provided" (empty again); probe-results.md frozen at 2026-09-20 11:49:36 — no new runs this cycle.
+
+STEP 2 — PRIORITIZE
+[PRIO] api.tech26.de/api/accounts/{id}/…,6.25,attack_surface=8 business=9 tech=6 gate=0 cloud=5 fresh=6 — live mutating 15-member Bearer-gated family, financial PII behind creds
+[PRIO] pay.n26.com/v1/*,6.10,attack_surface=7 business=10 tech=5 gate=0 cloud=6 fresh=5 — Stripe passthrough, core-banking, key-gated
+[PRIO] authentication-service…keyless.technology,5.15,attack_surface=6 business=8 tech=5 gate=0 cloud=6 fresh=3 — WS subprotocol replay gated on minted token
+[PRIO] phishing-report.tech26.de,3.80,attack_surface=5 business=4 tech=3 gate=0 cloud=3 fresh=8 — fresh leaf but SG-blocked; HUMAN_ONLY monitor
+
+STEP 3 — HYPOTHESES
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15-member flat GET-only family re-confirmed 09-17, all 401 len=211 cmp/md5-identical invalid_token; /api/accounts/{0..9} ID-independent 401 proves numeric-ID resources exist behind the prefix-firewall; gate is Authorization-header-only, query-param/traversal/encoded/case bypasses closed; versioned /api/v1/* drops gate to 404; per-account ACL unobservable anonymously.
+evidence_needed: valid Bearer → 200 {own}/tans AND 200 {own±1}/tans with body diff.
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals}; read-only; <=1 rps; zero mutation.
+impact: cross-tenant statements+TAN+pending-approval+address PII disclosure → transfer-fraud chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation failure
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 401 len=342 no-key vs 132B fake-key `sk_live_****0000` stable 11+ cycles incl TLS-rotate 09-17 zero drift; pure Stripe passthrough (REST ?limit=3 accepted; OAuth/Connect family 404); key-discovery closed 3/3 corpora.
+evidence_needed: N26-issued sk_live key reads payment records beyond owned membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-key; GET /v1/payments/{adjacent-id}; compare membership; read-only.
+impact: cross-tenant payment/balance/charge disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 70
+reasoning: 68+ standard/tenant paths + WS-upgrade all `{"code":"UNPROCESSABLE","reason":"path unused"}`; deployment pinned v26.09.07; API provably at custom routes reachable only via minted JWT/WS subprotocol — anonymous discovery exhausted; server/mobile bundle (untested half) may encode subprotocol strings.
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake with minted token.
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app; replay read-only.
+impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached.
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+[PARKED] phishing-report.tech26.de form/intake surface: fresh leaf + AWS origin is a genuine discovery, but gate=0 (connect-timeout both ports) leaves zero anonymous verify steps — confidence <<40; belongs on the internal-tier HUMAN_ONLY escalation list, monitor for nginx/ALB activation.
+[REJECTED] mag*.n26.com cluster: 301-alias, REJECTED marketing-alias class; dropped.
+[FINAL] 1) api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (92) — AUTH_HELPED
+[FINAL] 2) pay.n26.com Stripe-forwarded payment API IDOR (85) — AUTH_HELPED
+[FINAL] 3) authentication-service…keyless.technology WS-token replay (70) — AUTH_HELPED
+
+STEP 5 — NEXT ACTION
+[NEXT] HUMAN: Re-escalate coordinator — 12th consecutive cycle, target=api — (1) written in-scope OK for read-only BOLA on api.tech26.de (statements/tans/approvals=financial records), (2) scoped test account + harmless Bearer → GET /api/me then /api/accounts/{own±1}/{tans,statements,approvals}, (3) N26-issued sk_live key for pay.n26.com, (4) WebAuthn/mobile-credential capture for keyless WS replay; append phishing-report.tech26.de as additional SG-gated internal host needing credentialed reachability (5) after internal-tier access, probe its intake form for upload/redirect BUSLOGIC.
+
+STEP 6 — LEARNING
+[LEARN] ACCEPTED MISCONFIG @ phishing-report.tech26.de: fresh CT leaf (post-09-13), AWS A-records, connect-timeout 25s/443 15s/80 0B — joins source-gated internal tier (matches fpadedge/mambuedge + 09-18 backstage/Mambu SG pattern); HUMAN_ONLY, INFO monitor.
+[LEARN] REJECTED MISCONFIG @ mag{,-de,-es,-fr,-it}.n26.com: all 301→ n26.com */blog (envoy) — pure marketing-alias class, no surface, closed.
+[LEARN] ACCEPTED MISCONFIG @ process: certspotter re-sweep after 7d (prior sweep 09-13) yielded 2 fresh leaves — "passive corpora exhausted" was stale for the CT corpus; periodic low-rate CT refresh still produces signal even inside NO_DELTA runs.
+[LEARN] ACCEPTED MISCONFIG @ process: triage feeder empty again (run-2026-09-20-14-16, 14th+ consecutive no-lead); probe-results frozen at 11:49:36; pipeline fully dependent on coordinator credential supply.
+
+STEP 7 — RISK
+[RISK] N26 Bank AG: 92 — unchanged: api.tech26.de active mutating Bearer-gated BOLA surface (HIGH if any valid token held), pay.n26.com core-banking Stripe passthrough (CRITICAL if key leaks), keyless auth WS replay (CRITICAL if reachable); all gated on credentials unprovisioned across 12 coordinator escalations; new phishing-report + mag.* leaves add INFO/HUMAN_ONLY only.

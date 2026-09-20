@@ -2837,3 +2837,23 @@
 - LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
 - LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS to
 - LEARN: ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative acros
+
+## RANKED HYPOTHESES 2026-09-20 15:19:08 UTC
+- [92] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}: api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (from art/lead_nemotron3.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Re-escalate coordinator — 12th consecutive cycle, target=api — (1) written in-scope OK for read-only BOLA on api.tech26.de (statements/tans/approvals=fin
+- NEXT(hypotheses-nemotron3.txt): HUMAN: Re-escalate coordinator for 11th consecutive cycle — (1) written in-scope confirmation for read-only BOLA on api.tech26.de (statements/tans/approvals = f
+- LEARN: ACCEPTED MISCONFIG @ phishing-report.tech26.de: fresh CT leaf (post-09-13), AWS A-records, connect-timeout 25s/443 15s/80 0B — joins source-gated internal tier 
+- LEARN: REJECTED MISCONFIG @ mag{,-de,-es,-fr,-it}.n26.com: all 301→ n26.com */blog (envoy) — pure marketing-alias class, no surface, closed.
+- LEARN: ACCEPTED MISCONFIG @ process: certspotter re-sweep after 7d (prior sweep 09-13) yielded 2 fresh leaves — "passive corpora exhausted" was stale for the CT corpus
+- LEARN: ACCEPTED MISCONFIG @ process: triage feeder empty again (run-2026-09-20-14-16, 14th+ consecutive no-lead); probe-results frozen at 11:49:36; pipeline fully depe
+- LEARN: REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive cor
+- LEARN: REJECTED AUTH @ api.tech26.de: no new anonymous bypass surface — 10-member flat GET-only nested family re-confirmed token-gated 2026-09-17 (md5/cmp-verified); c
+- LEARN: REJECTED MISCONFIG @ api.tech26.de/beta-api/fpt: anonymous HTTP API discovery remains conclusively exhausted (~47 paths envoy empty-404); no additional /api/* n
+- LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator cre
+- LEARN: ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/stateme
+- LEARN: REJECTED AUTH @ api.tech26.de: No anonymous method/path bypass re-emerged under /tans — GET/401 uniform, POST/OPTIONS route-less (prior cycles), gate intact
+- LEARN: REJECTED AUTH @ api.tech26.de: query-param token acceptance closed — /api/me?{access_token,token,api_key,auth}=zzz all 401 len=211 md5 d585... byte-identical; g
+- LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 11+ cycles (no-key
+- LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+- LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS to
+- LEARN: ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative acros
