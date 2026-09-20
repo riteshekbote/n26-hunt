@@ -4807,3 +4807,47 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ process: certspotter re-sweep after 7d (prior sweep 09-13) yielded 2 fresh leaves — "passive corpora exhausted" was stale for the CT corpus; periodic low-rate CT refresh still produces signal even inside NO_DELTA runs.
 [LEARN] ACCEPTED MISCONFIG @ process: triage feeder empty again (run-2026-09-20-14-16, 14th+ consecutive no-lead); probe-results frozen at 11:49:36; pipeline fully dependent on coordinator credential supply.
 [RISK] N26 Bank AG: 92 — unchanged: api.tech26.de active mutating Bearer-gated BOLA surface (HIGH if any valid token held), pay.n26.com core-banking Stripe passthrough (CRITICAL if key leaks), keyless auth WS replay (CRITICAL if reachable); all gated on credentials unprovisioned across 12 coordinator escalations; new phishing-report + mag.* leaves add INFO/HUMAN_ONLY only.
+## 2026-09-20 18:13:51 UTC [target] (model bigpickle)
+[CHANGED] triage feeder: fresh run-2026-09-20-17-31 also "No leads provided" — 4 empty feeder runs today (05:25/10:05/14:16/17:31), 15th+ consecutive no-lead cycle.
+[NEW] certspotter refresh this cycle: n26.com=85 names, tech26.de=39 names — zero leaves beyond 09-20 15:19 corpus (mag.*, phishing-report already captured; `www.3ds-challenge.n26.com` is a trivial www-alias of a known SG-gated asset).
+[CHANGED] grep.app still Vercel Security Checkpoint HTTP 429 for `pay.n26.com`/`api.tech26.de`/`sk_live` — passive key-leak corpus remains closed (github 401, sourcegraph 0, crt.sh 502 unchanged).
+[PRIO] api.tech26.de/api/accounts/{id}/…,6.25,attack_surface=8 business=9 tech=6 gate=0 cloud=5 fresh=6 — live mutating 15-member Bearer-gated BOLA family, financial PII behind creds
+[PRIO] pay.n26.com/v1/*,6.10,attack_surface=7 business=10 tech=5 gate=0 cloud=6 fresh=5 — Stripe passthrough, core-banking, key-gated
+[PRIO] authentication-service…keyless.technology,5.15,attack_surface=6 business=8 tech=5 gate=0 cloud=6 fresh=3 — WS subprotocol replay gated on minted token
+[PRIO] phishing-report.tech26.de,3.80,attack_surface=5 business=4 tech=3 gate=0 cloud=3 fresh=8 — fresh leaf but SG-blocked; HUMAN_ONLY monitor
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15-member flat GET-only family re-confirmed 09-17, all 401 len=211 cmp/md5-identical invalid_token; /api/accounts/{0..9} ID-independent 401 proves numeric-ID resources exist behind the prefix-firewall; gate is Authorization-header-only, query-param/traversal/encoded/case bypasses closed; versioned /api/v1/* drops gate to 404; per-account ACL unobservable anonymously.
+evidence_needed: valid Bearer → 200 {own}/tans AND 200 {own±1}/tans with body diff.
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals}; read-only; <=1 rps; zero mutation.
+impact: cross-tenant statements+TAN+pending-approval+address PII disclosure → transfer-fraud chain; HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation failure
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 401 len=342 no-key vs 132B fake-key `sk_live_****0000` stable 11+ cycles incl TLS-rotate 09-17 zero drift; pure Stripe passthrough (REST ?limit=3 accepted; OAuth/Connect family 404); key-discovery closed 3/3 corpora, grep.app still 429 this cycle.
+evidence_needed: N26-issued sk_live key reads payment records beyond owned membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-key; GET /v1/payments/{adjacent-id}; compare membership; read-only.
+impact: cross-tenant payment/balance/charge disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+[HYP] keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 70
+reasoning: 68+ standard/tenant paths + WS-upgrade all `{"code":"UNPROCESSABLE","reason":"path unused"}`; deployment pinned v26.09.07; API provably at custom routes reachable only via minted JWT/WS subprotocol — anonymous discovery exhausted; mobile bundle (untested half) may encode subprotocol strings.
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake with minted token.
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app; replay read-only.
+impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached.
+testability: AUTH_HELPED
+[PARKED] phishing-report.tech26.de form/intake surface: still fresh-leaf + AWS origin, but gate=0 (connect-timeout both ports re-confirmed pattern) leaves zero anonymous verify steps; belongs on internal-tier HUMAN_ONLY escalation list.
+[FINAL] 1) api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (92) — AUTH_HELPED
+[FINAL] 2) pay.n26.com Stripe-forwarded payment API IDOR (85) — AUTH_HELPED
+[FINAL] 3) authentication-service…keyless.technology WS-token replay (70) — AUTH_HELPED
+[NEXT] HUMAN: Re-escalate coordinator — 15th consecutive no-lead cycle, target=api, no coordinator response yet — (1) written in-scope OK for read-only BOLA on api.tech26.de (statements/tans/approvals=financial records), (2) scoped test account + harmless Bearer → GET /api/me then /api/accounts/{own±1}/{tans,statements,approvals}, (3) N26-issued sk_live key for pay.n26.com, (4) WebAuthn/mobile-credential capture for keyless WS replay; append phishing-report.tech26.de as SG-gated internal host needing credentialed reachability, then probe its intake form for upload/redirect BUSLOGIC.
+[LEARN] ACCEPTED MISCONFIG @ process: certspotter both corpora refreshed (n26.com=85, tech26.de=39 names) — ZERO new leaves vs 09-20 15:19 sweep; last-cycle CT signal (mag.*, phishing-report) not repeated; daily low-rate CT refresh is adequate cadence inside NO_DELTA.
+[LEARN] ACCEPTED MISCONFIG @ process: triage feeder empty at 05:25/10:05/14:16/17:31 (4/4 today) — 15th+ consecutive no-lead; probe-results frozen at 11:49:36; pipeline 100% dependent on coordinator credential supply.
+[LEARN] REJECTED AUTH @ all: no anonymous experiment this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora all closed this cycle (certspotter 0 new, grep.app 429 Vercel-checkpoint, github 401, sourcegraph 0, crt.sh 502).
+[RISK] N26 Bank AG: 92 — unchanged: api.tech26.de active mutating Bearer-gated BOLA family (HIGH if any valid token held), pay.n26.com core-banking Stripe passthrough (CRITICAL if key leaks), keyless auth WS replay (CRITICAL if reachable); all gated on credentials unprovisioned across 15 coordinator escalations; zero new anonymous surface this cycle.
