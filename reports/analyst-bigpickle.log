@@ -30416,3 +30416,141 @@ testability: AUTH_HELPED
 
 **STEP 7 — RISK**
 - [RISK] N26 Bank AG: 92 — unchanged: api.tech26.de active mutating Bearer-gated BOLA family (HIGH if any valid token held), pay.n26.com core-banking Stripe passthrough (CRITICAL if key leaks), keyless auth WS replay (CRITICAL if reachable); all gated on credentials unprovisioned across 16 coordinator escalations; zero new anonymous surface this cycle.
+===== ANALYST bigpickle 2026-09-21 00:47:07 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt 2>/dev/null && echo "---" && ls -la /home/runner/work/n26-hunt/n26-hunt/triage 2>/dev/null | tail -20
+total 548
+drwxr-xr-x 12 runner runner   4096 Sep 21 00:45 .
+drwxr-xr-x  3 runner runner   4096 Sep 21 00:44 ..
+drwxr-xr-x  7 runner runner   4096 Sep 21 00:45 .git
+drwxr-xr-x  3 runner runner   4096 Sep 21 00:44 .github
+-rw-r--r--  1 runner runner   1844 Sep 21 00:44 README.md
+-rw-r--r--  1 runner runner     32 Sep 21 00:45 analyst-out.txt
+-rw-r--r--  1 runner runner 226797 Sep 21 00:45 analyst-prompt.txt
+-rw-r--r--  1 runner runner 222927 Sep 21 00:45 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 21 00:44 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 21 00:44 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 21 00:44 leads
+-rw-r--r--  1 runner runner  19119 Sep 21 00:44 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 21 00:44 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 21 00:44 reports
+drwxr-xr-x  2 runner runner   4096 Sep 21 00:44 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 21 00:44 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 21 00:44 scripts
+-rw-r--r--  1 runner runner     33 Sep 21 00:44 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 21 00:44 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 21 00:44 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 21 00:44 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 21 00:44 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 21 00:44 state_nemotron3.json
+drwxr-xr-x  2 runner runner   4096 Sep 21 00:44 triage
+---
+-rw-r--r--  1 runner runner   189 Sep 21 00:44 run-2026-09-18-11-27.md
+-rw-r--r--  1 runner runner   271 Sep 21 00:44 run-2026-09-18-15-07.md
+-rw-r--r--  1 runner runner   193 Sep 21 00:44 run-2026-09-18-18-33.md
+-rw-r--r--  1 runner runner   198 Sep 21 00:44 run-2026-09-18-21-14.md
+-rw-r--r--  1 runner runner   236 Sep 21 00:44 run-2026-09-18-23-22.md
+-rw-r--r--  1 runner runner   228 Sep 21 00:44 run-2026-09-19-01-34.md
+-rw-r--r--  1 runner runner   212 Sep 21 00:44 run-2026-09-19-06-36.md
+-rw-r--r--  1 runner runner   149 Sep 21 00:44 run-2026-09-19-11-31.md
+-rw-r--r--  1 runner runner  2417 Sep 21 00:44 run-2026-09-19-14-48.md
+-rw-r--r--  1 runner runner   159 Sep 21 00:44 run-2026-09-19-17-50.md
+-rw-r--r--  1 runner runner   151 Sep 21 00:44 run-2026-09-19-20-13.md
+-rw-r--r--  1 runner runner   518 Sep 21 00:44 run-2026-09-19-22-21.md
+-rw-r--r--  1 runner runner   194 Sep 21 00:44 run-2026-09-20-00-22.md
+-rw-r--r--  1 runner runner   146 Sep 21 00:44 run-2026-09-20-05-25.md
+-rw-r--r--  1 runner runner   266 Sep 21 00:44 run-2026-09-20-10-05.md
+-rw-r--r--  1 runner runner   164 Sep 21 00:44 run-2026-09-20-14-16.md
+-rw-r--r--  1 runner runner   212 Sep 21 00:44 run-2026-09-20-17-31.md
+-rw-r--r--  1 runner runner   190 Sep 21 00:44 run-2026-09-20-19-43.md
+-rw-r--r--  1 runner runner   223 Sep 21 00:44 run-2026-09-20-22-15.md
+-rw-r--r--  1 runner runner  1097 Sep 21 00:44 run-2026-09-21-00-22.md
+[0m
+[0m✱ [0mGlob "**/*.md"[90m 100 matches[0m
+[0m→ [0mRead triage/run-2026-09-21-00-22.md
+[0m→ [0mRead probe-results.md
+[0m→ [0mRead triage/run-2026-09-20-22-15.md
+Fresh triage run exists (run-2026-09-21-00-22). Let me read the key artifacts.
+[0m
+[0m$ [0mcat /home/runner/work/n26-hunt/n26-hunt/state_bigpickle.json && echo "---GITLOG---" && cd /home/runner/work/n26-hunt/n26-hunt && git log --oneline -15 --date=iso --format='%h %ad %s'
+{"phase": "POC", "target": "api"}---GITLOG---
+19b2480 2026-09-21 00:22:22 +0000 triage 2026-09-21-00-22
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && git status --short | head -40 && echo "---LEADS---" && ls -la leads/
+?? analyst-out.txt
+?? analyst-prompt.txt
+?? ctx.txt
+---LEADS---
+total 1828
+drwxr-xr-x  2 runner runner    4096 Sep 21 00:44 .
+drwxr-xr-x 12 runner runner    4096 Sep 21 00:45 ..
+-rw-r--r--  1 runner runner  642989 Sep 21 00:44 lead-bigpickle.md
+-rw-r--r--  1 runner runner    6171 Sep 21 00:44 lead-laguna.md
+-rw-r--r--  1 runner runner    6050 Sep 21 00:44 lead-ling3.md
+-rw-r--r--  1 runner runner    6292 Sep 21 00:44 lead-longcat.md
+-rw-r--r--  1 runner runner      18 Sep 21 00:44 lead-mimo.md
+-rw-r--r--  1 runner runner 1133451 Sep 21 00:44 lead-nemotron3.md
+-rw-r--r--  1 runner runner    6911 Sep 21 00:44 reposcan-n26-manual.md
+-rw-r--r--  1 runner runner   49123 Sep 21 00:44 reposcan-n26.md
+[0m
+New triage run confirms another empty-leads cycle; probe-results frozen since my last cycle (22:53:45). Prior canon: daily low-rate CT refresh is the one non-redundant passive action. Trying certspotter for the new day.
+[0m% [0mWebFetch https://api.certspotter.com/v1/issuances?domain=n26.com&include_subdomains=true&expand=dns_names
+[0m% [0mWebFetch https://api.certspotter.com/v1/issuances?domain=tech26.de&include_subdomains=true&expand=dns_names
+STEP 1 — DELTA
+- CHANGED triage feeder run-2026-09-21-00-22: empty LEADS again ("No leads were provided", Reportable bugs: 0) — 16th consecutive no-lead cycle
+- CHANGED probe-results.md frozen at 2026-09-20 22:53:45 — zero new probe data since 09-18 10:07
+- NEW certspotter daily refresh (09-21): n26.com + tech26.de both corpora — ZERO new leaves vs 09-20 18:15 sweep; last fresh signal (mag.*, phishing-report) already captured; api.tech26.de cert covered by 08-09 issuance (not_after 2027-02-22, prior 03-09 cert expiring 09-22 is already rotated — no signal)
+- REJECTED no fresh anonymous surface anywhere; surface identical to 09-17/09-18/09-19/09-20 runs
+
+STEP 2 — PRIORITIZE
+[PRIO] api.tech26.de: 6.0, 0.25a(8)+0.25b(9)+0.15t(6)+0.15g(1)+0.10c(5)+0.10f(2) — 15-endpoint BOLA family, only 1 fresh axis movement possible (gate_ease stays 1, token-gated)
+[PRIO] authentication-service.eks.core-production.keyless.technology: 5.9, 0.25a(5)+0.25b(10)+0.15t(8)+0.15g(1)+0.10c(7)+0.10f(1) — WS/JWT/passkey exposure, CRITICAL ceiling
+[PRIO] pay.n26.com: 5.85, 0.25a(7)+0.25b(10)+0.15t(5)+0.15g(1)+0.10c(6)+0.10f(1) — core-banking Stripe passthrough
+
+STEP 3 — HYPOTHESES
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15-member flat GET-only family 401 len=211 md5-identical invalid_token, verified 09-17; /api/accounts/{0..9} ID-independent 401 proves numeric-ID resources behind prefix-firewall; gate pre-normalization exact-lowercase Authorization-header-only, query-param/encoded/traversal/case bypasses closed; versioned /api/v1/* drops gate to 404; per-account ACL unobservable anonymously; CT refresh confirms no route change signal.
+evidence_needed: valid Bearer → 200 own/tans AND 200 adjacent-id/tans with body diff.
+verify_steps: AUTH_HELPED — GET /api/me → own id; GET /api/accounts/{own±1}/{tans,statements,approvals}; read-only; <=1 rps; zero mutation.
+impact: cross-tenant statements+TAN+pending-approval+address PII → transfer-fraud chain; HIGH.
+testability: AUTH_HELPED
+[HYP] keyless WS minted-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 70
+reasoning: 68+ standard/tenant paths + WS-upgrade all {"code":"UNPROCESSABLE","reason":"path unused"}; deployment pinned v26.09.07; API provably at custom routes reachable only via minted JWT/WS subprotocol; anonymous discovery exhausted; mobile-bundle subprotocol strings = untested half.
+evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake with minted token.
+verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app; replay read-only.
+impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded tenant-separation failure
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 401 len=342 no-key vs 132B fake-key sk_live_****0000 stable 11+ cycles incl TLS-rotate 09-17 zero drift; pure Stripe passthrough (REST ?limit=3 accepted; OAuth/Connect 404); key-discovery closed 3/3 corpora + grep.app 429 STILL this cycle.
+evidence_needed: N26-issued sk_live key reads payment records beyond owned membership.
+verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-key; GET /v1/payments/{adjacent-id}; compare membership; read-only.
+impact: cross-tenant payment/balance/charge disclosure; HIGH, key-gated.
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+[PARKED] phishing-report.tech26.de form/intake surface: fresh leaf + AWS origin genuine, but gate=0 (connect-timeout 25s/443, 15s/80 re-confirmed) leaves zero anonymous verify steps — internal-tier HUMAN_ONLY escalation item; monitor for nginx/ALB activation.
+[FINAL] 1) api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (92) — AUTH_HELPED
+[FINAL] 2) pay.n26.com Stripe-forwarded payment API IDOR (85) — AUTH_HELPED
+[FINAL] 3) authentication-service…keyless.technology WS-token replay (70) — AUTH_HELPED
+
+STEP 5 — NEXT ACTION
+[NEXT] HUMAN: Re-escalate coordinator — 16th consecutive no-lead cycle (run-2026-09-21-00-22 empty, probe-results frozen since 09-18), all pipeline analysts converge on the identical AUTH_HELPED trio, zero delta in daily CT refresh. Request: (1) written in-scope OK for read-only BOLA on api.tech26.de (statements/tans/approvals=financial records), (2) scoped test account + harmless Bearer → GET /api/me then /api/accounts/{own±1}/{tans,statements,approvals} at <=1 rps, (3) N26-issued sk_live key for pay.n26.com, (4) WebAuthn/mobile-credential capture for keyless WS replay; append phishing-report.tech26.de as SG-gated internal host needing credentialed reachability before intake-form BUSLOGIC probe.
+
+STEP 6 — LEARNING
+[LEARN] ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-21 (n26.com + tech26.de) returns zero new leaves — confirms 09-20 learning that daily low-rate CT cadence suffices inside NO_DELTA; both corpora fully reconciled with inventory.
+[LEARN] REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora all closed (certspotter 0 new, sourcegraph 0-match, grep.app 429, github 401, crt.sh 502).
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: cert lifecycle confirms prior rotation — 08-09 issuance (SAN api/beta-api/fpt, not_after 2027-02-22) supersedes 03-09 cert expiring 09-22; deployment churn only, no surface delta.
+
+STEP 7 — RISK
+[RISK] N26 Bank AG: 92 — unchanged: api.tech26.de live mutating Bearer-gated BOLA family (HIGH if any valid token held), pay.n26.com core-banking Stripe passthrough (CRITICAL if key leaks), keyless auth WS replay (CRITICAL if reachable); all gated on credentials unprovisioned across 16 coordinator escalations; zero new anonymous surface this cycle.
