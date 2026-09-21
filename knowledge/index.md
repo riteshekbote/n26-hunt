@@ -544,3 +544,4 @@
 - 2026-09-21 ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
 - 2026-09-21 ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS token — anonymous route discovery exhausted, requires AUTH_HELPED
 - 2026-09-21 ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative across app CSP+10 bundles → server/mobile-only; boundary confirmed, requires key to test further
+- 2026-09-21 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 12+ consecutive cycles
