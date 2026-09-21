@@ -1,7 +1,7 @@
-## 2026-09-21 11:44:48 UTC [target] (model nemotron3)
-[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.20,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=2,cloud_surface=8,freshness=10
-[PRIO] pay.n26.com/v1/payments,8.50,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=8
-[PRIO] authentication-service.eks.core-production.keyless.technology,7.10,attack_surface=7,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=7
+## 2026-09-21 17:42:16 UTC [target] (model nemotron3)
+[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},8.45,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=2,cloud_surface=8,freshness=10
+[PRIO] pay.n26.com/v1/payments,7.95,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.00,attack_surface=7,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=7
 [HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
 class: IDOR
 asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
@@ -29,12 +29,6 @@ evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; succe
 verify_steps: PASSIVE: GET /health → /ready → /metrics → /actuator/health → /api/internal/v1/auth/n26 → /api/private/v1/enroll/n26 → /v1/webauthn/n26 → /v1/credentials/n26 (tenant-scoped paths from prior cycles). AUTH_HELPED: With valid WebAuthn credential/enrollment flow, establish WS connection → capture signed token → replay across sessions
 impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
 testability: AUTH_HELPED
-[PARKED] engagementplatform.n26.com Braze IDOR: Confidence <40 — 401 key-gated boundary, no web-bundle token, server/mobile-only; requires valid REST key (AUTH_HELPED) but lower business value than top-3
-[PARKED] app.n26.com/graphql GraphQL WAF bypass: Confidence <40 — WAF inspects body structure across all Content-Types (urlencoded/text/plain/multipart all 403), GET query param returns connection reset, support.n26.com identical tarpit — transport class closed anonymously after 20+ cycles
-[PARKED] spc.n26.com IDOR: REJECTED-class — endpoints are 1x1 GIF tracking pixels (len=43), not payment API — permanently invalidated
-[PARKED] flags.n26.com server-key escalation: REJECTED-class — full bundle sweep found ONE key (public client key); no server/secret keys embedded
-[PARKED] my.n26.com subdomain takeover: REJECTED-class — server-side 301 redirect, not dangling DNS
-[PARKED] cdn.number26.de S3 misconfig: REJECTED-class — private bucket, object-only behind CloudFront
 [FINAL] 1) api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (confidence 92) — AUTH_HELPED
 [FINAL] 2) pay.n26.com/v1/payments Stripe-forwarded payment API BOLA (confidence 85) — AUTH_HELPED
 [FINAL] 3) authentication-service.eks.core-production.keyless.technology WS token replay (confidence 70) — AUTH_HELPED
