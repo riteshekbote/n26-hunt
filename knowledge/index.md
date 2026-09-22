@@ -565,3 +565,4 @@
 - 2026-09-22 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 14+ consecutive cycles
 - 2026-09-22 ACCEPTED MISCONFIG @ process: certspotter daily refresh (n26.com=85, tech26.de=39) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA.
 - 2026-09-22 ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; pipeline 100% dependent on coordinator credential supply.
+- 2026-09-22 ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-22 (n26.com + tech26.de) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA

@@ -3042,3 +3042,16 @@
 - LEARN: ACCEPTED MISCONFIG @ pay.n26.com: Stripe-passthrough 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
 - LEARN: ACCEPTED MISCONFIG @ authentication-service.eks.core-production.keyless.technology: Service LIVE, 68+ paths "path unused", API at custom routes via minted WS to
 - LEARN: ACCEPTED AUTH @ engagementplatform.n26.com: /users returns 401 key-gated (not 403/tarpit) — distinct live boundary; web-side Bearer key embedding negative acros
+
+## RANKED HYPOTHESES 2026-09-22 15:00:20 UTC
+- [92] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}: api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (from art/lead_nemotron3.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Re-escalate coordinator — 17th consecutive cycle; sole unblock remains provisioning of one sandbox N26 account (api.tech26.de BOLA), one N26-issued sk_li
+- NEXT(hypotheses-nemotron3.txt): HUMAN: Re-escalate coordinator for 17th consecutive cycle — sole unblock remains provisioning of one sandbox N26 account (api.tech26.de BOLA: GET /api/me + adja
+- LEARN: ACCEPTED MISCONFIG @ process: certspotter daily refresh (n26.com=85, tech26.de=39) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-
+- LEARN: REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive cor
+- LEARN: ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; pipeline 100% dependent on coordinator credential su
+- LEARN: ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-22 (n26.com + tech26.de) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low
+- LEARN: REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive cor
+- LEARN: ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; pipeline 100% dependent on coordinator credential su
+- LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator cre
+- LEARN: ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/stateme
