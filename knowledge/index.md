@@ -566,3 +566,7 @@
 - 2026-09-22 ACCEPTED MISCONFIG @ process: certspotter daily refresh (n26.com=85, tech26.de=39) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA.
 - 2026-09-22 ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; pipeline 100% dependent on coordinator credential supply.
 - 2026-09-22 ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-22 (n26.com + tech26.de) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA
+- 2026-09-22 REJECTED AUTH @ all: no anonymous experiment this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora all closed (certspotter 0 new, sourcegraph 0-match, grep.app 429 Vercel-checkpoint, github 401, crt.sh 502)
+- 2026-09-22 ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-22 returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA; no intraday re-sweeps
+- 2026-09-22 ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; probe-results frozen since 11:49:36; pipeline 100% dependent on coordinator credential/scope supply
+- 2026-09-22 ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live — 15-endpoint flat GET-only family all 401 len=211 cmp-identical; ID-independent prefix-firewall stable; BOLA target set unchanged
