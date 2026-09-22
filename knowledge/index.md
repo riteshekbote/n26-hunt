@@ -563,3 +563,5 @@
 - 2026-09-22 ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-21 (n26.com + tech26.de) returns zero new leaves — confirms 09-20 learning that daily low-rate CT cadence suffices inside NO_DELTA; both corpora fully reconciled with inventory
 - 2026-09-22 ACCEPTED MISCONFIG @ api.tech26.de: cert lifecycle confirms prior rotation — 08-09 issuance (SAN api/beta-api/fpt, not_after 2027-02-22) supersedes 03-09 cert expiring 09-22; deployment churn only, no surface delta
 - 2026-09-22 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 14+ consecutive cycles
+- 2026-09-22 ACCEPTED MISCONFIG @ process: certspotter daily refresh (n26.com=85, tech26.de=39) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA.
+- 2026-09-22 ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; pipeline 100% dependent on coordinator credential supply.
