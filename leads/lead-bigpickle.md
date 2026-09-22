@@ -5406,3 +5406,31 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 14+ consecutive cycles
 [LEARN] ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/statements all 401 len=211 cmp-identical invalid_token; tans sub-route Join confirms 10-member flat GET-only family; ID-independent prefix-firewall stable
 [RISK] N26 Bank AG: 92 — pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with 15-endpoint numeric ID BOLA surface (statements/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/addresses/bookings/cards nested routes confirmed, breadth proven); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API
+## 2026-09-22 21:39:19 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/...
+confidence: 92
+reasoning: 15 endpoints confirmed live (5 base + 10 nested); all return 401 len=211 byte-identical invalid_token; ID-independent prefix firewall stable across account IDs 1,2,3,4,9; versioned /api/v1/* route-less; GET-only (POST/OPTIONS 404); gate is pre-normalization exact-lowercase Authorization-header-only prefix match; query-param credentials rejected; family ACTIVE and previously MUTATING (api/accounts 404→401 09-14).
+evidence_needed: Valid Bearer token (paired-device grant); GET /api/accounts/1/statements returning objects; cross-tenant account_id traversal.
+verify_steps: PASSIVE (already exhausted): GET /api/accounts/6/statements → expect 401 len=211 identical schema. AUTH_HELPED: GET /api/accounts/1/statements vs 2 → compare; repeat across 10 nested resources.
+impact: Cross-tenant statement history, address PII, cards, bookings, TANs, approvals, transactions, transfers, beneficiaries, devices, limits, cosmetics — CRITICAL.
+testability: AUTH_HELPED
+[HYP] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 23+ /v1/* endpoints return 401 Stripe error JSON (len=342 no-key, len=132 fake-key refs sk_live); pagination param accepted (REST semantics); WWW-Authenticate Basic realm=Stripe; CORS-open; no N26-side key injection; key-discovery closed 3/3 corpora; app CSP lacks connect-src to pay.n26.com; stable 11+ cycles.
+evidence_needed: Valid pay.n26.com Stripe secret key; GET /v1/payments returning objects; payment_id/charge_id traversal across accounts.
+verify_steps: PASSIVE (done): capture WWW-Authenticate + error schema. AUTH_HELPED: GET /v1/payments → /v1/charges/{id} → /v1/balance.
+impact: Cross-account payment/charge/balance enumeration — CRITICAL (core banking).
+testability: AUTH_HELPED
+[HYP] authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 70
+reasoning: LIVE HTTP/2 404, Istio/Envoy v26.09.07, x-keyless-flow-id header; 68+ standard + tenant-scoped paths return path-unused; WS-upgrade (json/graphql-ws) 404; subprotocol likely requires minted token; keyless core-production suggests WebAuthn/passwordless for N26 tenant.
+evidence_needed: WS endpoint returning 101; successful signed-token handshake; cross-session replay.
+verify_steps: PASSIVE (done): tenant-scoped path set exhausted. AUTH_HELPED: valid WebAuthn enrollment → WS connect → capture → replay.
+impact: WebAuthn enrollment bypass → tenant ATO; token replay → session hijack — HIGH/CRITICAL.
+testability: AUTH_HELPED
