@@ -1,40 +1,165 @@
-## 2026-09-22 14:59:19 UTC [target] (model bigpickle)
-[PRIO] api.tech26.de/api/accounts/{id}/…,9.0 — a=9 b=9 t=5 g=2 c=6 f=7 (gate fully characterized, AUTH_HELPED)
-[PRIO] pay.n26.com/v1/*,8.6 — a=7 b=10 t=4 g=1 c=6 f=7 (Stripe passthrough, key-gated)
-[PRIO] authentication-service…keyless.technology,7.4 — a=6 b=9 t=7 g=1 c=7 f=5 (custom routes only, WS-token gated)
+## 2026-09-22 18:40:36 UTC [target] (model bigpickle)
+[HYP] Hardcoded Basic Auth Credential `android:secret` in PSD2 MFA Challenge Script
+class: SECRET
+asset: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+confidence: 75
+reasoning: Line 26 contains a hardcoded Base64-encoded Basic Auth header `YW5kcm9pZDpzZWNyZXQ=` which decodes to `android:secret`. This credential is used in a curl POST to `https://$PISP_HOST/api/mfa/challenge` (defaults to `pisp.tech26.de`). The credential is a static app-level OAuth client ID/secret pair, not a per-user token. If accepted by the live MFA challenge endpoint, it could allow unauthorized out-of-band MFA challenge initiation for any user. The credential may be a well-known sandbox/demo value per PSD2 documentation conventions, but it targets a real PISP endpoint that is confirmed reachable (returns 404 rather than DNS failure).
+impact: Medium — potential unauthorized MFA challenge trigger if credential is live on production PISP
+verify_steps: (1) Confirm whether `pisp.tech26.de` is a sandbox-only or production host by checking HTTP response headers/body on error paths. (2) Check N26 PSD2 developer docs to verify if `android:secret` is documented as a sandbox-only credential. (3) Test if the endpoint accepts the credential by observing error response differences with/without the header.
+[HYP] Internal S3 Bucket Name `consumercredit-staging` Disclosed in Android Sample Data
+class: MISCONFIG
+asset: n26/N26AndroidSamples/credit/src/main/res/raw/credit_drafts.json:8,30
+confidence: 65
+reasoning: Two mock credit entries reference `https://s3.eu-central-1.amazonaws.com/consumercredit-staging/` for image assets. This discloses the internal AWS S3 bucket naming convention (`consumercredit-staging`) for N26's consumer credit staging environment in eu-central-1. The bucket naming pattern reveals internal infrastructure naming conventions that could aid enumeration if staging buckets are recreated or if similar patterns apply to other services.
+impact: Low — bucket appears non-public/deleted; informational naming convention leak only
+verify_steps: (1) Verify if `s3://consumercredit-staging` is publicly listable or accessible via `aws s3 ls s3://consumercredit-staging/ --no-sign-request`. (2) No further action needed unless staging bucket is recreated.
+[HYP] Internal PSD2 API Hostnames Exposed in Public Documentation
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/sandbox.md, n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh
+confidence: 70
+reasoning: Multiple files expose internal PSD2 API hostnames: `xs2a.tech26.de`, `pisp.tech26.de`, `aisp.tech26.de`. These are real endpoints (confirmed reachable via HTTP 404/401 responses). The hostnames reveal N26's internal PSD2 API naming convention and infrastructure. Combined with the hardcoded `android:secret` credential, this provides a complete attack surface for the MFA challenge flow.
+impact: Low — hostnames alone are not directly exploitable; combined with credential findings increases attack surface
+verify_steps: (1) Already confirmed hostnames resolve and respond (HTTP 404/401). (2) Check if hosts serve other endpoints beyond documented paths.
+[HYP] Sandbox OAuth Client IDs and Internal Hostname in Postman Environment
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+confidence: 55
+reasoning: The Postman environment file contains sandbox credentials: `dedicated_aisp_client_id=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI`, `auth_code=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK`, sandbox IBAN `DE15100110012627633320`, and internal hostname `xs2a.tech26.de` (confirmed live — returns HTTP 401). The collection also references OAuth client IDs `PSDDE-BAFIN-000001` and `PSDES-BDE-3DFD12` as code_challenge values. While explicitly labeled "sandbox," these values reveal the internal PSD2 API hostname and OAuth registration format.
+impact: Informational — sandbox-only documentation values; `xs2a.tech26.de` is a real endpoint (returns 401)
+verify_steps: (1) Already confirmed `xs2a.tech26.de` is live (returns 401 for unauthenticated requests). (2) Verify the client_id values are sandbox-scoped only.
+[HYP] Slack Bot Token Transmitted via URL Query Parameter
+class: MISCONFIG
+asset: n26/bob/Sources/Bob/Core/Slack/SlackClient.swift:31
+confidence: 60
+reasoning: The bob Slack bot passes the API token as a URL query parameter (`token=...`) to the deprecated Slack RTM API endpoint `https://slack.com/api/rtm.start`. Tokens in URL query strings appear in server logs, proxy logs, browser history, and HTTP Referer headers. The token is loaded from config at runtime (not hardcoded in source), but the transmission pattern is an insecure practice per OWASP. The Slack RTM API is deprecated (superseded by Socket Mode). Bob is an archived internal N26 tool used for TravisCI/GitHub communication.
+impact: Low — token is not hardcoded (loaded from config at runtime); insecure transmission pattern only; bot is archived
+verify_steps: (1) Verify no token values are committed in the repo's config files or .env. (2) Confirm the bot is no longer actively deployed (repo is archived since 2020). (3) If still deployed, rotate the Slack bot token and migrate to Socket Mode.
+[HYP] Internal Artifactory Registry URL Disclosed in Public npm Lockfile
+class: MISCONFIG
+asset: n26/express-simple-locale/package-lock.json:1518,2429,3391,3571,7527
+confidence: 45
+reasoning: The package-lock.json contains resolved URLs pointing to an internal N26 Artifactory instance at `artifactory.cd-tech26.de:443` (e.g., `https://artifactory.cd-tech26.de:443/artifactory/api/npm/npm/lodash/-/lodash-4.17.21.tgz`). This reveals the internal artifact registry hostname and that it hosts N26's npm packages. The endpoint is not publicly reachable (connection refused / timeout), suggesting it is VPN-internal only. This is a standard npm lockfile entry, not a credential.
+impact: Informational — internal hostname disclosure; Artifactory is not publicly accessible
+verify_steps: (1) Already confirmed Artifactory is not publicly reachable (connection timeout). (2) No further action needed.
+[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.25,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=2,cloud_surface=8,freshness=10
+[PRIO] pay.n26.com/v1/payments,8.45,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.45,attack_surface=7,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=7
 [HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
 class: IDOR
 asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
 confidence: 92
-reasoning: 15-member flat GET-only family 401 len=211 md5-identical invalid_token verified 09-17; /api/accounts/{0..9} ID-independent 401 proves numeric-ID resources behind prefix-firewall; gate pre-normalization exact-lowercase Authorization-only, query-param/encoded/traversal/case bypasses closed; versioned /api/v1/* drops gate to 404; no route delta 09-17→09-22.
-evidence_needed: valid Bearer → 200 own/{tans,statements,approvals} AND 200 adjacent-id/{same}, body diff.
-verify_steps: AUTH_HELPED — GET /api/me; GET /api/accounts/{own±1}/{tans,statements,approvals}; read-only; <=1 rps; zero mutation.
-impact: cross-tenant statements+TAN+pending-approval+address PII → transfer-fraud chain; HIGH.
+reasoning: 15 endpoints confirmed live (5 base: /api/me, /api/statements, /api/accounts{/me,/1}, /api/addresses + 10 nested under /api/accounts/{id}/) all return 401 len=211 byte-identical invalid_token; ID-independent prefix firewall stable across account IDs 1,2,3,4,9; versioned /api/v1/* returns 404; GET-only surface (OPTIONS/POST return 404 route-less); gate is pre-normalization exact-lowercase Authorization-header-only prefix match; query-param credential bypass closed; surface ACTIVE and MUTATING (api/accounts drifted 404→401)
+evidence_needed: Valid Bearer token via paired-device grant; successful GET /api/accounts/1/statements returning statement objects; IDOR via account_id traversal across tenants
+verify_steps: PASSIVE: GET /api/accounts/6/statements → confirm 401 len=211 byte-identical error schema for sixth account ID. AUTH_HELPED: With valid token, GET /api/accounts/1/statements → GET /api/accounts/2/statements → GET /api/accounts/1/tans → GET /api/accounts/2/tans → test BOLA via cross-account account_id across all 10 nested resources
+impact: Cross-tenant statement history, address PII, cards, bookings, TANs, approvals, transactions, transfer records, beneficiaries, registered devices, limits, cosmetics enumeration — CRITICAL (banking PII + financial data + transaction authorization artifacts)
 testability: AUTH_HELPED
-[HYP] pay.n26.com Stripe-forwarded tenant-separation failure
+[HYP] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA
 class: IDOR
 asset: pay.n26.com/v1/payments
 confidence: 85
-reasoning: 401 len=342 no-key vs 132B fake-key sk_live_****0000 stable 12+ cycles incl TLS-rotate 09-17 zero drift; pure Stripe passthrough (REST ?limit=3 accepted; OAuth/Connect family 404); key-discovery closed 3/3 corpora (github 401, grep.app 429, sourcegraph 0).
-evidence_needed: N26-issued sk_live key reads payment records beyond owned membership.
-verify_steps: AUTH_HELPED — GET /v1/payments?limit=3 owner-key; GET /v1/payments/{adjacent-id}; compare membership; read-only.
-impact: cross-tenant payment/balance/charge disclosure; HIGH, key-gated.
+reasoning: 23+ /v1/* endpoints return 401 with Stripe error JSON (len=342 no-key, len=132 fake-key "Invalid API Key provided: sk_live_****0000"); /v1/payments?limit=3 accepts pagination confirming REST semantics; WWW-Authenticate: Basic realm="Stripe"; CORS-open (ACAO: *); pure Stripe passthrough on N26 domain — no N26-side key injection; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); app CSP lacks pay.n26.com connect-src (mobile/server-only); boundary stable 11+ cycles with no drift
+evidence_needed: Valid Stripe secret key for pay.n26.com (sk_live_...); successful GET /v1/payments returning payment objects; IDOR via payment_id/charge_id traversal across accounts
+verify_steps: PASSIVE: GET /v1/payments?limit=3 → capture WWW-Authenticate header + error schema. AUTH_HELPED: With valid key, GET /v1/payments → GET /v1/charges/{id} → GET /v1/balance → test BOLA via cross-account payment_id
+impact: Cross-account payment/charge/balance enumeration, potential payment manipulation — CRITICAL (core banking)
 testability: AUTH_HELPED
-[HYP] keyless WS minted-token subprotocol replay
+[HYP] authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay
 class: AUTH
 asset: authentication-service.eks.core-production.keyless.technology
 confidence: 70
-reasoning: 68+ standard/tenant paths + WS-upgrade all {"code":"UNPROCESSABLE","reason":"path unused"}; deployment pinned v26.09.07; API at custom routes reachable only via minted JWT/WS subprotocol; anonymous discovery exhausted; mobile-bundle subprotocol strings untested half.
-evidence_needed: 101 or non-"unused" WS-upgrade replaying live-app handshake with minted token.
-verify_steps: AUTH_HELPED — capture WS subprotocol+headers from live app; replay read-only.
-impact: WebAuthn/passwordless enrollment/session flaw; CRITICAL if reached.
+reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version authentication-service-2/v26.09.07 eks-production, custom x-keyless-flow-id header; all 68+ standard + tenant-scoped paths return {"code":"UNPROCESSABLE","reason":"path unused"}; WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token; "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant; deployment rotated v26.09.07
+evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; successful subprotocol handshake with signed token; token replay across sessions/challenges
+verify_steps: PASSIVE: GET /health → /ready → /metrics → /actuator/health → /api/internal/v1/auth/n26 → /api/private/v1/enroll/n26 → /v1/webauthn/n26 → /v1/credentials/n26 (tenant-scoped paths from prior cycles). AUTH_HELPED: With valid WebAuthn credential/enrollment flow, establish WS connection → capture signed token → replay across sessions
+impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
 testability: AUTH_HELPED
-[PARKED] none — all three survive self-critique (conf≥40, AUTH_HELPED verify plans concrete).
-[FINAL] api.tech26.de BOLA (92) — top priority, concrete verify plan, AUTH_HELPED.
-[FINAL] pay.n26.com Stripe tenant-separation (85) — stable boundary, key-gated, AUTH_HELPED.
-[FINAL] keyless WS subprotocol replay (70) — CRITICAL ceiling, AUTH_HELPED.
-[NEXT] HUMAN: Re-escalate coordinator — 17th consecutive cycle; sole unblock remains provisioning of one sandbox N26 account (api.tech26.de BOLA), one N26-issued sk_live test key (pay.n26.com), and one mobile-bundle WS subprotocol capture (keyless). No anonymous experiment will yield signal; certspotter daily refresh zero-delta again (85/39), triage feeder errored/empty, all other corpora closed or rate-limited.
-[LEARN] ACCEPTED MISCONFIG @ process: certspotter daily refresh (n26.com=85, tech26.de=39) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA.
-[LEARN] REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora all closed (certspotter 0 new, sourcegraph 0-match, grep.app 429, github 401, crt.sh 502).
-[LEARN] ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; pipeline 100% dependent on coordinator credential supply.
-[RISK] N26 Bank AG: 92 — unchanged: api.tech26.de live Bearer-gated BOLA family (HIGH if any valid token held), pay.n26.com Stripe passthrough (CRITICAL if key leaks), keyless auth WS replay (CRITICAL if reachable); all gated on credentials unprovisioned across 17+ coordinator escalations; zero new anonymous surface this cycle.
+[FINAL] 1) api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (confidence 92) — AUTH_HELPED
+[FINAL] 2) pay.n26.com/v1/payments Stripe-forwarded payment API BOLA (confidence 85) — AUTH_HELPED
+[FINAL] 3) authentication-service.eks.core-production.keyless.technology WS token replay (confidence 70) — AUTH_HELPED
+[NEXT] HUMAN: Re-escalate coordinator for 17th consecutive cycle — sole unblock remains provisioning of one sandbox N26 account (api.tech26.de BOLA: GET /api/me + adjacent-id traversal on 10 nested resources), one N26-issued sk_live key for pay.n26.com, paired-device grant flow token for api.tech26.de legacy API, valid WebAuthn credential/enrollment flow for authentication-service.eks.core-production.keyless.technology
+[LEARN] ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-22 (n26.com + tech26.de) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA
+[LEARN] REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora all closed (certspotter 0 new, sourcegraph 0-match, grep.app 429, github 401, crt.sh 502)
+[LEARN] ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; pipeline 100% dependent on coordinator credential supply
+[LEARN] ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 14+ consecutive cycles
+[LEARN] ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/statements all 401 len=211 cmp-identical invalid_token; tans sub-route Join confirms 10-member flat GET-only family; ID-independent prefix-firewall stable
+[RISK] N26 Bank AG: 92 — pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with 15-endpoint numeric ID BOLA surface (statements/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/addresses/bookings/cards nested routes confirmed, breadth proven); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API
+[HYP] Hardcoded Basic Auth Credential `android:secret` in PSD2 MFA Challenge Script
+class: SECRET
+asset: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+confidence: 75
+reasoning: Line 26 contains a hardcoded Base64-encoded Basic Auth header `YW5kcm9pZDpzZWNyZXQ=` which decodes to `android:secret`. This credential is used in a curl POST to `https://$PISP_HOST/api/mfa/challenge` (defaults to `pisp.tech26.de`). The credential is a static app-level OAuth client ID/secret pair, not a per-user token. If accepted by the live MFA challenge endpoint, it could allow unauthorized out-of-band MFA challenge initiation for any user. The credential may be a well-known sandbox/demo value per PSD2 documentation conventions, but it targets a real PISP endpoint that is confirmed reachable (returns 404 rather than DNS failure).
+impact: Medium — potential unauthorized MFA challenge trigger if credential is live on production PISP
+verify_steps: (1) Confirm whether `pisp.tech26.de` is a sandbox-only or production host by checking HTTP response headers/body on error paths. (2) Check N26 PSD2 developer docs to verify if `android:secret` is documented as a sandbox-only credential. (3) Test if the endpoint accepts the credential by observing error response differences with/without the header.
+[HYP] Internal S3 Bucket Name `consumercredit-staging` Disclosed in Android Sample Data
+class: MISCONFIG
+asset: n26/N26AndroidSamples/credit/src/main/res/raw/credit_drafts.json:8,30
+confidence: 65
+reasoning: Two mock credit entries reference `https://s3.eu-central-1.amazonaws.com/consumercredit-staging/` for image assets. This discloses the internal AWS S3 bucket naming convention (`consumercredit-staging`) for N26's consumer credit staging environment in eu-central-1. The bucket naming pattern reveals internal infrastructure naming conventions that could aid enumeration if staging buckets are recreated or if similar patterns apply to other services.
+impact: Low — bucket appears non-public/deleted; informational naming convention leak only
+verify_steps: (1) Verify if `s3://consumercredit-staging` is publicly listable or accessible via `aws s3 ls s3://consumercredit-staging/ --no-sign-request`. (2) No further action needed unless staging bucket is recreated.
+[HYP] Internal PSD2 API Hostnames Exposed in Public Documentation
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/sandbox.md, n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh
+confidence: 70
+reasoning: Multiple files expose internal PSD2 API hostnames: `xs2a.tech26.de`, `pisp.tech26.de`, `aisp.tech26.de`. These are real endpoints (confirmed reachable via HTTP 404/401 responses). The hostnames reveal N26's internal PSD2 API naming convention and infrastructure. Combined with the hardcoded `android:secret` credential, this provides a complete attack surface for the MFA challenge flow.
+impact: Low — hostnames alone are not directly exploitable; combined with credential findings increases attack surface
+verify_steps: (1) Already confirmed hostnames resolve and respond (HTTP 404/401). (2) Check if hosts serve other endpoints beyond documented paths.
+[HYP] Sandbox OAuth Client IDs and Internal Hostname in Postman Environment
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+confidence: 55
+reasoning: The Postman environment file contains sandbox credentials: `dedicated_aisp_client_id=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI`, `auth_code=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK`, sandbox IBAN `DE15100110012627633320`, and internal hostname `xs2a.tech26.de` (confirmed live — returns HTTP 401). The collection also references OAuth client IDs `PSDDE-BAFIN-000001` and `PSDES-BDE-3DFD12` as code_challenge values. While explicitly labeled "sandbox," these values reveal the internal PSD2 API hostname and OAuth registration format.
+impact: Informational — sandbox-only documentation values; `xs2a.tech26.de` is a real endpoint (returns 401)
+verify_steps: (1) Already confirmed `xs2a.tech26.de` is live (returns 401 for unauthenticated requests). (2) Verify the client_id values are sandbox-scoped only.
+[HYP] Slack Bot Token Transmitted via URL Query Parameter
+class: MISCONFIG
+asset: n26/bob/Sources/Bob/Core/Slack/SlackClient.swift:31
+confidence: 60
+reasoning: The bob Slack bot passes the API token as a URL query parameter (`token=...`) to the deprecated Slack RTM API endpoint `https://slack.com/api/rtm.start`. Tokens in URL query strings appear in server logs, proxy logs, browser history, and HTTP Referer headers. The token is loaded from config at runtime (not hardcoded in source), but the transmission pattern is an insecure practice per OWASP. The Slack RTM API is deprecated (superseded by Socket Mode). Bob is an archived internal N26 tool used for TravisCI/GitHub communication.
+impact: Low — token is not hardcoded (loaded from config at runtime); insecure transmission pattern only; bot is archived
+verify_steps: (1) Verify no token values are committed in the repo's config files or .env. (2) Confirm the bot is no longer actively deployed (repo is archived since 2020). (3) If still deployed, rotate the Slack bot token and migrate to Socket Mode.
+[HYP] Internal Artifactory Registry URL Disclosed in Public npm Lockfile
+class: MISCONFIG
+asset: n26/express-simple-locale/package-lock.json:1518,2429,3391,3571,7527
+confidence: 45
+reasoning: The package-lock.json contains resolved URLs pointing to an internal N26 Artifactory instance at `artifactory.cd-tech26.de:443` (e.g., `https://artifactory.cd-tech26.de:443/artifactory/api/npm/npm/lodash/-/lodash-4.17.21.tgz`). This reveals the internal artifact registry hostname and that it hosts N26's npm packages. The endpoint is not publicly reachable (connection refused / timeout), suggesting it is VPN-internal only. This is a standard npm lockfile entry, not a credential.
+impact: Informational — internal hostname disclosure; Artifactory is not publicly accessible
+verify_steps: (1) Already confirmed Artifactory is not publicly reachable (connection timeout). (2) No further action needed.
+[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.25,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=2,cloud_surface=8,freshness=10
+[PRIO] pay.n26.com/v1/payments,8.45,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.45,attack_surface=7,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=7
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15 endpoints confirmed live (5 base: /api/me, /api/statements, /api/accounts{/me,/1}, /api/addresses + 10 nested under /api/accounts/{id}/) all return 401 len=211 byte-identical invalid_token; ID-independent prefix firewall stable across account IDs 1,2,3,4,9; versioned /api/v1/* returns 404; GET-only surface (OPTIONS/POST return 404 route-less); gate is pre-normalization exact-lowercase Authorization-header-only prefix match; query-param credential bypass closed; surface ACTIVE and MUTATING (api/accounts drifted 404→401)
+evidence_needed: Valid Bearer token via paired-device grant; successful GET /api/accounts/1/statements returning statement objects; IDOR via account_id traversal across tenants
+verify_steps: PASSIVE: GET /api/accounts/6/statements → confirm 401 len=211 byte-identical error schema for sixth account ID. AUTH_HELPED: With valid token, GET /api/accounts/1/statements → GET /api/accounts/2/statements → GET /api/accounts/1/tans → GET /api/accounts/2/tans → test BOLA via cross-account account_id across all 10 nested resources
+impact: Cross-tenant statement history, address PII, cards, bookings, TANs, approvals, transactions, transfer records, beneficiaries, registered devices, limits, cosmetics enumeration — CRITICAL (banking PII + financial data + transaction authorization artifacts)
+testability: AUTH_HELPED
+[HYP] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 23+ /v1/* endpoints return 401 with Stripe error JSON (len=342 no-key, len=132 fake-key "Invalid API Key provided: sk_live_****0000"); /v1/payments?limit=3 accepts pagination confirming REST semantics; WWW-Authenticate: Basic realm="Stripe"; CORS-open (ACAO: *); pure Stripe passthrough on N26 domain — no N26-side key injection; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); app CSP lacks pay.n26.com connect-src (mobile/server-only); boundary stable 11+ cycles with no drift
+evidence_needed: Valid Stripe secret key for pay.n26.com (sk_live_...); successful GET /v1/payments returning payment objects; IDOR via payment_id/charge_id traversal across accounts
+verify_steps: PASSIVE: GET /v1/payments?limit=3 → capture WWW-Authenticate header + error schema. AUTH_HELPED: With valid key, GET /v1/payments → GET /v1/charges/{id} → GET /v1/balance → test BOLA via cross-account payment_id
+impact: Cross-account payment/charge/balance enumeration, potential payment manipulation — CRITICAL (core banking)
+testability: AUTH_HELPED
+[HYP] authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 70
+reasoning: Service LIVE (HTTP/2 404), Istio/Envoy, version authentication-service-2/v26.09.07 eks-production, custom x-keyless-flow-id header; all 68+ standard + tenant-scoped paths return {"code":"UNPROCESSABLE","reason":"path unused"}; WS-upgrade (json/graphql-ws) returns 404 "path unused" — subprotocol handshake likely requires minted token; "keyless" + core-production EKS suggests WebAuthn/passwordless flow for N26 tenant; deployment rotated v26.09.07
+evidence_needed: Discovered WS endpoint returning 101 Switching Protocols; successful subprotocol handshake with signed token; token replay across sessions/challenges
+verify_steps: PASSIVE: GET /health → /ready → /metrics → /actuator/health → /api/internal/v1/auth/n26 → /api/private/v1/enroll/n26 → /v1/webauthn/n26 → /v1/credentials/n26 (tenant-scoped paths from prior cycles). AUTH_HELPED: With valid WebAuthn credential/enrollment flow, establish WS connection → capture signed token → replay across sessions
+impact: WebAuthn credential enrollment bypass → ATO on N26 tenant; token replay → session hijacking; possible internal service mesh access — HIGH/CRITICAL
+testability: AUTH_HELPED
+[FINAL] 1) api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (confidence 92) — AUTH_HELPED
+[FINAL] 2) pay.n26.com/v1/payments Stripe-forwarded payment API BOLA (confidence 85) — AUTH_HELPED
+[FINAL] 3) authentication-service.eks.core-production.keyless.technology WS token replay (confidence 70) — AUTH_HELPED
+[NEXT] HUMAN: Re-escalate coordinator for 17th consecutive cycle — sole unblock remains provisioning of one sandbox N26 account (api.tech26.de BOLA: GET /api/me + adjacent-id traversal on 10 nested resources), one N26-issued sk_live key for pay.n26.com, paired-device grant flow token for api.tech26.de legacy API, valid WebAuthn credential/enrollment flow for authentication-service.eks.core-production.keyless.technology
+[LEARN] ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-22 (n26.com + tech26.de) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA
+[LEARN] REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora all closed (certspotter 0 new, sourcegraph 0-match, grep.app 429, github 401, crt.sh 502)
+[LEARN] ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; pipeline 100% dependent on coordinator credential supply
+[LEARN] ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 14+ consecutive cycles
+[LEARN] ACCEPTED AUTH @ api.tech26.de: Gate re-confirmed live 2026-09-17 — /api/me, /api/statements, /api/addresses, /api/accounts/{1,4,9}/tans, /api/accounts/1/statements all 401 len=211 cmp-identical invalid_token; tans sub-route Join confirms 10-member flat GET-only family; ID-independent prefix-firewall stable
+[RISK] N26 Bank AG: 92 — pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with 15-endpoint numeric ID BOLA surface (statements/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/addresses/bookings/cards nested routes confirmed, breadth proven); engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API
