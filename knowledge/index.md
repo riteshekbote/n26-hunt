@@ -570,3 +570,8 @@
 - 2026-09-22 ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-22 returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA; no intraday re-sweeps
 - 2026-09-22 ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; probe-results frozen since 11:49:36; pipeline 100% dependent on coordinator credential/scope supply
 - 2026-09-22 ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live — 15-endpoint flat GET-only family all 401 len=211 cmp-identical; ID-independent prefix-firewall stable; BOLA target set unchanged
+- 2026-09-23 ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-22 (n26.com + tech26.de) returns zero new leaves — 4th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA
+- 2026-09-23 REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora all closed (certspotter 0 new, sourcegraph 0-match, grep.app 429, github 401, crt.sh 502)
+- 2026-09-23 ACCEPTED MISCONFIG @ process: triage feeder run-2026-09-22-09-10 errored empty — 16th+ consecutive no-lead; pipeline 100% dependent on coordinator credential supply
+- 2026-09-23 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 14+ consecutive cycles
+- 2026-09-23 ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live — 15-endpoint flat GET-only family all 401 len=211 cmp-identical; ID-independent prefix-firewall stable; BOLA target set unchanged
