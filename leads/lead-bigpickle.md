@@ -5726,3 +5726,31 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ process: triage feeder degraded for 3rd consecutive run — run-2026-09-23-09-10 errored `Unexpected server error` (ref err_ac7b5f7e), joining err_1e46c9ea (09-22-23-48) and err_7c7ad8b3 (09-23-03-53); 17th+ consecutive no-lead; pipeline 100% blocked on coordinator credential/scope supply + feeder repair.
 [LEARN] REJECTED AUTH @ all: no anonymous experiment this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora closed (certspotter 09-23 zero new = 5th consecutive zero-delta daily CT, sourcegraph 0-match, grep.app 429, github 401, crt.sh 502); intraday re-sweeps confirmed no-signal on 09-20.
 [RISK] N26 Bank AG: 92 — api.tech26.de legacy Bearer-gated family ACTIVE with 15-endpoint numeric-ID BOLA surface (statements/address PII/cards/TANs/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/bookings — top confirmed-target leak path once any token obtained); pay.n26.com Stripe forward CRITICAL-if-key (3/3 corpora key-discovery closed); keyless auth fabric HIGH-if-subprotocol-replayed; engagementplatform Braze PII-if-key-leaks. Exposure risk static 21+ cycles pending coordinator credential supply + feeder repair.
+## 2026-09-23 21:33:15 UTC [target] (model bigpickle)
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15 endpoints live (5 base + 10 nested), GET-only 401 len=211 byte-identical invalid_token; ID-independent gate across IDs 1/2/3/4/9; pre-normalization Authorization-only prefix firewall, query-param immune; versioned /api/v1/* route-less; gate re-confirmed 09-17, no drift since
+evidence_needed: valid paired-device Bearer token; GET /api/accounts/{n}/statements returning objects; cross-tenant account_id traversal schema-stable
+verify_steps: PASSIVE exhausted (re-probing suspended per canon). AUTH_HELPED: GET /api/accounts/1/statements vs /2 → diff; sweep all 10 nested resources across adjacent IDs
+impact: cross-tenant statement history, address PII, cards, TANs, approvals, transactions, transfer, beneficiaries, devices, limits, cosmetics — CRITICAL
+testability: AUTH_HELPED
+[HYP] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA
+class: IDOR
+asset: pay.n26.com/v1/{payments,balance,charges}
+confidence: 85
+reasoning: 23+ /v1/* return 401 Stripe JSON (len=342 no-key vs len=132 fake-key refs sk_live_****0000); pagination accepted; WWW-Authenticate Basic realm=Stripe; CORS-open; pure Stripe passthrough, no N26-side key injection; key-discovery closed 3/3 corpora; boundary stable 12+ cycles incl. 09-17 TLS rotation
+evidence_needed: valid N26-issued sk_live key; GET /v1/payments returning objects; payment_id/charge_id cross-account traversal
+verify_steps: PASSIVE done. AUTH_HELPED: GET /v1/payments → /v1/charges/{id} → /v1/balance
+impact: cross-account payment/charge/balance enumeration — CRITICAL (core banking)
+testability: AUTH_HELPED
+[HYP] authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 70
+reasoning: LIVE HTTP/2 404, Istio/Envoy v26.09.07, x-keyless-flow-id; 68+ standard+tenant-scoped paths all `path unused`; WS-upgrade (json/graphql-ws) 404 — subprotocol requires minted token; keyless core-production implies WebAuthn/passwordless for N26 tenant
+evidence_needed: WS endpoint 101; successful signed-token handshake; cross-session/challenge replay
+verify_steps: PASSIVE done (tenant-scoped path set exhausted). AUTH_HELPED: valid WebAuthn enrollment → WS connect → capture → replay
+impact: WebAuthn enrollment bypass → tenant ATO; token replay → session hijack — HIGH/CRITICAL
+testability: AUTH_HELPED
