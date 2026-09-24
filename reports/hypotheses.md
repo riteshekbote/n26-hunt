@@ -3230,3 +3230,17 @@
 - LEARN: ACCEPTED MISCONFIG @ process: triage feeder degraded — run-2026-09-22-23-48 and run-2026-09-23-09-10 both errored `Unexpected server error` (ref err_1e46c9ea / 
 - LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator cre
 - LEARN: ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live — 15-endpoint flat GET-only family all 401 len=211 cmp-identical; ID-independent prefix-firewall stable; B
+
+## RANKED HYPOTHESES 2026-09-24 21:08:16 UTC
+- [92] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}: api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (from art/lead_nemotron3.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Re-escalate coordinator (26th consecutive cycle) — sole unblock is (a) one sandbox N26 account for api.tech26.de BOLA (GET /api/me + adjacent-ID traversa
+- NEXT(hypotheses-nemotron3.txt): HUMAN: Re-escalate coordinator for 26th consecutive cycle — sole unblock is provisioning (a) one sandbox N26 account for api.tech26.de BOLA (GET /api/me + adjac
+- LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA 12+ consecutive cycles through 2026-09-24 — surface identical to 09-17/09-18; probe-results.md frozen since 09-18 10:07 (
+- LEARN: ACCEPTED MISCONFIG @ process: triage-feeder outage is the standing pipeline blocker beyond credentials — error streak corrected to 12 consecutive runs (err_0846
+- LEARN: REJECTED MISCONFIG @ {idealedge,livepersonedge}.tech26.de: both resolve live eu-central-1 ELB (idealedge-live-fra / livepersonedge-live-fra, N26 app uses LivePe
+- LEARN: ACCEPTED MISCONFIG @ process: CT daily refresh 09-24 returns zero fresh leaves (n26.com=85, tech26.de=39 — 6th consecutive zero-delta daily run) but two previou
+- LEARN: ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-23 (n26.com=85, tech26.de=39) returns zero new leaves — 5th consecutive zero-delta daily CT run; dail
+- LEARN: REJECTED AUTH @ all: no anonymous experiment this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora
+- LEARN: ACCEPTED MISCONFIG @ process: triage feeder degraded — run-2026-09-22-23-48 and run-2026-09-23-09-10 both errored `Unexpected server error` (ref err_1e46c9ea / 
+- LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator cre
+- LEARN: ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live — 15-endpoint flat GET-only family all 401 len=211 cmp-identical; ID-independent prefix-firewall stable; B
