@@ -1,39 +1,81 @@
-## 2026-09-25 14:13:13 UTC [target] (model bigpickle)
-[CHANGED] @ process: triage run 2026-09-25 11:37 failed with UnknownError err_d0219e06; intake remains empty/errored.
-[CHANGED] @ process: 2026-09-25 12:10 reposcan skipped because TARGET_ORG is unset; no findings were produced.
-[CHANGED] @ process: prior probe-freeze claim is corrected; probe-results.md contains data through 2026-09-19 21:15:28 UTC, followed only by empty sections.
+## 2026-09-25 18:42:33 UTC [target] (model bigpickle)
+[HYP] Hardcoded Basic Auth Credential `android:secret` in PSD2 MFA Challenge Script
+class: SECRET
+asset: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26
+confidence: 75
+reasoning: Line 26 contains a hardcoded Base64-encoded Basic Auth header `YW5kcm9pZDpzZWNyZXQ=` which decodes to `android:secret`. This credential is used in a curl POST to `https://$PISP_HOST/api/mfa/challenge` (defaults to `pisp.tech26.de`). The credential is a static app-level OAuth client ID/secret pair, not a per-user token. If accepted by the live MFA challenge endpoint, it could allow unauthorized out-of-band MFA challenge initiation for any user. The credential may be a well-known sandbox/demo value per PSD2 documentation conventions, but it targets a real PISP endpoint that is confirmed reachable (returns 404 rather than DNS failure).
+impact: Medium — potential unauthorized MFA challenge trigger if credential is live on production PISP
+verify_steps: (1) Confirm whether `pisp.tech26.de` is a sandbox-only or production host by checking HTTP response headers/body on error paths. (2) Check N26 PSD2 developer docs to verify if `android:secret` is documented as a sandbox-only credential. (3) Test if the endpoint accepts the credential by observing error response differences with/without the header.
+[HYP] Internal S3 Bucket Name `consumercredit-staging` Disclosed in Android Sample Data
+class: MISCONFIG
+asset: n26/N26AndroidSamples/credit/src/main/res/raw/credit_drafts.json:8,30
+confidence: 65
+reasoning: Two mock credit entries reference `https://s3.eu-central-1.amazonaws.com/consumercredit-staging/` for image assets. This discloses the internal AWS S3 bucket naming convention (`consumercredit-staging`) for N26's consumer credit staging environment in eu-central-1. The bucket naming pattern reveals internal infrastructure naming conventions that could aid enumeration if staging buckets are recreated or if similar patterns apply to other services.
+impact: Low — bucket appears non-public/deleted; informational naming convention leak only
+verify_steps: (1) Verify if `s3://consumercredit-staging` is publicly listable or accessible via `aws s3 ls s3://consumercredit-staging/ --no-sign-request`. (2) No further action needed unless staging bucket is recreated.
+[HYP] Internal PSD2 API Hostnames Exposed in Public Documentation
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/sandbox.md, n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh
+confidence: 70
+reasoning: Multiple files expose internal PSD2 API hostnames: `xs2a.tech26.de`, `pisp.tech26.de`, `aisp.tech26.de`. These are real endpoints (confirmed reachable via HTTP 404/401 responses). The hostnames reveal N26's internal PSD2 API naming convention and infrastructure. Combined with the hardcoded `android:secret` credential, this provides a complete attack surface for the MFA challenge flow.
+impact: Low — hostnames alone are not directly exploitable; combined with credential findings increases attack surface
+verify_steps: (1) Already confirmed hostnames resolve and respond (HTTP 404/401). (2) Check if hosts serve other endpoints beyond documented paths.
+[HYP] Sandbox OAuth Client IDs and Internal Hostname in Postman Environment
+class: MISCONFIG
+asset: n26/psd2-tpp-docs/doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+confidence: 55
+reasoning: The Postman environment file contains sandbox credentials: `dedicated_aisp_client_id=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI`, `auth_code=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK`, sandbox IBAN `DE15100110012627633320`, and internal hostname `xs2a.tech26.de` (confirmed live — returns HTTP 401). The collection also references OAuth client IDs `PSDDE-BAFIN-000001` and `PSDES-BDE-3DFD12` as code_challenge values. While explicitly labeled "sandbox," these values reveal the internal PSD2 API hostname and OAuth registration format.
+impact: Informational — sandbox-only documentation values; `xs2a.tech26.de` is a real endpoint (returns 401)
+verify_steps: (1) Already confirmed `xs2a.tech26.de` is live (returns 401 for unauthenticated requests). (2) Verify the client_id values are sandbox-scoped only.
+[HYP] Slack Bot Token Transmitted via URL Query Parameter
+class: MISCONFIG
+asset: n26/bob/Sources/Bob/Core/Slack/SlackClient.swift:31
+confidence: 60
+reasoning: The bob Slack bot passes the API token as a URL query parameter (`token=...`) to the deprecated Slack RTM API endpoint `https://slack.com/api/rtm.start`. Tokens in URL query strings appear in server logs, proxy logs, browser history, and HTTP Referer headers. The token is loaded from config at runtime (not hardcoded in source), but the transmission pattern is an insecure practice per OWASP. The Slack RTM API is deprecated (superseded by Socket Mode). Bob is an archived internal N26 tool used for TravisCI/GitHub communication.
+impact: Low — token is not hardcoded (loaded from config at runtime); insecure transmission pattern only; bot is archived
+[CHANGED] @ beta-api.tech26.de + sapi.tech26.de: both serve the **same legacy Bearer-gated `/api/*` family** as api.tech26.de — `/api/me`, `/api/accounts`, `/api/statements`, `/api/addresses`, `/api/accounts/1/statements`, `/api/accounts/1/cards`, `/api/accounts/1/tans` all → `401 len=211`, body `md5 d58528c924` (byte-identical `invalid_token` problem+json). Prior "route-less / no distinct surface" classification is **INVALIDATED** — it was a path-family false negative (~47 generic OpenAPI/healthz/GraphQL paths probed, zero `/api/*` members).
+[NEW] @ tech26.de mesh split: `{api, beta-api, sapi}.tech26.de` = `server: envoy` with `x-envoy-upstream-service-time` (app-layer reachable); `{aisp, xs2a}.tech26.de` = `server: istio-envoy` edge, `/api/me` + `/api/accounts/1/statements` → `404 len=0` → aisp/xs2a carry **no** legacy family.
+[CHANGED] @ api.tech26.de gate: header-name case (`authorization:`), tab separator and double-space after colon all normalize → `401 len=211` identical. Gate is framework-level header parsing, not a raw-string prefix match. Path matching stays case-sensitive (`/API/` → 404 route-less).
+[CHANGED] @ method gating: `HEAD /api/me` → `404 len=0` vs `GET /api/me` → `401 len=211`; with prior OPTIONS/POST 404, the route table registers GET only.
+[CHANGED] @ pisp.tech26.de: `GET /api/mfa/challenge` → `404 len=0` (istio-envoy) — route is POST-only, consistent with the psd2-tpp-docs script.
+[CHANGED] @ process: triage feeder intake still dead (last successful local artifact run-2026-09-22-14-04 returned "LEADS empty"; later runs errored). This cycle's delta came from analyst-initiated read-only probing (11 GET/HEAD total, ≤1 rps), not from the feeder.
 [PRIO] api.tech26.de,7.80,attack_surface=10.0;business_value=10.0;tech_exposure=8.0;gate_ease=0.0;cloud_surface=8.0;freshness=8.0
 [PRIO] pay.n26.com,7.68,attack_surface=9.5;business_value=10.0;tech_exposure=8.0;gate_ease=0.0;cloud_surface=7.0;freshness=9.0
+[PRIO] beta-api.tech26.de,7.45,attack_surface=9.5;business_value=9.0;tech_exposure=7.5;gate_ease=0.0;cloud_surface=7.0;freshness=10.0
 [PRIO] authentication-service.eks.core-production.keyless.technology,7.40,attack_surface=7.5;business_value=10.0;tech_exposure=8.5;gate_ease=0.0;cloud_surface=9.5;freshness=8.0
+[PRIO] sapi.tech26.de,6.95,attack_surface=9.0;business_value=8.0;tech_exposure=7.0;gate_ease=0.0;cloud_surface=7.0;freshness=10.0
 [HYP] api.tech26.de BOLA on the legacy account-resource family
 class: IDOR
 asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
 confidence: 92
-reasoning: Recorded GET requests to 15 unversioned resources returned HTTP 401 invalid_token; account IDs 1, 2, 3, 4, and 9 produced byte-identical gates, while tested method, query-parameter, case, and path-shape variants did not yield anonymous access.
+reasoning: GET on 15 unversioned members returns `401 len=211` `invalid_token` problem+json (`md5 d58528c924`); account IDs 1,2,3,4,9 produce byte-identical gates; GET-only route table (HEAD/OPTIONS/POST → `404 len=0`); path-shape, case, query-param, and header-shape variants produced zero anonymous access this cycle; gate confirmed shared with two sibling deployments (below).
 evidence_needed: Two isolated sandbox identities, scoped read-only Bearer tokens, stable synthetic account/resource IDs, and object-bearing responses for both identities.
-verify_steps: GET /api/me HTTP/1.1 | Host: api.tech26.de | Authorization: Bearer <sandbox-A-read-only-token> | Accept: application/json; then GET /api/accounts/<sandbox-B-account-id>/statements with token A and /api/accounts/<sandbox-A-account-id>/statements with token B; stop on any non-test data.
-impact: Conditional cross-tenant disclosure of statements, address PII, cards, TANs, transactions, devices, and limits; CRITICAL if object-level authorization is missing.
+verify_steps: `GET /api/me HTTP/1.1 | Host: api.tech26.de | Authorization: Bearer <sandbox-A-read-only> | Accept: application/json`; then `GET /api/accounts/<sandbox-B-account-id>/statements` with token A and `GET /api/accounts/<sandbox-A-account-id>/statements` with token B; halt on any non-test data.
+impact: Conditional cross-tenant disclosure of statements, address PII, cards, TANs, transactions, devices, limits; CRITICAL if object-level authorization is missing.
 testability: AUTH_HELPED
 [HYP] pay.n26.com Stripe-forwarded payment API BOLA
 class: IDOR
 asset: pay.n26.com/v1/{payments,balance,charges,customers,invoices}
 confidence: 85
-reasoning: Recorded GET requests to 23+ versioned routes returned Stripe-shaped HTTP 401 responses with distinct missing-key and invalid-key bodies; WWW-Authenticate, ACAO, OAuth/Connect 404s, and versioned resource behavior are consistent with passthrough rather than an N26 authorization layer.
-evidence_needed: A coordinator-approved test-mode key accepted by this host, synthetic payment/customer/charge fixtures, and confirmation that ownership is enforced independently of the key.
-verify_steps: GET /v1/payments?limit=3 HTTP/1.1 | Host: pay.n26.com | Authorization: Bearer <approved-test-key> | Accept: application/json; then GET /v1/balance and /v1/charges/<fixture-charge-id> and /v1/customers/<fixture-customer-id> with the same and second approved test key; do not enumerate live IDs.
-impact: Conditional cross-account payment, charge, customer, and balance disclosure; CRITICAL, with no anonymous exposure established.
+reasoning: 23+ versioned routes return Stripe-shaped `401` with distinct no-key (`len=342`) and invalid-key (`len=132`, `sk_live_****0000`) bodies; `WWW-Authenticate: Basic realm="Stripe"`, `ACAO: *`; OAuth/Connect routes 404 identically to direct Stripe → 1:1 passthrough, no N26 authorization layer; public key discovery closed on 3/3 corpora.
+evidence_needed: Coordinator-approved test-mode key accepted by this host, synthetic payment/customer/charge fixtures, and proof that object ownership is enforced independently of the key.
+verify_steps: `GET /v1/payments?limit=3 HTTP/1.1 | Host: pay.n26.com | Authorization: Bearer <approved-test-key>`; then `GET /v1/balance`, `GET /v1/charges/<fixture-charge-id>`, `GET /v1/customers/<fixture-customer-id>` with the same and a second approved test key; do not enumerate live IDs.
+impact: Conditional cross-account payment, charge, customer and balance disclosure; CRITICAL, no anonymous exposure established.
 testability: AUTH_HELPED
-[HYP] keyless authentication-service signed WebSocket-token replay
+[HYP] Cross-deployment token audience confusion across the mirrored {api, beta-api, sapi}.tech26.de banking API
 class: AUTH
-asset: authentication-service.eks.core-production.keyless.technology
-confidence: 70
-reasoning: The Istio/Envoy service is live, discloses authentication-service-2/v26.09.07 eks-production and x-keyless-flow-id, and returned the same path-unused response for 68+ standard paths and anonymous JSON/GraphQL WebSocket upgrade attempts; no successful anonymous handshake was observed.
-evidence_needed: An approved sandbox WebAuthn enrollment, one normal successful sandbox WebSocket handshake, and proof that a freshly issued test-session token is accepted on a fresh isolated connection.
-verify_steps: GET / HTTP/1.1 | Host: authentication-service.eks.core-production.keyless.technology | Connection: Upgrade | Upgrade: websocket | Sec-WebSocket-Version: 13 | Sec-WebSocket-Key: <sandbox-handshake-key> | Sec-WebSocket-Protocol: <approved-test-subprotocol>; compare one freshly issued sandbox-session token on a fresh isolated connection and never replay production tokens.
-impact: Conditional WebAuthn/session authentication bypass or tenant account takeover; HIGH/CRITICAL.
+asset: {api,beta-api,sapi}.tech26.de/api/*
+confidence: 55
+reasoning: Three independent deployments in the same `server: envoy` mesh return a **byte-identical** gate body (`md5 d58528c924`, `len=211`, same `x-request-id`/`x-envoy-upstream-service-time` shape) and the same nested account-resource route table, proving one shared middleware + route definition deployed to prod, beta and sapi; a `beta-*` deployment commonly carries weaker object-authorization and may hold seeded or mirrored banking fixtures; nothing observed shows whether `iss`/`aud`/scope is bound per deployment, because that is only observable with a token.
+evidence_needed: One read-only sandbox token issued for `api.tech26.de` and one for `beta-api.tech26.de`, plus proof of whether each is accepted on the other two hosts and whether the accepted identity/tenant matches the issuing deployment.
+verify_steps: `GET /api/me HTTP/1.1 | Host: beta-api.tech26.de | Authorization: Bearer <token-issued-for-api.tech26.de> | Accept: application/json`; repeat with the token-issued-for-beta token against `Host: api.tech26.de` and `Host: sapi.tech26.de`; compare returned identity/tenant/claims across the matrix; stop on any non-test data.
+impact: A production token accepted on a pre-production deployment (or the reverse) breaks the environment trust boundary and can expose seeded/mirrored account, card and statement fixtures to the wrong trust tier; HIGH, and it would multiply the reach of hypothesis 1 from one host to three.
 testability: AUTH_HELPED
-[PARKED] none — all three remain above 40, use supported classes, and have concrete credentialed verification paths; no anonymous result is being promoted as a finding.
-[FINAL] 1. api.tech26.de BOLA (92); 2. pay.n26.com Stripe-forwarded BOLA (85); 3. keyless WebSocket-token replay (70).
-[NEXT] HUMAN: Provision two isolated read-only N26 sandbox identities, scoped Bearer tokens, and synthetic object IDs for api.tech26.de; testing must halt on any non-test data.
-[LEARN] ACCEPTED MISCONFIG @ process: 2026-09-25 11:37 triage error err_d0219e06 and 12:10 reposcan skip add no target delta; probe-results.md last contains data at 2026-09-19 21:15:28 UTC, correcting the prior 09-18 freeze claim.
-[RISK] N26 Bank AG: 92 — the highest-impact path remains a credential-gated banking API BOLA involving statements, PII, cards, and TANs; no anonymous bypass, validated exploit, or confirmed finding exists, and zero findings are currently validated.
+[PARKED] none — all three clear the ≥40 floor, use supported classes (IDOR/AUTH, no descriptive-error or scanner-only basis), and carry concrete verification requests. Retained below the top-3 cut this cycle but not invalid: keyless signed-WebSocket-token replay (70, displaced by the newly-mapped beta-api 7.45), and sapi.tech26.de (6.95, covered inside hypothesis 3). No anonymous result is being promoted as a finding.
+[FINAL] 1. api.tech26.de BOLA (92); 2. pay.n26.com Stripe-forwarded BOLA (85); 3. cross-deployment token audience confusion on {api,beta-api,sapi} (55).
+[NEXT] HUMAN: Provision **one** read-only sandbox Bearer token for the `api.tech26.de` family and run the 3-host audience matrix (`Host: api|beta-api|sapi.tech26.de` × `GET /api/me`) — one token now unlocks three deployments instead of one, which is the highest-leverage credential ask outstanding.
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less / no distinct surface" classification is **false** — both serve the full legacy `/api/*` Bearer-gated family (`401 len=211`, `md5 d58528c924`) on `/api/me`, `/api/accounts`, `/api/statements`, `/api/addresses`, `/api/accounts/1/{statements,cards,tans}`; `/api/v1/statements` still `404 len=0` (versioning still drops the gate). Rule learned: a host may only be called "route-less" **for the route table that was actually enumerated** — a generic wordlist probed before the real route table is known produces systematic false negatives.
+[LEARN] REJECTED AUTH @ api.tech26.de: header-shape bypass closed — lowercase header name `authorization:`, tab separator, and double space after colon all return `401 len=211` identical, so the gate parses the header at framework level rather than prefix-matching the raw header line; path matching remains case-sensitive.
+[LEARN] ACCEPTED MISCONFIG @ {aisp,xs2a}.tech26.de: `server: istio-envoy` edge, `/api/me` and `/api/accounts/1/statements` → `404 len=0`; these hosts are on a different mesh from `{api,beta-api,sapi}` (`server: envoy`) and carry no legacy family — closes the sibling-sweep question for the PISP/AS pair.
+[LEARN] REJECTED MISCONFIG @ pisp.tech26.de `/api/mfa/challenge` (GET): `404 len=0` istio-envoy, consistent with a POST-only route as used in the public psd2-tpp-docs script; no anonymous GET surface.
+[RISK] N26 Bank AG: 90 — the BOLA-capable surface is now proven to span **three** deployments (api/beta-api/sapi.tech26.de) with a byte-identical gate and an identical statements/cards/TANs route table, and a fourth high-value path (Stripe passthrough) remains open; the pre-production twin plus unresolved per-deployment token audience is a genuine environment-boundary risk. Still zero validated findings, zero anonymous bypass, zero key leak, and every path remains credential-gated.
