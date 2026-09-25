@@ -39535,3 +39535,344 @@ testability: AUTH_HELPED
 
 **[STEP 7 — RISK]**
 [RISK] N26 Bank AG: 90 — the BOLA-capable surface is now proven to span **three** deployments (api/beta-api/sapi.tech26.de) with a byte-identical gate and an identical statements/cards/TANs route table, and a fourth high-value path (Stripe passthrough) remains open; the pre-production twin plus unresolved per-deployment token audience is a genuine environment-boundary risk. Still zero validated findings, zero anonymous bypass, zero key leak, and every path remains credential-gated.
+===== ANALYST bigpickle 2026-09-25 21:52:57 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/ 2>/dev/null | head -40; echo "---TRIAGE---"; ls -t /home/runner/work/n26-hunt/n26-hunt/triage/ 2>/dev/null | head -10; echo "---PROBE---"; ls -t /home/runner/work/n26-hunt/n26-hunt/probe-results.md 2>/dev/null; stat -c '%y %s' /home/runner/work/n26-hunt/n26-hunt/probe-results.md 2>/dev/null
+total 636
+drwxr-xr-x 12 runner runner   4096 Sep 25 21:49 .
+drwxr-xr-x  3 runner runner   4096 Sep 25 21:49 ..
+drwxr-xr-x  7 runner runner   4096 Sep 25 21:49 .git
+drwxr-xr-x  3 runner runner   4096 Sep 25 21:49 .github
+-rw-r--r--  1 runner runner   1844 Sep 25 21:49 README.md
+-rw-r--r--  1 runner runner     32 Sep 25 21:49 analyst-out.txt
+-rw-r--r--  1 runner runner 267179 Sep 25 21:49 analyst-prompt.txt
+-rw-r--r--  1 runner runner 263309 Sep 25 21:49 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 leads
+-rw-r--r--  1 runner runner  19931 Sep 25 21:49 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 reports
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 25 21:49 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 scripts
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Sep 25 21:49 triage
+---TRIAGE---
+run-2026-09-23-18-26.md
+run-2026-09-23-21-46.md
+run-2026-09-24-00-17.md
+run-2026-09-24-05-04.md
+run-2026-09-24-10-10.md
+run-2026-09-24-15-14.md
+run-2026-09-24-19-17.md
+run-2026-09-24-22-31.md
+run-2026-09-25-00-47.md
+run-2026-09-25-05-56.md
+---PROBE---
+/home/runner/work/n26-hunt/n26-hunt/probe-results.md
+2026-09-25 21:49:20.604967836 +0000 19931
+[0m
+I'll start by checking the current state of the local artifacts to determine what's changed since my last cycle.
+[0m$ [0mdate -u '+NOW: %Y-%m-%d %H:%M:%S UTC'; echo "---LEADS---"; ls -t /home/runner/work/n26-hunt/n26-hunt/art/ 2>/dev/null | head -20; echo "---HYP---"; ls -t /home/runner/work/n26-hunt/n26-hunt/*.txt 2>/dev/null | head -10
+NOW: 2026-09-25 21:49:34 UTC
+---LEADS---
+---HYP---
+/home/runner/work/n26-hunt/n26-hunt/analyst-out.txt
+/home/runner/work/n26-hunt/n26-hunt/analyst-prompt.txt
+/home/runner/work/n26-hunt/n26-hunt/ctx.txt
+[0m
+[0m$ [0mls -t /home/runner/work/n26-hunt/n26-hunt/triage/ | head -20; echo "=== latest triage content ==="; for f in $(ls -t /home/runner/work/n26-hunt/n26-hunt/triage/*.md | head -4); do echo "--- $f ---"; cat "$f" | head -30; done
+run-2026-09-23-18-26.md
+run-2026-09-23-21-46.md
+run-2026-09-24-00-17.md
+run-2026-09-24-05-04.md
+run-2026-09-24-10-10.md
+run-2026-09-24-15-14.md
+run-2026-09-24-19-17.md
+run-2026-09-24-22-31.md
+run-2026-09-25-00-47.md
+run-2026-09-25-05-56.md
+run-2026-09-25-11-37.md
+run-2026-09-25-15-55.md
+run-2026-09-25-19-54.md
+run-2026-09-18-15-07.md
+run-2026-09-18-18-33.md
+run-2026-09-18-21-14.md
+run-2026-09-18-23-22.md
+run-2026-09-19-01-34.md
+run-2026-09-19-06-36.md
+run-2026-09-19-11-31.md
+=== latest triage content ===
+--- /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-23-18-26.md ---
+
+===== TRIAGE 2026-09-23 18:26:58 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_a0681089"
+  }
+}
+--- /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-23-21-46.md ---
+
+===== TRIAGE 2026-09-23 21:46:11 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_3f771ab5"
+  }
+}
+--- /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-24-00-17.md ---
+
+===== TRIAGE 2026-09-24 00:17:44 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_dc66849a"
+  }
+}
+--- /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-24-05-04.md ---
+
+===== TRIAGE 2026-09-24 05:04:03 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_67fa5bde"
+  }
+}
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt; echo "=== probe-results tail ==="; tail -60 probe-results.md; echo; echo "=== state ==="; cat state_bigpickle.json; echo; cat analyst-out.txt
+=== probe-results tail ===
+
+## 2026-09-22 15:00:20 UTC
+
+
+## 2026-09-22 18:40:50 UTC
+
+
+## 2026-09-22 21:40:02 UTC
+
+
+## 2026-09-22 23:50:24 UTC
+
+
+## 2026-09-23 02:51:23 UTC
+
+
+## 2026-09-23 08:13:34 UTC
+
+
+## 2026-09-23 13:45:05 UTC
+
+
+## 2026-09-23 18:10:34 UTC
+
+
+## 2026-09-23 21:34:43 UTC
+
+
+## 2026-09-23 23:57:55 UTC
+
+
+## 2026-09-24 02:51:39 UTC
+
+
+## 2026-09-24 08:04:51 UTC
+
+
+## 2026-09-24 13:39:42 UTC
+
+
+## 2026-09-24 17:58:38 UTC
+
+
+## 2026-09-24 21:08:16 UTC
+
+
+## 2026-09-24 23:54:30 UTC
+
+
+## 2026-09-25 03:00:30 UTC
+
+
+## 2026-09-25 08:35:44 UTC
+
+
+## 2026-09-25 14:13:25 UTC
+
+
+## 2026-09-25 18:42:44 UTC
+
+
+=== state ===
+{"phase": "POC", "target": "api"}
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/ 2>/dev/null | head -40; echo "---TRIAGE---"; ls -t /home/runner/work/n26-hunt/n26-hunt/triage/ 2>/dev/null | head -10; echo "---PROBE---"; ls -t /home/runner/work/n26-hunt/n26-hunt/probe-results.md 2>/dev/null; stat -c '%y %s' /home/runner/work/n26-hunt/n26-hunt/probe-results.md 2>/dev/null
+total 636
+drwxr-xr-x 12 runner runner   4096 Sep 25 21:49 .
+drwxr-xr-x  3 runner runner   4096 Sep 25 21:49 ..
+drwxr-xr-x  7 runner runner   4096 Sep 25 21:49 .git
+drwxr-xr-x  3 runner runner   4096 Sep 25 21:49 .github
+-rw-r--r--  1 runner runner   1844 Sep 25 21:49 README.md
+-rw-r--r--  1 runner runner     32 Sep 25 21:49 analyst-out.txt
+-rw-r--r--  1 runner runner 267179 Sep 25 21:49 analyst-prompt.txt
+-rw-r--r--  1 runner runner 263309 Sep 25 21:49 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 leads
+-rw-r--r--  1 runner runner  19931 Sep 25 21:49 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 reports
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 25 21:49 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 25 21:49 scripts
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 25 21:49 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Sep 25 21:49 triage
+---TRIAGE---
+run-2026-09-23-18-26.md
+run-2026-09-23-21-46.md
+run-2026-09-24-00-17.md
+run-2026-09-24-05-04.md
+run-2026-09-24-10-10.md
+run-2026-09-24-15-14.md
+run-2026-09-24-19-17.md
+run-2026-09-24-22-31.md
+run-2026-09-25-00-47.md
+run-2026-09-25-05-56.md
+---PROBE---
+/home/runner/work/n26-hunt/n26-hunt/probe-results.md
+2026-09-25 21:49:20.604967836 +0000 19931
+[0m
+I'll start by checking the current state of the local artifacts to determine what's changed since my last cycle.
+[0m$ [0mdate -u '+NOW: %Y-%m-%d %H:%M:%S UTC'; echo "---LEADS---"; ls -t /home/runner/work/n26-hunt/n26-hunt/art/ 2>/dev/null | head -20; echo "---HYP---"; ls -t /home/runner/work/n26-hunt/n26-hunt/*.txt 2>/dev/null | head -10
+NOW: 2026-09-25 21:49:34 UTC
+---LEADS---
+---HYP---
+/home/runner/work/n26-hunt/n26-hunt/analyst-out.txt
+/home/runner/work/n26-hunt/n26-hunt/analyst-prompt.txt
+/home/runner/work/n26-hunt/n26-hunt/ctx.txt
+[0m
+[0m$ [0mls -t /home/runner/work/n26-hunt/n26-hunt/triage/ | head -20; echo "=== latest triage content ==="; for f in $(ls -t /home/runner/work/n26-hunt/n26-hunt/triage/*.md | head -4); do echo "--- $f ---"; cat "$f" | head -30; done
+run-2026-09-23-18-26.md
+run-2026-09-23-21-46.md
+run-2026-09-24-00-17.md
+run-2026-09-24-05-04.md
+run-2026-09-24-10-10.md
+run-2026-09-24-15-14.md
+run-2026-09-24-19-17.md
+run-2026-09-24-22-31.md
+run-2026-09-25-00-47.md
+run-2026-09-25-05-56.md
+run-2026-09-25-11-37.md
+run-2026-09-25-15-55.md
+run-2026-09-25-19-54.md
+run-2026-09-18-15-07.md
+run-2026-09-18-18-33.md
+run-2026-09-18-21-14.md
+run-2026-09-18-23-22.md
+run-2026-09-19-01-34.md
+run-2026-09-19-06-36.md
+run-2026-09-19-11-31.md
+=== latest triage content ===
+--- /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-23-18-26.md ---
+
+===== TRIAGE 2026-09-23 18:26:58 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_a0681089"
+  }
+}
+--- /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-23-21-46.md ---
+
+===== TRIAGE 2026-09-23 21:46:11 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_3f771ab5"
+  }
+}
+--- /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-24-00-17.md ---
+
+===== TRIAGE 2026-09-24 00:17:44 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_dc66849a"
+  }
+}
+--- /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-24-05-04.md ---
+
+===== TRIAGE 2026-09-24 05:04:03 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_67fa5bde"
+  }
+}
+[0m
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt/triage; for f in run-2026-09-25-11-37.md run-2026-09-25-15-55.md run-2026-09-25-19-54.md; do echo "=== $f ==="; cat "$f"; echo; done
+=== run-2026-09-25-11-37.md ===
+
+===== TRIAGE 2026-09-25 11:37:50 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_d0219e06"
+  }
+}
+
+=== run-2026-09-25-15-55.md ===
+
+===== TRIAGE 2026-09-25 15:55:26 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_08acd767"
+  }
+}
+
+=== run-2026-09-25-19-54.md ===
+
+===== TRIAGE 2026-09-25 19:54:29 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_95bfedf0"
+  }
+}
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt; echo "=== last non-empty probe sections ==="; awk '/^## /{sec=$0; buf=""} {if($0!="" && $0 !~ /^## /) buf=buf $0 "\n"} /^## /{if(prev!="" && prev!~/^## /) print prevbuf; prev=sec; prevbuf=""} END{}' probe-results.md 2>/dev/null | head -5; echo "--- grep for data-bearing lines after 2026-09-19 ---"; grep -n -A3 "^## 2026-09-2" probe-results.md | grep -E "^\S+[-:][0-9]+[-:]-|http|HTTP|len=" | tail -20
+=== last non-empty probe sections ===
+--- grep for data-bearing lines after 2026-09-19 ---
+[0m
+[93m[1m! [0mpermission requested: external_directory (/tmp/opencode/*, /tmp/*); auto-rejecting
+[0m✗ [0mcd /tmp/opencode 2>/dev/null || cd /tmp; for h in fpt.tech26.de pisp.tech26.de pisp-staging.tech26.de aigw.tech26.de; do printf "%-26s " "$h"; timeout 12 curl -s -o /dev/null -w "%{http_code} clen=%{size_download} t=%{time_total}\n" --http2 -A "Mozilla/5.0" "https://$h/" 2>&1 || echo "FAIL"; sleep 1.5; done failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+Triage feeder is dead again (3 new error refs this cycle). Applying my own LEARN rule from last cycle — hosts classified "route-less" via a generic wordlist must be re-swept with the **actual** legacy route table. Let me identify which hosts were never swept that way.

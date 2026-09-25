@@ -3313,3 +3313,13 @@
 - LEARN: ACCEPTED MISCONFIG @ process: CT daily refresh 09-24 returns zero fresh leaves (n26.com=85, tech26.de=39 — 6th consecutive zero-delta daily run) but two previou
 - LEARN: REJECTED AUTH @ all: no anonymous experiment this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora
 - LEARN: ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live — 15-endpoint flat GET-only family all 401 len=211 cmp-identical; ID-independent prefix-firewall stable; B
+
+## RANKED HYPOTHESES 2026-09-25 21:52:57 UTC
+- [92] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}: api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi) (from art/lead_nemotron3.txt)
+- NEXT(hypotheses-nemotron3.txt): HUMAN: Re-escalate coordinator for 28th consecutive cycle — sole unblock is provisioning (a) one sandbox N26 account for api.tech26.de BOLA (GET /api/me + adjac
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less / no distinct surface" classification is **false** — both serve the full legacy `/ap
+- LEARN: REJECTED AUTH @ api.tech26.de: header-shape bypass closed — lowercase header name `authorization:`, tab separator, and double space after colon all return `401 
+- LEARN: ACCEPTED MISCONFIG @ {aisp,xs2a}.tech26.de: `server: istio-envoy` edge, `/api/me` and `/api/accounts/1/statements` → `404 len=0`; these hosts are on a different
+- LEARN: REJECTED MISCONFIG @ pisp.tech26.de `/api/mfa/challenge` (GET): `404 len=0` istio-envoy, consistent with POST-only route as used in public psd2-tpp-docs script;
+- LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section heade
+- LEARN: ACCEPTED MISCONFIG @ process: triage-feeder intake dead since 09-22-14-04 (~3.5 days; healthy-but-empty 09-24-19-17 the only break); pipeline 100% blocked on co
