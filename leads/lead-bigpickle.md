@@ -6029,3 +6029,40 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ process: triage-feeder health is NOT a purely-consecutive error streak — run-2026-09-24-19-17 executed successfully but returned "No leads provided" (breaks the 12-error streak), then err_644fea34 (run-2026-09-24-22-31) resumes errors; the standing blocker is empty/errored intake (dead since 09-22-14-04), not strictly consecutive failure.
 [LEARN] ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section headers only); identical-boundary re-probing formally suspended as zero-signal; all pipeline analysts converge on the same three AUTH_HELPED hypotheses.
 [RISK] N26 Bank AG: 92 — api.tech26.de 15-endpoint numeric-ID BOLA (statements/address PII/cards/TANs/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/bookings) remains the top confirmed-target leak path with fully-characterized Authorization prefix-firewall and zero anonymous bypass across 8+ path-normalization variants, unchanged 27+ cycles; pay.n26.com Stripe forward CRITICAL-if-key; keyless auth fabric HIGH-if-subprotocol-replayed; engagementplatform Braze PII-if-key-leaks. Exposure risk static pending coordinator credential/scope supply and triage-feeder repair (intake dead ~3.7 days).
+## 2026-09-25 02:57:48 UTC [target] (model bigpickle)
+[PRIO] pay.n26.com,5.8,payments/business_value
+[PRIO] api.tech26.de,5.65,banking-PII/business_value
+[PRIO] authentication-service(keyless),4.75,auth-fabric/business_value
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15 endpoints (5 base + 10 nested) live GET-only, all 401 len=211 cmp-identical invalid_token, ID-independent across 1/2/3/4/9; Authorization-header-only pre-normalization exact-lowercase prefix firewall, query-param immune, raw path-shape immune, encoded %2e%2e 403 at edge, /API/ 404 case-short-circuit; versioned + POST/OPTIONS route-less; gate stable since 09-17, last re-confirmed 09-22
+evidence_needed: valid paired-device Bearer token; GET /api/accounts/{n}/statements returning objects; cross-tenant ID traversal schema-stable
+verify_steps: AUTH_HELPED: GET /api/me bind token→account; GET /api/accounts/1/statements vs /2 vs /9; sweep 10 nested resources across adjacent numeric IDs
+impact: cross-tenant statements/address PII/cards/TANs/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/bookings — CRITICAL
+testability: AUTH_HELPED
+[HYP] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA
+class: IDOR
+asset: pay.n26.com/v1/{payments,balance,charges,customers,invoices}
+confidence: 85
+reasoning: 23+ /v1/* 401 Stripe JSON (no-key len=342 vs fake-key len=132 `Invalid API Key provided: sk_live_****0000`); WWW-Authenticate Basic realm=Stripe; CORS-open ACAO:*; 1:1 Stripe passthrough, no N26 overlay (OAuth/Connect family 404 invalid_request_error); ?limit=3 REST semantics; boundary stable 13+ cycles incl 09-17 TLS rotation zero-drift; key-discovery closed 3/3 corpora
+evidence_needed: valid N26-issued sk_live key; GET /v1/payments objects; payment_id/charge_id cross-account traversal
+verify_steps: AUTH_HELPED: GET /v1/payments → GET /v1/charges/{id} → GET /v1/balance → expand /v1/customers/{id}, /v1/invoices/{id}
+impact: cross-account payment/charge/balance enumeration — CRITICAL
+testability: AUTH_HELPED
+[HYP] authentication-service keyless WS signed-token subprotocol replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 70
+reasoning: LIVE HTTP/2 404, Istio/Envoy version authentication-service-2/v26.09.07 eks-production, custom x-keyless-flow-id; 68+ standard+tenant-scoped paths all {"code":"UNPROCESSABLE","reason":"path unused"} 404; WS-upgrade json/graphql-ws 404, subprotocol needs minted token; sdk./api. subdomains coalesce to one ELB; keyless production auth implies WebAuthn/passwordless for N26 tenant; deployment stable v26.09.07
+evidence_needed: WS endpoint 101; successful signed-token handshake; challenge replay capture
+verify_steps: AUTH_HELPED: valid WebAuthn enrollment → WS connect with captured signed-token subprotocol → disconnect → replay frame against fresh connection
+impact: WebAuthn enrollment bypass → tenant ATO; token replay → session hijack — HIGH/CRITICAL
+testability: AUTH_HELPED
+[PARKED] none — all three survive (92/85/70 ≥ 40); no REJECTED-class introduced; evidence gap is credentials-only, not method.
+[FINAL] 1. api.tech26.de BOLA (92) 2. pay.n26.com Stripe-forwarded BOLA (85) 3. keyless WS replay (70). Identical ranking 14+ consecutive cycles — stable under re-scoring, no delta.
+[NEXT] HUMAN: Re-escalate coordinator (28th consecutive cycle) — sole unblock is (a) one sandbox N26 account for api.tech26.de BOLA (GET /api/me + adjacent-ID traversal across 10 nested resources), (b) one N26-issued sk_live key for pay.n26.com, (c) paired-device grant token, (d) valid WebAuthn enrollment for keyless WS; plus triage-feeder repair (dead intake since 09-22-14-04, err_5ecf6b63 latest). No anonymous experiment possible; certspotter already refreshed today (zero delta); intraday CT re-sweeps and identical-boundary re-probing remain formally suspended as zero-signal.
+[LEARN] ACCEPTED MISCONFIG @ process: certspotter daily refresh 09-25 (n26.com=85, tech26.de=39) returns zero new leaves — 7th consecutive zero-delta daily CT run; daily low-rate cadence fully adequate inside NO_DELTA.
+[LEARN] ACCEPTED MISCONFIG @ process: triage feeder dead-intake continuing — run-2026-09-25-00-47 errored `Unexpected server error` (err_5ecf6b63); intake dead since 09-22-14-04 (~3.5 days; healthy-but-empty 09-24-19-17 the only break); pipeline 100% blocked on coordinator credential/scope supply + feeder repair.
+[RISK] N26 Bank AG: 92 — api.tech26.de 15-endpoint numeric-ID BOLA (statements/address PII/cards/TANs/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/bookings) remains the top confirmed-target leak path with fully-characterized Authorization prefix-firewall and zero anonymous bypass across 8+ path-normalization variants, unchanged 28+ cycles; pay.n26.com Stripe forward CRITICAL-if-key; keyless auth fabric HIGH-if-subprotocol-replayed; engagementplatform Braze PII-if-key-leaks. Exposure risk static pending coordinator credential/scope supply and triage-feeder repair (intake dead ~3.5 days).
