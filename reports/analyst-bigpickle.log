@@ -38703,3 +38703,66 @@ STEP 6 — LEARNING
 
 STEP 7 — RISK
 [RISK] N26 Bank AG: 92 — api.tech26.de 15-endpoint numeric-ID BOLA (statements/address PII/cards/TANs/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/bookings) remains the top confirmed-target leak path with fully-characterized Authorization prefix-firewall and zero anonymous bypass across 8+ path-normalization variants, unchanged 28+ cycles; pay.n26.com Stripe forward CRITICAL-if-key; keyless auth fabric HIGH-if-subprotocol-replayed; engagementplatform Braze PII-if-key-leaks. Exposure risk static pending coordinator credential/scope supply and triage-feeder repair (intake dead ~3.5 days).
+===== ANALYST bigpickle 2026-09-25 08:35:44 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m# [0mTodos
+[•] Compare supplied inventory, knowledge base, and last leads for current delta
+[ ] Rank assets and formulate three bounded, evidence-gated hypotheses
+[ ] Render the required structured analyst blocks with one next action
+[0m
+[0m# [0mTodos
+[✓] Compare supplied inventory, knowledge base, and last leads for current delta
+[•] Rank assets and formulate three bounded, evidence-gated hypotheses
+[ ] Render the required structured analyst blocks with one next action
+[0m
+[0m# [0mTodos
+[✓] Compare supplied inventory, knowledge base, and last leads for current delta
+[✓] Rank assets and formulate three bounded, evidence-gated hypotheses
+[✓] Render the required structured analyst blocks with one next action
+[0m
+[DELTA] NO_DELTA — no new asset-surface delta; the 2026-09-25 certspotter refresh returned zero new leaves, and recorded api.tech26.de, pay.n26.com, and keyless boundaries remain unchanged.
+
+[PRIO] pay.n26.com,5.80,payments/business_value;gate_ease=0
+[PRIO] api.tech26.de,5.65,banking-PII/business_value;gate_ease=0
+[PRIO] authentication-service.eks.core-production.keyless.technology,4.75,auth-fabric/business_value;gate_ease=0
+
+[HYP] api.tech26.de BOLA on the legacy account-resource family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15 unversioned GET endpoints (5 base + 10 nested) returned HTTP 401 invalid_token; response shape was ID-independent; recorded normalization, query-parameter, case, and method variants produced no anonymous bypass; versioned routes were route-less.
+evidence_needed: Two isolated sandbox identities with read-only Bearer tokens, object-bearing responses for both identities, and stable test-resource identifiers.
+verify_steps: AUTH_HELPED: GET /api/me HTTP/1.1; Host: api.tech26.de; Authorization: Bearer <approved-test-token>. Then request GET /api/accounts/<sandbox-account-B>/statements with token A and GET /api/accounts/<sandbox-account-A>/statements with token B; repeat only the ten nested routes when both responses are test fixtures, and stop on any non-test data.
+impact: Conditional cross-tenant disclosure of statements, address PII, cards, TANs, transactions, transfer metadata, devices, and limits; CRITICAL if object-level authorization is missing.
+testability: AUTH_HELPED
+
+[HYP] pay.n26.com Stripe-forwarded payment API BOLA
+class: IDOR
+asset: pay.n26.com/v1/{payments,balance,charges,customers,invoices}
+confidence: 85
+reasoning: 23+ versioned routes returned Stripe-shaped 401 responses; no-key and invalid-key responses differ; ACAO:* and Basic realm=Stripe are present; OAuth/Connect behavior matched direct Stripe passthrough; no N26-side key injection or public key leak was found.
+evidence_needed: Coordinator-approved test-mode key, test payment/customer/charge fixtures, and confirmation that resource ownership is enforced independently of the key.
+verify_steps: AUTH_HELPED: GET /v1/payments?limit=3 HTTP/1.1; Host: pay.n26.com; Authorization: Bearer <approved-test-key>; then GET /v1/balance and documented test-fixture paths /v1/charges/<test-charge-id> and /v1/customers/<test-customer-id> with the same and second approved test key. Do not enumerate live IDs.
+impact: Conditional cross-tenant payment, charge, customer, and balance disclosure; CRITICAL, with no anonymous exposure established.
+testability: AUTH_HELPED
+
+[HYP] keyless authentication-service signed WebSocket-token replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 70
+reasoning: The EKS/Istio/Envoy service is live; deployment version and x-keyless-flow-id were disclosed; 68+ standard and tenant-scoped paths plus JSON/GraphQL WebSocket upgrade attempts returned the same path-unused 404; no anonymous route or successful handshake was observed.
+evidence_needed: Approved sandbox WebAuthn enrollment, a successful normal WebSocket handshake, and evidence that an already-issued test-session token is accepted on a fresh isolated connection.
+verify_steps: AUTH_HELPED: GET / HTTP/1.1; Host: authentication-service.eks.core-production.keyless.technology; Connection: Upgrade; Upgrade: websocket; Sec-WebSocket-Protocol: <approved-test-protocol>. Only in an isolated sandbox, compare one freshly issued test-session token on a fresh connection; never replay production tokens.
+impact: Conditional WebAuthn/session authentication bypass or tenant account takeover; HIGH/CRITICAL.
+testability: AUTH_HELPED
+
+[PARKED] none — all three remain above 40, use supported classes, and have concrete evidence and verification paths; no anonymous result is being promoted as a finding.
+[FINAL] 1. api.tech26.de BOLA (92); 2. pay.n26.com Stripe-forwarded BOLA (85); 3. keyless WebSocket-token replay (70).
+
+[NEXT] HUMAN: Provision two isolated, read-only N26 sandbox identities and scoped Bearer tokens for api.tech26.de; use them only to validate test-fixture object authorization.
+
+[LEARN] ACCEPTED MISCONFIG @ process: 2026-09-25 certspotter refresh produced zero new leaves for the seventh consecutive daily CT run, supporting NO_DELTA and leaving credentialed testing as the productive path.
+
+[RISK] N26 Bank AG: 92 — the top-ranked api.tech26.de BOLA remains high-impact but credential-gated; pay.n26.com and keyless replay are also high-impact conditional paths, with no anonymous bypass or key-leak evidence present.
