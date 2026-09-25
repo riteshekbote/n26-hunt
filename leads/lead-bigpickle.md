@@ -6102,3 +6102,42 @@ testability: AUTH_HELPED
 [NEXT] HUMAN: Provision two isolated, read-only N26 sandbox identities and scoped Bearer tokens for api.tech26.de; use them only to validate test-fixture object authorization.
 [LEARN] ACCEPTED MISCONFIG @ process: 2026-09-25 certspotter refresh produced zero new leaves for the seventh consecutive daily CT run, supporting NO_DELTA and leaving credentialed testing as the productive path.
 [RISK] N26 Bank AG: 92 — the top-ranked api.tech26.de BOLA remains high-impact but credential-gated; pay.n26.com and keyless replay are also high-impact conditional paths, with no anonymous bypass or key-leak evidence present.
+## 2026-09-25 14:13:13 UTC [target] (model bigpickle)
+[CHANGED] @ process: triage run 2026-09-25 11:37 failed with UnknownError err_d0219e06; intake remains empty/errored.
+[CHANGED] @ process: 2026-09-25 12:10 reposcan skipped because TARGET_ORG is unset; no findings were produced.
+[CHANGED] @ process: prior probe-freeze claim is corrected; probe-results.md contains data through 2026-09-19 21:15:28 UTC, followed only by empty sections.
+[PRIO] api.tech26.de,7.80,attack_surface=10.0;business_value=10.0;tech_exposure=8.0;gate_ease=0.0;cloud_surface=8.0;freshness=8.0
+[PRIO] pay.n26.com,7.68,attack_surface=9.5;business_value=10.0;tech_exposure=8.0;gate_ease=0.0;cloud_surface=7.0;freshness=9.0
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.40,attack_surface=7.5;business_value=10.0;tech_exposure=8.5;gate_ease=0.0;cloud_surface=9.5;freshness=8.0
+[HYP] api.tech26.de BOLA on the legacy account-resource family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: Recorded GET requests to 15 unversioned resources returned HTTP 401 invalid_token; account IDs 1, 2, 3, 4, and 9 produced byte-identical gates, while tested method, query-parameter, case, and path-shape variants did not yield anonymous access.
+evidence_needed: Two isolated sandbox identities, scoped read-only Bearer tokens, stable synthetic account/resource IDs, and object-bearing responses for both identities.
+verify_steps: GET /api/me HTTP/1.1 | Host: api.tech26.de | Authorization: Bearer <sandbox-A-read-only-token> | Accept: application/json; then GET /api/accounts/<sandbox-B-account-id>/statements with token A and /api/accounts/<sandbox-A-account-id>/statements with token B; stop on any non-test data.
+impact: Conditional cross-tenant disclosure of statements, address PII, cards, TANs, transactions, devices, and limits; CRITICAL if object-level authorization is missing.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded payment API BOLA
+class: IDOR
+asset: pay.n26.com/v1/{payments,balance,charges,customers,invoices}
+confidence: 85
+reasoning: Recorded GET requests to 23+ versioned routes returned Stripe-shaped HTTP 401 responses with distinct missing-key and invalid-key bodies; WWW-Authenticate, ACAO, OAuth/Connect 404s, and versioned resource behavior are consistent with passthrough rather than an N26 authorization layer.
+evidence_needed: A coordinator-approved test-mode key accepted by this host, synthetic payment/customer/charge fixtures, and confirmation that ownership is enforced independently of the key.
+verify_steps: GET /v1/payments?limit=3 HTTP/1.1 | Host: pay.n26.com | Authorization: Bearer <approved-test-key> | Accept: application/json; then GET /v1/balance and /v1/charges/<fixture-charge-id> and /v1/customers/<fixture-customer-id> with the same and second approved test key; do not enumerate live IDs.
+impact: Conditional cross-account payment, charge, customer, and balance disclosure; CRITICAL, with no anonymous exposure established.
+testability: AUTH_HELPED
+[HYP] keyless authentication-service signed WebSocket-token replay
+class: AUTH
+asset: authentication-service.eks.core-production.keyless.technology
+confidence: 70
+reasoning: The Istio/Envoy service is live, discloses authentication-service-2/v26.09.07 eks-production and x-keyless-flow-id, and returned the same path-unused response for 68+ standard paths and anonymous JSON/GraphQL WebSocket upgrade attempts; no successful anonymous handshake was observed.
+evidence_needed: An approved sandbox WebAuthn enrollment, one normal successful sandbox WebSocket handshake, and proof that a freshly issued test-session token is accepted on a fresh isolated connection.
+verify_steps: GET / HTTP/1.1 | Host: authentication-service.eks.core-production.keyless.technology | Connection: Upgrade | Upgrade: websocket | Sec-WebSocket-Version: 13 | Sec-WebSocket-Key: <sandbox-handshake-key> | Sec-WebSocket-Protocol: <approved-test-subprotocol>; compare one freshly issued sandbox-session token on a fresh isolated connection and never replay production tokens.
+impact: Conditional WebAuthn/session authentication bypass or tenant account takeover; HIGH/CRITICAL.
+testability: AUTH_HELPED
+[PARKED] none — all three remain above 40, use supported classes, and have concrete credentialed verification paths; no anonymous result is being promoted as a finding.
+[FINAL] 1. api.tech26.de BOLA (92); 2. pay.n26.com Stripe-forwarded BOLA (85); 3. keyless WebSocket-token replay (70).
+[NEXT] HUMAN: Provision two isolated read-only N26 sandbox identities, scoped Bearer tokens, and synthetic object IDs for api.tech26.de; testing must halt on any non-test data.
+[LEARN] ACCEPTED MISCONFIG @ process: 2026-09-25 11:37 triage error err_d0219e06 and 12:10 reposcan skip add no target delta; probe-results.md last contains data at 2026-09-19 21:15:28 UTC, correcting the prior 09-18 freeze claim.
+[RISK] N26 Bank AG: 92 — the highest-impact path remains a credential-gated banking API BOLA involving statements, PII, cards, and TANs; no anonymous bypass, validated exploit, or confirmed finding exists, and zero findings are currently validated.

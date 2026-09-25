@@ -3284,3 +3284,16 @@
 - LEARN: ACCEPTED MISCONFIG @ process: CT daily refresh 09-24 returns zero fresh leaves (n26.com=85, tech26.de=39 — 6th consecutive zero-delta daily run) but two previou
 - LEARN: REJECTED AUTH @ all: no anonymous experiment this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora
 - LEARN: ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live — 15-endpoint flat GET-only family all 401 len=211 cmp-identical; ID-independent prefix-firewall stable; B
+
+## RANKED HYPOTHESES 2026-09-25 14:13:25 UTC
+- [92] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}: api.tech26.de BOLA on the legacy account-resource family (from art/lead_bigpickle.txt)
+- [92] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}: api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (from art/lead_nemotron3.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Provision two isolated read-only N26 sandbox identities, scoped Bearer tokens, and synthetic object IDs for api.tech26.de; testing must halt on any non-t
+- NEXT(hypotheses-nemotron3.txt): HUMAN: Re-escalate coordinator for 28th consecutive cycle — sole unblock is provisioning (a) one sandbox N26 account for api.tech26.de BOLA (GET /api/me + adjac
+- LEARN: ACCEPTED MISCONFIG @ process: 2026-09-25 11:37 triage error err_d0219e06 and 12:10 reposcan skip add no target delta; probe-results.md last contains data at 202
+- LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section heade
+- LEARN: ACCEPTED MISCONFIG @ process: triage-feeder health is NOT a purely-consecutive error streak — run-2026-09-24-19-17 executed successfully but returned "No leads 
+- LEARN: REJECTED MISCONFIG @ {idealedge,livepersonedge}.tech26.de: both resolve live eu-central-1 ELB (idealedge-live-fra / livepersonedge-live-fra, N26 app uses LivePe
+- LEARN: ACCEPTED MISCONFIG @ process: CT daily refresh 09-24 returns zero fresh leaves (n26.com=85, tech26.de=39 — 6th consecutive zero-delta daily run) but two previou
+- LEARN: REJECTED AUTH @ all: no anonymous experiment this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora
+- LEARN: ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live — 15-endpoint flat GET-only family all 401 len=211 cmp-identical; ID-independent prefix-firewall stable; B

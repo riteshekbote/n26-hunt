@@ -613,3 +613,4 @@
 - 2026-09-25 REJECTED AUTH @ all: no anonymous experiment this cycle by design — identical-boundary re-probing yields zero signal, suspended per prior-canon; passive corpora closed (certspotter 0 new, sourcegraph 0-match, grep.app 429, github 401, crt.sh 502)
 - 2026-09-25 ACCEPTED AUTH @ api.tech26.de: gate re-confirmed live — 15-endpoint flat GET-only family all 401 len=211 cmp-identical; ID-independent prefix-firewall stable; BOLA target set unchanged
 - 2026-09-25 ACCEPTED MISCONFIG @ process: 2026-09-25 certspotter refresh produced zero new leaves for the seventh consecutive daily CT run, supporting NO_DELTA and leaving credentialed testing as the productive path.
+- 2026-09-25 ACCEPTED MISCONFIG @ process: 2026-09-25 11:37 triage error err_d0219e06 and 12:10 reposcan skip add no target delta; probe-results.md last contains data at 2026-09-19 21:15:28 UTC, correcting the prior 09-18 freeze claim.
