@@ -41292,3 +41292,815 @@ testability: AUTH_HELPED
 ## STEP 7 — RISK
 
 [RISK] N26 Bank AG: 90 — the open-banking tier is materially worse than the KB reflected. Two previously-"unmapped" hosts are in fact the **PSD2 contingency/fallback interface with live payment initiation** (`/api/openbanking/fallback/sepa-ct`, `.../sepa-instant`, `/api/transactions/so`) sitting on the same load balancer as the dedicated Berlin-Group API, across which the one documented transport control — a qualified client certificate required to establish the TLS connection — is not enforced on any of the three hostnames, with an internet client completing TLS 1.3 and reaching the app unauthenticated at the transport layer. The fallback design compounds it: a 180-day rotating refresh-token chain on a client-invented `device-token`, with the documented anti-fraud controls keyed to a client-asserted `x-tpp-userip` header. Still zero validated findings, zero anonymous data access, and every read/write path remains bearer-gated; the control-gap itself is the part provable today.
+===== ANALYST bigpickle 2026-09-26 10:00:51 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la; echo "---"; ls -la triage 2>/dev/null | tail -20; echo "---"; ls -la art 2>/dev/null | tail -20; echo "---"; ls -la leads 2>/dev/null | tail -20
+total 676
+drwxr-xr-x 12 runner runner   4096 Sep 26 09:55 .
+drwxr-xr-x  3 runner runner   4096 Sep 26 09:54 ..
+drwxr-xr-x  7 runner runner   4096 Sep 26 09:55 .git
+drwxr-xr-x  3 runner runner   4096 Sep 26 09:55 .github
+-rw-r--r--  1 runner runner   1844 Sep 26 09:55 README.md
+-rw-r--r--  1 runner runner     32 Sep 26 09:55 analyst-out.txt
+-rw-r--r--  1 runner runner 287466 Sep 26 09:55 analyst-prompt.txt
+-rw-r--r--  1 runner runner 283596 Sep 26 09:55 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 26 09:55 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 26 09:55 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 26 09:55 leads
+-rw-r--r--  1 runner runner  20018 Sep 26 09:55 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 26 09:55 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 26 09:55 reports
+drwxr-xr-x  2 runner runner   4096 Sep 26 09:55 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 26 09:55 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 26 09:55 scripts
+-rw-r--r--  1 runner runner     33 Sep 26 09:55 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 26 09:55 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 26 09:55 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 26 09:55 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 26 09:55 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 26 09:55 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Sep 26 09:55 triage
+---
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-22-23-48.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-23-03-53.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-23-09-10.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-23-14-16.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-23-18-26.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-23-21-46.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-24-00-17.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-24-05-04.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-24-10-10.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-24-15-14.md
+-rw-r--r--  1 runner runner   143 Sep 26 09:55 run-2026-09-24-19-17.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-24-22-31.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-25-00-47.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-25-05-56.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-25-11-37.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-25-15-55.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-25-19-54.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-25-23-09.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-26-01-40.md
+-rw-r--r--  1 runner runner   210 Sep 26 09:55 run-2026-09-26-06-38.md
+---
+---
+total 2316
+drwxr-xr-x  2 runner runner    4096 Sep 26 09:55 .
+drwxr-xr-x 12 runner runner    4096 Sep 26 09:55 ..
+-rw-r--r--  1 runner runner  850984 Sep 26 09:55 lead-bigpickle.md
+-rw-r--r--  1 runner runner    7752 Sep 26 09:55 lead-laguna.md
+-rw-r--r--  1 runner runner    7600 Sep 26 09:55 lead-ling3.md
+-rw-r--r--  1 runner runner    7904 Sep 26 09:55 lead-longcat.md
+-rw-r--r--  1 runner runner      18 Sep 26 09:55 lead-mimo.md
+-rw-r--r--  1 runner runner 1418374 Sep 26 09:55 lead-nemotron3.md
+-rw-r--r--  1 runner runner    6911 Sep 26 09:55 reposcan-n26-manual.md
+-rw-r--r--  1 runner runner   52285 Sep 26 09:55 reposcan-n26.md
+[0m
+[0m$ [0mdate -u; echo "---"; stat -c '%y %n' probe-results.md 2>/dev/null; echo "---"; ls -t triage 2>/dev/null | head -10
+Sat Sep 26 09:55:17 UTC 2026
+---
+2026-09-26 09:55:01.877896033 +0000 probe-results.md
+---
+run-2026-09-25-15-55.md
+run-2026-09-25-19-54.md
+run-2026-09-25-23-09.md
+run-2026-09-26-01-40.md
+run-2026-09-26-06-38.md
+run-2026-09-21-00-22.md
+run-2026-09-21-05-09.md
+run-2026-09-21-10-51.md
+run-2026-09-21-16-50.md
+run-2026-09-21-20-51.md
+[0m
+[0m$ [0mcat triage/run-2026-09-26-06-38.md; echo "=== 01-40 ==="; cat triage/run-2026-09-26-01-40.md; echo "=== probe tail ==="; tail -40 probe-results.md; echo "=== scripts ==="; ls scripts
+===== TRIAGE 2026-09-26 06:38:33 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_58805be8"
+  }
+}
+=== 01-40 ===
+
+===== TRIAGE 2026-09-26 01:40:03 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_d242ae5e"
+  }
+}
+=== probe tail ===
+
+
+## 2026-09-24 02:51:39 UTC
+
+
+## 2026-09-24 08:04:51 UTC
+
+
+## 2026-09-24 13:39:42 UTC
+
+
+## 2026-09-24 17:58:38 UTC
+
+
+## 2026-09-24 21:08:16 UTC
+
+
+## 2026-09-24 23:54:30 UTC
+
+
+## 2026-09-25 03:00:30 UTC
+
+
+## 2026-09-25 08:35:44 UTC
+
+
+## 2026-09-25 14:13:25 UTC
+
+
+## 2026-09-25 18:42:44 UTC
+
+
+## 2026-09-25 21:52:57 UTC
+
+
+## 2026-09-26 00:25:36 UTC
+
+
+## 2026-09-26 05:13:12 UTC
+
+=== scripts ===
+sync-issues.py
+[0m
+[0m$ [0mtail -60 leads/lead-bigpickle.md
+evidence_needed: a coordinator-approved test-mode key accepted by this host, synthetic payment/customer/charge fixtures, and proof that object ownership is enforced independently of the key
+verify_steps: `GET /v1/payments?limit=3 HTTP/1.1` + `Host: pay.n26.com` + `Authorization: Bearer <approved-test-key>`; then `/v1/balance`, `/v1/charges/<fixture-id>`, `/v1/customers/<fixture-id>` with the same and a second approved key; do not enumerate live IDs
+impact: conditional cross-account payment, charge, customer and balance disclosure; CRITICAL, no anonymous exposure established
+testability: AUTH_HELPED
+[PARKED] cross-deployment token audience confusion ({api,beta-api,sapi} + live/staging XS2A pair) — upgraded with `xs2a-staging.tech26.de` on `obnium-mtls-staging-fra` but still speculative at 55; it is the natural follow-on to hypothesis 1 and should be run in the same credentialed session rather than as a separate claim. Also parked: keyless signed-WebSocket-token replay (70).
+[FINAL] 1. xs2a.tech26.de missing mTLS/SCA enforcement on the live Berlin-Group API (70, only hypothesis this cycle backed by a new observation); 2. api.tech26.de BOLA (92); 3. pay.n26.com Stripe-forwarded BOLA (85). No anonymous result is promoted as a finding.
+[NEXT] HUMAN: Provision one TPP test credential for the Berlin-Group tier — a QWAC client certificate plus its `client_id`, or a bearer minted for `xs2a.tech26.de` — so two things can be settled in one session: (a) `GET /v1/berlin-group/v1/consents/<id> HTTP/2` + `Host: xs2a.tech26.de` + `Authorization: Bearer <tpp-token>` with **no** client certificate vs with a QWAC whose CN ≠ the token's client_id (does the app bind cert to token?); (b) the BOLA matrix — TPP-A's token against TPP-B's `consentId`, `accountId` and `transactions/{id}`. Do **not** attempt `POST /oauth2/token` or `POST /consents` on the live tier without explicit written approval.
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not enforced at the edge despite the `obnium-mtls-live-fra` ELB — anonymous TLS1.3 completes with no client certificate.
+[LEARN] REJECTED MISCONFIG @ app.n26.com `/open-banking`: open-redirect hypothesis closed — the `redirect` param is rebuilt server-side from the matched route path, user-supplied absolute/protocol-relative values are ignored, and path-smuggling variants 404.
+[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de: unauthenticated auth-code minting via the documented sandbox helpers (`/sandbox/oauth2/authorize|/sandbox/oauth2/token|/sandbox/psu-interaction/generate-auth-code/{id}`) is **not** present on the production host — sandbox and production are path-separated.
+[LEARN] ACCEPTED MISCONFIG @ {aisp,pisp}.tech26.de: not "route-less" and not a mesh split — they share the `{aisp,xs2a,pisp}` cert leaf but do not terminate the Berlin-Group table; their own route tables are still unenumerated.
+[LEARN] ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only thing that produced signal was **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collection + certspotter), not further anonymous boundary probing. Generalised rule: when a gate returns `401` for real routes and `404` for absent ones, the vendor's own API corpus is the correct enumeration source; when every path returns `401`, only a known-real route table can produce trustworthy negatives.
+[RISK] N26 Bank AG: 92 — a whole previously-unmapped production API class (Berlin-Group AIS+PIS on xs2a.tech26.de: accounts, balances, transactions, consents, SEPA payment initiation) was assumed absent for 9 days, and its only transport-layer control (the mTLS posture the ELB name advertises) is not enforced for internet clients. Combined with the two standing credential-gated IDOR paths and the unreachable staging twin, undetected exposure in the open-banking tier is the dominant residual risk. Still zero validated findings and zero anonymous data access; every path remains bearer-gated.
+## 2026-09-26 05:13:01 UTC [target] (model bigpickle)
+[NEW] @ aisp.tech26.de: **route table mapped from vendor corpus (psd2-tpp-docs/doc/fallback-aisp.md)** — this is the **PSD2 Fallback / contingency** interface, not Berlin Group. 4 live route classes, all `401` app-layer: `GET /api/v2/accounts`, `GET /api/v2/accounts/{accountId}`, `GET /api/fallback/accounts/{accountId}/transactions?from&to`, `GET /api/fallback/accounts/{accountId}/transactions/{transactionId}`. **Invalidates** the 09-26 KB entry "aisp/pisp own route tables still unenumerated" — they were never 404, they were probed with the wrong wordlist (`/api/me`, `/api/accounts/1/statements` = the api-family shapes).
+[NEW] @ pisp.tech26.de: **route table mapped (fallback-pisp.md)** — 5 live route classes: `GET /api/openbanking/fallback/sepa-ct/{paymentId}/status`, `.../sepa-instant/{paymentId}/status`, `.../so/{paymentId}/status` (all `401`), plus documented POST payment-initiation `/api/openbanking/fallback/sepa-ct`, `.../sepa-instant`, `/api/transactions/so`. **Live payment-initiation surface on the contingency interface** — highest-value money-movement asset in the program, previously absent from the inventory.
+[NEW] @ {xs2a,aisp,pisp}.tech26.de: all three CNAME to the **same** ELB `obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com` (63.184.77.225 / 18.195.172.188 / 35.156.254.129). Routing is vhost-based at one Istio gateway — not a "mesh split".
+[NEW] @ {xs2a,aisp,pisp}.tech26.de: **mTLS definitively absent** — `openssl s_client -tls1_3` with no client cert returns `No client certificate CA names sent` on all three, i.e. the server never issues a TLS `CertificateRequest`. N26's own public support page states of aisp/pisp: *"Access to the above URL and establishing the TLS connection requires implementation of a qualified certificate."* Documented control is not enforced at the transport layer.
+[NEW] @ app.n26.com: `/wl/open-banking/cbpii?consentId=x` → `302 /open-banking/cbpii?consentId=x` → unauth `302 /login?...&redirect=%2Fopen-banking%2Fcbpii%3F...`. **Third open-banking web surface** (cbpii = funds-confirmation), previously only `aisp` was known. `/wl/open-banking/pisp?consentId=x` → `302 /feed` (route absent, silently absorbed into the authenticated feed).
+[CHANGED] @ xs2a.tech26.de: the 09-26 REJECTED conclusion *"token-minting surface is not anonymously reachable — `/oauth2/token` 404"* is **unsound**. On this edge, `GET /api/mfa/challenge` (documented POST-only, confirmed live) returns a **byte-identical 404** to `GET /oauth2/token`. GET-404 does not discriminate absent from POST-only here — the same method-gating asymmetry already proven on `api.tech26.de` (`GET /api/me`→401, `HEAD /api/me`→404). The password/refresh grant surface is **unresolved, not closed**.
+[PRIO] xs2a.tech26.de,7.70,attack_surface=9.0;business_value=10.0;tech_exposure=9.0;gate_ease=0.0;cloud_surface=7.0;freshness=9.0
+[PRIO] pisp.tech26.de,7.80,attack_surface=9.5;business_value=10.0;tech_exposure=9.0;gate_ease=0.0;cloud_surface=7.0;freshness=10.0
+[PRIO] aisp.tech26.de,7.30,attack_surface=8.0;business_value=9.0;tech_exposure=9.0;gate_ease=0.0;cloud_surface=7.0;freshness=10.0
+[HYP] Missing client-certificate (mTLS) enforcement on the live Berlin-Group XS2A production API
+class: MISCONFIG
+asset: xs2a.tech26.de/v1/berlin-group/v1
+confidence: 78
+reasoning: 11 Berlin-Group route classes (`/accounts`, `/accounts/{id}`, `/balances`, `/transactions`, `/consents`, `/consents/status`, `/consents/{id}`, `/consents/{id}/status`, `/payments/sepa-credit-transfers/{id}`, `.../status`) return `401 len=0` with `x-envoy-upstream-service-time` (app-layer, est 20ms), while a bogus path under the same base returns `404`. The ELB is named `obnium-mtls-live-fra`; Berlin Group mandates an eIDAS QWAC on every TPP request; N26's own support page states the qualified certificate is required to *establish the TLS connection*. `openssl s_client -tls1_3` to xs2a.tech26.de with no client cert completes with `No client certificate CA names sent` and `Verify return code: 0` — the server never requests a certificate, so no client cert is possible to present. The sole gate is a bearer token.
+evidence_needed: a QWAC client certificate plus a token issued for a registered TPP, proving the app never binds the certificate CN/organisation to the token's `client_id`; or a token minted with no QWAC at all being accepted on these routes.
+verify_steps: `GET /v1/berlin-group/v1/consents/<tpp-A-consent-id> HTTP/2` + `Host: xs2a.tech26.de` + `Authorization: Bearer <tpp-A-token>` (a) with no client certificate, (b) with a QWAC whose CN differs from the token's client_id; compare status and any `WWW-Authenticate` / `ASPSP-SCA-*` headers.
+impact: PSD2 strong customer authentication is reduced to bearer-token possession, so any leaked, stale or mis-issued 20-minute token yields full account listing, balances, transaction history, consent state and SEPA payment initiation for the linked PSU; HIGH, conditional on token compromise, no anonymous access established.
+testability: AUTH_HELPED
+[HYP] Unattended 180-day access to full account data via unbound fallback refresh-token chain
+class: AUTH
+asset: aisp.tech26.de/oauth2/token
+confidence: 70
+reasoning: the fallback AISP spec (fallback-aisp.md) makes the access token 15-minute and marked `Storage: NEVER`, but the refresh token is a **180-day rotating chain** renewed by `POST /oauth2/token` with `grant_type=refresh_token`. That refresh call requires only `refresh_token` in the body plus the `device-token` **request header** — and `device_token` is not issued by N26: the doc instructs the TPP to "provide a unique device_token per client/device connection… a valid UUID v4 as per RFC 4122", i.e. the client invents it. `x-tpp-userip` is likewise client-asserted. The route is live (`GET`-family `/api/v2/accounts` → `401`, est app-layer) and `GET /oauth2/token` returns the same 404 as the known-live POST-only `/api/mfa/challenge`, so its reachability is unresolved rather than closed.
+evidence_needed: one TPP sandbox refresh token for the fallback tier, plus a second independently-minted session, to test whether a refresh token issued to session A is accepted when replayed with a freshly invented `device-token` and a different `x-tpp-userip`.
+verify_steps: baseline `GET /api/v2/accounts HTTP/1.1` + `Host: aisp.tech26.de` + `Authorization: bearer <tpp-A-access>` + `device-token: <uuid-A>` + `x-tpp-userip: 203.0.113.7`; then repeat the same request with `device-token: <random-uuid-B>` and `x-tpp-userip: 198.51.100.9` (both different from the minting session); compare status and body. Halt on any non-test data.
+impact: if `device-token` is not bound server-side to the session, one leaked refresh token yields 180 days of unattended, un-rate-limited access to every account's IBAN, balance, product, owner name and full transaction history including counterparty IBANs and partner names; HIGH.
+testability: AUTH_HELPED
+[HYP] Cross-tenant BOLA on the fallback PIS/AIS interface with client-asserted anti-fraud binding
+class: IDOR
+asset: pisp.tech26.de/api/openbanking/fallback/{sepa-ct,sepa-instant,so}/{paymentId}/status and aisp.tech26.de/api/fallback/accounts/{accountId}/transactions
+confidence: 68
+reasoning: the status routes are live and 401-gated (`sepa-ct/{uuid}/status` → `401`, `so/{uuid}/status` → `401`) and each documented request carries only `device-token` + `x-tpp-userip` — no `Authorization` line in the vendor example (I confirmed the server does enforce authz regardless, so the doc example is an omission, not a flaw). `{accountId}` and `{paymentId}` are attacker-suppliable UUIDs. N26 documents that its entire anti-fraud layer for this interface keys off `x-tpp-userip`: *"providing this IP address guarantees us to identify proper user calls and to protect the integrity of our services… If a TPP doesn't provide an end-user's IP address with API requests requiring IP specification, or tries to manipulate or obfuscate IP addresses, such cases will be treated in accordance to our established security policies."* That control is a plain client-supplied header on the same request.
+evidence_needed: two isolated sandbox TPP sessions, stable synthetic `accountId`/`paymentId` values per session, and object-bearing responses.
+verify_steps: `GET /api/openbanking/fallback/sepa-ct/<tpp-B-payment-id>/status HTTP/1.1` + `Host: pisp.tech26.de` + `Authorization: bearer <tpp-A-access>` + `device-token: <uuid-A>` + `x-tpp-userip: <tpp-B-user's real IP>`; mirror with token B; same pattern on `GET /api/fallback/accounts/<tpp-B-accountId>/transactions?from=0&to=1` at aisp.tech26.de. Halt on any non-test data.
+impact: cross-tenant disclosure of payment execution state, rejection reasons, and full account transaction history with counterparty identifiers; additionally, spoofing `x-tpp-userip` with the victim's real IP neutralises the documented fraud controls, so a stolen fallback token is used without tripping IP-anomaly detection; CRITICAL conditional on BOLA, no anonymous access established.
+testability: AUTH_HELPED
+[PARKED] vhost route confusion / token-audience bypass on the shared `obnium-mtls-live-fra` ELB: tested and **refuted** — route tables are strictly disjoint per Host (aisp serves only `/api/v2/accounts`, pisp only the fallback payment routes, xs2a only `/v1/berlin-group/v1/*`; every cross-cell returns `404`, bogus-path control `/api/openbanking/fallback/sepa-ct-x/status` → `404`). This was my own hypothesis, generated from the shared-ELB discovery, and it does not hold.
+[PARKED] unauthenticated payment-status read via missing `Authorization` header: refuted — `device-token` + `x-tpp-userip` with no `Authorization` returned `401` on all three status routes. The vendor doc example omitting the header is a documentation defect, not an exploitable gap; reporting it would be a descriptive-error/no-POC rejection.
+[PARKED] `api.tech26.de` legacy BOLA (92) and `pay.n26.com` Stripe-forwarded BOLA (85): both remain **valid and undischarged** AUTH_HELPED items, retained below the top-3 cut only because this cycle's entire new evidence concerns the fallback/XS2A tier. Neither is invalidated.
+[FINAL] 1. xs2a.tech26.de missing mTLS with vendor-documented control (78 — the only one demonstrable without any credential); 2. aisp.tech26.de unbound 180-day refresh chain (70); 3. fallback-tier BOLA with client-asserted `x-tpp-userip` (68).
+[NEXT] PROBE: `POST /oauth2/token` on `pisp.tech26.de` with `Content-Type: application/x-www-form-urlencoded`, `device-token: <fresh uuid4>`, body `refresh_token=00000000-0000-4000-8000-000000000000&grant_type=refresh_token` — a syntactically valid but fabricated token, no username/password, so no login attempt and no username enumeration. This settles the one open question my own LEARN flags as unsound: whether the fallback password/refresh grant is anonymously reachable, which GET-404 cannot answer. Requires sign-off because it is method-correct POST; not run under this cycle's GET/HEAD-only constraint.
+[LEARN] ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share ELB `obnium-mtls-live-fra-328671153` and none ever issues a TLS `CertificateRequest` (`No client certificate CA names sent`), despite N26's public support page stating aisp/pisp "Access to the above URL and establishing the TLS connection requires implementation of a qualified certificate". Second independent instance of the 09-25 rule — a generic wordlist probed before the real route table produces systematic false negatives; the correct enumeration source is the vendor's own `psd2-tpp-docs`, and it reclassified aisp/pisp from "unmapped" to a live money-movement surface.
+[LEARN] REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `state` is passed through as an opaque query param into the server-rebuilt `/login?...&redirect=` chain, and `redirect` is server-constructed from the matched route path (09-26 finding holds) — no open redirect and no observable state-binding failure; auth-code theft on the new Redirect SCA mode is AUTH_HELPED at best, not reportable.
+[LEARN] REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: the "the TPP must not use access/refresh tokens on other base URLs" and "PISP tokens cannot be used for AISP flows" audience-separation controls **are enforced at the routing layer** — the three route tables are strictly disjoint per Host, so a token minted on one host has no route to reach on another. Closes the cross-deployment audience-confusion item parked at 55 last cycle.
+[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: my own 09-26 entry "token-minting surface is not anonymously reachable" is retracted as unsound — `GET /api/mfa/challenge` (documented POST-only, confirmed live) returns a byte-identical 404 on this edge, so GET-404 cannot distinguish absent from POST-only. Generalised rule: on this program, a 404 on a GET is only evidence of route absence for routes documented as GET; for documented-POST routes it is evidence of nothing.
+[RISK] N26 Bank AG: 90 — the open-banking tier is materially worse than the KB reflected. Two previously-"unmapped" hosts are in fact the **PSD2 contingency/fallback interface with live payment initiation** (`/api/openbanking/fallback/sepa-ct`, `.../sepa-instant`, `/api/transactions/so`) sitting on the same load balancer as the dedicated Berlin-Group API, across which the one documented transport control — a qualified client certificate required to establish the TLS connection — is not enforced on any of the three hostnames, with an internet client completing TLS 1.3 and reaching the app unauthenticated at the transport layer. The fallback design compounds it: a 180-day rotating refresh-token chain on a client-invented `device-token`, with the documented anti-fraud controls keyed to a client-asserted `x-tpp-userip` header. Still zero validated findings, zero anonymous data access, and every read/write path remains bearer-gated; the control-gap itself is the part provable today.
+[0m
+[0m$ [0mtimeout 25 curl -s -o /dev/null -w "xs2a_live %{http_code} %{time_total}\n" https://xs2a.tech26.de/v1/berlin-group/v1/accounts 2>&1; timeout 25 curl -s -o /dev/null -w "aisp_live %{http_code} %{time_total}\n" https://aisp.tech26.de/api/v2/accounts 2>&1
+xs2a_live 401 0.544410
+aisp_live 401 0.469256
+[0m
+[0m$ [0mtimeout 20 getent hosts xs2a-staging.tech26.de aisp-staging.tech26.de pisp-staging.tech26.de 2>&1; echo "--- curl test ---"; timeout 25 curl -s -o /dev/null -w "%{http_code} %{time_total} %{remote_ip}\n" https://xs2a-staging.tech26.de/ 2>&1 || echo "FAILED/TIMEOUT"
+18.194.149.157  obnium-mtls-staging-fra-558276106.eu-central-1.elb.amazonaws.com xs2a-staging.tech26.de
+63.183.127.82   obnium-mtls-staging-fra-558276106.eu-central-1.elb.amazonaws.com xs2a-staging.tech26.de
+3.123.53.230    obnium-mtls-staging-fra-558276106.eu-central-1.elb.amazonaws.com xs2a-staging.tech26.de
+63.183.127.82   obnium-mtls-staging-fra-558276106.eu-central-1.elb.amazonaws.com aisp-staging.tech26.de
+18.194.149.157  obnium-mtls-staging-fra-558276106.eu-central-1.elb.amazonaws.com aisp-staging.tech26.de
+3.123.53.230    obnium-mtls-staging-fra-558276106.eu-central-1.elb.amazonaws.com aisp-staging.tech26.de
+63.183.127.82   obnium-mtls-staging-fra-558276106.eu-central-1.elb.amazonaws.com pisp-staging.tech26.de
+3.123.53.230    obnium-mtls-staging-fra-558276106.eu-central-1.elb.amazonaws.com pisp-staging.tech26.de
+18.194.149.157  obnium-mtls-staging-fra-558276106.eu-central-1.elb.amazonaws.com pisp-staging.tech26.de
+--- curl test ---
+FAILED/TIMEOUT
+[0m
+[0m$ [0mtimeout 40 curl -s "https://api.github.com/repos/XDgovDE/psd2-tpp-docs/git/trees/HEAD?recursive=1" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+if isinstance(d,dict) and d.get('tree'):
+    for t in d['tree']:
+        print(t['type'], t.get('size',''), t['path'])
+else:
+    print(json.dumps(d)[:500])
+" 2>&1 | head -80
+{"message": "Not Found", "documentation_url": "https://docs.github.com/rest/git/trees#get-a-tree", "status": "404"}
+[0m
+[0m$ [0mfor h in xs2a-staging aisp-staging pisp-staging; do timeout 30 curl -s -o /dev/null --connect-timeout 25 -w "$h 443 -> %{http_code} connect=%{time_connect} total=%{time_total}\n" "https://$h.tech26.de/v1/berlin-group/v1/accounts" 2>&1 || echo "$h FAILED (connect-timeout)"; done
+xs2a-staging 443 -> 000 connect=0.000000 total=25.001166
+xs2a-staging FAILED (connect-timeout)
+aisp-staging 443 -> 000 connect=0.000000 total=25.001309
+aisp-staging FAILED (connect-timeout)
+pisp-staging 443 -> 000 connect=0.000000 total=25.000677
+pisp-staging FAILED (connect-timeout)
+[0m
+[0m$ [0mtimeout 40 curl -s "https://api.github.com/search/repositories?q=psd2-tpp-docs" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for r in d.get('items',[])[:10]:
+    print(r['full_name'], '|', r.get('description'), '|', r['html_url'])
+" 2>&1
+n26/psd2-tpp-docs | N26 Open Banking Documentation for TPPs | https://github.com/n26/psd2-tpp-docs
+dcguim/psd2-tpp-docs | N26 Open Banking Documentation for TPPs | https://github.com/dcguim/psd2-tpp-docs
+[0m
+[0m$ [0mtimeout 30 curl -s -o /dev/null -w "pisp_status %{http_code}\n" "https://pisp.tech26.de/api/openbanking/fallback/sepa-ct/11111111-1111-4111-8111-111111111111/status"; timeout 30 curl -s -o /dev/null -w "aisp_fb_tans %{http_code}\n" "https://aisp.tech26.de/api/fallback/accounts/11111111-1111-4111-8111-111111111111/transactions?from=0&to=1"
+pisp_status 401
+aisp_fb_tans 401
+[0m
+[0m$ [0mtimeout 40 curl -s "https://api.github.com/repos/n26/psd2-tpp-docs/git/trees/HEAD?recursive=1" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+tr=d.get('tree')
+if not tr: print(json.dumps(d)[:300]); sys.exit()
+for t in sorted(tr,key=lambda x:x['path']):
+    if t['type']=='blob': print(f\"{t.get('size',0):>8}  {t['path']}\")
+" 2>&1
+8  .gitignore
+   25519  README.md
+  100887  doc/assets/Updated_oauth_flow.png
+    4416  doc/assets/bash/pin_encryption_and_initiating_transaction.sh
+   49344  doc/assets/fallback-user-auth-flow.png
+  333021  doc/assets/oauth-flow.png
+  106550  doc/assets/oauth-pisp-flow.png
+   17567  doc/assets/openapi/XS2A_Open_API.yml
+    1493  doc/assets/openapi/additional_api_spec.md
+  106141  doc/assets/postman/XS2A_N26_Sandbox.postman_collection.json
+    1782  doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+       1  doc/assets/quarterly-report/2019/.gitkeep
+   52153  doc/assets/quarterly-report/2019/Reporting Period 2019 Q3 Jul - Sep 2019.pdf
+   51374  doc/assets/quarterly-report/2019/Reporting Period 2019 Q4 Oct - Dec 2019.pdf
+   51136  doc/assets/quarterly-report/2020/Reporting Period 2020 Q1 Jan - Mar 2020.pdf
+   62769  doc/assets/quarterly-report/2020/Reporting Period 2020 Q2 Apr - Jun 2020.pdf
+   63202  doc/assets/quarterly-report/2020/Reporting Period 2020 Q3 Jul - Sep 2020.pdf
+   73525  doc/assets/quarterly-report/2020/Reporting Period 2020 Q4 Oct - Dec 2020.pdf
+       1  doc/assets/quarterly-report/2021/.gitkeep
+   72399  doc/assets/quarterly-report/2021/Reporting Period 2021 Q1 Jan - Mar 2021.pdf
+   72649  doc/assets/quarterly-report/2021/Reporting Period 2021 Q2 Apr - Jun 2021.pdf
+   74066  doc/assets/quarterly-report/2021/Reporting Period 2021 Q3 Jul - Sep 2021.pdf
+   73993  doc/assets/quarterly-report/2021/Reporting Period 2021 Q4 Oct - Dec 2021.pdf
+   54686  doc/assets/quarterly-report/2022/Reporting Period 2022 Q1 Jan - Mar 2022.pdf
+   72215  doc/assets/quarterly-report/2022/Reporting Period 2022 Q2 Apr - Jun 2022.pdf
+   73784  doc/assets/quarterly-report/2022/Reporting Period 2022 Q3 Jul - Sep 2022.pdf
+   73760  doc/assets/quarterly-report/2022/Reporting Period 2022 Q4 Oct - Dec 2022.pdf
+       1  doc/assets/quarterly-report/2023/.gitkeep
+   72768  doc/assets/quarterly-report/2023/Reporting Period 2023 Q1 Jan - Mar 2023.pdf
+   72362  doc/assets/quarterly-report/2023/Reporting Period 2023 Q2 Apr - Jun 2023.pdf
+   68547  doc/assets/quarterly-report/2023/Reporting Period 2023 Q3 Jul - Sep 2023.pdf
+   75185  doc/assets/quarterly-report/2023/Reporting Period 2023 Q4 Oct - Dec 2023.pdf
+   74567  doc/assets/quarterly-report/2024/Reporting Period 2024 Q1 Jan - Mar 2024.pdf
+   73589  doc/assets/quarterly-report/2024/Reporting Period 2024 Q2 Apr - Jun 2024.pdf
+   75299  doc/assets/quarterly-report/2024/Reporting Period 2024 Q3 Jul - Sep 2024.pdf
+   71437  doc/assets/quarterly-report/2024/Reporting Period 2024 Q4 Oct - Dec 2024.pdf
+   15914  doc/assets/quarterly-report/2025/Reporting Period 2025 Q1 Jan - March 2025.pdf
+   16096  doc/assets/quarterly-report/2025/Reporting Period 2025 Q2 Apr - Jun 2025.pdf
+   16148  doc/assets/quarterly-report/2025/Reporting Period 2025 Q3 Jul - Sep 2025.pdf
+   16932  doc/assets/quarterly-report/2025/Reporting Period 2025 Q4 Oct - Dec 2025.pdf
+   16580  doc/assets/quarterly-report/2026/Reporting Period 2026 Q1 Jan - Mar 2026.pdf
+   16715  doc/assets/quarterly-report/2026/Reporting Period 2026 Q2 Apr - Jun 2026.pdf
+   43029  doc/decoupled/dedicated-aisp.md
+   18999  doc/decoupled/dedicated-cbpii.md
+   38254  doc/decoupled/dedicated-pisp.md
+   27406  doc/fallback-aisp.md
+   28212  doc/fallback-pisp.md
+   42413  doc/redirect/dedicated-aisp.md
+   18345  doc/redirect/dedicated-cbpii.md
+   39455  doc/redirect/dedicated-pisp.md
+   20102  doc/sandbox.md
+[0m
+[0m$ [0mcd /tmp/opencode && for f in "doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json" "doc/assets/openapi/additional_api_spec.md"; do echo "=============== $f"; timeout 40 curl -s "https://raw.githubusercontent.com/n26/psd2-tpp-docs/HEAD/$f"; echo; done 2>&1 | head -120
+=============== doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json
+{
+	"id": "0cefcd4e-5bd3-4883-980c-a7da73646fb6",
+	"name": "XS2A_N26_Sandbox",
+	"values": [
+		{
+			"key": "address",
+			"value": "https://xs2a.tech26.de",
+			"enabled": true
+		},
+		{
+			"key": "api_path",
+			"value": "/v1/berlin-group/v1",
+			"enabled": true
+		},
+		{
+			"key": "user_id",
+			"value": "f3f51978-20fb-4bd9-91d9-7cc2a1fd9618",
+			"enabled": true
+		},
+		{
+			"key": "aisp_name",
+			"value": "Postman",
+			"enabled": true
+		},
+		{
+			"key": "consent_id",
+			"value": "f3f51978-20fb-4bd9-91d9-7cc2a1fd9618",
+			"enabled": true
+		},
+		{
+			"key": "iban",
+			"value": "DE15100110012627633320",
+			"enabled": true
+		},
+		{
+			"key": "bg_account_id",
+			"value": "f3f51978-20fb-4bd9-91d9-7cc2a1fd9618",
+			"enabled": true
+		},
+		{
+			"key": "space_bg_account_id",
+			"value": "f3f51978-20fb-4bd9-91d9-7cc2a1fd9618",
+			"enabled": true
+		},
+		{
+			"key": "device_token",
+			"value": "f3f51978-20fb-4bd9-91d9-7cc2a1fd9618",
+			"enabled": true
+		},
+		{
+			"key": "request_id",
+			"value": "f3f51978-20fb-4bd9-91d9-7cc2a1fd9618",
+			"enabled": true
+		},
+		{
+			"key": "access_token",
+			"value": "f3f51978-20fb-4bd9-91d9-7cc2a1fd9618",
+			"enabled": true
+		},
+		{
+			"key": "refresh_token",
+			"value": null,
+			"enabled": true
+		},
+		{
+			"key": "host",
+			"value": "xs2a.tech26.de",
+			"enabled": true
+		},
+		{
+			"key": "auth_code",
+			"value": "w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK",
+			"enabled": true
+		},
+		{
+			"key": "dedicated_aisp_client_id",
+			"value": "w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI",
+			"enabled": true
+		},
+		{
+			"key": "redirect_uri",
+			"value": "https://app.n26.com/login",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2021-12-16T18:01:58.627Z",
+	"_postman_exported_using": "Postman/8.12.2"
+}
+
+=============== doc/assets/openapi/additional_api_spec.md
+# Additional API Specification
+## (#bank-transaction-code) Bank Transaction Code
+**Transaction Type**              | **Transaction Code** 
+-----------------------------------|----------------------
+ Authorization Accepted / Rejected      | PMNT-MCRD-UPCT       
+ Authorization Reversal / Expired       | PMNT-MCRD-DAJT       
+ Cash26 Deposit                         | PMNT-CNTR-CDPT       
+ Cash26 Withdrawal                      | PMNT-CNTR-CWDL       
+ Credit Transfer                        | PMNT-RCDT-ESCT       
+ Direct Debit                           | PMNT-IDDT-ESDD       
+ SEPA Bank Transfer                     | PMNT-ICDT-ESCT       
+ Direct Debit Reversal                  | PMNT-IDDT-PRDD       
+ N26 Moneybeam                          | PMNT-ICDT-BOOK       
+ Internal Debit Transfer                | ACMT-OPCL-ACCC       
+ Presentment Refund                     | PMNT-MCRD-OTHR       
+ Presentment                            | PMNT-CCRD-POSD       
+ Remittance Transfer (Wise)             | PMNT-RCDT-XBCT       
+ N26 Fees                               | PMNT-MDOP-FEES       
+ Reward Transfer                        | PMNT-RCDT-ESCT
+ ATM Withdrawal                         | PMNT-CCRD-CWDL
+ Mastercard MoneySend                   | PMNT-RRCT-CAJT
+ Mastercard MoneySend Reversal          | PMNT-RRCT-RPCR
+ N26 Savings Account Incoming Interest  | PMNT-MCOP-INTR
+ N26 Savings Account Outgoing Tax       | PMNT-MDOP-TAXE
+ Others                                 | ACMT-OTHR-OTHR
+[0m
+[0m$ [0mcd /tmp/opencode && timeout 60 curl -s -o coll.json "https://raw.githubusercontent.com/n26/psd2-tpp-docs/HEAD/doc/assets/postman/XS2A_N26_Sandbox.postman_collection.json" && python3 - <<'EOF'
+import json,re
+d=json.load(open('coll.json'))
+paths=set(); hosts=set(); headers=set()
+def walk(o):
+    if isinstance(o,dict):
+        if 'raw' in o and isinstance(o.get('raw'),str) and 'http' in o.get('raw','')[:8]:
+            pass
+        for k,v in o.items():
+            if k=='url' and isinstance(v,dict):
+                if 'raw' in v: 
+                    m=re.match(r'https?://([^/]+)(/[^?\s]*)',v['raw'])
+                    if m: hosts.add(m.group(1)); paths.add(m.group(2))
+                for pv in v.get('path',[]):
+                    pass
+            if k=='header' and isinstance(v,list):
+                for h in v:
+                    if isinstance(h,dict) and 'key' in h: headers.add(h['key'])
+            walk(v)
+    elif isinstance(o,list):
+        for i in o: walk(i)
+walk(d)
+print("HOSTS:"); [print("  ",h) for h in sorted(hosts)]
+print("\nPATHS:"); [print("  ",p) for p in sorted(paths)]
+print("\nHEADERS:"); [print("  ",h) for h in sorted(headers)]
+EOF
+HOSTS:
+
+PATHS:
+
+HEADERS:
+   
+   Authorization
+   Consent-ID
+   Content-Type
+   Host
+   X-Request-ID
+   device-token
+   device_token
+   x-aisp-name
+   x-authorize-meta
+   x-n26-userid
+   x-n26-userlocale
+   x-tpp-userip
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import json,re
+raw=open('coll.json').read()
+# distinct request URL lines
+urls=sorted(set(re.findall(r'"raw"\s*:\s*"\{\{[^"]*', raw)))
+for u in urls: print(u)
+print("\n=== name/desc pairs mentioning endpoint ===")
+d=json.loads(raw)
+items=d.get('item',[])
+def walk(items,depth=0):
+    for it in items:
+        if 'item' in it: walk(it['item'],depth+1)
+        else:
+            r=it.get('request',{})
+            print(f"  [{r.get('method')}] {it.get('name')}")
+walk(items)
+EOF
+"raw": "{{address}}/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI&redirect_uri=https://google.com&response_type=CODE&state=testState
+"raw": "{{address}}/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_CBPII&code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI&redirect_uri=https://google.com&response_type=CODE&state=testState
+"raw": "{{address}}/sandbox/oauth2/authorize?client_id=PSDES-BDE-3DFD12&scope=DEDICATED_PISP&code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI&redirect_uri=https://google.com&response_type=CODE&state=testState
+"raw": "{{address}}/sandbox/oauth2/token?role=DEDICATED_AISP
+"raw": "{{address}}/sandbox/oauth2/token?role=DEDICATED_CBPII
+"raw": "{{address}}/sandbox/oauth2/token?role=DEDICATED_PISP
+"raw": "{{address}}/sandbox/psu-interaction/confirmation-of-funds-consents/{{consent_id}}/scas
+"raw": "{{address}}/sandbox/psu-interaction/consents/{{consent_id}}/scas
+"raw": "{{address}}/sandbox/psu-interaction/generate-auth-code/{{request_id}}?role=DEDICATED_AISP
+"raw": "{{address}}/sandbox/psu-interaction/generate-auth-code/{{request_id}}?role=DEDICATED_CBPII
+"raw": "{{address}}/sandbox/psu-interaction/generate-auth-code/{{request_id}}?role=DEDICATED_PISP
+"raw": "{{address}}/sandbox{{api_path}}/accounts
+"raw": "{{address}}/sandbox{{api_path}}/accounts/{{bg_account_id}}
+"raw": "{{address}}/sandbox{{api_path}}/accounts/{{bg_account_id}}/balances
+"raw": "{{address}}/sandbox{{api_path}}/accounts/{{bg_account_id}}/transactions/f3f51978-20fb-4bd9-91d9-7cc2a1fd9618
+"raw": "{{address}}/sandbox{{api_path}}/accounts/{{bg_account_id}}/transactions?bookingStatus=BOOKED
+"raw": "{{address}}/sandbox{{api_path}}/accounts/{{bg_account_id}}/transactions?bookingStatus=information
+"raw": "{{address}}/sandbox{{api_path}}/accounts/{{space_bg_account_id}}/balances
+"raw": "{{address}}/sandbox{{api_path}}/accounts/{{space_bg_account_id}}/transactions
+"raw": "{{address}}/sandbox{{api_path}}/consents
+"raw": "{{address}}/sandbox{{api_path}}/consents/confirmation-of-funds
+"raw": "{{address}}/sandbox{{api_path}}/consents/confirmation-of-funds/{{consent_id}}
+"raw": "{{address}}/sandbox{{api_path}}/consents/confirmation-of-funds/{{consent_id}}/authorisations
+"raw": "{{address}}/sandbox{{api_path}}/consents/confirmation-of-funds/{{consent_id}}/authorisations/{{authorisation_id}}
+"raw": "{{address}}/sandbox{{api_path}}/consents/confirmation-of-funds/{{consent_id}}/status
+"raw": "{{address}}/sandbox{{api_path}}/consents/{{consent_id}}
+"raw": "{{address}}/sandbox{{api_path}}/consents/{{consent_id}}/authorisations
+"raw": "{{address}}/sandbox{{api_path}}/consents/{{consent_id}}/authorisations/{{authorisation_id}}
+"raw": "{{address}}/sandbox{{api_path}}/consents/{{consent_id}}/status
+"raw": "{{address}}/sandbox{{api_path}}/funds-confirmations
+"raw": "{{address}}/sandbox{{api_path}}/payments/instant-sepa-credit-transfers
+"raw": "{{address}}/sandbox{{api_path}}/payments/instant-sepa-credit-transfers/{{payment_id}}
+"raw": "{{address}}/sandbox{{api_path}}/payments/instant-sepa-credit-transfers/{{payment_id}}/authorisations
+"raw": "{{address}}/sandbox{{api_path}}/payments/instant-sepa-credit-transfers/{{payment_id}}/authorisations/{{authorisation_id}}
+"raw": "{{address}}/sandbox{{api_path}}/payments/instant-sepa-credit-transfers/{{payment_id}}/status
+"raw": "{{address}}/sandbox{{api_path}}/payments/instant-sepa-credit-transfers?signed={{redirect_uri}}
+"raw": "{{address}}/sandbox{{api_path}}/payments/sepa-credit-transfers
+"raw": "{{address}}/sandbox{{api_path}}/payments/sepa-credit-transfers/{{payment_id}}
+"raw": "{{address}}/sandbox{{api_path}}/payments/sepa-credit-transfers/{{payment_id}}/authorisations
+"raw": "{{address}}/sandbox{{api_path}}/payments/sepa-credit-transfers/{{payment_id}}/authorisations/{{authorisation_id}}
+"raw": "{{address}}/sandbox{{api_path}}/payments/sepa-credit-transfers/{{payment_id}}/status
+"raw": "{{address}}/sandbox{{api_path}}/periodic-payments/sepa-credit-transfers
+"raw": "{{address}}/sandbox{{api_path}}/periodic-payments/sepa-credit-transfers/{{payment_id}}
+"raw": "{{address}}/sandbox{{api_path}}/periodic-payments/sepa-credit-transfers/{{payment_id}}/authorisations
+"raw": "{{address}}/sandbox{{api_path}}/periodic-payments/sepa-credit-transfers/{{payment_id}}/authorisations/{{authorisation_id}}
+"raw": "{{address}}/sandbox{{api_path}}/periodic-payments/sepa-credit-transfers/{{payment_id}}/status
+
+=== name/desc pairs mentioning endpoint ===
+  [GET] 0.1 Create authorization
+  [POST] 0.2 (Fake) Generate auth code
+  [POST] 0.3 Get Access Token
+  [POST] 0.4 Refresh access token
+  [POST] 1.1 POST /consents (all accounts)
+  [POST] 1.2 POST /consents (account by Iban)
+  [POST] 2.1 POST /psu-interaction/consents/scas (called by TPP to CERTIFY)
+  [POST] 2.2 POST /psu-interaction/consents/scas (called by TPP to REJECT)
+  [GET] 3.1 GET /consents/status (polling)
+  [GET] 3.2 GET /consents
+  [GET] 3.3 GET /consents/authorisations
+  [GET] 3.4 GET /consents/authorisations/authorisationId
+  [DELETE] 3.5 DELETE /consents
+  [GET] 4.1 GET /accounts
+  [GET] 4.2 GET /accounts by ID
+  [GET] 5.1 GET /balances
+  [GET] 5.2 GET /balances for a space
+  [GET] 6.1 GET /transactions
+  [GET] 6.2 GET /transactions by ID
+  [GET] 6.3 GET /transactions for a space
+  [GET] 6.4 GET /transactions (standing orders)
+  [VIEW] 0.0 README AISP
+  [GET] 0.1 Create authorization
+  [POST] 0.2 (Fake) Generate auth code
+  [POST] 0.3 Get Access Token
+  [POST] 1.1 POST /sepa-credit-transfers
+  [GET] 1.2 GET /sepa-credit-transfers/ID
+  [GET] 1.3 GET /sepa-credit-transfers/ID/status
+  [GET] 1.4 GET /sepa-credit-transfers/ID/authorisations
+  [GET] 1.5 GET /sepa-credit-transfers/ID/authorisations/ID
+  [POST] 2.1.a POST /instant-sepa-credit-transfers (User without signed TnC)
+  [POST] 2.1.b POST /instant-sepa-credit-transfers (User with signed TnC)
+  [GET] 2.2 GET /instant-sepa-credit-transfers/ID
+  [GET] 2.3 GET /instant-sepa-credit-transfers/ID/status
+  [GET] 2.4 GET /instant-sepa-credit-transfers/ID/authorisations
+  [GET] 2.5 GET /instant-sepa-credit-transfers/ID/authorisations/ID
+  [POST] 3.1 POST /periodic-payments/sepa-credit-transfers
+  [GET] 3.2 GET /periodic-payments/sepa-credit-transfers/ID
+  [DELETE] 3.3 DELETE /periodic-payments/sepa-credit-transfers/ID
+  [GET] 3.4 GET /periodic-payments/sepa-credit-transfers/ID/status
+  [GET] 3.5 GET /periodic-payments/sepa-credit-transfers/ID/authorisations
+  [GET] 3.6 GET /periodic-payments/sepa-credit-transfers/ID/authorisations/ID
+  [VIEW] 0.0 README PISP
+  [GET] 0.1 Create authorization
+  [POST] 0.2 (Fake) Generate auth code
+  [POST] 0.3 Get Access Token
+  [POST] 1.1 POST /consents/confirmation-of-funds
+  [POST] 2.1 POST /psu-interaction/confirmation-of-funds-consents/scas (called by TPP to CERTIFY)
+  [POST] 2.2 POST /psu-interaction/confirmation-of-funds-consents/scas (called by TPP to REJECT)
+  [GET] 3.1 GET /consents/confirmation-of-funds/status (polling)
+  [GET] 3.2 GET /consents/confirmation-of-funds
+  [GET] 3.3 GET /consents/confirmation-of-funds/authorisationIds
+  [GET] 3.4 GET /consents/confirmation-of-funds/authorisationIds Copy
+  [DELETE] 3.5 DELETE /consents/confirmation-of-funds
+  [POST] 4.1 POST /funds-confirmations
+  [VIEW] 0.0 README CBPII
+  [VIEW] README
+[0m
+[0m$ [0mcd /tmp/opencode && UA='Mozilla/5.0 (compatible; security-research)' 
+probe(){ timeout 20 curl -s -o body.txt -w "%{http_code} len=%{size_download} ct=%{content_type}" -H "User-Agent: $UA" "$@"; echo; head -c 200 body.txt; echo; echo "  ^-- $1"; }
+echo "### DISCRIMINATOR: does the /sandbox data plane exist on the production xs2a host?"
+probe "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts"; sleep 1.2
+probe "https://xs2a.tech26.de/v1/berlin-group/v1/accounts"; sleep 1.2
+probe "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts/11111111-1111-4111-8111-111111111111"; sleep 1.2
+probe "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/this-route-does-not-exist-xyz"
+### DISCRIMINATOR: does the /sandbox data plane exist on the production xs2a host?
+401 len=0 ct=
+
+  ^-- https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts
+401 len=0 ct=
+
+  ^-- https://xs2a.tech26.de/v1/berlin-group/v1/accounts
+401 len=0 ct=
+
+  ^-- https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts/11111111-1111-4111-8111-111111111111
+404 len=0 ct=
+
+  ^-- https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/this-route-does-not-exist-xyz
+[0m
+[0m$ [0mcd /tmp/opencode && UA='Mozilla/5.0 (compatible; security-research)'
+h(){ timeout 20 curl -s -D - -o /dev/null -w "" -H "User-Agent: $UA" "$1" | tr -d '\r' | grep -Ei '^(HTTP/|www-authenticate|content-type|content-length|x-envoy|x-request|x-powered|x-n26|x-correlation|server):' | sed 's/^/   /'; }
+echo "== LIVE  /v1/berlin-group/v1/accounts"; h "https://xs2a.tech26.de/v1/berlin-group/v1/accounts"; sleep 1.2
+echo "== SANDBOX /sandbox/v1/berlin-group/v1/accounts"; h "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts"
+== LIVE  /v1/berlin-group/v1/accounts
+   content-length: 0
+   server: istio-envoy
+== SANDBOX /sandbox/v1/berlin-group/v1/accounts
+   content-length: 0
+   server: istio-envoy
+[0m
+[0m$ [0mcd /tmp/opencode && UA='Mozilla/5.0 (compatible; security-research)'
+U=11111111-1111-4111-8111-111111111111
+s(){ printf "%-4s %s\n" "$(timeout 20 curl -s -o /dev/null -w '%{http_code}' -H "User-Agent: $UA" "$1")" "$1"; sleep 1.1; }
+echo "### SANDBOX plane (prod host) route classes"
+s "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts/$U/balances"
+s "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts/$U/transactions"
+s "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents/$U"
+s "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents/$U/status"
+s "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/payments/sepa-credit-transfers/$U"
+s "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/payments/instant-sepa-credit-transfers/$U"
+s "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/funds-confirmations"
+s "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents/confirmation-of-funds/$U"
+### SANDBOX plane (prod host) route classes
+401  https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts/11111111-1111-4111-8111-111111111111/balances
+401  https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts/11111111-1111-4111-8111-111111111111/transactions
+401  https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents/11111111-1111-4111-8111-111111111111
+401  https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents/11111111-1111-4111-8111-111111111111/status
+401  https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/payments/sepa-credit-transfers/11111111-1111-4111-8111-111111111111
+401  https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/payments/instant-sepa-credit-transfers/11111111-1111-4111-8111-111111111111
+404  https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/funds-confirmations
+401  https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents/confirmation-of-funds/11111111-1111-4111-8111-111111111111
+[0m
+[0m$ [0mcd /tmp/opencode && UA='Mozilla/5.0 (compatible; security-research)'
+U=11111111-1111-4111-8111-111111111111
+s(){ printf "%-4s %s\n" "$(timeout 20 curl -s -o /dev/null -w '%{http_code}' -H "User-Agent: $UA" "$1")" "$1"; sleep 1.1; }
+echo "### LIVE plane - route classes never enumerated (from vendor collection)"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/payments/instant-sepa-credit-transfers/$U"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/payments/instant-sepa-credit-transfers/$U/status"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/periodic-payments/sepa-credit-transfers/$U"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/periodic-payments/sepa-credit-transfers/$U/status"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds/$U"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds/$U/status"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/consents/$U/authorisations"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/funds-confirmments"
+### LIVE plane - route classes never enumerated (from vendor collection)
+401  https://xs2a.tech26.de/v1/berlin-group/v1/payments/instant-sepa-credit-transfers/11111111-1111-4111-8111-111111111111
+401  https://xs2a.tech26.de/v1/berlin-group/v1/payments/instant-sepa-credit-transfers/11111111-1111-4111-8111-111111111111/status
+401  https://xs2a.tech26.de/v1/berlin-group/v1/periodic-payments/sepa-credit-transfers/11111111-1111-4111-8111-111111111111
+401  https://xs2a.tech26.de/v1/berlin-group/v1/periodic-payments/sepa-credit-transfers/11111111-1111-4111-8111-111111111111/status
+401  https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds/11111111-1111-4111-8111-111111111111
+401  https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds/11111111-1111-4111-8111-111111111111/status
+401  https://xs2a.tech26.de/v1/berlin-group/v1/consents/11111111-1111-4111-8111-111111111111/authorisations
+404  https://xs2a.tech26.de/v1/berlin-group/v1/funds-confirmments
+[0m
+[0m$ [0mcd /tmp/opencode && UA='Mozilla/5.0 (compatible; security-research)'
+U=11111111-1111-4111-8111-111111111111
+s(){ printf "%-4s %s\n" "$(timeout 20 curl -s -o /dev/null -w '%{http_code}' -H "User-Agent: $UA" "$1")" "$1"; sleep 1.1; }
+echo "### remaining documented authorisations routes"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/payments/instant-sepa-credit-transfers/$U/authorisations"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/periodic-payments/sepa-credit-transfers/$U/authorisations"
+s "https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds/$U/authorisations"
+echo
+echo "### SANDBOX AUTH PLANE - route existence only, NO parameters (nothing created)"
+printf "%-4s %s\n" "$(timeout 20 curl -s -o b1.txt -w '%{http_code}' -H "User-Agent: $UA" 'https://xs2a.tech26.de/sandbox/oauth2/authorize')" "/sandbox/oauth2/authorize"; head -c 300 b1.txt; echo
+sleep 1.1
+printf "%-4s %s\n" "$(timeout 20 curl -s -o b2.txt -w '%{http_code}' -H "User-Agent: $UA" 'https://xs2a.tech26.de/oauth2/authorize')" "/oauth2/authorize (live tier)"; head -c 300 b2.txt; echo
+### remaining documented authorisations routes
+401  https://xs2a.tech26.de/v1/berlin-group/v1/payments/instant-sepa-credit-transfers/11111111-1111-4111-8111-111111111111/authorisations
+401  https://xs2a.tech26.de/v1/berlin-group/v1/periodic-payments/sepa-credit-transfers/11111111-1111-4111-8111-111111111111/authorisations
+401  https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds/11111111-1111-4111-8111-111111111111/authorisations
+
+### SANDBOX AUTH PLANE - route existence only, NO parameters (nothing created)
+404  /sandbox/oauth2/authorize
+
+404  /oauth2/authorize (live tier)
+[0m
+[0m$ [0mcd /tmp/opencode && UA='Mozilla/5.0 (compatible; security-research)'
+Q='?client_id=THIS-CLIENT-DOES-NOT-EXIST&response_type=CODE&state=t&redirect_uri=https%3A%2F%2Fapp.n26.com%2Flogin&scope=DEDICATED_AISP&code_challenge=0000000000000000000000000000000000000000'
+r(){ printf "%-4s len=%s  %s\n" "$(timeout 20 curl -s -o o.txt -w '%{http_code}' -H "User-Agent: $UA" "$1")" "$(stat -c%s o.txt)" "$1"; head -c 250 o.txt; echo; sleep 1.2; }
+echo "### bogus-client discriminator (creates nothing, uses no real credential)"
+r "https://xs2a.tech26.de/sandbox/oauth2/authorize$Q"
+r "https://xs2a.tech26.de/oauth2/authorize$Q"
+### bogus-client discriminator (creates nothing, uses no real credential)
+401  len=0  https://xs2a.tech26.de/sandbox/oauth2/authorize?client_id=THIS-CLIENT-DOES-NOT-EXIST&response_type=CODE&state=t&redirect_uri=https%3A%2F%2Fapp.n26.com%2Flogin&scope=DEDICATED_AISP&code_challenge=0000000000000000000000000000000000000000
+
+401  len=0  https://xs2a.tech26.de/oauth2/authorize?client_id=THIS-CLIENT-DOES-NOT-EXIST&response_type=CODE&state=t&redirect_uri=https%3A%2F%2Fapp.n26.com%2Flogin&scope=DEDICATED_AISP&code_challenge=0000000000000000000000000000000000000000
+[0m
+[0m$ [0mcd /tmp/opencode && UA='Mozilla/5.0 (compatible; security-research)'
+echo "### token endpoint existence via GET (RFC6749 allows GET in some impls; no token can be minted by a GET without a valid code)"
+for p in "/sandbox/oauth2/token?role=DEDICATED_AISP&grant_type=authorization_code&code=NONEXISTENT" "/oauth2/token?grant_type=authorization_code&code=NONEXISTENT"; do
+printf "%-4s len=%s  %s\n" "$(timeout 20 curl -s -o o.txt -w '%{http_code}' -H "User-Agent: $UA" "https://xs2a.tech26.de$p")" "$(stat -c%s o.txt)" "$p"; head -c 200 o.txt; echo; sleep 1.2; done
+echo "### re-extract authorize URLs verbatim (client_id check)"
+python3 -c "
+import json
+d=json.load(open('coll.json'))
+def w(items):
+    for it in items:
+        if 'item' in it: w(it['item'])
+        else:
+            r=it.get('request',{}); u=r.get('url',{})
+            raw=u.get('raw') if isinstance(u,dict) else None
+            if raw and 'authorize' in raw: print(' ', r.get('method'), raw)
+w(d.get('item',[]))"
+### token endpoint existence via GET (RFC6749 allows GET in some impls; no token can be minted by a GET without a valid code)
+404  len=0  /sandbox/oauth2/token?role=DEDICATED_AISP&grant_type=authorization_code&code=NONEXISTENT
+
+404  len=0  /oauth2/token?grant_type=authorization_code&code=NONEXISTENT
+
+### re-extract authorize URLs verbatim (client_id check)
+  GET {{address}}/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI&redirect_uri=https://google.com&response_type=CODE&state=testState
+  GET {{address}}/sandbox/oauth2/authorize?client_id=PSDES-BDE-3DFD12&scope=DEDICATED_PISP&code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI&redirect_uri=https://google.com&response_type=CODE&state=testState
+  GET {{address}}/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_CBPII&code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI&redirect_uri=https://google.com&response_type=CODE&state=testState
+[0m
+## STEP 1 — DELTA
+
+[NEW] @ xs2a.tech26.de: **the PSD2 sandbox tier is deployed and routed on the PRODUCTION host** at `/sandbox/v1/berlin-group/v1/*` — 7 route classes all `401 len=0` app-layer (`/accounts`, `/accounts/{id}`, `/accounts/{id}/balances`, `/accounts/{id}/transactions`, `/consents/{id}`, `/consents/{id}/status`, `/payments/sepa-credit-transfers/{id}`, `/payments/instant-sepa-credit-transfers/{id}`, `/consents/confirmation-of-funds/{id}`); bogus control `/sandbox/v1/berlin-group/v1/this-route-does-not-exist-xyz` → `404`. **Retracts** my 09-26 REJECTED "sandbox and production are path-separated". Vendor collection confirms the sandbox base is the *same* host: `{{address}}` = `https://xs2a.tech26.de`, paths = `/sandbox{{api_path}}/...`.
+[NEW] @ xs2a.tech26.de: **OAuth2 authorization plane is anonymously reachable on the production host, both tiers** — `GET /oauth2/authorize?...&client_id=THIS-CLIENT-DOES-NOT-EXIST` → `401`, `GET /sandbox/oauth2/authorize?...(same params)` → `401`; the same two routes with **no parameters** → `404`. The 404 is therefore a missing-parameter response, not route absence. **Retracts** 09-26 "token-minting surface is not anonymously reachable". Discriminator identified: **parameter presence, not HTTP method**.
+[NEW] @ xs2a.tech26.de: **8 previously-unenumerated Berlin-Group route classes live** on the live plane (all `401`): `payments/instant-sepa-credit-transfers/{id}`, `.../{id}/status`, `.../{id}/authorisations`, `periodic-payments/sepa-credit-transfers/{id}`, `.../{id}/status`, `.../{id}/authorisations`, `consents/confirmation-of-funds/{id}`, `.../status`, `consents/{id}/authorisations`. Live money-movement surface is **21 classes, not 11** — includes irrevocable instant SEPA credit transfer and standing orders, neither previously inventoried. (`funds-confirmations` → `404` on GET; documented POST-only, so uninformative per the 09-26 rule.)
+[NEW] @ n26/psd2-tpp-docs (public vendor corpus, `doc/assets/postman/XS2A_N26_Sandbox.postman_environment.json` + collection): **two registered Berlin-Group `client_id`s published since 2021-12-16** — `PSDDE-BAFIN-000001` (scopes `DEDICATED_AISP`, `DEDICATED_CBPII`) and `PSDES-BDE-3DFD12` (scope `DEDICATED_PISP`), plus PKCE `code_challenge` `w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI` and `redirect_uri` `https://app.n26.com/login`. No secret material is present in the repo (no `.p12`/`.pem`/`client_secret`); the earlier env var `dedicated_aisp_client_id` value is the PKCE challenge, not a client_id.
+[NEW] @ xs2a.tech26.de: custom request headers in the vendor collection not in the KB — `x-n26-userid`, `x-n26-userlocale`, `x-aisp-name`, `x-authorize-meta`, `X-Request-ID`, `Consent-ID`, `device-token`/`device_token`, `x-tpp-userip`. `x-n26-userid` is a **client-asserted PSU identity header**.
+[CHANGED] @ {xs2a,aisp,pisp}-staging.tech26.de: all three CNAME to `obnium-mtls-staging-fra-558276106` (18.194.149.157 / 63.183.127.82 / 3.123.53.230) and **connect-timeout 25s, 0 bytes on 443** — source-gated SG, matches the fpadedge/mambuedge class. Never probed before; now closed.
+[CHANGED] @ process: 09-26 learning "vendor corpus is the correct enumeration source" confirmed for the third consecutive cycle and again produced the only signal — my own last-cycle [NEXT] probe (POST to `/oauth2/token`) was unnecessary, because the *GET* authorize plane on the same host already answers the reachability question that the 404 could not.
+
+## STEP 2 — PRIORITIZE
+
+[PRIO] xs2a.tech26.de,8.45,attack_surface=9.5;business_value=10.0;tech_exposure=9.5;gate_ease=3.0;cloud_surface=7.0;freshness=10.0
+[PRIO] pisp.tech26.de,7.88,attack_surface=9.5;business_value=10.0;tech_exposure=9.0;gate_ease=0.0;cloud_surface=7.0;freshness=9.5
+[PRIO] aisp.tech26.de,7.25,attack_surface=8.0;business_value=9.0;tech_exposure=9.0;gate_ease=0.0;cloud_surface=7.0;freshness=9.5
+[PRIO] api.tech26.de,6.70,attack_surface=8.5;business_value=9.5;tech_exposure=6.0;gate_ease=0.0;cloud_surface=7.0;freshness=6.0
+
+## STEP 3 — HYPOTHESES
+
+[HYP] Sandbox/live token audience confusion on the Berlin-Group money-movement API, with a credential-free sandbox token-mint path
+class: AUTH
+asset: xs2a.tech26.de — `/sandbox/v1/berlin-group/v1/*` vs `/v1/berlin-group/v1/*`, issuer `/sandbox/oauth2/{authorize,token}`
+confidence: 72
+reasoning: the sandbox data plane and the live data plane are **co-tenants on one production host** behind one Istio gateway, 7 vs 21 route classes, both `401` app-layer, both vhost-identical (`server: istio-envoy`, no distinguishing header). The authorization plane for both tiers is **anonymously reachable** (`401` at `/oauth2/authorize` and `/sandbox/oauth2/authorize` with documented parameters, `404` without — parameter presence, not method, is the discriminator). N26's own Postman collection shows the sandbox flow needs **no PSU interaction**: step `0.2 (Fake) Generate auth code` is `POST /sandbox/psu-interaction/generate-auth-code/{request_id}?role=DEDICATED_AISP` — the ASPSP issues the auth code itself. Registered `client_id`s are public (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`). Two registered client_ids mean a token minted under `DEDICATED_AISP` is bound to a client, but the Berlin-Group spec requires ASPSP to reject sandbox tokens on the production service; the single-host, single-gateway topology makes an audience check easy to omit and there is no `aud`/`iss` claim in any observable response. Separately, `x-n26-userid` is a client-asserted PSU identity header in the same collection.
+evidence_needed: a token minted against the **sandbox** issuer and replayed against the **live** data plane (`/v1/berlin-group/v1/accounts`, `.../accounts/{id}/balances`, `.../payments/instant-sepa-credit-transfers`), and the reverse; plus the live/sandbox `aud`/`iss` values from the two token responses; plus a repeat of `/sandbox/.../accounts` with the `x-n26-userid` header swapped to a second fixture value.
+verify_steps: baseline `GET /v1/berlin-group/v1/accounts HTTP/2` + `Host: xs2a.tech26.de` + `Authorization: Bearer <sandbox-token>` → expect `401`; then `GET /sandbox/v1/berlin-group/v1/accounts` with the same sandbox token → expect `200`; then `GET /sandbox/v1/berlin-group/v1/accounts` with `x-n26-userid: <second fixture uuid>` and compare bodies. Obtain the sandbox token with `GET /sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI&redirect_uri=https://app.n26.com/login&response_type=CODE&state=<random>` then `POST /sandbox/psu-interaction/generate-auth-code/<request_id>?role=DEDICATED_AISP` then `POST /sandbox/oauth2/token?role=DEDICATED_AISP`. Halt on any non-sandbox data; do not touch live account IDs.
+impact: a token obtainable with **zero user interaction and zero user credentials** that is accepted on the live tier yields account listing, balances, transaction history, consent state and **initiation of instant SEPA credit transfers** (irrevocable) as the linked PSU; combined with the absent mTLS, PSD2 SCA collapses to "possession of a sandbox-minted token". CRITICAL if confirmed; nothing anonymous is established today.
+testability: AUTH_HELPED
+
+[HYP] Cross-tenant BOLA on the fallback PIS/AIS interface with client-asserted anti-fraud binding
+class: IDOR
+asset: pisp.tech26.de/api/openbanking/fallback/{sepa-ct,sepa-instant,so}/{paymentId}/status; aisp.tech26.de/api/fallback/accounts/{accountId}/transactions
+confidence: 68
+reasoning: reconfirmed live this cycle — `GET /api/openbanking/fallback/sepa-ct/1111.../status` → `401`, `GET /api/fallback/accounts/1111.../transactions?from=0&to=1` → `401`. Route table is the correct one (vendor `fallback-pisp.md` / `fallback-aisp.md`, not the api-family wordlist). `{accountId}`/`{paymentId}` are attacker-suppliable UUIDs. N26 documents the entire anti-fraud layer as keyed to a client-asserted header: *"providing this IP address guarantees us to identify proper user calls and to protect the integrity of our services… If a TPP doesn't provide an end-user's IP address… such cases will be treated in accordance to our established security policies."* `device-token` is a client-invented UUID v4 and `x-tpp-userip` is client-asserted on the same request.
+evidence_needed: two isolated sandbox TPP sessions with stable synthetic `accountId`/`paymentId` per session, and object-bearing responses.
+verify_steps: `GET /api/openbanking/fallback/sepa-ct/<tpp-B-payment-id>/status HTTP/1.1` + `Host: pisp.tech26.de` + `Authorization: bearer <tpp-A-access>` + `device-token: <uuid-A>` + `x-tpp-userip: <tpp-B-user's real IP>`; mirror with token B; same pattern on `GET /api/fallback/accounts/<tpp-B-accountId>/transactions?from=0&to=1` at `aisp.tech26.de`. Halt on any non-test data.
+impact: cross-tenant disclosure of payment execution state, rejection reasons and full transaction history with counterparty identifiers; spoofing `x-tpp-userip` with the victim's real IP additionally neutralises the documented fraud controls, so a stolen fallback token is used without tripping IP-anomaly detection. CRITICAL conditional on BOLA; no anonymous access established.
+testability: AUTH_HELPED
+
+[HYP] Unattended 180-day access to full account data via unbound fallback refresh-token chain
+class: AUTH
+asset: aisp.tech26.de/oauth2/token
+confidence: 70
+reasoning: the fallback AISP spec makes the access token 15-minute / `Storage: NEVER`, but the refresh token is a **180-day rotating chain** renewed by `POST /oauth2/token` with `grant_type=refresh_token`, requiring only `refresh_token` in the body plus the `device-token` **request header** — a value the doc tells the TPP to invent ("a valid UUID v4 as per RFC 4122"). `x-tpp-userip` is likewise client-asserted. The `/oauth2/token` route is POST-only, so the 09-26 `GET` 404 is uninformative — and this cycle proves the same edge answers `401` for `/oauth2/authorize` when parameters are present, so a `404` on a param-less GET carries no information at all.
+evidence_needed: one fallback-tier sandbox refresh token plus a second independently-minted session, to test whether a refresh token issued to session A is accepted when replayed with a freshly invented `device-token` and a different `x-tpp-userip`.
+verify_steps: baseline `GET /api/v2/accounts HTTP/1.1` + `Host: aisp.tech26.de` + `Authorization: bearer <tpp-A-access>` + `device-token: <uuid-A>` + `x-tpp-userip: 203.0.113.7`; repeat with `device-token: <random-uuid-B>` + `x-tpp-userip: 198.51.100.9` (both different from the minting session); compare status and body. Halt on any non-test data.
+impact: if `device-token` is not bound server-side to the session, one leaked refresh token yields 180 days of unattended access to every account's IBAN, balance, product, owner name and full transaction history including counterparty IBANs; HIGH.
+testability: AUTH_HELPED
+
+## STEP 4 — SELF-CRITIQUE
+
+[PARKED] xs2a.tech26.de missing mTLS/SCA enforcement: still true and still 78, but it is a transport-control gap (INFO/low as a bounty item) that is fully explained by the single-`obnium-mtls-live-fra`-gateway topology, and it is tested in the **same credentialed session** as hypothesis 1 — reporting it separately would duplicate the evidence.
+[PARKED] sandbox plane serving production customer data: cannot be separated from hypothesis 1 without a sandbox token; folded into its verify steps rather than carried as a free-floating claim.
+[PARKED] `POST /oauth2/token` reachability on xs2a.tech26.de: GET returns `404` on both tiers, which per my own 09-26 rule is evidence of nothing for a documented-POST route. Unresolved, not closed; not promoted.
+[PARKED] vhost route confusion / token-audience bypass across `{xs2a,aisp,pisp}`: **refuted last cycle** — route tables strictly disjoint per Host, every cross-cell `404`. The audience question that survives is *sandbox-vs-live on the same host* (hypothesis 1), which is different and still open.
+[PARKED] fallback-tier unauthenticated payment-status read: refuted — `device-token` + `x-tpp-userip` with no `Authorization` → `401` on all three status routes; documentation defect only, would be a no-POC rejection.
+[PARKED] `api.tech26.de` legacy BOLA (92) and `pay.n26.com` Stripe-forwarded BOLA (85): both still valid and undischarged, retained below the cut only because this cycle's entire new evidence concerns the open-banking tier. Neither is invalidated.
+[FINAL] 1. xs2a.tech26.de sandbox/live token audience confusion on a 21-class money-movement API (72 — only hypothesis this cycle backed by a new observation); 2. aisp.tech26.de unbound 180-day refresh chain (70); 3. fallback-tier BOLA with client-asserted `x-tpp-userip` (68). No anonymous result is promoted as a finding; zero secrets obtained this cycle (published `client_id`/PKCE values are public identifiers, not credentials).
+
+## STEP 5 — NEXT ACTION
+
+[NEXT] PROBE: `GET https://xs2a.tech26.de/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI&redirect_uri=https%3A%2F%2Fapp.n26.com%2Flogin&response_type=CODE&state=<random-32-hex>` with `User-Agent` set and no cookies. Expected: `302` to `app.n26.com/login` carrying a `request_id` (sandbox tier only, no customer data, no user authenticated, GET-only). This is the only route on the program that can yield a working token **without** coordinator-provisioned credentials, because the sandbox flow mints its own auth code (`POST /sandbox/psu-interaction/generate-auth-code/{request_id}`). The two follow-on POSTs (generate-auth-code, `/sandbox/oauth2/token`) require sign-off and must not be run against the live `/oauth2/*` tier; stop immediately if any response contains non-sandbox data.
+
+## STEP 6 — LEARNING
+
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: the PSD2 **sandbox tier is co-tenant on the production host** at `/sandbox/v1/berlin-group/v1/*` (7 classes `401`, bogus-path control `404`) — retracts my 09-26 "sandbox and production are path-separated".
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: the OAuth2 **authorization plane is anonymously reachable on the production host for both tiers** — `/oauth2/authorize` and `/sandbox/oauth2/authorize` return `401` with documented parameters and `404` without them. Retracts 09-26 "token-minting surface is not anonymously reachable" and proves my own 2-hour-old correction with the precise mechanism: **on this edge the 404 is a missing-parameter response, so the discriminator is parameter presence, not HTTP method.** Generalised rule: a 404 on a param-less GET is evidence of nothing at all.
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: 8 previously-unenumerated Berlin-Group classes are live, including `payments/instant-sepa-credit-transfers` and `periodic-payments/sepa-credit-transfers` — the live money-movement surface is 21 classes, not 11, and includes irrevocable instant credit transfer.
+[LEARN] REJECTED MISCONFIG @ {xs2a,aisp,pisp}-staging.tech26.de: all three CNAME to `obnium-mtls-staging-fra-558276106` and connect-timeout 25s / 0 bytes on 443 — source-gated SG, class closed, HUMAN_ONLY.
+[LEARN] ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and a PKCE challenge in its own public repo since 2021-12-16, and the collection's `{{address}}` is the **production** host. Third consecutive instance of the 09-25 rule: the vendor's own corpus is the only enumeration source that produces signal on this program, and `psd2-tpp-docs` also documents a `(Fake) Generate auth code` endpoint, i.e. a credential-free token-mint path in the sandbox tier.
+[LEARN] ACCEPTED MISCONFIG @ process: my own [NEXT] probe from last cycle (`POST /oauth2/token`) was mis-designed — a GET on the *authorize* plane of the same host answers the reachability question that the token-endpoint 404 could not, without leaving the read-only envelope. Method-shape questions must be asked of the route that actually carries the documented method, not of a sibling.
+
+## STEP 7 — RISK
+
+[RISK] N26 Bank AG: 92 — the open-banking tier is worse than the KB reflected, and this cycle closed the last "unmapped" gaps. The Berlin-Group production API on `xs2a.tech26.de` is 21 route classes (not 11) including instant and periodic SEPA credit transfers; the **PSD2 sandbox tier is co-resident on the same production host behind the same gateway**; the **authorization plane is anonymously reachable on both tiers**; the **sandbox flow mints its own authorization code with no PSU interaction**, so a token is obtainable with no user and no credential; and the one documented transport control (a qualified client certificate required to establish the connection) is never requested by the server. The blast radius if the audience check between `/sandbox/*` and `/*` is missing is irrevocable payment initiation as an authenticated PSU. Offsetting: still zero validated findings, zero anonymous data access, every read and write path returns `401`, and the two public identifiers carry no secret.
