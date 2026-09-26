@@ -707,3 +707,6 @@ https://spc.n26.com/status -> HTTP 404
 https://app.n26.com/login` -> HTTP 404
 https://app.n26.com/login&response_type=CODE&state=<random>` -> HTTP 404
 https://xs2a.tech26.de/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI&redirect_uri=https%3A%2F%2Fapp.n26.com%2Flogin&response_type=CODE&state=<random-32-hex>` -> HTTP 404
+
+## 2026-09-26 14:04:17 UTC
+

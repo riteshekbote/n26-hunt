@@ -3390,3 +3390,58 @@
 - LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
 - LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token m
 - LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collecti
+
+## RANKED HYPOTHESES 2026-09-26 14:04:17 UTC
+- [95] xs2a.tech26.de/v1/berlin-group/v1: xs2a.tech26.de missing mandatory mTLS enforcement on production Berlin-Group XS2A API (from art/lead_nemotron3.txt)
+- [40] n26/N26AndroidSamples/buildsystem/configurations.gradle: xs2a.tech26.de missing mTLS enforcement on production Berlin-Group XS2A API (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): PROBE: `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -showcerts </dev/null 2>&1 | grep -E "(CertificateRequest|Verify return code|no 
+- NEXT(hypotheses-nemotron3.txt): PROBE: `curl -v https://xs2a-staging.tech26.de/v1/berlin-group/v1/accounts 2>&1 | grep -E "(HTTP|CertificateRequest|Verify return code)"` — compare staging vs p
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: 8 previously-unenumerated Berlin-Group classes are live, including `payments/instant-sepa-credit-transfers` and `periodic-p
+- LEARN: REJECTED MISCONFIG @ {xs2a,aisp,pisp}-staging.tech26.de: all three CNAME to `obnium-mtls-staging-fra-558276106` and connect-timeout 25s / 0 bytes on 443 — sourc
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and a PKCE challenge in it
+- LEARN: ACCEPTED MISCONFIG @ process: my own [NEXT] probe from last cycle (`POST /oauth2/token`) was mis-designed — a GET on the *authorize* plane of the same host answ
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — on this edge, `GET /api/mfa/challenge` 
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token m
+- LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collecti
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not en
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking`: open-redirect hypothesis closed — the `redirect` param is rebuilt server-side from the matched route path, use
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de: unauthenticated auth-code minting via the documented sandbox helpers (`/sandbox/oauth2/authorize|/sandbox/oauth2/token|/san
+- LEARN: ACCEPTED MISCONFIG @ {aisp,pisp}.tech26.de: not "route-less" and not a mesh split — they share the `{aisp,xs2a,pisp}` cert leaf but do not terminate the Berlin-
+- LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only thing that produced signal was **vendor-corpus-driven route mapping** (public OpenAPI yml + Po
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less / no distinct surface" classification is **false** — both serve the full legacy `/ap
+- LEARN: REJECTED AUTH @ api.tech26.de: header-shape bypass closed — lowercase header name `authorization:`, tab separator, and double space after colon all return `401 
+- LEARN: ACCEPTED MISCONFIG @ {aisp,xs2a}.tech26.de: `server: istio-envoy` edge, `/api/me` and `/api/accounts/1/statements` → `404 len=0`; these hosts are on a different
+- LEARN: REJECTED MISCONFIG @ pisp.tech26.de `/api/mfa/challenge` (GET): `404 len=0` istio-envoy, consistent with POST-only route as used in public psd2-tpp-docs script;
+- LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section heade
+- LEARN: ACCEPTED MISCONFIG @ process: triage-feeder intake dead since 09-22-14-04 (~3.5 days; healthy-but-empty 09-24-19-17 the only break); pipeline 100% blocked on co
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not en
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share ELB `obnium-mtls-live-fra-328671153` and none ever issues a TLS `CertificateRequest` (`No clien
+- LEARN: ACCEPTED MISCONFIG @ aisp.tech26.de: route table mapped from vendor corpus (psd2-tpp-docs/doc/fallback-aisp.md) — this is the PSD2 Fallback / contingency interf
+- LEARN: ACCEPTED MISCONFIG @ pisp.tech26.de: route table mapped (fallback-pisp.md) — 5 live route classes: `GET /api/openbanking/fallback/sepa-ct/{paymentId}/status`, `
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — on this edge, `GET /api/mfa/challenge` 
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token m
+- LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collecti
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not en
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share ELB `obnium-mtls-live-fra-328671153` and none ever issues a TLS `CertificateRequest` (`No clien
+- LEARN: ACCEPTED MISCONFIG @ aisp.tech26.de: route table mapped from vendor corpus (psd2-tpp-docs/doc/fallback-aisp.md) — this is the PSD2 Fallback / contingency interf
+- LEARN: ACCEPTED MISCONFIG @ pisp.tech26.de: route table mapped (fallback-pisp.md) — 5 live route classes: `GET /api/openbanking/fallback/sepa-ct/{paymentId}/status`, `
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — on this edge, `GET /api/mfa/challenge` 
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token m
+- LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collecti
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not en
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share ELB `obnium-mtls-live-fra-328671153` and none ever issues a TLS `CertificateRequest` (`No clien
+- LEARN: ACCEPTED MISCONFIG @ aisp.tech26.de: route table mapped from vendor corpus (psd2-tpp-docs/doc/fallback-aisp.md) — this is the PSD2 Fallback / contingency interf
+- LEARN: ACCEPTED MISCONFIG @ pisp.tech26.de: route table mapped (fallback-pisp.md) — 5 live route classes: `GET /api/openbanking/fallback/sepa-ct/{paymentId}/status`, `
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — on this edge, `GET /api/mfa/challenge` 
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token m
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the PSD2 **sandbox tier is co-tenant on the production host** at `/sandbox/v1/berlin-group/v1/*` (7 classes `401`, bogus-pa
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the OAuth2 **authorization plane is anonymously reachable on the production host for both tiers** — `/oauth2/authorize` and
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: 8 previously-unenumerated Berlin-Group classes are live, including `payments/instant-sepa-credit-transfers` and `periodic-p
+- LEARN: REJECTED MISCONFIG @ {xs2a,aisp,pisp}-staging.tech26.de: all three CNAME to `obnium-mtls-staging-fra-558276106` and connect-timeout 25s / 0 bytes on 443 — sourc
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and a PKCE challenge in it
+- LEARN: ACCEPTED MISCONFIG @ process: my own [NEXT] probe from last cycle (`POST /oauth2/token`) was mis-designed — a GET on the *authorize* plane of the same host answ
+- LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collecti

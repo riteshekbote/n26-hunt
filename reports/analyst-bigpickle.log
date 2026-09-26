@@ -42104,3 +42104,614 @@ testability: AUTH_HELPED
 ## STEP 7 — RISK
 
 [RISK] N26 Bank AG: 92 — the open-banking tier is worse than the KB reflected, and this cycle closed the last "unmapped" gaps. The Berlin-Group production API on `xs2a.tech26.de` is 21 route classes (not 11) including instant and periodic SEPA credit transfers; the **PSD2 sandbox tier is co-resident on the same production host behind the same gateway**; the **authorization plane is anonymously reachable on both tiers**; the **sandbox flow mints its own authorization code with no PSU interaction**, so a token is obtainable with no user and no credential; and the one documented transport control (a qualified client certificate required to establish the connection) is never requested by the server. The blast radius if the audience check between `/sandbox/*` and `/*` is missing is irrevocable payment initiation as an authenticated PSU. Offsetting: still zero validated findings, zero anonymous data access, every read and write path returns `401`, and the two public identifiers carry no secret.
+===== ANALYST bigpickle 2026-09-26 14:04:17 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la; echo "---STATE---"; cat state_bigpickle.json 2>/dev/null; echo "---LEADS---"; ls -la art/ 2>/dev/null | head -30
+total 692
+drwxr-xr-x 12 runner runner   4096 Sep 26 13:59 .
+drwxr-xr-x  3 runner runner   4096 Sep 26 13:59 ..
+drwxr-xr-x  7 runner runner   4096 Sep 26 13:59 .git
+drwxr-xr-x  3 runner runner   4096 Sep 26 13:59 .github
+-rw-r--r--  1 runner runner   1844 Sep 26 13:59 README.md
+-rw-r--r--  1 runner runner     32 Sep 26 13:59 analyst-out.txt
+-rw-r--r--  1 runner runner 297902 Sep 26 13:59 analyst-prompt.txt
+-rw-r--r--  1 runner runner 294032 Sep 26 13:59 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 26 13:59 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 26 13:59 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 26 13:59 leads
+-rw-r--r--  1 runner runner  20416 Sep 26 13:59 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 26 13:59 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 26 13:59 reports
+drwxr-xr-x  2 runner runner   4096 Sep 26 13:59 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 26 13:59 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 26 13:59 scripts
+-rw-r--r--  1 runner runner     33 Sep 26 13:59 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 26 13:59 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 26 13:59 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 26 13:59 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 26 13:59 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 26 13:59 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Sep 26 13:59 triage
+---STATE---
+{"phase": "POC", "target": "api"}---LEADS---
+[0m
+I'll run the 8-step cycle. Let me first check the workspace state and available artifacts.
+[0m$ [0mls -la triage/ 2>/dev/null | tail -20; echo "---PROBE---"; ls -la probe-results.md hypotheses.md 2>/dev/null
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-23-03-53.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-23-09-10.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-23-14-16.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-23-18-26.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-23-21-46.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-24-00-17.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-24-05-04.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-24-10-10.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-24-15-14.md
+-rw-r--r--  1 runner runner   143 Sep 26 13:59 run-2026-09-24-19-17.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-24-22-31.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-25-00-47.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-25-05-56.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-25-11-37.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-25-15-55.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-25-19-54.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-25-23-09.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-26-01-40.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-26-06-38.md
+-rw-r--r--  1 runner runner   210 Sep 26 13:59 run-2026-09-26-11-48.md
+---PROBE---
+-rw-r--r-- 1 runner runner 20416 Sep 26 13:59 probe-results.md
+[0m
+[0m$ [0mfor f in triage/run-2026-09-26-06-38.md triage/run-2026-09-26-11-48.md triage/run-2026-09-26-01-40.md; do echo "=== $f ==="; cat "$f"; echo; done
+=== triage/run-2026-09-26-06-38.md ===
+
+===== TRIAGE 2026-09-26 06:38:33 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_58805be8"
+  }
+}
+
+=== triage/run-2026-09-26-11-48.md ===
+
+===== TRIAGE 2026-09-26 11:48:02 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_9a03853a"
+  }
+}
+
+=== triage/run-2026-09-26-01-40.md ===
+
+===== TRIAGE 2026-09-26 01:40:03 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_d242ae5e"
+  }
+}
+[0m
+[0m$ [0mls -la leads/ recon-notes/ reports/ 2>/dev/null; echo "---LEAD TAIL---"; for f in leads/*; do echo "=== $f ==="; tail -5 "$f"; done 2>/dev/null | head -60
+leads/:
+total 2364
+drwxr-xr-x  2 runner runner    4096 Sep 26 13:59 .
+drwxr-xr-x 12 runner runner    4096 Sep 26 13:59 ..
+-rw-r--r--  1 runner runner  886158 Sep 26 13:59 lead-bigpickle.md
+-rw-r--r--  1 runner runner    7803 Sep 26 13:59 lead-laguna.md
+-rw-r--r--  1 runner runner    7650 Sep 26 13:59 lead-ling3.md
+-rw-r--r--  1 runner runner    7956 Sep 26 13:59 lead-longcat.md
+-rw-r--r--  1 runner runner      18 Sep 26 13:59 lead-mimo.md
+-rw-r--r--  1 runner runner 1429717 Sep 26 13:59 lead-nemotron3.md
+-rw-r--r--  1 runner runner    6911 Sep 26 13:59 reposcan-n26-manual.md
+-rw-r--r--  1 runner runner   52387 Sep 26 13:59 reposcan-n26.md
+
+recon-notes/:
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep 26 13:59 .
+drwxr-xr-x 12 runner runner 4096 Sep 26 13:59 ..
+-rw-r--r--  1 runner runner  809 Sep 26 13:59 DEDICATED-DEEP.md
+
+reports/:
+total 5676
+drwxr-xr-x  2 runner runner    4096 Sep 26 13:59 .
+drwxr-xr-x 12 runner runner    4096 Sep 26 13:59 ..
+-rw-r--r--  1 runner runner 3117757 Sep 26 13:59 analyst-bigpickle.log
+-rw-r--r--  1 runner runner   33201 Sep 26 13:59 analyst-laguna.log
+-rw-r--r--  1 runner runner   33048 Sep 26 13:59 analyst-ling3.log
+-rw-r--r--  1 runner runner   33354 Sep 26 13:59 analyst-longcat.log
+-rw-r--r--  1 runner runner 2061944 Sep 26 13:59 analyst-nemotron3.log
+-rw-r--r--  1 runner runner   35174 Sep 26 13:59 hypotheses-bigpickle.txt
+-rw-r--r--  1 runner runner      51 Sep 26 13:59 hypotheses-laguna.txt
+-rw-r--r--  1 runner runner      50 Sep 26 13:59 hypotheses-ling3.txt
+-rw-r--r--  1 runner runner      52 Sep 26 13:59 hypotheses-longcat.txt
+-rw-r--r--  1 runner runner   11343 Sep 26 13:59 hypotheses-nemotron3.txt
+-rw-r--r--  1 runner runner  512498 Sep 26 13:59 hypotheses.md
+-rw-r--r--  1 runner runner    4596 Sep 26 13:59 reposcan-findings.md
+-rw-r--r--  1 runner runner    1529 Sep 26 13:59 valid-bugs.md
+---LEAD TAIL---
+=== leads/lead-bigpickle.md ===
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: 8 previously-unenumerated Berlin-Group classes are live, including `payments/instant-sepa-credit-transfers` and `periodic-payments/sepa-credit-transfers` — the live money-movement surface is 21 classes, not 11, and includes irrevocable instant credit transfer.
+[LEARN] REJECTED MISCONFIG @ {xs2a,aisp,pisp}-staging.tech26.de: all three CNAME to `obnium-mtls-staging-fra-558276106` and connect-timeout 25s / 0 bytes on 443 — source-gated SG, class closed, HUMAN_ONLY.
+[LEARN] ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and a PKCE challenge in its own public repo since 2021-12-16, and the collection's `{{address}}` is the **production** host. Third consecutive instance of the 09-25 rule: the vendor's own corpus is the only enumeration source that produces signal on this program, and `psd2-tpp-docs` also documents a `(Fake) Generate auth code` endpoint, i.e. a credential-free token-mint path in the sandbox tier.
+[LEARN] ACCEPTED MISCONFIG @ process: my own [NEXT] probe from last cycle (`POST /oauth2/token`) was mis-designed — a GET on the *authorize* plane of the same host answers the reachability question that the token-endpoint 404 could not, without leaving the read-only envelope. Method-shape questions must be asked of the route that actually carries the documented method, not of a sibling.
+[RISK] N26 Bank AG: 92 — the open-banking tier is worse than the KB reflected, and this cycle closed the last "unmapped" gaps. The Berlin-Group production API on `xs2a.tech26.de` is 21 route classes (not 11) including instant and periodic SEPA credit transfers; the **PSD2 sandbox tier is co-resident on the same production host behind the same gateway**; the **authorization plane is anonymously reachable on both tiers**; the **sandbox flow mints its own authorization code with no PSU interaction**, so a token is obtainable with no user and no credential; and the one documented transport control (a qualified client certificate required to establish the connection) is never requested by the server. The blast radius if the audience check between `/sandbox/*` and `/*` is missing is irrevocable payment initiation as an authenticated PSU. Offsetting: still zero validated findings, zero anonymous data access, every read and write path returns `401`, and the two public identifiers carry no secret.
+=== leads/lead-laguna.md ===
+## 2026-09-25 18:40:08 UTC [target] (model laguna)
+## 2026-09-25 21:49:27 UTC [target] (model laguna)
+## 2026-09-26 00:19:09 UTC [target] (model laguna)
+## 2026-09-26 05:09:11 UTC [target] (model laguna)
+## 2026-09-26 09:55:11 UTC [target] (model laguna)
+=== leads/lead-ling3.md ===
+## 2026-09-25 18:40:10 UTC [target] (model ling3)
+## 2026-09-25 21:49:29 UTC [target] (model ling3)
+## 2026-09-26 00:19:11 UTC [target] (model ling3)
+## 2026-09-26 05:09:09 UTC [target] (model ling3)
+## 2026-09-26 09:55:19 UTC [target] (model ling3)
+=== leads/lead-longcat.md ===
+## 2026-09-25 18:40:08 UTC [target] (model longcat)
+## 2026-09-25 21:49:31 UTC [target] (model longcat)
+## 2026-09-26 00:19:12 UTC [target] (model longcat)
+## 2026-09-26 05:09:10 UTC [target] (model longcat)
+## 2026-09-26 09:55:11 UTC [target] (model longcat)
+=== leads/lead-mimo.md ===
+# Lead log (seed)
+=== leads/lead-nemotron3.md ===
+[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — on this edge, `GET /api/mfa/challenge` (documented POST-only) returns 404, so GET-404 cannot distinguish absent from POST-only routes
+[LEARN] REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-smuggling variants 404
+[LEARN] REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token minted on one host has no route to reach on another
+[LEARN] ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collection + certspotter), not further anonymous boundary probing
+[RISK] N26 Bank AG: 95 — xs2a.tech26.de production Berlin-Group XS2A API missing mandatory mTLS enforcement (PSD2/RTS regulatory violation, HIGH/CRITICAL); pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with 15-endpoint numeric ID BOLA surface across THREE hosts (api|beta-api|sapi.tech26.de) — statements/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/addresses/bookings/cards nested routes confirmed, breadth proven; engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API
+=== leads/reposcan-n26-manual.md ===
+asset: n26/N26AndroidSamples/buildsystem/configurations.gradle
+confidence: 40
+reasoning: The Android sample app contains a hardcoded staging endpoint URL: `https://www.definitelynotn26-staging.de/api/`. While clearly a placeholder/example URL, it reveals the naming convention for N26 staging environments (staging subdomain pattern). The URL is used as `N26_FAKE_API_URL` in build configurations.
+impact: Informational — staging URL naming convention disclosure; URL is clearly a placeholder
+verify_steps: (1) Confirm the URL is not a real endpoint (appears to be a joke/placeholder). (2) No further action needed.
+=== leads/reposcan-n26.md ===
+TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-26 07:10:50 UTC
+TARGET_ORG not configured for n26; skipping public-org deep scan.
+## REPOSCAN 2026-09-26 12:16:22 UTC
+TARGET_ORG not configured for n26; skipping public-org deep scan.
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && grep -n "^## 2026-09-26" leads/lead-nemotron3.md | tail -8; echo "=== NEMO TAIL 120 ==="; tail -120 leads/lead-nemotron3.md
+8109:## 2026-09-26 00:21:51 UTC [target] (model nemotron3)
+8156:## 2026-09-26 05:10:22 UTC [target] (model nemotron3)
+8220:## 2026-09-26 09:56:27 UTC [target] (model nemotron3)
+=== NEMO TAIL 120 ===
+## 2026-09-26 05:10:22 UTC [target] (model nemotron3)
+[NEW] xs2a.tech26.de: Production Berlin-Group XS2A API (AIS+PIS) LIVE at `/v1/berlin-group/v1` with 11 route classes; 7 return 401 (real), 4 return 404 (bogus) — gate is route-aware, not blind prefix-firewall
+[NEW] xs2a.tech26.de: mTLS NOT enforced at production edge despite ELB `obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com` — anonymous TLS 1.3 handshake completes (ssl_verify_result=0), no client certificate required
+[NEW] xs2a.tech26.de: Token minting surface not anonymously reachable — `/oauth2/token`, `/v1/berlin-group/v1/oauth2/token`, `/oauth2/authorize`, sandbox helpers all 404
+[NEW] {aisp,xs2a,pisp}.tech26.de share cert leaf (Amazon RSA 2048 M04, valid 2026-02-02→2027-03-03); aisp/pisp do NOT serve Berlin-Group table (404 app-layer, ~1ms)
+[NEW] app.n26.com `/open-banking` open-redirect hypothesis closed — `redirect` param rebuilt server-side from matched route, user-supplied values ignored, path-smuggling variants 404
+[CHANGED] beta-api.tech26.de + sapi.tech26.de: Prior "route-less" classification FALSE — both serve full legacy `/api/*` Bearer-gated family (15 endpoints: 5 base + 10 nested under `/api/accounts/{id}/`) identical to api.tech26.de, all 401 len=211 md5 d58528c924
+[CHANGED] api.tech26.de gate fully characterized: framework-level header parse (case/tab/space normalization all 401 identical), GET-only route table (HEAD/OPTIONS/POST 404), Authorization-header-only, query-param bypass closed, case-sensitive path match
+[CHANGED] pay.n26.com/v1/*: Stripe-passthrough 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+[CHANGED] authentication-service.eks.core-production.keyless.technology: 68+ paths "path unused", deployment stable v26.09.07; anonymous route discovery exhausted, requires AUTH_HELPED
+[CHANGED] engagementplatform.n26.com: Braze REST 401 key-gated boundary confirmed, CORS-open, no web-bundle token
+[CHANGED] NO_DELTA broken after ~9 days — first signal from corpus-driven route mapping (vendor OpenAPI + Postman + CT), not re-probing frozen boundaries
+[PRIO] xs2a.tech26.de/v1/berlin-group/v1,9.5,attack_surface=10,business_value=10,tech_exposure=10,gate_ease=2,cloud_surface=9,freshness=10
+[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.5,attack_surface=10,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] beta-api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.0,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=7
+[PRIO] sapi.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.0,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=7
+[PRIO] pay.n26.com/v1/payments,9.0,attack_surface=9,business_value=10,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=7
+[PRIO] authentication-service.eks.core-production.keyless.technology,8.5,attack_surface=8,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=10,freshness=6
+[HYP] xs2a.tech26.de missing mTLS enforcement on production Berlin-Group XS2A API
+class: MISCONFIG
+asset: xs2a.tech26.de/v1/berlin-group/v1
+confidence: 95
+reasoning: Production XS2A API (AIS+PIS) serves 7 real Berlin-Group route classes at `/v1/berlin-group/v1/{accounts,accounts/{id}/transactions,consents,payments,periodic-payments}` all returning 401; bogus routes return 404 proving route-aware gate. ELB named `obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com` implies mandatory eIDAS QWAC mTLS per Berlin Group spec, but anonymous TLS 1.3 handshake completes (ssl_verify_result=0) with no client certificate required. mTLS termination appears disabled or misconfigured at edge.
+evidence_needed: Successful TLS handshake without client cert on production XS2A endpoints; comparison with staging ELB `obnium-mtls-staging-fra-558276106` behavior; Berlin Group conformance test showing missing mTLS
+verify_steps: PASSIVE: `curl -v https://xs2a.tech26.de/v1/berlin-group/v1/accounts` → confirm 401 + ssl_verify_result=0 + no cert request in handshake. PASSIVE: `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de` → verify no CertificateRequest in server hello. PASSIVE: Test staging `xs2a-staging.tech26.de` (CNAME to obnium-mtls-staging-fra-558276106) for mTLS enforcement difference. AUTH_HELPED: With valid QWAC, verify mTLS path works; without QWAC, verify production still allows anonymous handshake.
+impact: Berlin Group XS2A mandates mTLS for all TPP requests — missing enforcement allows unauthenticated clients to reach Bearer-gated AIS/PIS endpoints, bypassing eIDAS strong authentication requirement. Regulatory non-compliance (PSD2/RTS), potential TPP impersonation, account data exposure via stolen Bearer tokens. Severity: HIGH/CRITICAL (regulatory + financial data)
+testability: PASSIVE
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi)
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15 endpoints confirmed live across api|beta-api|sapi.tech26.de (5 base: /api/me, /api/statements, /api/accounts{/me,/1}, /api/addresses + 10 nested under /api/accounts/{id}/) all return 401 len=211 byte-identical invalid_token; ID-independent prefix firewall stable across account IDs 1,2,3,4,9; versioned /api/v1/* returns 404; GET-only surface (HEAD/OPTIONS/POST return 404 route-less); gate is pre-normalization exact-lowercase Authorization-header-only framework parse; query-param credential bypass closed; surface ACTIVE and MUTATING (api/accounts drifted 404→401); three hosts serve identical family multiplying cross-tenant BOLA surface
+evidence_needed: Valid Bearer token via paired-device grant; successful GET /api/accounts/1/statements returning statement objects; IDOR via account_id traversal across tenants on all three hosts
+verify_steps: PASSIVE: GET /api/accounts/6/statements → confirm 401 len=211 byte-identical error schema for sixth account ID. AUTH_HELPED: With valid token, GET /api/accounts/1/statements → GET /api/accounts/2/statements → GET /api/accounts/1/tans → GET /api/accounts/2/tans → repeat across beta-api.tech26.de and sapi.tech26.de → test BOLA via cross-account account_id across all 10 nested resources on all three hosts
+impact: Cross-tenant statement history, address PII, cards, bookings, TANs, approvals, transactions, transfer records, beneficiaries, registered devices, limits, cosmetics enumeration across three API hosts — CRITICAL (banking PII + financial data + transaction authorization artifacts)
+testability: AUTH_HELPED
+[HYP] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 23+ /v1/* endpoints return 401 with Stripe error JSON (len=342 no-key, len=132 fake-key "Invalid API Key provided: sk_live_****0000"); /v1/payments?limit=3 accepts pagination confirming REST semantics; WWW-Authenticate: Basic realm="Stripe"; CORS-open (ACAO: *); pure Stripe passthrough on N26 domain — no N26-side key injection; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); app CSP lacks pay.n26.com connect-src (mobile/server-only); boundary stable 11+ cycles with no drift
+evidence_needed: Valid Stripe secret key for pay.n26.com (sk_live_...); successful GET /v1/payments returning payment objects; IDOR via payment_id/charge_id traversal across accounts
+verify_steps: PASSIVE: GET /v1/payments?limit=3 → capture WWW-Authenticate header + error schema. AUTH_HELPED: With valid key, GET /v1/payments → GET /v1/charges/{id} → GET /v1/balance → test BOLA via cross-account payment_id
+impact: Cross-account payment/charge/balance enumeration, potential payment manipulation — CRITICAL (core banking)
+testability: AUTH_HELPED
+[PARKED] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi): confidence 92 but testability AUTH_HELPED — requires coordinator credential supply (paired-device grant token); no passive path to escalate
+[PARKED] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA: confidence 85 but testability AUTH_HELPED — requires N26-issued sk_live key; key discovery closed 3/3 corpora; no passive path
+[PARKED] authentication-service.eks.core-production.keyless.technology WS signed-token subprotocol replay: confidence 70 but testability AUTH_HELPED — requires valid WebAuthn credential/enrollment flow; no anonymous route discovery possible (68+ paths exhausted)
+[FINAL] 1) xs2a.tech26.de missing mTLS enforcement on production Berlin-Group XS2A API (confidence 95) — PASSIVE testable
+[FINAL] 2) api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi) (confidence 92) — AUTH_HELPED
+[FINAL] 3) pay.n26.com/v1/payments Stripe-forwarded payment API BOLA (confidence 85) — AUTH_HELPED
+[NEXT] PROBE: `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -showcerts </dev/null 2>&1 | grep -E "(CertificateRequest|Verify return code|no client certificate)"` — confirm no CertificateRequest in server hello, verifying mTLS not enforced at edge
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not enforced at the production edge despite the `obnium-mtls-live-fra` ELB — anonymous TLS1.3 completes with no client certificate
+[LEARN] REJECTED MISCONFIG @ app.n26.com `/open-banking`: open-redirect hypothesis closed — the `redirect` param is rebuilt server-side from the matched route path, user-supplied absolute/protocol-relative values are ignored, and path-smuggling variants 404
+[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de: unauthenticated auth-code minting via the documented sandbox helpers (`/sandbox/oauth2/authorize|/sandbox/oauth2/token|/sandbox/psu-interaction/generate-auth-code/{id}`) is **not** present on the production host — sandbox and production are path-separated
+[LEARN] ACCEPTED MISCONFIG @ {aisp,pisp}.tech26.de: not "route-less" and not a mesh split — they share the `{aisp,xs2a,pisp}` cert leaf but do not terminate the Berlin-Group table; their own route tables are still unenumerated
+[LEARN] ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only thing that produced signal was **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collection + certspotter), not further anonymous boundary probing. Generalised rule: when a gate returns `401` for real routes and `404` for absent ones, the vendor's own API corpus is the correct enumeration source; when every path returns `401`, only a known-real route table can produce trustworthy negatives
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less / no distinct surface" classification is **false** — both serve the full legacy `/api/*` Bearer-gated family (`/api/me`, `/api/accounts`, `/api/statements`, `/api/addresses`, `/api/accounts/1/{statements,cards,tans}` all 401 len=211 md5 d58528c924); `/api/v1/statements` still 404 (versioning drops gate). Rule: a host may only be called "route-less" for the route table actually enumerated — generic wordlist before real route table produces systematic false negatives
+[LEARN] REJECTED AUTH @ api.tech26.de: header-shape bypass closed — lowercase header name `authorization:`, tab separator, and double space after colon all return `401 len=211` identical; gate parses header at framework level, not raw-string prefix-match; path matching remains case-sensitive
+[LEARN] ACCEPTED MISCONFIG @ {aisp,xs2a}.tech26.de: `server: istio-envoy` edge, `/api/me` and `/api/accounts/1/statements` → `404 len=0`; these hosts are on a different mesh from `{api,beta-api,sapi}` (`server: envoy`) and carry no legacy family — closes sibling-sweep question for PISP/AS pair
+[LEARN] REJECTED MISCONFIG @ pisp.tech26.de `/api/mfa/challenge` (GET): `404 len=0` istio-envoy, consistent with POST-only route as used in public psd2-tpp-docs script; no anonymous GET surface
+[LEARN] ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section headers only); identical-boundary re-probing formally suspended as zero-signal; all pipeline analysts converge on the same three AUTH_HELPED hypotheses
+[LEARN] ACCEPTED MISCONFIG @ process: triage-feeder intake dead since 09-22-14-04 (~3.5 days; healthy-but-empty 09-24-19-17 the only break); pipeline 100% blocked on coordinator credential/scope supply + feeder repair
+[RISK] N26 Bank AG: 95 — xs2a.tech26.de production Berlin-Group XS2A API missing mandatory mTLS enforcement (PSD2/RTS regulatory violation, HIGH/CRITICAL); pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with 15-endpoint numeric ID BOLA surface across THREE hosts (api|beta-api|sapi.tech26.de) — statements/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/addresses/bookings/cards nested routes confirmed, breadth proven; engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API
+## 2026-09-26 09:56:27 UTC [target] (model nemotron3)
+[NEW] xs2a.tech26.de production Berlin-Group XS2A API (AIS+PIS) confirmed LIVE at `/v1/berlin-group/v1` with 11 route classes; 7 real routes → 401, bogus routes → 404 proving route-aware gate
+[NEW] mTLS NOT enforced at production edge despite ELB `obnium-mtls-live-fra` — anonymous TLS 1.3 handshake completes (Verify return code: 0), no CertificateRequest issued
+[NEW] {xs2a,aisp,pisp}.tech26.de share same ELB `obnium-mtls-live-fra-328671153` and cert leaf (Amazon RSA 2048 M04); aisp/pisp serve Fallback PSD2 interface (not Berlin-Group), 4/5 routes 401
+[CHANGED] beta-api.tech26.de + sapi.tech26.de: prior "route-less" classification FALSE — both serve full legacy `/api/*` Bearer-gated family (15 endpoints identical to api.tech26.de)
+[CHANGED] api.tech26.de gate fully characterized: framework-level header parse, GET-only, Authorization-header-only, query-param bypass closed, case-sensitive path match
+[CHANGED] NO_DELTA broken after ~9 days — signal from corpus-driven route mapping (vendor OpenAPI + Postman + CT), not re-probing frozen boundaries
+[PRIO] xs2a.tech26.de/v1/berlin-group/v1,9.8,attack_surface=10,business_value=10,tech_exposure=10,gate_ease=10,cloud_surface=9,freshness=10
+[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.3,attack_surface=10,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] beta-api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.0,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=7
+[PRIO] sapi.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.0,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=7
+[PRIO] pay.n26.com/v1/payments,8.8,attack_surface=9,business_value=10,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=7
+[PRIO] aisp.tech26.de (Fallback PSD2),8.2,attack_surface=8,business_value=9,tech_exposure=9,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] pisp.tech26.de (Fallback PSD2),8.2,attack_surface=8,business_value=9,tech_exposure=9,gate_ease=2,cloud_surface=9,freshness=8
+[HYP] xs2a.tech26.de missing mandatory mTLS enforcement on production Berlin-Group XS2A API
+class: MISCONFIG
+asset: xs2a.tech26.de/v1/berlin-group/v1
+confidence: 95
+reasoning: Production XS2A API serves 7 real Berlin-Group route classes at `/v1/berlin-group/v1/{accounts,accounts/{id}/transactions,consents,payments,periodic-payments}` all returning 401; bogus routes return 404 proving route-aware gate. ELB named `obnium-mtls-live-fra-328671153` implies mandatory eIDAS QWAC mTLS per Berlin Group spec, but anonymous TLS 1.3 handshake completes (ssl_verify_result=0) with no client certificate required. mTLS termination appears disabled or misconfigured at edge.
+evidence_needed: Successful TLS handshake without client cert on production XS2A endpoints; comparison with staging ELB `obnium-mtls-staging-fra-558276106` behavior; Berlin Group conformance test showing missing mTLS
+verify_steps: PASSIVE: `curl -v https://xs2a.tech26.de/v1/berlin-group/v1/accounts` → confirm 401 + ssl_verify_result=0 + no cert request in handshake. PASSIVE: `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3` → verify no CertificateRequest in server hello. PASSIVE: Test staging `xs2a-staging.tech26.de` (CNAME to obnium-mtls-staging-fra-558276106) for mTLS enforcement difference. AUTH_HELPED: With valid QWAC, verify mTLS path works; without QWAC, verify production still allows anonymous handshake.
+impact: Berlin Group XS2A mandates mTLS for all TPP requests — missing enforcement allows unauthenticated clients to reach Bearer-gated AIS/PIS endpoints, bypassing eIDAS strong authentication requirement. Regulatory non-compliance (PSD2/RTS), potential TPP impersonation, account data exposure via stolen Bearer tokens. Severity: HIGH/CRITICAL (regulatory + financial data)
+testability: PASSIVE
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi)
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15 endpoints confirmed live across api|beta-api|sapi.tech26.de (5 base: /api/me, /api/statements, /api/accounts{/me,/1}, /api/addresses + 10 nested under /api/accounts/{id}/) all return 401 len=211 byte-identical invalid_token; ID-independent prefix firewall stable across account IDs 1,2,3,4,9; versioned /api/v1/* returns 404; GET-only surface (HEAD/OPTIONS/POST return 404 route-less); gate is pre-normalization exact-lowercase Authorization-header-only framework parse; query-param credential bypass closed; surface ACTIVE and MUTATING (api/accounts drifted 404→401); three hosts serve identical family multiplying cross-tenant BOLA surface
+evidence_needed: Valid Bearer token via paired-device grant; successful GET /api/accounts/1/statements returning statement objects; IDOR via account_id traversal across tenants on all three hosts
+verify_steps: PASSIVE: GET /api/accounts/6/statements → confirm 401 len=211 byte-identical error schema for sixth account ID. AUTH_HELPED: With valid token, GET /api/accounts/1/statements → GET /api/accounts/2/statements → GET /api/accounts/1/tans → GET /api/accounts/2/tans → repeat across beta-api.tech26.de and sapi.tech26.de → test BOLA via cross-account account_id across all 10 nested resources on all three hosts
+impact: Cross-tenant statement history, address PII, cards, bookings, TANs, approvals, transactions, transfer records, beneficiaries, registered devices, limits, cosmetics enumeration across three API hosts — CRITICAL (banking PII + financial data + transaction authorization artifacts)
+testability: AUTH_HELPED
+[HYP] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 23+ /v1/* endpoints return 401 with Stripe error JSON (len=342 no-key, len=132 fake-key "Invalid API Key provided: sk_live_****0000"); /v1/payments?limit=3 accepts pagination confirming REST semantics; WWW-Authenticate: Basic realm="Stripe"; CORS-open (ACAO: *); pure Stripe passthrough on N26 domain — no N26-side key injection; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); app CSP lacks pay.n26.com connect-src (mobile/server-only); boundary stable 11+ cycles with no drift
+evidence_needed: Valid Stripe secret key for pay.n26.com (sk_live_...); successful GET /v1/payments returning payment objects; IDOR via payment_id/charge_id traversal across accounts
+verify_steps: PASSIVE: GET /v1/payments?limit=3 → capture WWW-Authenticate header + error schema. AUTH_HELPED: With valid key, GET /v1/payments → GET /v1/charges/{id} → GET /v1/balance → test BOLA via cross-account payment_id
+impact: Cross-account payment/charge/balance enumeration, potential payment manipulation — CRITICAL (core banking)
+testability: AUTH_HELPED
+[PARKED] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi): confidence 92 but testability AUTH_HELPED — requires coordinator credential supply (paired-device grant token); no passive path to escalate
+[PARKED] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA: confidence 85 but testability AUTH_HELPED — requires N26-issued sk_live key; key discovery closed 3/3 corpora; no passive path
+[FINAL] 1) xs2a.tech26.de missing mTLS enforcement on production Berlin-Group XS2A API (confidence 95) — PASSIVE testable
+[FINAL] 2) api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi) (confidence 92) — AUTH_HELPED
+[FINAL] 3) pay.n26.com/v1/payments Stripe-forwarded payment API BOLA (confidence 85) — AUTH_HELPED
+[NEXT] PROBE: `curl -v https://xs2a-staging.tech26.de/v1/berlin-group/v1/accounts 2>&1 | grep -E "(HTTP|CertificateRequest|Verify return code)"` — compare staging vs production mTLS enforcement on the twin ELB `obnium-mtls-staging-fra-558276106`
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not enforced at the production edge despite the `obnium-mtls-live-fra` ELB — anonymous TLS1.3 completes with no client certificate
+[LEARN] ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share ELB `obnium-mtls-live-fra-328671153` and none ever issues a TLS `CertificateRequest` (`No client certificate CA names sent`), despite N26's public support page stating aisp/pisp "Access to the above URL and establishing the TLS connection requires implementation of a qualified certificate"
+[LEARN] ACCEPTED MISCONFIG @ aisp.tech26.de: route table mapped from vendor corpus (psd2-tpp-docs/doc/fallback-aisp.md) — this is the PSD2 Fallback / contingency interface, not Berlin Group. 4 live route classes, all 401
+[LEARN] ACCEPTED MISCONFIG @ pisp.tech26.de: route table mapped (fallback-pisp.md) — 5 live route classes: `GET /api/openbanking/fallback/sepa-ct/{paymentId}/status`, `.../sepa-instant/{paymentId}/status`, `.../so/{paymentId}/status`, `POST /api/openbanking/fallback/sepa-ct`, `POST /api/openbanking/fallback/sepa-instant`
+[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — on this edge, `GET /api/mfa/challenge` (documented POST-only) returns 404, so GET-404 cannot distinguish absent from POST-only routes
+[LEARN] REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-smuggling variants 404
+[LEARN] REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token minted on one host has no route to reach on another
+[LEARN] ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collection + certspotter), not further anonymous boundary probing
+[RISK] N26 Bank AG: 95 — xs2a.tech26.de production Berlin-Group XS2A API missing mandatory mTLS enforcement (PSD2/RTS regulatory violation, HIGH/CRITICAL); pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with 15-endpoint numeric ID BOLA surface across THREE hosts (api|beta-api|sapi.tech26.de) — statements/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/addresses/bookings/cards nested routes confirmed, breadth proven; engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && tail -60 reports/hypotheses-nemotron3.txt; echo "=== VALID BUGS ==="; cat reports/valid-bugs.md
+## 2026-09-26 09:56:27 UTC [target] (model nemotron3)
+[NEW] xs2a.tech26.de production Berlin-Group XS2A API (AIS+PIS) confirmed LIVE at `/v1/berlin-group/v1` with 11 route classes; 7 real routes → 401, bogus routes → 404 proving route-aware gate
+[NEW] mTLS NOT enforced at production edge despite ELB `obnium-mtls-live-fra` — anonymous TLS 1.3 handshake completes (Verify return code: 0), no CertificateRequest issued
+[NEW] {xs2a,aisp,pisp}.tech26.de share same ELB `obnium-mtls-live-fra-328671153` and cert leaf (Amazon RSA 2048 M04); aisp/pisp serve Fallback PSD2 interface (not Berlin-Group), 4/5 routes 401
+[CHANGED] beta-api.tech26.de + sapi.tech26.de: prior "route-less" classification FALSE — both serve full legacy `/api/*` Bearer-gated family (15 endpoints identical to api.tech26.de)
+[CHANGED] api.tech26.de gate fully characterized: framework-level header parse, GET-only, Authorization-header-only, query-param bypass closed, case-sensitive path match
+[CHANGED] NO_DELTA broken after ~9 days — signal from corpus-driven route mapping (vendor OpenAPI + Postman + CT), not re-probing frozen boundaries
+[PRIO] xs2a.tech26.de/v1/berlin-group/v1,9.8,attack_surface=10,business_value=10,tech_exposure=10,gate_ease=10,cloud_surface=9,freshness=10
+[PRIO] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.3,attack_surface=10,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] beta-api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.0,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=7
+[PRIO] sapi.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics},9.0,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=7
+[PRIO] pay.n26.com/v1/payments,8.8,attack_surface=9,business_value=10,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=7
+[PRIO] aisp.tech26.de (Fallback PSD2),8.2,attack_surface=8,business_value=9,tech_exposure=9,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] pisp.tech26.de (Fallback PSD2),8.2,attack_surface=8,business_value=9,tech_exposure=9,gate_ease=2,cloud_surface=9,freshness=8
+[HYP] xs2a.tech26.de missing mandatory mTLS enforcement on production Berlin-Group XS2A API
+class: MISCONFIG
+asset: xs2a.tech26.de/v1/berlin-group/v1
+confidence: 95
+reasoning: Production XS2A API serves 7 real Berlin-Group route classes at `/v1/berlin-group/v1/{accounts,accounts/{id}/transactions,consents,payments,periodic-payments}` all returning 401; bogus routes return 404 proving route-aware gate. ELB named `obnium-mtls-live-fra-328671153` implies mandatory eIDAS QWAC mTLS per Berlin Group spec, but anonymous TLS 1.3 handshake completes (ssl_verify_result=0) with no client certificate required. mTLS termination appears disabled or misconfigured at edge.
+evidence_needed: Successful TLS handshake without client cert on production XS2A endpoints; comparison with staging ELB `obnium-mtls-staging-fra-558276106` behavior; Berlin Group conformance test showing missing mTLS
+verify_steps: PASSIVE: `curl -v https://xs2a.tech26.de/v1/berlin-group/v1/accounts` → confirm 401 + ssl_verify_result=0 + no cert request in handshake. PASSIVE: `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3` → verify no CertificateRequest in server hello. PASSIVE: Test staging `xs2a-staging.tech26.de` (CNAME to obnium-mtls-staging-fra-558276106) for mTLS enforcement difference. AUTH_HELPED: With valid QWAC, verify mTLS path works; without QWAC, verify production still allows anonymous handshake.
+impact: Berlin Group XS2A mandates mTLS for all TPP requests — missing enforcement allows unauthenticated clients to reach Bearer-gated AIS/PIS endpoints, bypassing eIDAS strong authentication requirement. Regulatory non-compliance (PSD2/RTS), potential TPP impersonation, account data exposure via stolen Bearer tokens. Severity: HIGH/CRITICAL (regulatory + financial data)
+testability: PASSIVE
+[HYP] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi)
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}
+confidence: 92
+reasoning: 15 endpoints confirmed live across api|beta-api|sapi.tech26.de (5 base: /api/me, /api/statements, /api/accounts{/me,/1}, /api/addresses + 10 nested under /api/accounts/{id}/) all return 401 len=211 byte-identical invalid_token; ID-independent prefix firewall stable across account IDs 1,2,3,4,9; versioned /api/v1/* returns 404; GET-only surface (HEAD/OPTIONS/POST return 404 route-less); gate is pre-normalization exact-lowercase Authorization-header-only framework parse; query-param credential bypass closed; surface ACTIVE and MUTATING (api/accounts drifted 404→401); three hosts serve identical family multiplying cross-tenant BOLA surface
+evidence_needed: Valid Bearer token via paired-device grant; successful GET /api/accounts/1/statements returning statement objects; IDOR via account_id traversal across tenants on all three hosts
+verify_steps: PASSIVE: GET /api/accounts/6/statements → confirm 401 len=211 byte-identical error schema for sixth account ID. AUTH_HELPED: With valid token, GET /api/accounts/1/statements → GET /api/accounts/2/statements → GET /api/accounts/1/tans → GET /api/accounts/2/tans → repeat across beta-api.tech26.de and sapi.tech26.de → test BOLA via cross-account account_id across all 10 nested resources on all three hosts
+impact: Cross-tenant statement history, address PII, cards, bookings, TANs, approvals, transactions, transfer records, beneficiaries, registered devices, limits, cosmetics enumeration across three API hosts — CRITICAL (banking PII + financial data + transaction authorization artifacts)
+testability: AUTH_HELPED
+[HYP] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 23+ /v1/* endpoints return 401 with Stripe error JSON (len=342 no-key, len=132 fake-key "Invalid API Key provided: sk_live_****0000"); /v1/payments?limit=3 accepts pagination confirming REST semantics; WWW-Authenticate: Basic realm="Stripe"; CORS-open (ACAO: *); pure Stripe passthrough on N26 domain — no N26-side key injection; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); app CSP lacks pay.n26.com connect-src (mobile/server-only); boundary stable 11+ cycles with no drift
+evidence_needed: Valid Stripe secret key for pay.n26.com (sk_live_...); successful GET /v1/payments returning payment objects; IDOR via payment_id/charge_id traversal across accounts
+verify_steps: PASSIVE: GET /v1/payments?limit=3 → capture WWW-Authenticate header + error schema. AUTH_HELPED: With valid key, GET /v1/payments → GET /v1/charges/{id} → GET /v1/balance → test BOLA via cross-account payment_id
+impact: Cross-account payment/charge/balance enumeration, potential payment manipulation — CRITICAL (core banking)
+testability: AUTH_HELPED
+[PARKED] api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi): confidence 92 but testability AUTH_HELPED — requires coordinator credential supply (paired-device grant token); no passive path to escalate
+[PARKED] pay.n26.com/v1/payments Stripe-forwarded payment API BOLA: confidence 85 but testability AUTH_HELPED — requires N26-issued sk_live key; key discovery closed 3/3 corpora; no passive path
+[FINAL] 1) xs2a.tech26.de missing mTLS enforcement on production Berlin-Group XS2A API (confidence 95) — PASSIVE testable
+[FINAL] 2) api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi) (confidence 92) — AUTH_HELPED
+[FINAL] 3) pay.n26.com/v1/payments Stripe-forwarded payment API BOLA (confidence 85) — AUTH_HELPED
+[NEXT] PROBE: `curl -v https://xs2a-staging.tech26.de/v1/berlin-group/v1/accounts 2>&1 | grep -E "(HTTP|CertificateRequest|Verify return code)"` — compare staging vs production mTLS enforcement on the twin ELB `obnium-mtls-staging-fra-558276106`
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not enforced at the production edge despite the `obnium-mtls-live-fra` ELB — anonymous TLS1.3 completes with no client certificate
+[LEARN] ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share ELB `obnium-mtls-live-fra-328671153` and none ever issues a TLS `CertificateRequest` (`No client certificate CA names sent`), despite N26's public support page stating aisp/pisp "Access to the above URL and establishing the TLS connection requires implementation of a qualified certificate"
+[LEARN] ACCEPTED MISCONFIG @ aisp.tech26.de: route table mapped from vendor corpus (psd2-tpp-docs/doc/fallback-aisp.md) — this is the PSD2 Fallback / contingency interface, not Berlin Group. 4 live route classes, all 401
+[LEARN] ACCEPTED MISCONFIG @ pisp.tech26.de: route table mapped (fallback-pisp.md) — 5 live route classes: `GET /api/openbanking/fallback/sepa-ct/{paymentId}/status`, `.../sepa-instant/{paymentId}/status`, `.../so/{paymentId}/status`, `POST /api/openbanking/fallback/sepa-ct`, `POST /api/openbanking/fallback/sepa-instant`
+[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — on this edge, `GET /api/mfa/challenge` (documented POST-only) returns 404, so GET-404 cannot distinguish absent from POST-only routes
+[LEARN] REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-smuggling variants 404
+[LEARN] REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token minted on one host has no route to reach on another
+[LEARN] ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collection + certspotter), not further anonymous boundary probing
+[RISK] N26 Bank AG: 95 — xs2a.tech26.de production Berlin-Group XS2A API missing mandatory mTLS enforcement (PSD2/RTS regulatory violation, HIGH/CRITICAL); pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with 15-endpoint numeric ID BOLA surface across THREE hosts (api|beta-api|sapi.tech26.de) — statements/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/addresses/bookings/cards nested routes confirmed, breadth proven; engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API
+=== VALID BUGS ===
+# Validated findings (running count 0)
+
+- 1 lead(s) marked VALID at 2026-09-05 17:37:21 UTC
+  - **Verdict: HOLD** — RBAC bypass on `sdk_exception` confirmed, but impact ceiling is LOW (public client key, no PII/funds). Needs evidence of actual sensitive flag data being disclosed. If `/v1/downloa
+
+- 2 lead(s) marked VALID at 2026-09-07 06:12:37 UTC
+  - | **Q4 Provable** | HOLD — requires valid Bearer key which is not in web CSP/bundles; cannot prove non-invasively |
+  - | engagementplatform.n26.com/users | **HOLD** | Needs valid key path discovery |
+
+- 2 lead(s) marked VALID at 2026-09-07 12:47:54 UTC
+  - | Q4 Provable | **No** — requires valid Bearer key not found in web CSP/bundles |
+  - | 7 | `engagementplatform.n26.com/users` | **HOLD** | Needs valid key path |
+
+- 4 lead(s) marked VALID at 2026-09-13 06:48:50 UTC
+  - | Q5 Novel | **NO** — POST /v1/initialize returning data when given a valid public client key is the standard Statsig SDK flow. Not a bypass. |
+  - | Q5 Novel | **NO** — `/v1/initialize` accepting a valid public client key via POST is the documented Statsig client SDK flow |
+  - | Q4 Provable | **NO** — Requires valid Bearer key not found in web CSP/bundles. 10 web bundles searched, no token. CORS is open but no web-accessible key path identified. Server/mobile-only API. |
+  - **Verdict: HOLD** — Distinct auth boundary confirmed (401 key-gated, not tarpit). CORS-open suggests server/mobile integration. But no valid Bearer key path found in web bundles or CSP. Needs valid ke
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/reposcan-raw/ 2>/dev/null; ls /tmp/opencode 2>/dev/null
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep 26 13:59 .
+drwxr-xr-x 12 runner runner 4096 Sep 26 13:59 ..
+-rw-r--r--  1 runner runner   66 Sep 26 13:59 summary.txt
+[0m
+Feeder errored again (`err_9a03853a` at 11:48). Running my own [NEXT] probe plus new unauth discovery classes. Checking egress first.
+[0m$ [0mcd /tmp/opencode && timeout 25 curl -s -o /dev/null -w "connect=%{time_connect} http=%{http_code} total=%{time_total}\n" https://xs2a.tech26.de/v1/berlin-group/v1/accounts 2>&1; echo "exit=$?"
+connect=0.289980 http=401 total=0.517369
+exit=0
+[0m
+Egress confirmed. Running the committed [NEXT] probe (sandbox authorize, GET-only, no credentials) plus a new discovery class.
+[0m$ [0mcd /tmp/opencode && cat > p.sh <<'EOF'
+#!/bin/bash
+# read-only GET probe, prints compact evidence
+H="$1"; P="$2"; LBL="$3"
+out=$(timeout 20 curl -s -o /tmp/opencode/b.txt -D /tmp/opencode/h.txt \
+  -A "Mozilla/5.0 (X11; Linux x86_64) TPP-conformance/1.0" \
+  -w "%{http_code}|%{size_download}|%{time_total}" "https://$H$P" 2>/dev/null)
+code=$(echo "$out"|cut -d'|' -f1); size=$(echo "$out"|cut -d'|' -f2)
+loc=$(grep -i '^location:' /tmp/opencode/h.txt | head -1 | tr -d '\r' | cut -d' ' -f2-)
+auth=$(grep -i '^www-authenticate:' /tmp/opencode/h.txt | head -1 | tr -d '\r')
+srv=$(grep -i '^server:' /tmp/opencode/h.txt | head -1 | tr -d '\r')
+printf "%-46s -> %s len=%s\n" "$LBL" "$code" "$size"
+[ -n "$loc" ] && printf "    Location: %s\n" "$loc"
+[ -n "$auth" ] && printf "    WWW-Auth: %s\n" "$auth"
+[ -n "$srv" ] && printf "    Server: %s\n" "$srv"
+if [ "$size" -gt 0 ] 2>/dev/null; then printf "    Body: %s\n" "$(head -c 220 /tmp/opencode/b.txt | tr -d '\r\n')"; fi
+EOF
+chmod +x p.sh
+CC="w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI"
+RU="https%3A%2F%2Fapp.n26.com%2Flogin"
+./p.sh xs2a.tech26.de "/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&code_challenge=$CC&code_challenge_method=S256&redirect_uri=$RU&response_type=CODE&state=a1b2c3d4e5f60718293a4b5c6d7e8f90" "A1 sandbox/authorize published AIS client_id"
+sleep 1.3
+./p.sh xs2a.tech26.de "/sandbox/oauth2/authorize?client_id=THIS-CLIENT-DOES-NOT-EXIST&scope=DEDICATED_AISP&redirect_uri=$RU&response_type=CODE&state=a1b2c3d4e5f60718293a4b5c6d7e8f90" "A2 CONTROL bogus client_id"
+sleep 1.3
+./p.sh xs2a.tech26.de "/sandbox/oauth2/authorize" "A3 CONTROL no params"
+A1 sandbox/authorize published AIS client_id   -> 401 len=0
+    Server: server: istio-envoy
+A2 CONTROL bogus client_id                     -> 401 len=0
+    Server: server: istio-envoy
+A3 CONTROL no params                           -> 404 len=0
+    Server: server: istio-envoy
+[0m
+A1 vs A2 are byte-identical — the published `client_id` is indistinguishable from a fabricated one. Narrowing the gate with cheap read-only discriminators.
+[0m$ [0mcd /tmp/opencode && CC="w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI"; RU="https%3A%2F%2Fapp.n26.com%2Flogin"; Q="client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&code_challenge=$CC&code_challenge_method=S256&redirect_uri=$RU&response_type=CODE&state=a1b2c3d4e5f60718293a4b5c6d7e8f90"
+# B1: dummy bearer on the 401 path
+r=$(timeout 20 curl -s -o b.txt -D h.txt -A "TPP-conformance/1.0" -H "Authorization: Bearer zzz-not-a-real-token" -w "%{http_code}|%{size_download}" "https://xs2a.tech26.de/sandbox/oauth2/authorize?$Q"); echo "B1 dummy-bearer sandbox/authorize -> $r  body=$(head -c 150 b.txt|tr -d '\r\n')"
+sleep 1.3
+# B2: live tier same param set
+r=$(timeout 20 curl -s -o b.txt -w "%{http_code}|%{size_download}" -A "TPP-conformance/1.0" "https://xs2a.tech26.de/oauth2/authorize?$Q"); echo "B2 live /oauth2/authorize same params -> $r  body=$(head -c 150 b.txt|tr -d '\r\n')"
+sleep 1.3
+# B3: redirect_uri validation — unregistered redirect_uri on the documented route
+r=$(timeout 20 curl -s -o b.txt -D h.txt -A "TPP-conformance/1.0" -w "%{http_code}|%{size_download}" "https://xs2a.tech26.de/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&code_challenge=$CC&redirect_uri=https%3A%2F%2Fattacker.example%2Fcb&response_type=CODE&state=a1b2c3d4e5f60718293a4b5c6d7e8f90"); loc=$(grep -i '^location:' h.txt|tr -d '\r'); echo "B3 UNREGISTERED redirect_uri -> $r  $loc body=$(head -c 150 b.txt|tr -d '\r\n')"
+sleep 1.3
+# B4: response_type=token (implicit) instead of CODE
+r=$(timeout 20 curl -s -o b.txt -w "%{http_code}|%{size_download}" -A "TPP-conformance/1.0" "https://xs2a.tech26.de/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&redirect_uri=$RU&response_type=token&state=a1b2c3d4e5f60718293a4b5c6d7e8f90"); echo "B4 response_type=token -> $r  body=$(head -c 150 b.txt|tr -d '\r\n')"
+B1 dummy-bearer sandbox/authorize -> 401|0  body=
+B2 live /oauth2/authorize same params -> 401|0  body=
+B3 UNREGISTERED redirect_uri -> 401|0   body=
+B4 response_type=token -> 401|0  body=
+[0m
+Uniform 401 across all parameter variants — the gate rejects before any OAuth validation. Now a discovery class nobody has run on this mesh: `.well-known` metadata.
+[0m$ [0mcd /tmp/opencode && for H in xs2a.tech26.de aisp.tech26.de pisp.tech26.de; do
+for P in "/.well-known/openid-configuration" "/.well-known/oauth-authorization-server" "/.well-known/jwks.json" "/.well-known/psd2-aspsp" "/.well-known/this-route-does-not-exist-xyz"; do
+  r=$(timeout 20 curl -s -o b.txt -D h.txt -A "TPP-conformance/1.0" -w "%{http_code}|%{size_download}" "https://$H$P" 2>/dev/null)
+  loc=$(grep -i '^location:' h.txt|head -1|tr -d '\r'|cut -d' ' -f2-)
+  printf "%-22s %-42s -> %s %s\n" "$H" "$P" "$r" "$loc"
+  if [ "${r#*|}" != "0" ]; then printf "      Body: %s\n" "$(head -c 200 b.txt|tr -d '\r\n')"; fi
+  sleep 1.3
+done; done
+xs2a.tech26.de         /.well-known/openid-configuration          -> 404|0 
+xs2a.tech26.de         /.well-known/oauth-authorization-server    -> 404|0 
+xs2a.tech26.de         /.well-known/jwks.json                     -> 404|0 
+xs2a.tech26.de         /.well-known/psd2-aspsp                    -> 404|0 
+xs2a.tech26.de         /.well-known/this-route-does-not-exist-xyz -> 404|0 
+aisp.tech26.de         /.well-known/openid-configuration          -> 404|0 
+aisp.tech26.de         /.well-known/oauth-authorization-server    -> 404|0 
+aisp.tech26.de         /.well-known/jwks.json                     -> 404|0 
+aisp.tech26.de         /.well-known/psd2-aspsp                    -> 404|0 
+aisp.tech26.de         /.well-known/this-route-does-not-exist-xyz -> 404|0 
+pisp.tech26.de         /.well-known/openid-configuration          -> 404|0 
+pisp.tech26.de         /.well-known/oauth-authorization-server    -> 404|0 
+pisp.tech26.de         /.well-known/jwks.json                     -> 404|0 
+pisp.tech26.de         /.well-known/psd2-aspsp                    -> 404|0 
+pisp.tech26.de         /.well-known/this-route-does-not-exist-xyz -> 404|0
+[0m
+`.well-known` is closed on all three hosts (404 == bogus control). Two new corpus-driven angles: the live cert SAN list and the ELB's own default vhost.
+[0m$ [0mcd /tmp/opencode && echo | timeout 20 openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de 2>/dev/null | openssl x509 -noout -subject -issuer -dates -ext subjectAltName 2>/dev/null; echo "=== aisp ==="; echo | timeout 20 openssl s_client -connect aisp.tech26.de:443 -servername aisp.tech26.de 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | tail -3
+subject=CN = aisp.tech26.de
+issuer=C = US, O = Amazon, CN = Amazon RSA 2048 M04
+notBefore=Feb  2 00:00:00 2026 GMT
+notAfter=Mar  3 23:59:59 2027 GMT
+X509v3 Subject Alternative Name: 
+    DNS:aisp.tech26.de, DNS:xs2a.tech26.de, DNS:pisp.tech26.de
+=== aisp ===
+X509v3 Subject Alternative Name: 
+    DNS:aisp.tech26.de, DNS:xs2a.tech26.de, DNS:pisp.tech26.de
+[0m
+Cert SANs = only the 3 known hosts, no hidden sibling. Now the ELB default vhost plus sandbox data-plane completeness (the 401/404 split is a valid existence oracle on the data plane, unlike the authorize plane).
+[0m$ [0mcd /tmp/opencode && U="11111111-1111-4111-8111-111111111111"; B="/sandbox/v1/berlin-group/v1"
+r=$(timeout 20 curl -s -o b.txt -D h.txt -A "TPP/1.0" -w "%{http_code}|%{size_download}" "https://obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com/v1/berlin-group/v1/accounts" 2>/dev/null); printf "%-30s -> %s  srv=%s\n" "ELB default vhost" "$r" "$(grep -i '^server:' h.txt|tr -d '\r')"
+sleep 1.3
+for P in "/consents" "/consents/$U/authorisations" "/consents/confirmation-of-funds/$U/status" "/payments/sepa-credit-transfers" "/payments/instant-sepa-credit-transfers" "/periodic-payments/sepa-credit-transfers/$U" "/accounts/$U/balances/SUBRES" "/funds-confirmations/$U"; do
+  r=$(timeout 20 curl -s -o b.txt -A "TPP/1.0" -w "%{http_code}|%{size_download}" "https://xs2a.tech26.de$B$P" 2>/dev/null)
+  printf "%-46s -> %s %s\n" "sandbox$P" "$r" "$(head -c 90 b.txt|tr -d '\r\n')"
+  sleep 1.3
+done
+ELB default vhost              -> 000|0  srv=
+sandbox/consents                               -> 401|0 
+sandbox/consents/11111111-1111-4111-8111-111111111111/authorisations -> 401|0 
+sandbox/consents/confirmation-of-funds/11111111-1111-4111-8111-111111111111/status -> 401|0 
+sandbox/payments/sepa-credit-transfers         -> 401|0 
+sandbox/payments/instant-sepa-credit-transfers -> 401|0 
+sandbox/periodic-payments/sepa-credit-transfers/11111111-1111-4111-8111-111111111111 -> 401|0 
+sandbox/accounts/11111111-1111-4111-8111-111111111111/balances/SUBRES -> 401|0 
+sandbox/funds-confirmations/11111111-1111-4111-8111-111111111111 -> 404|0
+[0m
+Material delta: 7 of 8 new sandbox classes return **401** — the sandbox tier is far larger than the 7 recorded last cycle. Cross-checking the live plane and capturing the ELB failure precisely.
+[0m$ [0mcd /tmp/opencode && echo "--- ELB direct hostname error ---"; timeout 20 curl -sS -o /dev/null -w "code=%{http_code}\n" "https://obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com/v1/berlin-group/v1/accounts" 2>&1 | head -4
+U="11111111-1111-4111-8111-111111111111"; L="/v1/berlin-group/v1"
+for P in "/consents" "/consents/$U/authorisations" "/accounts/$U/balances/SUBRES" "/accounts/$U/balances"; do
+  r=$(timeout 20 curl -s -o b.txt -A "TPP/1.0" -w "%{http_code}|%{size_download}" "https://xs2a.tech26.de$L$P" 2>/dev/null)
+  printf "LIVE %-44s -> %s\n" "$P" "$r"; sleep 1.3
+done
+--- ELB direct hostname error ---
+curl: (60) SSL: no alternative certificate subject name matches target host name 'obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com'
+More details here: https://curl.se/docs/sslcerts.html
+
+curl failed to verify the legitimacy of the server and therefore could not
+LIVE /consents                                    -> 401|0
+LIVE /consents/11111111-1111-4111-8111-111111111111/authorisations -> 401|0
+LIVE /accounts/11111111-1111-4111-8111-111111111111/balances/SUBRES -> 401|0
+LIVE /accounts/11111111-1111-4111-8111-111111111111/balances -> 401|0
+[0m
+Live and sandbox tiers are **route-identical** for every class compared. One last method-shape question against the route that actually carries the header (my 09-26 lesson): where is the 401 gate implemented on this mesh?
+[0m$ [0mcd /tmp/opencode && P="/v1/berlin-group/v1/accounts"
+t(){ lbl="$1"; shift; r=$(timeout 20 curl -s -o b.txt -D h.txt -A "TPP/1.0" "$@" -w "%{http_code}|%{size_download}" "https://xs2a.tech26.de$P" 2>/dev/null); printf "%-38s -> %s  ct=%s  loc=%s\n" "$lbl" "$r" "$(grep -i '^content-type:' h.txt|head -1|tr -d '\r'|cut -d' ' -f2-)" "$(grep -i '^location:' h.txt|head -1|tr -d '\r'|cut -d' ' -f2-)"; sleep 1.3; }
+t "C1 no Authorization (control)"
+t "C2 Bearer fake-valid-shape" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig"
+t "C3 Basic bogus" -H "Authorization: Basic $(printf 'zz:zz' | base64)"
+t "C4 empty Authorization value" -H "Authorization;"
+t "C5 duplicated Authorization hdrs" -H "Authorization: Bearer aaa" -H "Authorization: Bearer bbb"
+C1 no Authorization (control)          -> 401|0  ct=  loc=
+C2 Bearer fake-valid-shape             -> 401|0  ct=  loc=
+C3 Basic bogus                         -> 401|0  ct=  loc=
+C4 empty Authorization value           -> 401|0  ct=  loc=
+C5 duplicated Authorization hdrs       -> 400|122  ct=text/html  loc=
+[0m
+A differential at last — duplicated `Authorization` returns **400 text/html** where everything else returns 401 len=0. Attributing the layer.
+[0m$ [0mcd /tmp/opencode && timeout 20 curl -s -D h.txt -A "TPP/1.0" -H "Authorization: Bearer aaa" -H "Authorization: Bearer bbb" "https://xs2a.tech26.de/v1/berlin-group/v1/accounts" -o b.txt 2>/dev/null; echo "--- BODY (400) ---"; cat b.txt; echo; echo "--- HEADERS ---"; cat h.txt | tr -d '\r'
+--- BODY (400) ---
+<html>
+<head><title>400 Bad Request</title></head>
+<body>
+<center><h1>400 Bad Request</h1></center>
+</body>
+</html>
+
+--- HEADERS ---
+HTTP/2 400 
+server: awselb/2.0
+date: Sat, 26 Sep 2026 14:03:03 GMT
+content-type: text/html
+content-length: 122
+[0m
+Cycle complete. Five read-only probe sets run, one differential found.
+
+**STEP 1 — DELTA**
+- [CHANGED] `xs2a.tech26.de/sandbox/oauth2/authorize`: the **published, registered** `client_id=PSDDE-BAFIN-000001` with full documented params + PKCE returns `401 len=0` — **byte-identical to a fabricated `client_id`**. No variation (dummy bearer, unregistered `redirect_uri`, `response_type=token`, live-tier equivalent) changes anything. The authorize plane is reachable but gated **before any OAuth validation**.
+- [NEW] `xs2a.tech26.de` **sandbox data plane is route-identical to the live tier**, not a reduced mock: 7 of 8 fresh sandbox classes return 401, including payment-initiation `payments/sepa-credit-transfers`, `payments/instant-sepa-credit-transfers`, `periodic-payments/sepa-credit-transfers/{id}`. Sandbox ≥14 classes, live ≥23. Sandbox `funds-confirmations/{id}` → 404 (documented POST-only → uninformative per my 09-26 rule).
+- [NEW] `xs2a.tech26.de` **edge-layer attribution**: duplicate `Authorization` headers → `400 len=122 text/html` `server: awselb/2.0`, while every app auth failure → `401 len=0` `server: istio-envoy`. Two components. The ALB actively rejects ambiguous request framing but never issues a `CertificateRequest`.
+- [CHANGED] `{xs2a,aisp,pisp}.tech26.de`: `.well-known` class closed — `openid-configuration`, `oauth-authorization-server`, `jwks.json`, `psd2-aspsp` all `404 len=0` == bogus control, all three hosts. No published auth-server metadata.
+- [CHANGED] Cert leaf SANs enumerated for the first time: exactly `aisp,xs2a,pisp.tech26.de` — no unprobed sibling on the `obnium-mtls-live-fra` cert.
+- [CHANGED] process: triage feeder errored in 3 of last 6 runs (err_d242ae5e 01:40, err_58805be8 06:38, err_9a03853a 11:48) — intake dead ~4 days; signal this cycle came from my own probes.
+- Correction to my own probe: the ELB-direct-hostname test returned `000` because **my** TLS client rejected the ELB name (cert covers only the 3 vhosts) — no server behaviour inferred.
+
+**STEP 2 — PRIORITIZE**
+- [PRIO] xs2a.tech26.de `/v1/berlin-group/v1` + `/sandbox/v1/berlin-group/v1`,9.75,attack_surface=10;business_value=10;tech_exposure=10;gate_ease=9;cloud_surface=9;freshness=10
+- [PRIO] api.tech26.de `/api/accounts/{id}/{tans,statements,addresses,bookings,cards}`,6.70,attack_surface=8.5;business_value=9.5;tech_exposure=6;gate_ease=0;cloud_surface=7;freshness=6
+- [PRIO] pisp.tech26.de `/api/openbanking/fallback/*`,7.88,attack_surface=9.5;business_value=10;tech_exposure=9;gate_ease=0;cloud_surface=7;freshness=9.5
+
+**STEP 3 — HYPOTHESES**
+[HYP] Missing mandatory client-certificate (mTLS) enforcement on the production Berlin-Group XS2A API, with the enforcing component positively identified but the control absent
+class: MISCONFIG
+asset: xs2a.tech26.de /v1/berlin-group/v1, /sandbox/v1/berlin-group/v1
+confidence: 94
+reasoning: 3 vhosts share ELB `obnium-mtls-live-fra-328671153` and cert SANs `aisp,xs2a,pisp.tech26.de` (RSA 2048 M04, 2026-02-02→2027-03-03). Anonymous TLS1.3 completes, `No client certificate CA names sent` — no `CertificateRequest` ever issued. N26's own public support page states aisp/pisp "requires implementation of a qualified certificate". New this cycle: the edge is **not** a pass-through — it rejects ambiguous framing (duplicate `Authorization` → `400 text/html server: awselb/2.0`) while app auth failures return `401 len=0 server: istio-envoy`. So the policy-enforcing hop is present and demonstrably enforcing a different rule class, with client-cert authentication not among its rules. All 23+ live and 14+ sandbox route classes answer 401 to an anonymous client.
+evidence_needed: proof the 401 bearer gate is the *only* compensating control, i.e. no client-cert binding inside the token; a conformance run showing requests served to a non-QWAC client. Counter-argument to neutralise: the API may deliberately delegate identity to bearer+`client_id` and the ELB name may be vestigial — this cannot be settled anonymously and is the reason confidence is 94, not 99.
+verify_steps: `echo | openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de 2>&1 | grep -E "(Acceptable client certificate|Verify return code|no client certificate)"` → expect no CertificateRequest; repeat for aisp/pisp. Confirm `server:` header split: duplicate-Authorization GET → expect `awselb/2.0` 400, single GET → `istio-envoy` 401.
+impact: Berlin Group XS2A mandates eIDAS-qualified-certificate mTLS on every TPP request; without it any internet client reaches the payment-initiation surface unauthenticated at the transport layer, so a stolen bearer token is replayable from anywhere and TPP identity is unverifiable. Regulatory (PSD2/RTS) plus a direct blast radius over `payments/instant-sepa-credit-transfers` (irrevocable). HIGH; CRITICAL if the bearer is the sole control.
+testability: PASSIVE
+
+[HYP] Cross-tenant BOLA on the 15-endpoint legacy account-scoped family (api|beta-api|sapi.tech26.de)
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans,statements,addresses,bookings,cards,approvals,transactions,transfer,beneficiaries,devices,limits,cosmetics}
+confidence: 92
+reasoning: 15 endpoints across 3 hosts all return 401 len=211 byte-identical `invalid_token`; gate fully characterised (Authorization-header-only, GET-only, case-sensitive, query-param and path-shape immune); numeric-ID sweep {0..9} ID-independent; surface observed mutating 404→401. No anonymous escalation path; carried forward undischarged.
+evidence_needed: paired-device-grant bearer; object-bearing responses; cross-tenant `account_id` substitution.
+verify_steps: with a test token, `GET /api/accounts/1/statements` then `GET /api/accounts/2/statements` on api, beta-api and sapi; halt on any non-test data.
+impact: cross-tenant statement history, address PII, cards, TAN/approval artifacts. CRITICAL conditional on BOLA.
+testability: AUTH_HELPED
+
+[HYP] Fallback-tier BOLA with client-asserted anti-fraud binding (`x-tpp-userip`, `device-token`)
+class: IDOR
+asset: pisp.tech26.de/api/openbanking/fallback/{sepa-ct,sepa-instant,so}/{paymentId}/status
+confidence: 68
+reasoning: route table is the vendor-documented `fallback-pisp.md` table (5 classes), not a wordlist; `{paymentId}` attacker-suppliable; N26 documents the entire anti-fraud layer as keyed to a **client-asserted** `x-tpp-userip` and an invented `device-token` UUID. All 3 status routes return 401 without `Authorization` (parked as documentation defect, not a finding).
+evidence_needed: two isolated sandbox TPP sessions with stable synthetic IDs.
+verify_steps: with TPP-A token, `GET /api/openbanking/fallback/sepa-ct/<TPP-B-paymentId>/status` + `x-tpp-userip` set to TPP-B's real IP; mirror with token B.
+impact: cross-tenant payment execution state + counterparty data, and spoofing the documented anti-fraud signal. CRITICAL conditional on BOLA.
+testability: AUTH_HELPED
+
+**STEP 4 — SELF-CRITIQUE**
+- [PARKED] xs2a sandbox/live token-audience confusion: route-identity now **proven** (14 sandbox classes mirror live 1:1) which raises the stakes, but the credential-free mint premise I based it on is **refuted** this cycle — a registered `client_id` is no better than a fabricated one, so there is no anonymous token source and the test is AUTH_HELPED. Folded into the same credentialed session as the mTLS evidence; carrying it separately would duplicate that session. Confidence 74, held not promoted.
+- [PARKED] `POST /sandbox/oauth2/token` reachability: still unanswerable by GET; and the authorize-plane 401 shows the gate rejects pre-validation, so a token POST is unlikely to be reachable. Unresolved, not closed.
+- [PARKED] `pay.n26.com` Stripe BOLA and `keyless` WS subprotocol replay: unchanged, AUTH_HELPED, below the cut — no new evidence this cycle.
+- [FINAL] 1. xs2a.tech26.de missing mTLS enforcement (94, PASSIVE — the only provable-today item). 2. api.tech26.de legacy 15-endpoint BOLA (92, AUTH_HELPED). 3. pisp.tech26.de fallback BOLA with client-asserted anti-fraud (68, AUTH_HELPED).
+
+**STEP 5 — NEXT ACTION**
+[NEXT] PROBE: tier-selection and gate-bypass differential via client-supplied forwarding headers on the xs2a edge — `GET https://xs2a.tech26.de/v1/berlin-group/v1/accounts` with each of `X-Forwarded-Host: sandbox.tech26.de`, `X-Forwarded-Prefix: /sandbox`, `X-Original-URL: /sandbox/v1/berlin-group/v1/accounts`, `X-Rewrite-URL: /sandbox/v1/berlin-group/v1/accounts`, `X-Forwarded-Proto: http` (one per request, 1.3 s apart, compare status+`server:`+len against the 401/0/`istio-envoy` control). If the gateway routes on any client-supplied header, the sandbox/live separation becomes defeatable with no token at all and hypothesis "audience confusion" converts from AUTH_HELPED to PASSIVE. Nothing here is mutating; stop on any 2xx/3xx.
+
+**STEP 6 — LEARNING**
+- [LEARN] REJECTED OTHER @ xs2a.tech26.de: my own 09-26 premise that the sandbox tier offers a **credential-free** token-mint path is refuted — `PSDDE-BAFIN-000001` with full documented params + PKCE returns `401 len=0` byte-identical to a fabricated client_id, and no parameter variation (bearer, redirect_uri, response_type, live tier) changes it. The authorize plane is gated **before** client/OAuth validation. Retracts "the only route that can yield a working token without coordinator-provisioned credentials."
+- [LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: the **sandbox** data plane is **route-identical** to live (14 classes incl. both SEPA credit-transfer initiation classes and periodic payments, 1:1 mirrored), not a reduced mock — so the only thing separating a sandbox token from a live one is a single server-side audience check, with no structural discriminator anywhere in the stack.
+- [LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: the edge is **two components** — `awselb/2.0` rejects ambiguous framing (duplicate `Authorization` → 400 html) while `istio-envoy` returns every 401. The mTLS gap is therefore not "no edge policy" but "edge policy present, client-cert rule absent".
+- [LEARN] REJECTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de `.well-known/{openid-configuration,oauth-authorization-server,jwks.json,psd2-aspsp}`: all `404 len=0` on all three hosts, identical to the bogus-path control — no authorization-server metadata published; class closed.
+- [LEARN] REJECTED MISCONFIG @ {obnium-mtls-live-fra} cert: SAN list is exactly `aisp,xs2a,pisp.tech26.de`; no unprobed sibling on the cert, and the ELB hostname itself fails TLS verification against it (my client's view only, no server claim).
+- [LEARN] ACCEPTED MISCONFIG @ process: generalising the 09-26 "ask the method-shape question of the route that carries the documented method" rule — extend it to *components*: once a differential reveals two `server:` values, subsequent framing questions must be aimed at the hop that demonstrably parses framing. The `awselb/2.0` vs `istio-envoy` split was only visible because I probed the header shape, and it is what turned an absence-of-evidence into a characterisation of the gap.
+- [LEARN] ACCEPTED MISCONFIG @ process: self-audit rule — when a probe returns `curl` exit 60 / HTTP `000`, record it as **my** TLS failure, not a server finding. The ELB-direct test was discarded on exactly that basis.
+
+**STEP 7 — RISK**
+[RISK] N26 Bank AG: 93 — the provable-today risk rose and the speculative risk fell. Provable: the production Berlin-Group XS2A API, its 23 live classes including irrevocable instant SEPA credit transfer, and its route-identical 14-class sandbox twin all answer an anonymous internet client, over an `obnium-mtls-live-fra` ALB that is positively shown to enforce request-hygiene policy but never requests a client certificate, against N26's own published statement that a qualified certificate is required. That is a documented-control gap with a regulatory dimension and is testable with no credential at all. Downgraded: the "sandbox mints its own auth code, so a token needs no user and no credential" claim is refuted — a registered client_id is indistinguishable from a fabricated one and the gate rejects before OAuth validation, so nothing is obtainable anonymously today. Unchanged: the api.tech26.de 15-endpoint BOLA set and the pay.n26.com Stripe boundary remain undischarged and credential-blocked. Still zero validated findings, zero anonymous data access, and every read and write path returns 401.
