@@ -3340,3 +3340,24 @@
 - LEARN: REJECTED MISCONFIG @ pisp.tech26.de `/api/mfa/challenge` (GET): `404 len=0` istio-envoy, consistent with POST-only route as used in public psd2-tpp-docs script;
 - LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section heade
 - LEARN: ACCEPTED MISCONFIG @ process: triage-feeder intake dead since 09-22-14-04 (~3.5 days; healthy-but-empty 09-24-19-17 the only break); pipeline 100% blocked on co
+
+## RANKED HYPOTHESES 2026-09-26 05:13:12 UTC
+- [95] xs2a.tech26.de/v1/berlin-group/v1: xs2a.tech26.de missing mTLS enforcement on production Berlin-Group XS2A API (from art/lead_nemotron3.txt)
+- [78] xs2a.tech26.de/v1/berlin-group/v1: Missing client-certificate (mTLS) enforcement on the live Berlin-Group XS2A production API (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): PROBE: `POST /oauth2/token` on `pisp.tech26.de` with `Content-Type: application/x-www-form-urlencoded`, `device-token: <fresh uuid4>`, body `refresh_token=00000
+- NEXT(hypotheses-nemotron3.txt): PROBE: `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -showcerts </dev/null 2>&1 | grep -E "(CertificateRequest|Verify return code|no 
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share ELB `obnium-mtls-live-fra-328671153` and none ever issues a TLS `CertificateRequest` (`No clien
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `state` is passed through as an opaque query param into the server-rebuilt `/login?...&redirect=`
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: the "the TPP must not use access/refresh tokens on other base URLs" and "PISP tokens cannot be used for AISP fl
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: my own 09-26 entry "token-minting surface is not anonymously reachable" is retracted as unsound — `GET /api
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not en
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking`: open-redirect hypothesis closed — the `redirect` param is rebuilt server-side from the matched route path, use
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de: unauthenticated auth-code minting via the documented sandbox helpers (`/sandbox/oauth2/authorize|/sandbox/oauth2/token|/san
+- LEARN: ACCEPTED MISCONFIG @ {aisp,pisp}.tech26.de: not "route-less" and not a mesh split — they share the `{aisp,xs2a,pisp}` cert leaf but do not terminate the Berlin-
+- LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only thing that produced signal was **vendor-corpus-driven route mapping** (public OpenAPI yml + Po
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less / no distinct surface" classification is **false** — both serve the full legacy `/ap
+- LEARN: REJECTED AUTH @ api.tech26.de: header-shape bypass closed — lowercase header name `authorization:`, tab separator, and double space after colon all return `401 
+- LEARN: ACCEPTED MISCONFIG @ {aisp,xs2a}.tech26.de: `server: istio-envoy` edge, `/api/me` and `/api/accounts/1/statements` → `404 len=0`; these hosts are on a different
+- LEARN: REJECTED MISCONFIG @ pisp.tech26.de `/api/mfa/challenge` (GET): `404 len=0` istio-envoy, consistent with POST-only route as used in public psd2-tpp-docs script;
+- LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section heade
+- LEARN: ACCEPTED MISCONFIG @ process: triage-feeder intake dead since 09-22-14-04 (~3.5 days; healthy-but-empty 09-24-19-17 the only break); pipeline 100% blocked on co

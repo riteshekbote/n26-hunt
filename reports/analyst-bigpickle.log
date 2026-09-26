@@ -40844,3 +40844,451 @@ testability: AUTH_HELPED
 
 ## STEP 7 — RISK
 [RISK] N26 Bank AG: 92 — a whole previously-unmapped production API class (Berlin-Group AIS+PIS on xs2a.tech26.de: accounts, balances, transactions, consents, SEPA payment initiation) was assumed absent for 9 days, and its only transport-layer control (the mTLS posture the ELB name advertises) is not enforced for internet clients. Combined with the two standing credential-gated IDOR paths and the unreachable staging twin, undetected exposure in the open-banking tier is the dominant residual risk. Still zero validated findings and zero anonymous data access; every path remains bearer-gated.
+===== ANALYST bigpickle 2026-09-26 05:13:12 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mfind . -name "probe-results.md" -o -name "state_bigpickle.json" -o -name "hypotheses-bigpickle.txt" 2>/dev/null | head -20
+./state_bigpickle.json
+./probe-results.md
+./reports/hypotheses-bigpickle.txt
+[0m
+[0m$ [0mls -la; echo "---TRIAGE---"; ls -t triage/ 2>/dev/null | head -20; echo "---LEADS---"; ls -t art/ leads/ 2>/dev/null | head -20
+total 652
+drwxr-xr-x 12 runner runner   4096 Sep 26 05:09 .
+drwxr-xr-x  3 runner runner   4096 Sep 26 05:08 ..
+drwxr-xr-x  7 runner runner   4096 Sep 26 05:09 .git
+drwxr-xr-x  3 runner runner   4096 Sep 26 05:09 .github
+-rw-r--r--  1 runner runner   1844 Sep 26 05:09 README.md
+-rw-r--r--  1 runner runner     32 Sep 26 05:09 analyst-out.txt
+-rw-r--r--  1 runner runner 278143 Sep 26 05:09 analyst-prompt.txt
+-rw-r--r--  1 runner runner 274273 Sep 26 05:09 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 26 05:09 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 26 05:09 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 26 05:09 leads
+-rw-r--r--  1 runner runner  19989 Sep 26 05:09 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 26 05:09 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 26 05:09 reports
+drwxr-xr-x  2 runner runner   4096 Sep 26 05:09 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 26 05:09 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 26 05:09 scripts
+-rw-r--r--  1 runner runner     33 Sep 26 05:09 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 26 05:09 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 26 05:09 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 26 05:09 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 26 05:09 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 26 05:09 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Sep 26 05:09 triage
+---TRIAGE---
+run-2026-09-24-19-17.md
+run-2026-09-24-22-31.md
+run-2026-09-25-00-47.md
+run-2026-09-25-05-56.md
+run-2026-09-25-11-37.md
+run-2026-09-25-15-55.md
+run-2026-09-25-19-54.md
+run-2026-09-25-23-09.md
+run-2026-09-26-01-40.md
+run-2026-09-20-10-05.md
+run-2026-09-20-14-16.md
+run-2026-09-20-17-31.md
+run-2026-09-20-19-43.md
+run-2026-09-20-22-15.md
+run-2026-09-21-00-22.md
+run-2026-09-21-05-09.md
+run-2026-09-21-10-51.md
+run-2026-09-21-16-50.md
+run-2026-09-21-20-51.md
+run-2026-09-21-23-54.md
+---LEADS---
+leads/:
+lead-nemotron3.md
+reposcan-n26-manual.md
+reposcan-n26.md
+lead-bigpickle.md
+lead-laguna.md
+lead-ling3.md
+lead-longcat.md
+lead-mimo.md
+[0m
+[0m$ [0mcat scope.yml
+programs:
+  n26:
+    name: N26 Bank AG Bug Bounty
+    disclosure_policy: via bugs.olivermaicher.eu (Oliver Maicher private program) - report + PoC + contact + payment
+    assets:
+      - name: "All company-owned infrastructure, online banking platforms, mobile applications, APIs, customer portals, authentication systems, internal banking services, websites, and domains operated by N26 Bank AG and its subsidiaries"
+        priority: In
+    out_of_scope:
+- "Network level Denial of Service attacks"
+      - "Application Denial of Service by locking user accounts"
+      - "Descriptive error messages or headers (e.g. Stack Traces, banner grabbing)"
+      - "Disclosure of known public files or directories (e.g. robots.txt)"
+      - "Outdated software / library versions"
+      - "OPTIONS / TRACE HTTP method enabled"
+      - "CSRF on logout"
+      - "CSRF on forms that are available to anonymous users"
+      - "Cookies that lack HTTP Only or Secure settings for non-sensitive data"
+      - "Self-XSS and issues exploitable only through Self-XSS"
+      - "Reports resulting from automated scanning utilities without additional details or a POC demonstrating a specific exploit"
+      - "Attacks requiring physical access to a user's device"
+      - "Attacks dependent upon social engineering of employees or vendors"
+      - "Username enumeration based on login or forgot password pages"
+      - "Enforcement policies for brute force, rate limiting, or account lockout"
+      - "SSL/TLS best practices"
+      - "SSL attacks such as BEAST, BREACH, Renegotiation attack"
+      - "Clickjacking, without additional details demonstrating a specific exploit"
+      - "Mail configuration issues including SPF, DKIM, DMARC settings"
+      - "Use of a known-vulnerable library without a description of an exploit specific to our implementation"
+      - "Password and account recovery policies"
+      - "Presence of autocomplete functionality in form fields"
+      - "Publicly accessible login panels"
+      - "Lack of email address verification during account registration or account invitation"
+      - "Lack of email address verification password restore"
+      - "Session control during email/password changes"
+      - "Social engineering, physical attacks, and DoS/DDoS testing (per program notes)"
+      - "Exposure of customer/employee/financial/authentication data during testing (per program notes)"
+    github_orgs:
+      - none-configured
+
+rules:
+  passive_first: false          # deep-hunt agent: active probes allowed when scoped
+  max_requests_per_second: 1    # never hammer live infra
+  no_doom: true                 # no DoS/DDoS, no account-lockout attacks
+  account_creation: restricted  # only on test/sandbox assets, never live customer data
+  no_data_modification: true    # no writes/deletes on live customer data
+  no_pre_disclosure: true       # never disclose before program response
+  poc_required: true            # scanner output alone is REJECTED
+  redact_secrets_in_commits: true
+
+models:
+  - { id: opencode/big-pickle, name: bigpickle }
+  - { id: opencode/nemotron-3-ultra-free, name: nemotron3 }
+  - { id: opencode/longcat-2.0-free, name: longcat }
+  - { id: opencode/ling-3.0-flash-free, name: ling3 }
+  - { id: opencode/laguna-s-2.1-free, name: laguna }
+[0m
+[0m$ [0mecho "=== triage run-2026-09-26-01-40 ==="; cat triage/run-2026-09-26-01-40.md 2>/dev/null | head -40; echo; echo "=== probe-results tail ==="; tail -60 probe-results.md; echo; echo "=== state ==="; cat state_bigpickle.json
+=== triage run-2026-09-26-01-40 ===
+
+===== TRIAGE 2026-09-26 01:40:03 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_d242ae5e"
+  }
+}
+
+=== probe-results tail ===
+
+## 2026-09-22 21:40:02 UTC
+
+
+## 2026-09-22 23:50:24 UTC
+
+
+## 2026-09-23 02:51:23 UTC
+
+
+## 2026-09-23 08:13:34 UTC
+
+
+## 2026-09-23 13:45:05 UTC
+
+
+## 2026-09-23 18:10:34 UTC
+
+
+## 2026-09-23 21:34:43 UTC
+
+
+## 2026-09-23 23:57:55 UTC
+
+
+## 2026-09-24 02:51:39 UTC
+
+
+## 2026-09-24 08:04:51 UTC
+
+
+## 2026-09-24 13:39:42 UTC
+
+
+## 2026-09-24 17:58:38 UTC
+
+
+## 2026-09-24 21:08:16 UTC
+
+
+## 2026-09-24 23:54:30 UTC
+
+
+## 2026-09-25 03:00:30 UTC
+
+
+## 2026-09-25 08:35:44 UTC
+
+
+## 2026-09-25 14:13:25 UTC
+
+
+## 2026-09-25 18:42:44 UTC
+
+
+## 2026-09-25 21:52:57 UTC
+
+
+## 2026-09-26 00:25:36 UTC
+
+
+=== state ===
+{"phase": "POC", "target": "api"}
+[0m
+[0m$ [0mls -la reposcan-raw/ 2>/dev/null; echo "---"; head -60 reposcan-raw/*psd2* 2>/dev/null
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep 26 05:09 .
+drwxr-xr-x 12 runner runner 4096 Sep 26 05:09 ..
+-rw-r--r--  1 runner runner   66 Sep 26 05:09 summary.txt
+---
+[0m
+[0m$ [0mfor h in aisp.tech26.de pisp.tech26.de xs2a.tech26.de; do echo "=== $h ==="; dig +short $h CNAME; dig +short $h A; done
+=== aisp.tech26.de ===
+obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com.
+obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com.
+63.184.77.225
+18.195.172.188
+35.156.254.129
+=== pisp.tech26.de ===
+obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com.
+obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com.
+35.156.254.129
+18.195.172.188
+63.184.77.225
+=== xs2a.tech26.de ===
+obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com.
+obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com.
+35.156.254.129
+63.184.77.225
+18.195.172.188
+[0m
+All three `{xs2a,aisp,pisp}.tech26.de` CNAME to the **same** ELB (`obnium-mtls-live-fra-328671153`). That contradicts last cycle's "xs2a alone terminates BG routes" claim — same LB means **vhost routing**, so BG paths must be retested per Host header.
+[0m$ [0mcd /tmp/opencode
+probe(){ # $1=host $2=path
+  sleep 1
+  out=$(curl -s -o /tmp/opencode/b.txt -w '%{http_code} %{size_download}' --http2 \
+    --resolve "$1:443:35.156.254.129" "https://$1$2" -D /tmp/opencode/h.txt --max-time 12 2>/dev/null)
+  srv=$(grep -i '^server:' /tmp/opencode/h.txt | tr -d '\r' | head -1)
+  ct=$(grep -i '^content-type:' /tmp/opencode/h.txt | tr -d '\r' | head -1)
+  est=$(grep -i '^x-envoy-upstream-service-time:' /tmp/opencode/h.txt | tr -d '\r' | head -1)
+  echo "$1$2 -> $out | $srv | $est"
+}
+probe xs2a.tech26.de /v1/berlin-group/v1/accounts
+probe aisp.tech26.de /v1/berlin-group/v1/accounts
+probe pisp.tech26.de /v1/berlin-group/v1/accounts
+xs2a.tech26.de/v1/berlin-group/v1/accounts -> 401 0 | server: istio-envoy | x-envoy-upstream-service-time: 20
+aisp.tech26.de/v1/berlin-group/v1/accounts -> 404 0 | server: istio-envoy | x-envoy-upstream-service-time: 1
+pisp.tech26.de/v1/berlin-group/v1/accounts -> 404 0 | server: istio-envoy | x-envoy-upstream-service-time: 1
+[0m
+Same ELB, same `istio-envoy` — routing is Host-based vhost selection, and aisp/pisp genuinely 404 on BG paths. Now mapping the **unmapped** route tables of aisp/pisp via vendor corpus (the move that produced last cycle's signal).
+[0m$ [0mcurl -s --max-time 20 "https://api.github.com/orgs/n26/repos?per_page=100&sort=updated" | python3 -c "
+import json,sys
+try:
+    d=json.load(sys.stdin)
+except Exception as e:
+    print('ERR',e); sys.exit()
+if isinstance(d,dict): print('DICT',str(d)[:300]); sys.exit()
+for r in d: print(r['name'],'|',(r.get('description') or '')[:90])
+" 2>&1 | head -60
+DICT {'message': "API rate limit exceeded for 68.211.146.18. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)", 'documentation_url': 'https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting'}
+[0m
+[0m◈ [0mParallel Web Search "N26 tech26.de aisp.tech26.de pisp.tech26.de API documentation Berlin Group AISP routes"
+**Break in the plateaus.** Vendor corpus just invalidated my own prior classification. `aisp.tech26.de` is the **PSD2 Fallback (contingency) interface** with routes `/api/v2/accounts` + `/api/fallback/accounts/{id}/transactions` — the exact wordlist false-negative rule I recorded on 09-25. Fetching full route tables.
+[0m% [0mWebFetch https://raw.githubusercontent.com/n26/psd2-tpp-docs/main/doc/fallback-aisp.md
+[0m% [0mWebFetch https://raw.githubusercontent.com/n26/psd2-tpp-docs/main/doc/fallback-pisp.md
+Full fallback route tables recovered. Note `GET /api/openbanking/fallback/sepa-ct/{id}/status` is documented with **no `Authorization` header** — only `device-token` + `x-tpp-userip`. Testing that gap, plus the vendor-documented mTLS requirement.
+[0m
+[0m$ [0mcd /tmp/opencode
+for h in aisp.tech26.de pisp.tech26.de xs2a.tech26.de; do
+  sleep 1
+  echo "=== $h TLS handshake (anonymous, no client cert) ==="
+  echo | timeout 15 openssl s_client -connect $h:443 -servername $h -tls1_3 2>/dev/null \
+    | grep -iE 'Acceptable client certificate|CA names|Verify return code|Protocol|Cipher *:' | head -6
+done
+=== aisp.tech26.de TLS handshake (anonymous, no client cert) ===
+No client certificate CA names sent
+Verify return code: 0 (ok)
+=== pisp.tech26.de TLS handshake (anonymous, no client cert) ===
+No client certificate CA names sent
+Verify return code: 0 (ok)
+=== xs2a.tech26.de TLS handshake (anonymous, no client cert) ===
+No client certificate CA names sent
+Verify return code: 0 (ok)
+[0m
+`No client certificate CA names sent` on all three — no `CertificateRequest` is ever issued, so mTLS is definitively unenforced, including on the two hosts N26's own support page says **require** a qualified cert to "establish the TLS connection". Now the route tables.
+[0m$ [0mcd /tmp/opencode
+# no auth header at all, exactly as the vendor doc example shows
+p(){ sleep 1; c=$(curl -s -o b.txt -w '%{http_code} %{size_download}' --http2 -X GET \
+  -H 'device-token: 11111111-2222-4333-8444-555555555555' \
+  -H 'x-tpp-userip: 203.0.113.7' --max-time 12 "https://$1$2" 2>/dev/null)
+  printf '%-58s -> %s | %s\n' "$1$2" "$c" "$(head -c 150 b.txt | tr -d '\n')"; }
+echo "### AISP fallback (documented table) ###"
+p aisp.tech26.de /api/v2/accounts
+p aisp.tech26.de /api/v2/accounts/00000000-0000-0000-0000-000000000000
+p aisp.tech26.de /api/fallback/accounts/00000000-0000-0000-0000-000000000000/transactions
+echo "### PISP fallback (documented table) ###"
+p pisp.tech26.de /api/openbanking/fallback/sepa-ct/00000000-0000-0000-0000-000000000000/status
+p pisp.tech26.de /api/openbanking/fallback/so/00000000-0000-0000-0000-000000000000/status
+### AISP fallback (documented table) ###
+aisp.tech26.de/api/v2/accounts                             -> 401 0 | 
+aisp.tech26.de/api/v2/accounts/00000000-0000-0000-0000-000000000000 -> 401 0 | 
+aisp.tech26.de/api/fallback/accounts/00000000-0000-0000-0000-000000000000/transactions -> 401 0 | 
+### PISP fallback (documented table) ###
+pisp.tech26.de/api/openbanking/fallback/sepa-ct/00000000-0000-0000-0000-000000000000/status -> 401 0 | 
+pisp.tech26.de/api/openbanking/fallback/so/00000000-0000-0000-0000-000000000000/status -> 401 0 |
+[0m
+All documented fallback routes are **live (401)** on aisp/pisp — prior "unmapped/route-less" classification was another wordlist false negative. Now the decisive test: the docs assert *"Access tokens issued for PISP cannot be used for AISP flows"* — a token-audience separation control. Since all three hosts share one ELB with Host-based routing, I can test the routing layer of that separation anonymously.
+[0m$ [0mcd /tmp/opencode
+m(){ sleep 1; c=$(curl -s -o b.txt -w '%{http_code}' --http2 -X GET \
+  -H 'device-token: 11111111-2222-4333-8444-555555555555' -H 'x-tpp-userip: 203.0.113.7' \
+  --max-time 12 "https://$1$2" 2>/dev/null); printf '  %-52s %s\n' "$2" "$c"; }
+for h in aisp.tech26.de pisp.tech26.de xs2a.tech26.de; do
+  echo "### Host: $h  (401=route served, 404=not served on this vhost) ###"
+  m $h /api/v2/accounts
+  m $h /api/openbanking/fallback/sepa-ct/00000000-0000-0000-0000-000000000000/status
+  m $h /v1/berlin-group/v1/accounts
+done
+echo "### control: bogus path on pisp (must be 404) ###"
+m pisp.tech26.de /api/openbanking/fallback/sepa-ct-x/status
+### Host: aisp.tech26.de  (401=route served, 404=not served on this vhost) ###
+  /api/v2/accounts                                     401
+  /api/openbanking/fallback/sepa-ct/00000000-0000-0000-0000-000000000000/status 404
+  /v1/berlin-group/v1/accounts                         404
+### Host: pisp.tech26.de  (401=route served, 404=not served on this vhost) ###
+  /api/v2/accounts                                     404
+  /api/openbanking/fallback/sepa-ct/00000000-0000-0000-0000-000000000000/status 401
+  /v1/berlin-group/v1/accounts                         404
+### Host: xs2a.tech26.de  (401=route served, 404=not served on this vhost) ###
+  /api/v2/accounts                                     404
+  /api/openbanking/fallback/sepa-ct/00000000-0000-0000-0000-000000000000/status 404
+  /v1/berlin-group/v1/accounts                         401
+### control: bogus path on pisp (must be 404) ###
+  /api/openbanking/fallback/sepa-ct-x/status           404
+[0m
+Route tables are **strictly disjoint per vhost** (AIS only on aisp, PIS only on pisp, BG only on xs2a; bogus-path control 404) — that closes my own vhost-confusion hypothesis. Checking the token-minting surface: KB's prior "credential rejected" test used **Basic** auth, but the documented flow is a form-urlencoded password grant.
+[0m$ [0mcd /tmp/opencode
+q(){ sleep 1; c=$(curl -s -o b.txt -w '%{http_code} %{size_download}' --http2 -X "$3" --max-time 12 "https://$1$2" 2>/dev/null)
+  printf '  %-6s %-46s -> %s | %s\n' "$3" "$2" "$c" "$(head -c 120 b.txt|tr -d '\n')"; }
+echo "### GET-only route-existence probe (no credentials transmitted) ###"
+q aisp.tech26.de /oauth2/token GET
+q pisp.tech26.de /oauth2/token GET
+q xs2a.tech26.de /oauth2/token GET
+q aisp.tech26.de /api/mfa/challenge GET
+q pisp.tech26.de /api/transactions/so GET
+q aisp.tech26.de /v1/berlin-group/v1/accounts GET
+### GET-only route-existence probe (no credentials transmitted) ###
+  GET    /oauth2/token                                  -> 404 0 | 
+  GET    /oauth2/token                                  -> 404 0 | 
+  GET    /oauth2/token                                  -> 404 0 | 
+  GET    /api/mfa/challenge                             -> 404 0 | 
+  GET    /api/transactions/so                           -> 404 0 | 
+  GET    /v1/berlin-group/v1/accounts                   -> 404 0 |
+[0m
+GET-404 is **non-conclusive** here: `/api/mfa/challenge` (documented POST-only, confirmed live) returns the identical 404 as `/oauth2/token`. That invalidates my own last-cycle "token-minting not anonymously reachable" conclusion. Checking the new Aug-2026 Redirect SCA flow on the web app.
+[0m$ [0mcd /tmp/opencode
+r(){ sleep 1; L=$(curl -s -o /dev/null -D - --http2 --max-time 15 "https://app.n26.com$1" 2>/dev/null \
+   | grep -iE '^(HTTP/|location:)' | tr -d '\r' | paste -sd' | ' -); printf '%-52s %s\n' "$1" "$L"; }
+r '/wl/open-banking/aisp?consentId=x'
+r '/wl/open-banking/pisp?consentId=x'
+r '/wl/open-banking/cbpii?consentId=x'
+r '/open-banking/redirect?consentId=x&client_id=y&state=z&redirect_uri=https%3A%2F%2Fexample.com%2Fcb'
+/wl/open-banking/aisp?consentId=x                    HTTP/2 302  location: /open-banking/aisp?consentId=x
+/wl/open-banking/pisp?consentId=x                    HTTP/2 302  location: /feed
+/wl/open-banking/cbpii?consentId=x                   HTTP/2 302  location: /open-banking/cbpii?consentId=x
+/open-banking/redirect?consentId=x&client_id=y&state=z&redirect_uri=https%3A%2F%2Fexample.com%2Fcb HTTP/2 404
+[0m
+[0m$ [0mcd /tmp/opencode
+r(){ sleep 1; L=$(curl -s -o /dev/null -D - --http2 --max-time 15 "https://app.n26.com$1" 2>/dev/null \
+   | grep -iE '^(HTTP/|location:)' | tr -d '\r' | paste -sd' | ' -); printf '%-62s %s\n' "$1" "$L"; }
+r '/open-banking/aisp?consentId=x'
+r '/open-banking/cbpii?consentId=x'
+r '/open-banking/aisp?consentId=x&state=abc'
+r '/wl/open-banking/pisp?consentId=x&state=abc'
+/open-banking/aisp?consentId=x                                 HTTP/2 302  location: /login?consentId=x&redirect=%2Fopen-banking%2Faisp%3FconsentId%3Dx
+/open-banking/cbpii?consentId=x                                HTTP/2 302  location: /login?consentId=x&redirect=%2Fopen-banking%2Fcbpii%3FconsentId%3Dx
+/open-banking/aisp?consentId=x&state=abc                       HTTP/2 302  location: /login?consentId=x&state=abc&redirect=%2Fopen-banking%2Faisp%3FconsentId%3Dx%26state%3Dabc
+/wl/open-banking/pisp?consentId=x&state=abc                    HTTP/2 302  location: /feed
+[0m
+## STEP 1 — DELTA
+
+[NEW] @ aisp.tech26.de: **route table mapped from vendor corpus (psd2-tpp-docs/doc/fallback-aisp.md)** — this is the **PSD2 Fallback / contingency** interface, not Berlin Group. 4 live route classes, all `401` app-layer: `GET /api/v2/accounts`, `GET /api/v2/accounts/{accountId}`, `GET /api/fallback/accounts/{accountId}/transactions?from&to`, `GET /api/fallback/accounts/{accountId}/transactions/{transactionId}`. **Invalidates** the 09-26 KB entry "aisp/pisp own route tables still unenumerated" — they were never 404, they were probed with the wrong wordlist (`/api/me`, `/api/accounts/1/statements` = the api-family shapes).
+
+[NEW] @ pisp.tech26.de: **route table mapped (fallback-pisp.md)** — 5 live route classes: `GET /api/openbanking/fallback/sepa-ct/{paymentId}/status`, `.../sepa-instant/{paymentId}/status`, `.../so/{paymentId}/status` (all `401`), plus documented POST payment-initiation `/api/openbanking/fallback/sepa-ct`, `.../sepa-instant`, `/api/transactions/so`. **Live payment-initiation surface on the contingency interface** — highest-value money-movement asset in the program, previously absent from the inventory.
+
+[NEW] @ {xs2a,aisp,pisp}.tech26.de: all three CNAME to the **same** ELB `obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com` (63.184.77.225 / 18.195.172.188 / 35.156.254.129). Routing is vhost-based at one Istio gateway — not a "mesh split".
+
+[NEW] @ {xs2a,aisp,pisp}.tech26.de: **mTLS definitively absent** — `openssl s_client -tls1_3` with no client cert returns `No client certificate CA names sent` on all three, i.e. the server never issues a TLS `CertificateRequest`. N26's own public support page states of aisp/pisp: *"Access to the above URL and establishing the TLS connection requires implementation of a qualified certificate."* Documented control is not enforced at the transport layer.
+
+[NEW] @ app.n26.com: `/wl/open-banking/cbpii?consentId=x` → `302 /open-banking/cbpii?consentId=x` → unauth `302 /login?...&redirect=%2Fopen-banking%2Fcbpii%3F...`. **Third open-banking web surface** (cbpii = funds-confirmation), previously only `aisp` was known. `/wl/open-banking/pisp?consentId=x` → `302 /feed` (route absent, silently absorbed into the authenticated feed).
+
+[CHANGED] @ xs2a.tech26.de: the 09-26 REJECTED conclusion *"token-minting surface is not anonymously reachable — `/oauth2/token` 404"* is **unsound**. On this edge, `GET /api/mfa/challenge` (documented POST-only, confirmed live) returns a **byte-identical 404** to `GET /oauth2/token`. GET-404 does not discriminate absent from POST-only here — the same method-gating asymmetry already proven on `api.tech26.de` (`GET /api/me`→401, `HEAD /api/me`→404). The password/refresh grant surface is **unresolved, not closed**.
+
+## STEP 2 — PRIORITIZE
+
+[PRIO] xs2a.tech26.de,7.70,attack_surface=9.0;business_value=10.0;tech_exposure=9.0;gate_ease=0.0;cloud_surface=7.0;freshness=9.0
+[PRIO] pisp.tech26.de,7.80,attack_surface=9.5;business_value=10.0;tech_exposure=9.0;gate_ease=0.0;cloud_surface=7.0;freshness=10.0
+[PRIO] aisp.tech26.de,7.30,attack_surface=8.0;business_value=9.0;tech_exposure=9.0;gate_ease=0.0;cloud_surface=7.0;freshness=10.0
+
+## STEP 3 — HYPOTHESES
+
+[HYP] Missing client-certificate (mTLS) enforcement on the live Berlin-Group XS2A production API
+class: MISCONFIG
+asset: xs2a.tech26.de/v1/berlin-group/v1
+confidence: 78
+reasoning: 11 Berlin-Group route classes (`/accounts`, `/accounts/{id}`, `/balances`, `/transactions`, `/consents`, `/consents/status`, `/consents/{id}`, `/consents/{id}/status`, `/payments/sepa-credit-transfers/{id}`, `.../status`) return `401 len=0` with `x-envoy-upstream-service-time` (app-layer, est 20ms), while a bogus path under the same base returns `404`. The ELB is named `obnium-mtls-live-fra`; Berlin Group mandates an eIDAS QWAC on every TPP request; N26's own support page states the qualified certificate is required to *establish the TLS connection*. `openssl s_client -tls1_3` to xs2a.tech26.de with no client cert completes with `No client certificate CA names sent` and `Verify return code: 0` — the server never requests a certificate, so no client cert is possible to present. The sole gate is a bearer token.
+evidence_needed: a QWAC client certificate plus a token issued for a registered TPP, proving the app never binds the certificate CN/organisation to the token's `client_id`; or a token minted with no QWAC at all being accepted on these routes.
+verify_steps: `GET /v1/berlin-group/v1/consents/<tpp-A-consent-id> HTTP/2` + `Host: xs2a.tech26.de` + `Authorization: Bearer <tpp-A-token>` (a) with no client certificate, (b) with a QWAC whose CN differs from the token's client_id; compare status and any `WWW-Authenticate` / `ASPSP-SCA-*` headers.
+impact: PSD2 strong customer authentication is reduced to bearer-token possession, so any leaked, stale or mis-issued 20-minute token yields full account listing, balances, transaction history, consent state and SEPA payment initiation for the linked PSU; HIGH, conditional on token compromise, no anonymous access established.
+testability: AUTH_HELPED
+
+[HYP] Unattended 180-day access to full account data via unbound fallback refresh-token chain
+class: AUTH
+asset: aisp.tech26.de/oauth2/token
+confidence: 70
+reasoning: the fallback AISP spec (fallback-aisp.md) makes the access token 15-minute and marked `Storage: NEVER`, but the refresh token is a **180-day rotating chain** renewed by `POST /oauth2/token` with `grant_type=refresh_token`. That refresh call requires only `refresh_token` in the body plus the `device-token` **request header** — and `device_token` is not issued by N26: the doc instructs the TPP to "provide a unique device_token per client/device connection… a valid UUID v4 as per RFC 4122", i.e. the client invents it. `x-tpp-userip` is likewise client-asserted. The route is live (`GET`-family `/api/v2/accounts` → `401`, est app-layer) and `GET /oauth2/token` returns the same 404 as the known-live POST-only `/api/mfa/challenge`, so its reachability is unresolved rather than closed.
+evidence_needed: one TPP sandbox refresh token for the fallback tier, plus a second independently-minted session, to test whether a refresh token issued to session A is accepted when replayed with a freshly invented `device-token` and a different `x-tpp-userip`.
+verify_steps: baseline `GET /api/v2/accounts HTTP/1.1` + `Host: aisp.tech26.de` + `Authorization: bearer <tpp-A-access>` + `device-token: <uuid-A>` + `x-tpp-userip: 203.0.113.7`; then repeat the same request with `device-token: <random-uuid-B>` and `x-tpp-userip: 198.51.100.9` (both different from the minting session); compare status and body. Halt on any non-test data.
+impact: if `device-token` is not bound server-side to the session, one leaked refresh token yields 180 days of unattended, un-rate-limited access to every account's IBAN, balance, product, owner name and full transaction history including counterparty IBANs and partner names; HIGH.
+testability: AUTH_HELPED
+
+[HYP] Cross-tenant BOLA on the fallback PIS/AIS interface with client-asserted anti-fraud binding
+class: IDOR
+asset: pisp.tech26.de/api/openbanking/fallback/{sepa-ct,sepa-instant,so}/{paymentId}/status and aisp.tech26.de/api/fallback/accounts/{accountId}/transactions
+confidence: 68
+reasoning: the status routes are live and 401-gated (`sepa-ct/{uuid}/status` → `401`, `so/{uuid}/status` → `401`) and each documented request carries only `device-token` + `x-tpp-userip` — no `Authorization` line in the vendor example (I confirmed the server does enforce authz regardless, so the doc example is an omission, not a flaw). `{accountId}` and `{paymentId}` are attacker-suppliable UUIDs. N26 documents that its entire anti-fraud layer for this interface keys off `x-tpp-userip`: *"providing this IP address guarantees us to identify proper user calls and to protect the integrity of our services… If a TPP doesn't provide an end-user's IP address with API requests requiring IP specification, or tries to manipulate or obfuscate IP addresses, such cases will be treated in accordance to our established security policies."* That control is a plain client-supplied header on the same request.
+evidence_needed: two isolated sandbox TPP sessions, stable synthetic `accountId`/`paymentId` values per session, and object-bearing responses.
+verify_steps: `GET /api/openbanking/fallback/sepa-ct/<tpp-B-payment-id>/status HTTP/1.1` + `Host: pisp.tech26.de` + `Authorization: bearer <tpp-A-access>` + `device-token: <uuid-A>` + `x-tpp-userip: <tpp-B-user's real IP>`; mirror with token B; same pattern on `GET /api/fallback/accounts/<tpp-B-accountId>/transactions?from=0&to=1` at aisp.tech26.de. Halt on any non-test data.
+impact: cross-tenant disclosure of payment execution state, rejection reasons, and full account transaction history with counterparty identifiers; additionally, spoofing `x-tpp-userip` with the victim's real IP neutralises the documented fraud controls, so a stolen fallback token is used without tripping IP-anomaly detection; CRITICAL conditional on BOLA, no anonymous access established.
+testability: AUTH_HELPED
+
+## STEP 4 — SELF-CRITIQUE
+
+[PARKED] vhost route confusion / token-audience bypass on the shared `obnium-mtls-live-fra` ELB: tested and **refuted** — route tables are strictly disjoint per Host (aisp serves only `/api/v2/accounts`, pisp only the fallback payment routes, xs2a only `/v1/berlin-group/v1/*`; every cross-cell returns `404`, bogus-path control `/api/openbanking/fallback/sepa-ct-x/status` → `404`). This was my own hypothesis, generated from the shared-ELB discovery, and it does not hold.
+[PARKED] unauthenticated payment-status read via missing `Authorization` header: refuted — `device-token` + `x-tpp-userip` with no `Authorization` returned `401` on all three status routes. The vendor doc example omitting the header is a documentation defect, not an exploitable gap; reporting it would be a descriptive-error/no-POC rejection.
+[PARKED] `api.tech26.de` legacy BOLA (92) and `pay.n26.com` Stripe-forwarded BOLA (85): both remain **valid and undischarged** AUTH_HELPED items, retained below the top-3 cut only because this cycle's entire new evidence concerns the fallback/XS2A tier. Neither is invalidated.
+[FINAL] 1. xs2a.tech26.de missing mTLS with vendor-documented control (78 — the only one demonstrable without any credential); 2. aisp.tech26.de unbound 180-day refresh chain (70); 3. fallback-tier BOLA with client-asserted `x-tpp-userip` (68).
+
+## STEP 5 — NEXT ACTION
+
+[NEXT] PROBE: `POST /oauth2/token` on `pisp.tech26.de` with `Content-Type: application/x-www-form-urlencoded`, `device-token: <fresh uuid4>`, body `refresh_token=00000000-0000-4000-8000-000000000000&grant_type=refresh_token` — a syntactically valid but fabricated token, no username/password, so no login attempt and no username enumeration. This settles the one open question my own LEARN flags as unsound: whether the fallback password/refresh grant is anonymously reachable, which GET-404 cannot answer. Requires sign-off because it is method-correct POST; not run under this cycle's GET/HEAD-only constraint.
+
+## STEP 6 — LEARNING
+
+[LEARN] ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share ELB `obnium-mtls-live-fra-328671153` and none ever issues a TLS `CertificateRequest` (`No client certificate CA names sent`), despite N26's public support page stating aisp/pisp "Access to the above URL and establishing the TLS connection requires implementation of a qualified certificate". Second independent instance of the 09-25 rule — a generic wordlist probed before the real route table produces systematic false negatives; the correct enumeration source is the vendor's own `psd2-tpp-docs`, and it reclassified aisp/pisp from "unmapped" to a live money-movement surface.
+[LEARN] REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `state` is passed through as an opaque query param into the server-rebuilt `/login?...&redirect=` chain, and `redirect` is server-constructed from the matched route path (09-26 finding holds) — no open redirect and no observable state-binding failure; auth-code theft on the new Redirect SCA mode is AUTH_HELPED at best, not reportable.
+[LEARN] REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: the "the TPP must not use access/refresh tokens on other base URLs" and "PISP tokens cannot be used for AISP flows" audience-separation controls **are enforced at the routing layer** — the three route tables are strictly disjoint per Host, so a token minted on one host has no route to reach on another. Closes the cross-deployment audience-confusion item parked at 55 last cycle.
+[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: my own 09-26 entry "token-minting surface is not anonymously reachable" is retracted as unsound — `GET /api/mfa/challenge` (documented POST-only, confirmed live) returns a byte-identical 404 on this edge, so GET-404 cannot distinguish absent from POST-only. Generalised rule: on this program, a 404 on a GET is only evidence of route absence for routes documented as GET; for documented-POST routes it is evidence of nothing.
+
+## STEP 7 — RISK
+
+[RISK] N26 Bank AG: 90 — the open-banking tier is materially worse than the KB reflected. Two previously-"unmapped" hosts are in fact the **PSD2 contingency/fallback interface with live payment initiation** (`/api/openbanking/fallback/sepa-ct`, `.../sepa-instant`, `/api/transactions/so`) sitting on the same load balancer as the dedicated Berlin-Group API, across which the one documented transport control — a qualified client certificate required to establish the TLS connection — is not enforced on any of the three hostnames, with an internet client completing TLS 1.3 and reaching the app unauthenticated at the transport layer. The fallback design compounds it: a 180-day rotating refresh-token chain on a client-invented `device-token`, with the documented anti-fraud controls keyed to a client-asserted `x-tpp-userip` header. Still zero validated findings, zero anonymous data access, and every read/write path remains bearer-gated; the control-gap itself is the part provable today.
