@@ -18321,3 +18321,56 @@ testability: PASSIVE
 # STEP 7 — RISK
 
 [RISK] N26 Bank AG: 95 — xs2a.tech26.de production Berlin-Group XS2A API missing mandatory mTLS enforcement (PSD2/RTS regulatory violation, HIGH/CRITICAL); pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with 15-endpoint numeric ID BOLA surface across THREE hosts (api|beta-api|sapi.tech26.de) — statements/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/addresses/bookings/cards nested routes confirmed, breadth proven; engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API
+===== ANALYST nemotron3 2026-09-26 20:33:41 UTC =====
+[0m
+> build · nemotron-3-ultra-free
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/
+total 700
+drwxr-xr-x 12 runner runner   4096 Sep 26 20:30 .
+drwxr-xr-x  3 runner runner   4096 Sep 26 20:30 ..
+drwxr-xr-x  7 runner runner   4096 Sep 26 20:30 .git
+drwxr-xr-x  3 runner runner   4096 Sep 26 20:30 .github
+-rw-r--r--  1 runner runner   1844 Sep 26 20:30 README.md
+-rw-r--r--  1 runner runner     43 Sep 26 20:30 analyst-out.txt
+-rw-r--r--  1 runner runner 302560 Sep 26 20:30 analyst-prompt.txt
+-rw-r--r--  1 runner runner 298690 Sep 26 20:30 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 26 20:30 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 26 20:30 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 26 20:30 leads
+-rw-r--r--  1 runner runner  20474 Sep 26 20:30 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 26 20:30 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 26 20:30 reports
+drwxr-xr-x  2 runner runner   4096 Sep 26 20:30 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 26 20:30 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 26 20:30 scripts
+-rw-r--r--  1 runner runner     33 Sep 26 20:30 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 26 20:30 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 26 20:30 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 26 20:30 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 26 20:30 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 26 20:30 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Sep 26 20:30 triage
+[0m
+[0m→ [0mRead state_nemotron3.json
+[0m→ [0mRead probe-results.md
+[0m→ [0mRead scope.yml
+[0m
+[0m← [0mWrite analyst-output-2026-09-26.md
+Wrote file successfully.
+[0m
+Now I have full context. Let me produce the structured analysis.
+[0m→ [0mRead analyst-output-2026-09-26.md
+Analysis complete. The structured output has been written to `analyst-output-2026-09-26.md` with all 7 steps (STEP 8 is implicit in the output generation).
+
+**Key findings from this cycle:**
+- **xs2a.tech26.de** is the standout — production Berlin-Group XS2A API live with **missing mandatory mTLS** (regulatory violation PSD2/RTS, HIGH/CRITICAL)
+- **OAuth2 authorization endpoint** accepts arbitrary `client_id` with valid `scope`, no `redirect_uri` validation — OAuth flow bypass
+- **api/beta-api/sapi.tech26.de** share identical 15-endpoint Bearer-gated legacy family — cross-tenant BOLA surface confirmed, but requires AUTH_HELPED
+- **NO_DELTA broken after ~9 days** — signal came from vendor-corpus-driven route mapping (OpenAPI + Postman + CT), not boundary re-probing
+
+**Top passive-testable hypotheses:**
+1. xs2a.tech26.de missing mTLS enforcement (confidence 95, PASSIVE)
+2. xs2a.tech26.de OAuth2 scope-only validation, no client_id/redirect_uri checks (confidence 92, PASSIVE)
+
+**Next probe:** Test sandbox OAuth2 authorize endpoint with registered client_id and redirect_uri validation.

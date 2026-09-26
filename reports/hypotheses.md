@@ -3469,3 +3469,9 @@
 - LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and a PKCE challenge in it
 - LEARN: ACCEPTED MISCONFIG @ process: my own [NEXT] probe from last cycle (`POST /oauth2/token`) was mis-designed — a GET on the *authorize* plane of the same host answ
 - LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collecti
+
+## RANKED HYPOTHESES 2026-09-26 20:33:41 UTC
+- [74] xs2a.tech26.de: Berlin-Group authorization endpoint serves 3 distinct roles (AIS, PIS, CBPII) while validating only the scope — never client_id or redirect_uri (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): discharged — sandbox scope set is byte-identical to live (`{DEDICATED_AISP, DEDICATED_PISP}` → 401 both tiers). Axis closed. Now re-mining the vendor corpus for
+- LEARN: ACCEPTED OTHER @ process: re-mining the vendor corpus (Postman collection + environment) found 6 unmapped live route classes and a third registered scope value 
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/psu-interaction/generate-auth-code/{id}`: now soundly closed rather than param-ambiguous — 404 on both tiers with the docu
