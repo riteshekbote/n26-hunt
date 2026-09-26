@@ -3323,3 +3323,20 @@
 - LEARN: REJECTED MISCONFIG @ pisp.tech26.de `/api/mfa/challenge` (GET): `404 len=0` istio-envoy, consistent with POST-only route as used in public psd2-tpp-docs script;
 - LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section heade
 - LEARN: ACCEPTED MISCONFIG @ process: triage-feeder intake dead since 09-22-14-04 (~3.5 days; healthy-but-empty 09-24-19-17 the only break); pipeline 100% blocked on co
+
+## RANKED HYPOTHESES 2026-09-26 00:25:35 UTC
+- [92] api.tech26.de/api/accounts/{id}/{tans|statements|addresses|bookings|cards|approvals|transactions|transfer|beneficiaries|devices|limits|cosmetics}: api.tech26.de BOLA on 15-endpoint legacy Bearer-gated family (extended to beta-api/sapi) (from art/lead_nemotron3.txt)
+- [70] xs2a.tech26.de/v1/berlin-group/v1: Missing mTLS / strong-authentication enforcement on the public Berlin-Group XS2A production API (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Provision one TPP test credential for the Berlin-Group tier — a QWAC client certificate plus its `client_id`, or a bearer minted for `xs2a.tech26.de` — s
+- NEXT(hypotheses-nemotron3.txt): HUMAN: Re-escalate coordinator for 28th consecutive cycle — sole unblock is provisioning (a) one sandbox N26 account for api.tech26.de BOLA (GET /api/me + adjac
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not en
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking`: open-redirect hypothesis closed — the `redirect` param is rebuilt server-side from the matched route path, use
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de: unauthenticated auth-code minting via the documented sandbox helpers (`/sandbox/oauth2/authorize|/sandbox/oauth2/token|/san
+- LEARN: ACCEPTED MISCONFIG @ {aisp,pisp}.tech26.de: not "route-less" and not a mesh split — they share the `{aisp,xs2a,pisp}` cert leaf but do not terminate the Berlin-
+- LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only thing that produced signal was **vendor-corpus-driven route mapping** (public OpenAPI yml + Po
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less / no distinct surface" classification is **false** — both serve the full legacy `/ap
+- LEARN: REJECTED AUTH @ api.tech26.de: header-shape bypass closed — lowercase header name `authorization:`, tab separator, and double space after colon all return `401 
+- LEARN: ACCEPTED MISCONFIG @ {aisp,xs2a}.tech26.de: `server: istio-envoy` edge, `/api/me` and `/api/accounts/1/statements` → `404 len=0`; these hosts are on a different
+- LEARN: REJECTED MISCONFIG @ pisp.tech26.de `/api/mfa/challenge` (GET): `404 len=0` istio-envoy, consistent with POST-only route as used in public psd2-tpp-docs script;
+- LEARN: ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section heade
+- LEARN: ACCEPTED MISCONFIG @ process: triage-feeder intake dead since 09-22-14-04 (~3.5 days; healthy-but-empty 09-24-19-17 the only break); pipeline 100% blocked on co
