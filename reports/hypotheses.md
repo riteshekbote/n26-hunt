@@ -3445,3 +3445,27 @@
 - LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and a PKCE challenge in it
 - LEARN: ACCEPTED MISCONFIG @ process: my own [NEXT] probe from last cycle (`POST /oauth2/token`) was mis-designed — a GET on the *authorize* plane of the same host answ
 - LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collecti
+
+## RANKED HYPOTHESES 2026-09-26 17:46:58 UTC
+- [95] xs2a.tech26.de/v1/berlin-group/v1: xs2a.tech26.de missing mandatory mTLS enforcement on production Berlin-Group XS2A API (from art/lead_nemotron3.txt)
+- [72] xs2a.tech26.de: OAuth2 authorization endpoint validates the `scope` string but performs no `client_id` or `redirect_uri` validation before demanding authentication (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): PROBE: run the registered-scope set differential between tiers to test live/sandbox scope separation — `for s in DEDICATED_AISP DEDICATED_PISP DEDICATED_AISPX d
+- NEXT(hypotheses-nemotron3.txt): PROBE: `curl -v https://xs2a.tech26.de/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&redirect_uri=https://example.com&response_type=code&scope=aisp 2>&1
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: the authorization endpoint's pre-auth gate is a single exact, case-sensitive, single-token `scope` match that validates the scop
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/sandbox/psu-interaction/generate-auth-code/{id}`: my 09-26 "not present on the production host" rested on a param-less GET
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de forwarding-header tier selection: `X-Forwarded-Host`, `X-Forwarded-Prefix`, `X-Original-URL`, `X-Rewrite-URL` and `X-Forward
+- LEARN: ACCEPTED OTHER @ process: the discriminator I asserted two steps into this cycle was wrong and only a deliberate bogus-value control caught it. On any endpoint 
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not en
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share ELB `obnium-mtls-live-fra-328671153` and none ever issues a TLS `CertificateRequest` (`No clien
+- LEARN: ACCEPTED MISCONFIG @ aisp.tech26.de: route table mapped from vendor corpus (psd2-tpp-docs/doc/fallback-aisp.md) — this is the PSD2 Fallback / contingency interf
+- LEARN: ACCEPTED MISCONFIG @ pisp.tech26.de: route table mapped (fallback-pisp.md) — 5 live route classes: `GET /api/openbanking/fallback/sepa-ct/{paymentId}/status`, `
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — on this edge, `GET /api/mfa/challenge` 
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token m
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the PSD2 **sandbox tier is co-tenant on the production host** at `/sandbox/v1/berlin-group/v1/*` (7 classes `401`, bogus-pa
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the OAuth2 **authorization plane is anonymously reachable on the production host for both tiers** — `/oauth2/authorize` and
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: 8 previously-unenumerated Berlin-Group classes are live, including `payments/instant-sepa-credit-transfers` and `periodic-p
+- LEARN: REJECTED MISCONFIG @ {xs2a,aisp,pisp}-staging.tech26.de: all three CNAME to `obnium-mtls-staging-fra-558276106` and connect-timeout 25s / 0 bytes on 443 — sourc
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and a PKCE challenge in it
+- LEARN: ACCEPTED MISCONFIG @ process: my own [NEXT] probe from last cycle (`POST /oauth2/token`) was mis-designed — a GET on the *authorize* plane of the same host answ
+- LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collecti
