@@ -6881,3 +6881,31 @@ evidence_needed: A paired-device-grant bearer; object-bearing responses; cross-t
 verify_steps: With a test token, `GET /api/accounts/1/statements` then `GET /api/accounts/2/statements` on all three hosts; halt immediately on any non-test data.
 impact: cross-tenant statement history, address PII, cards, TAN/approval artifacts. CRITICAL conditional on BOLA.
 testability: AUTH_HELPED
+## 2026-09-27 13:08:59 UTC [target] (model bigpickle)
+[HYP] xs2a.tech26.de production Berlin-Group XS2A API: mTLS is not merely missing as defence-in-depth — the vendor's own corpus states the client certificate IS the TPP identity, so the absent check is the whole control
+class: MISCONFIG
+asset: xs2a.tech26.de/v1/berlin-group/v1, aisp.tech26.de, pisp.tech26.de
+confidence: 94
+reasoning: Re-verified live this cycle: `openssl s_client -tls1_3` to xs2a and aisp return `No client certificate CA names sent` (server never issues a TLS CertificateRequest) with `Verify return code: 0`; all three CNAME to `obnium-mtls-live-fra-328671153`. 21 Bearer-gated Berlin-Group classes live, plus co-tenant sandbox tier. Vendor doc `doc/redirect/dedicated-aisp.md`: "POST /oauth2/token over an mTLS connection presenting its eIDAS QWAC certificate — N26 derives the TPP's client_id from the certificate", and "A valid QWAC Certificate for PSD2 is required to access the Berlin Group API." N26's public support text states a qualified certificate is required for aisp/pisp. All probe bodies 0 bytes; no data returned.
+evidence_needed: A Berlin-Group consent/account request ACCEPTED with no client certificate (proves no app-layer compensation), or N26 confirming the deployment is certified to run without transport-layer client auth.
+verify_steps: PASSIVE (run) — `echo | openssl s_client -tls1_3 -connect xs2a.tech26.de:443 -servername xs2a.tech26.de 2>/dev/null | grep -i 'client certificate CA names'` → `No client certificate CA names sent`; `dig +short CNAME xs2a.tech26.de` → `obnium-mtls-live-fra-328671153`.
+impact: Authorisation model of a PSD2 AIS+PIS API degrades to a single bearer token with no transport-layer identity binding; one leaked TPP credential yields full account-information and payment-initiation access including irrevocable instant SEPA credit transfer. HIGH.
+testability: PASSIVE
+[HYP] xs2a.tech26.de authorize plane: there is NO redirect_uri control at all — the only edge filter is an estate-wide `://`-anchored substring matcher that is blind to request headers and passes every scheme-relative, bare-IP and DNS-alias form of a private target
+class: OATH
+asset: xs2a.tech26.de/oauth2/authorize, /sandbox/oauth2/authorize
+confidence: 86
+reasoning: Three probes this cycle fix the mechanism. (1) Not path-scoped: `?x=https://127.0.0.1/` on the non-OAuth path `/v1/berlin-group/v1/accounts` → 403 awselb/2.0, so no redirect_uri rule exists. (2) No URI parsing: `a://`, `xyz://`, `gopher://` prefixed loopback all → 403 — a literal substring match on `://<token>`; `HTTPS://` also 403, so case-insensitive. (3) Header-blind: `X-Any: https://127.0.0.1/` → 401 istio-envoy, byte-identical to the no-header control. Same 403/118 on api, beta-api, sapi, aisp, pisp and on app.n26.com / support.n26.com, so it is a shared estate WAF, not a per-service control. Paired with the 09-27 finding that the AS performs no pre-auth validation of redirect_uri, client_id or scope, and the 09-27 finding that the vendor doc carries `TPP-Redirect-URI` in a request **header** (L239) with only a documented "malformed" FORMAT_ERROR check (L242) and no documented registered-value check, the redirect fires after PSU authentication from a trusted origin with the TPP's own `state` echoed.
+evidence_needed: A consent created with a `TPP-Redirect-URI` differing from any registered value, then the post-SCA `Location` header showing N26 honouring the attacker's URI. Needs a sandbox bearer + POST.
+verify_steps: PASSIVE (run) — `curl -G -s -o /dev/null -D - --data-urlencode 'x=a://127.0.0.1/' https://xs2a.tech26.de/v1/berlin-group/v1/accounts` → expect `403` + `server: awselb/2.0`; `curl -s -o /dev/null -D - -H 'X-Any: https://127.0.0.1/' https://api.tech26.de/api/me` → expect `401` + `server: envoy`. AUTH_HELPED for the Location half: with a sandbox client_credentials token, POST a consent with `TPP-Redirect-Preferred: true` and an unregistered `TPP-Redirect-URI`; a 400 FORMAT_ERROR on a syntactically valid URI is the negative.
+impact: A trusted-origin post-authentication redirect to an attacker-chosen or internal host, carrying the TPP's `state`, reachable by any caller able to create a consent — which the paired hypothesis shows is gated only by a client-certificate check the edge does not enforce. Composed with the header-blindness the edge offers no coverage at all on the parameter that actually matters. HIGH composed, MEDIUM standalone.
+testability: AUTH_HELPED
+[HYP] Cross-tenant BOLA on the 15-endpoint legacy account-scoped family across api|beta-api|sapi.tech26.de
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{tans,statements,addresses,bookings,cards,approvals,transactions,transfer,beneficiaries,devices,limits,cosmetics}
+confidence: 92
+reasoning: Unchanged, budget spent discharging the xs2a filter-scope probe. Gate fully characterised 09-25/09-26: framework-level `Authorization` header parse (header-name case, tab separator, double-space all normalise to identical 401), GET-only route table (HEAD/OPTIONS/POST 404), Authorization-header-only (query-param access_token/token/api_key/auth all 401 md5-identical), case-sensitive pre-normalization path match, numeric-ID sweep {0..9} ID-independent at 401 len=211. This cycle's sibling sweep added one fact: the same ALB sits in front of all three hosts (`?x=https://127.0.0.1/` → identical 403/118 on api, beta-api, sapi), so the three hosts share one edge tier and one route table.
+evidence_needed: A paired-device-grant bearer; object-bearing responses; cross-tenant account_id substitution returning another tenant's data.
+verify_steps: With a test token, `GET /api/accounts/1/statements` then `GET /api/accounts/2/statements` on all three hosts; halt immediately on any non-test data.
+impact: cross-tenant statement history, address PII, cards, TAN/approval artifacts. CRITICAL conditional on BOLA.
+testability: AUTH_HELPED
