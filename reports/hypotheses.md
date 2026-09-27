@@ -3522,3 +3522,24 @@
 - LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and a PKCE challenge in it
 - LEARN: ACCEPTED MISCONFIG @ process: my own [NEXT] probe from last cycle (`POST /oauth2/token`) was mis-designed — a GET on the *authorize* plane of the same host answ
 - LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collecti
+
+## RANKED HYPOTHESES 2026-09-27 07:10:51 UTC
+- [95] xs2a.tech26.de/v1/berlin-group/v1: xs2a.tech26.de production Berlin-Group XS2A API missing mandatory mTLS enforcement (from art/lead_nemotron3.txt)
+- [94] xs2a.tech26.de/v1/berlin-group/v1,: xs2a.tech26.de production Berlin-Group XS2A API: the absent mTLS check is not defence-in-depth, it is the entire TPP identity control — the vendor's own documentation states the client certificate IS the identity (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-nemotron3.txt): PROBE: `curl -v "https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&redirect_uri=https://127.0.0.1@evil.example/&response_type=code&scope=DEDI
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the redirect_uri loopback/private-host blocklist is enforced at the AWS ALB (`server: awselb/2.0`, 118-byte nginx body, no 
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: the authorize endpoint performs NO pre-authentication value validation of client_id, scope or redirect_uri. The gate requires BO
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 21 Bearer-gated route classes, and mTLS is not en
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share ELB `obnium-mtls-live-fra-328671153` and cert leaf (Amazon RSA 2048 M04); none issues TLS Certi
+- LEARN: ACCEPTED MISCONFIG @ aisp.tech26.de: route table mapped from vendor corpus (psd2-tpp-docs/doc/fallback-aisp.md) — this is the PSD2 Fallback / contingency interf
+- LEARN: ACCEPTED MISCONFIG @ pisp.tech26.de: route table mapped (fallback-pisp.md) — 5 live route classes: `GET /api/openbanking/fallback/sepa-ct/{paymentId}/status`, `
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — on this edge, `GET /api/mfa/challenge` 
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token m
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the PSD2 **sandbox tier is co-tenant on the production host** at `/sandbox/v1/berlin-group/v1/*` (7 classes `401`, bogus-pa
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the OAuth2 **authorization plane is anonymously reachable on the production host for both tiers** — `/oauth2/authorize` and
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: 8 previously-unenumerated Berlin-Group classes are live, including `payments/instant-sepa-credit-transfers` and `periodic-p
+- LEARN: REJECTED MISCONFIG @ {xs2a,aisp,pisp}-staging.tech26.de: all three CNAME to `obnium-mtls-staging-fra-558276106` and connect-timeout 25s / 0 bytes on 443 — sourc
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and a PKCE challenge in it
+- LEARN: ACCEPTED MISCONFIG @ process: my own [NEXT] probe from last cycle (`POST /oauth2/token`) was mis-designed — a GET on the *authorize* plane of the same host answ
+- LEARN: ACCEPTED MISCONFIG @ process: after ~9 days of NO_DELTA, the only signal came from **vendor-corpus-driven route mapping** (public OpenAPI yml + Postman collecti
