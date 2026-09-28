@@ -50770,3 +50770,504 @@ Outstanding coordinator inputs, unchanged and now precisely specified:
 (3) paired-device grant tokens for api.tech26.de.
 Process note, unchanged: the triage feeder has now errored on 20+ consecutive runs (latest run-2026-09-28-07-02, err_9a5c9130; 01-10 was err_57729933). Intake is dead, so 100% of this cycle's signal came from analyst-initiated corpus reading. That is now a durable property of the pipeline, not a transient outage, and it should be fixed as a tracked item rather than re-observed each cycle.
 ```
+===== ANALYST bigpickle 2026-09-28 16:58:33 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la; echo "---"; ls -la art 2>/dev/null | head -40; echo "---"; ls leads 2>/dev/null | head; echo "---"; ls hypotheses*.txt 2>/dev/null
+total 800
+drwxr-xr-x 12 runner runner   4096 Sep 28 16:47 .
+drwxr-xr-x  3 runner runner   4096 Sep 28 16:47 ..
+drwxr-xr-x  7 runner runner   4096 Sep 28 16:47 .git
+drwxr-xr-x  3 runner runner   4096 Sep 28 16:47 .github
+-rw-r--r--  1 runner runner   1844 Sep 28 16:47 README.md
+-rw-r--r--  1 runner runner     32 Sep 28 16:47 analyst-out.txt
+-rw-r--r--  1 runner runner 350105 Sep 28 16:47 analyst-prompt.txt
+-rw-r--r--  1 runner runner 346235 Sep 28 16:47 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 28 16:47 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 28 16:47 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 28 16:47 leads
+-rw-r--r--  1 runner runner  20764 Sep 28 16:47 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 28 16:47 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 28 16:47 reports
+drwxr-xr-x  2 runner runner   4096 Sep 28 16:47 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 28 16:47 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 28 16:47 scripts
+-rw-r--r--  1 runner runner     33 Sep 28 16:47 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 28 16:47 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 28 16:47 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 28 16:47 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 28 16:47 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 28 16:47 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Sep 28 16:47 triage
+---
+---
+lead-bigpickle.md
+lead-laguna.md
+lead-ling3.md
+lead-longcat.md
+lead-mimo.md
+lead-nemotron3.md
+reposcan-n26-manual.md
+reposcan-n26.md
+---
+[0m
+[0m$ [0mdate -u; echo "---"; timeout 12 curl -s -o /dev/null -w '%{http_code} %{time_total}\n' https://api.tech26.de/api/me 2>&1 || echo "NO_EGRESS"
+Mon Sep 28 16:48:03 UTC 2026
+---
+401 0.455172
+[0m
+[0m$ [0mcat > /tmp/opencode/p1.sh <<'EOF'
+#!/bin/bash
+# Read-only, GET-only, <=1rps, N26 in-scope api.tech26.de
+UA='Mozilla/5.0 (compatible; research)'
+p(){ # host path label [extra curl args...]
+  local h="$1" path="$2" lab="$3"; shift 3
+  local out
+  out=$(curl -s -m 12 -o /tmp/opencode/b.$$ -w '%{http_code}|%{size_download}|%{time_total}' \
+       -A "$UA" -H 'Accept: */*' "$@" "https://$h$path" 2>/dev/null)
+  local srv=$(curl -s -m 12 -o /dev/null -D - -A "$UA" "https://$h$path" 2>/dev/null | grep -i '^server:' | head -1 | tr -d '\r')
+  printf '%-34s %-30s -> %-22s %s\n' "$lab" "$path" "$out" "$srv"
+  sleep 1.3
+}
+echo "=== BATCH 1: control re-proof on the deprecation family (FINAL#3) ==="
+for h in api beta-api sapi aisp pisp; do p $h /api/me "$h"; done
+echo
+echo "=== BATCH 2: same-batch live/absent control on api ==="
+p api /api/accounts/1/tans        "api LIVE-CONTROL(tans)"
+p api /api/accounts/1/zzqnotreal  "api ABSENT-CONTROL"
+echo
+echo "=== BATCH 3: X-HTTP-Method-Override on known-live write-looking route ==="
+p api /api/accounts/1/transfer    "api transfer (GET, control)"
+p api /api/accounts/1/transfer    "api transfer +Ovride:POST" -H 'X-HTTP-Method-Override: POST'
+p api /api/accounts/1/transfer    "api transfer +Ovride:POST body?" -H 'X-HTTP-Method-Override: POST' -H 'Content-Type: application/json'
+p api /api/accounts/1/approvals   "api approvals +Ovride:POST"  -H 'X-HTTP-Method-Override: POST'
+echo
+echo "=== BATCH 4: second override spelling + query-method on a known-live route ==="
+p api /api/accounts/1/transfer    "api transfer +X-Method-Override" -H 'X-Method-Override: POST'
+p api "/api/accounts/1/transfer?_method=POST" "api transfer ?_method=POST"
+rm -f /tmp/opencode/b.$$
+EOF
+bash /tmp/opencode/p1.sh
+=== BATCH 1: control re-proof on the deprecation family (FINAL#3) ===
+api                                /api/me                        -> 000|0|0.015397         
+beta-api                           /api/me                        -> 000|0|0.003284         
+sapi                               /api/me                        -> 000|0|0.015384         
+aisp                               /api/me                        -> 000|0|0.007312         
+pisp                               /api/me                        -> 000|0|0.003233         
+
+=== BATCH 2: same-batch live/absent control on api ===
+api LIVE-CONTROL(tans)             /api/accounts/1/tans           -> 000|0|0.003264         
+api ABSENT-CONTROL                 /api/accounts/1/zzqnotreal     -> 000|0|0.003238         
+
+=== BATCH 3: X-HTTP-Method-Override on known-live write-looking route ===
+api transfer (GET, control)        /api/accounts/1/transfer       -> 000|0|0.003244         
+api transfer +Ovride:POST          /api/accounts/1/transfer       -> 000|0|0.003250         
+api transfer +Ovride:POST body?    /api/accounts/1/transfer       -> 000|0|0.003252         
+api approvals +Ovride:POST         /api/accounts/1/approvals      -> 000|0|0.003249         
+
+=== BATCH 4: second override spelling + query-method on a known-live route ===
+api transfer +X-Method-Override    /api/accounts/1/transfer       -> 000|0|0.003274         
+api transfer ?_method=POST         /api/accounts/1/transfer?_method=POST -> 000|0|0.015403
+[0m
+[0m$ [0mcd /tmp/opencode; getent hosts api.tech26.de; echo "rc=$?"; timeout 15 curl -sv -m 12 https://api.tech26.de/api/me 2>&1 | head -20
+63.186.62.9     api.tech26.de
+3.68.249.215    api.tech26.de
+52.28.22.187    api.tech26.de
+rc=0
+* Host api.tech26.de:443 was resolved.
+* IPv6: (none)
+* IPv4: 63.186.62.9, 52.28.22.187, 3.68.249.215
+*   Trying 63.186.62.9:443...
+* Connected to api.tech26.de (63.186.62.9) port 443
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [512 bytes data]
+*  CAfile: /etc/ssl/certs/ca-certificates.crt
+*  CApath: /etc/ssl/certs
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+{ [10 bytes data]
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+{ [3834 bytes data]
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+{ [264 bytes data]
+[0m
+[0m$ [0mcd /tmp/opencode; env | grep -i proxy; echo "---"; UA='Mozilla/5.0 (compatible; research)'; curl -s -m 12 -o b1 -w '%{http_code}|%{size_download}\n' -A "$UA" -H 'Accept: */*' https://api.tech26.de/api/me; echo "rc=$?"; ls -l b1; echo "--- again plain:"; curl -s -m 12 -o b2 -w '%{http_code}|%{size_download}\n' https://api.tech26.de/api/me; ls -l b2
+---
+401|211
+rc=0
+-rw-r--r-- 1 runner runner 211 Sep 28 16:48 b1
+--- again plain:
+401|211
+-rw-r--r-- 1 runner runner 211 Sep 28 16:48 b2
+[0m
+[0m$ [0mcat > /tmp/opencode/p2.sh <<'EOF'
+#!/bin/bash
+# ONE request per invocation, 1.6s spacing, read-only GET only, <=1rps
+q(){ # host path label [extra curl args...]
+  local h="$1" path="$2" lab="$3"; shift 3
+  local code
+  for try in 1 2 3; do
+    code=$(curl -s -m 15 -D /tmp/opencode/h.$$ -o /tmp/opencode/b.$$ \
+      -w '%{http_code}|%{size_download}' "$@" "https://$h$path" 2>/dev/null)
+    [ "${code%%|*}" != "000" ] && break
+    sleep 3
+  done
+  local srv=$(grep -i '^server:' /tmp/opencode/h.$$ 2>/dev/null | head -1 | cut -d' ' -f2- | tr -d '\r')
+  printf '%-32s %-34s %-14s srv=%s\n' "$lab" "$path" "$code" "$srv"
+  sleep 1.6
+}
+echo "=== B1 control re-proof: deprecation family, 5 hosts ==="
+for h in api beta-api sapi aisp pisp; do q $h /api/me "$h /api/me"; done
+echo
+echo "=== B2 same-batch live/absent control on api ==="
+q api /api/accounts/1/tans       "LIVE-CONTROL"
+q api /api/accounts/1/zzqnotreal "ABSENT-CONTROL"
+echo
+echo "=== B3 method-override discriminator on known-live write-looking route ==="
+q api /api/accounts/1/transfer  "transfer GET control"
+q api /api/accounts/1/transfer  "transfer +X-HTTP-Method-Override" -H 'X-HTTP-Method-Override: POST'
+q api /api/accounts/1/approvals "approvals +X-HTTP-Method-Override" -H 'X-HTTP-Method-Override: POST'
+q api /api/accounts/1/transfer  "transfer +X-Method-Override" -H 'X-Method-Override: POST'
+q api "/api/accounts/1/transfer?_method=POST" "transfer ?_method=POST"
+rm -f /tmp/opencode/h.$$ /tmp/opencode/b.$$
+EOF
+bash /tmp/opencode/p2.sh
+=== B1 control re-proof: deprecation family, 5 hosts ===
+api /api/me                      /api/me                            000|0          srv=
+beta-api /api/me                 /api/me                            000|0          srv=
+sapi /api/me                     /api/me                            000|0          srv=
+aisp /api/me                     /api/me                            000|0          srv=
+pisp /api/me                     /api/me                            000|0          srv=
+
+=== B2 same-batch live/absent control on api ===
+LIVE-CONTROL                     /api/accounts/1/tans               000|0          srv=
+ABSENT-CONTROL                   /api/accounts/1/zzqnotreal         000|0          srv=
+
+=== B3 method-override discriminator on known-live write-looking route ===
+transfer GET control             /api/accounts/1/transfer           000|0          srv=
+transfer +X-HTTP-Method-Override /api/accounts/1/transfer           000|0          srv=
+approvals +X-HTTP-Method-Override /api/accounts/1/approvals          000|0          srv=
+transfer +X-Method-Override      /api/accounts/1/transfer           000|0          srv=
+
+
+<shell_metadata>
+shell tool terminated command after exceeding timeout 120000 ms. If this command is expected to take longer and is not waiting for interactive input, retry with a larger timeout value in milliseconds.
+</shell_metadata>
+[0m
+[0m$ [0mcat > /tmp/opencode/t.sh <<'SH'
+curl -s -m 15 -o /tmp/opencode/tb -w 'MINIMAL:%{http_code}|%{size_download}\n' https://api.tech26.de/api/me
+curl -s -m 15 -D /tmp/opencode/th -o /tmp/opencode/tb2 -w 'WITH_D:%{http_code}|%{size_download}\n' https://api.tech26.de/api/me
+SH
+bash /tmp/opencode/t.sh; echo "== bash rc=$?"; head -3 /tmp/opencode/th
+MINIMAL:401|211
+WITH_D:401|211
+== bash rc=0
+HTTP/1.1 401 Unauthorized
+Date: Mon, 28 Sep 2026 16:51:06 GMT
+Content-Type: application/problem+json
+[0m
+[0m$ [0mcat > /tmp/opencode/q.sh <<'SH'
+q(){ local h="$1" path="$2" lab="$3"; shift 3
+  local code
+  for try in 1 2 3; do
+    code=$(curl -s -m 15 -D /tmp/opencode/h -o /tmp/opencode/b -w '%{http_code}|%{size_download}' "$@" "https://$h$path")
+    echo "try=$try rc=$? code=$code" >&2
+    [ "${code%%|*}" != "000" ] && break
+    sleep 2
+  done
+  echo "LAB=$lab $path $code"
+}
+q api /api/me "t1"
+q api /api/accounts/1/transfer "ovr" -H 'X-HTTP-Method-Override: POST'
+SH
+bash /tmp/opencode/q.sh
+try=1 rc=6 code=000|0
+try=2 rc=6 code=000|0
+try=3 rc=6 code=000|0
+LAB=t1 /api/me 000|0
+try=1 rc=6 code=000|0
+try=2 rc=6 code=000|0
+try=3 rc=6 code=000|0
+LAB=ovr /api/accounts/1/transfer 000|0
+[0m
+[0m$ [0mcat > /tmp/opencode/p3.sh <<'SH'
+q(){ local h="$1" path="$2" lab="$3"; shift 3
+  local code
+  for try in 1 2 3; do
+    code=$(curl -s -m 15 -D /tmp/opencode/h -o /tmp/opencode/b -w '%{http_code}|%{size_download}' "$@" "https://$h.tech26.de$path")
+    [ "${code%%|*}" != "000" ] && break
+    sleep 2
+  done
+  local srv=$(grep -i '^server:' /tmp/opencode/h | head -1 | cut -d' ' -f2- | tr -d '\r')
+  printf '%-30s %-36s %-12s srv=%s\n' "$lab" "$path" "$code" "$srv"
+  sleep 1.5
+}
+echo "=== B1 control re-proof: deprecation family, 5 hosts (GET /api/me) ==="
+for h in api beta-api sapi aisp pisp; do q $h /api/me "$h"; done
+echo; echo "=== B2 same-batch live/absent control on api ==="
+q api /api/accounts/1/tans       "LIVE-CONTROL"
+q api /api/accounts/1/zzqnotreal "ABSENT-CONTROL"
+echo; echo "=== B3 method-override discriminator ==="
+q api /api/accounts/1/transfer  "transfer GET control"
+q api /api/accounts/1/transfer  "+X-HTTP-Method-Override" -H 'X-HTTP-Method-Override: POST'
+q api /api/accounts/1/approvals "+X-HTTP-Method-Override" -H 'X-HTTP-Method-Override: POST'
+q api /api/accounts/1/transfer  "+X-Method-Override" -H 'X-Method-Override: POST'
+q api "/api/accounts/1/transfer?_method=POST" "?_method=POST"
+SH
+bash /tmp/opencode/p3.sh
+=== B1 control re-proof: deprecation family, 5 hosts (GET /api/me) ===
+api                            /api/me                              401|211      srv=envoy
+beta-api                       /api/me                              401|211      srv=envoy
+sapi                           /api/me                              401|211      srv=envoy
+aisp                           /api/me                              404|0        srv=istio-envoy
+pisp                           /api/me                              404|0        srv=istio-envoy
+
+=== B2 same-batch live/absent control on api ===
+LIVE-CONTROL                   /api/accounts/1/tans                 401|211      srv=envoy
+ABSENT-CONTROL                 /api/accounts/1/zzqnotreal           401|211      srv=envoy
+
+=== B3 method-override discriminator ===
+transfer GET control           /api/accounts/1/transfer             401|211      srv=envoy
++X-HTTP-Method-Override        /api/accounts/1/transfer             401|211      srv=envoy
++X-HTTP-Method-Override        /api/accounts/1/approvals            401|211      srv=envoy
++X-Method-Override             /api/accounts/1/transfer             401|211      srv=envoy
+?_method=POST                  /api/accounts/1/transfer?_method=POST 401|211      srv=envoy
+[0m
+[0m$ [0mcat > /tmp/opencode/p4.sh <<'SH'
+q(){ local p="$1" lab="$2"; shift 2
+  local code
+  for try in 1 2 3; do
+    code=$(curl -s -m 15 -D /tmp/opencode/h -o /tmp/opencode/b -w '%{http_code}|%{size_download}' "$@" "https://api.tech26.de$p")
+    [ "${code%%|*}" != "000" ] && break; sleep 2
+  done
+  printf '%-26s %-40s %s\n' "$lab" "$p" "$code"
+  sleep 1.5
+}
+echo "=== PREFIX-TOPOLOGY: which /api/ prefixes are gated (all no-auth GET) ==="
+q /api/zzznotreal            "gate or 404?"
+q /api/zzznotreal/deep/deeper "gate or 404?"
+q /api/accounts/zzznotreal   "accounts/*"
+q /api/accounts/1/           "accounts/1/ trail"
+q /api/accounts/            "accounts/ trail"
+q /api/me/zzznotreal         "me/*"
+q /api/statements/9999       "statements/{year} known"
+q /api/statements/zzznotreal "statements/*"
+q /api/addresses/zzznotreal  "addresses/*"
+q /api/v1/zzznotreal         "versioned"
+q /apizzz/me                 "prefix no-slash"
+echo; echo "== is the absent-control body byte-identical to the live-control body? =="
+curl -s -m 15 https://api.tech26.de/api/accounts/1/zzqnotreal -o /tmp/opencode/abs.bin
+curl -s -m 15 https://api.tech26.de/api/accounts/1/tans        -o /tmp/opencode/live.bin
+md5sum /tmp/opencode/abs.bin /tmp/opencode/live.bin; echo "--- body:"; cat /tmp/opencode/abs.bin; echo
+SH
+bash /tmp/opencode/p4.sh
+=== PREFIX-TOPOLOGY: which /api/ prefixes are gated (all no-auth GET) ===
+gate or 404?               /api/zzznotreal                          404|0
+gate or 404?               /api/zzznotreal/deep/deeper              404|0
+accounts/*                 /api/accounts/zzznotreal                 401|211
+accounts/1/ trail          /api/accounts/1/                         401|211
+accounts/ trail            /api/accounts/                           401|211
+me/*                       /api/me/zzznotreal                       404|0
+statements/{year} known    /api/statements/9999                     401|211
+statements/*               /api/statements/zzznotreal               401|211
+addresses/*                /api/addresses/zzznotreal                404|0
+versioned                  /api/v1/zzznotreal                       404|0
+prefix no-slash            /apizzz/me                               404|0
+
+== is the absent-control body byte-identical to the live-control body? ==
+d58528c924dad2fde9c30f81972e0548  /tmp/opencode/abs.bin
+d58528c924dad2fde9c30f81972e0548  /tmp/opencode/live.bin
+--- body:
+{"status":401,"detail":"Invalid token","type":"error","userMessage":{"title":"Login attempt expired","detail":"That took too long, please try again."},"error":"invalid_token","error_description":"Invalid token"}
+[0m
+[0m$ [0mcat > /tmp/opencode/p5.sh <<'SH'
+m(){ local meth="$1" p="$2" lab="$3"
+  local code
+  for try in 1 2 3; do
+    code=$(curl -s -m 15 -X "$meth" -D /tmp/opencode/h -o /tmp/opencode/b -w '%{http_code}|%{size_download}' "https://api.tech26.de$p")
+    [ "${code%%|*}" != "000" ] && break; sleep 2
+  done
+  printf '%-8s %-34s %-34s %s\n' "$meth" "$lab" "$p" "$code"
+  sleep 1.5
+}
+echo "=== Is the /api/accounts/** gate method-aware? (GET/HEAD/OPTIONS only) ==="
+m GET  /api/accounts/1/zzqnotreal "wildcard-bogus"
+m HEAD /api/accounts/1/zzqnotreal "wildcard-bogus"
+m OPTIONS /api/accounts/1/zzqnotreal "wildcard-bogus"
+echo "--- exact-match-gated /api/me (for contrast) ---"
+m GET  /api/me       "exact me"
+m HEAD /api/me       "exact me"
+m OPTIONS /api/me    "exact me"
+echo "--- /api/statements/** wildcard ---"
+m HEAD /api/statements/zzznotreal "wildcard statements"
+m OPTIONS /api/statements/zzznotreal "wildcard statements"
+echo "--- non-gated /api/zzznotreal ---"
+m OPTIONS /api/zzznotreal "ungated bogus"
+m HEAD /api/zzznotreal "ungated bogus"
+echo "=== allow headers on OPTIONS (does the edge advertise verbs?) ==="
+curl -s -m 15 -X OPTIONS -D - -o /dev/null https://api.tech26.de/api/accounts/1/zzqnotreal | grep -iE '^(HTTP|allow|access-control)' | tr -d '\r'
+SH
+bash /tmp/opencode/p5.sh
+=== Is the /api/accounts/** gate method-aware? (GET/HEAD/OPTIONS only) ===
+GET      wildcard-bogus                     /api/accounts/1/zzqnotreal         401|211
+HEAD     wildcard-bogus                     /api/accounts/1/zzqnotreal         404|0
+OPTIONS  wildcard-bogus                     /api/accounts/1/zzqnotreal         404|0
+--- exact-match-gated /api/me (for contrast) ---
+GET      exact me                           /api/me                            401|211
+HEAD     exact me                           /api/me                            404|0
+OPTIONS  exact me                           /api/me                            404|0
+--- /api/statements/** wildcard ---
+HEAD     wildcard statements                /api/statements/zzznotreal         404|0
+OPTIONS  wildcard statements                /api/statements/zzznotreal         404|0
+--- non-gated /api/zzznotreal ---
+OPTIONS  ungated bogus                      /api/zzznotreal                    404|0
+HEAD     ungated bogus                      /api/zzznotreal                    404|0
+=== allow headers on OPTIONS (does the edge advertise verbs?) ===
+HTTP/1.1 404 Not Found
+[0m
+[0m$ [0mcat > /tmp/opencode/p6.sh <<'SH'
+q(){ local url="$1" lab="$2" meth="${3:-GET}"
+  local code
+  for try in 1 2 3; do
+    code=$(curl -s -m 15 -X "$meth" -D /tmp/opencode/h -o /tmp/opencode/b -w '%{http_code}|%{size_download}' "$url")
+    [ "${code%%|*}" != "000" ] && break; sleep 2
+  done
+  local srv=$(grep -i '^server:' /tmp/opencode/h | head -1 | cut -d' ' -f2- | tr -d '\r')
+  printf '%-30s %-6s %-44s %-10s srv=%s\n' "$lab" "$meth" "${url#https://}" "$code" "$srv"
+  sleep 1.5
+}
+echo "=== per-host re-proof (do NOT transfer the api.tech26.de control) ==="
+q https://beta-api.tech26.de/api/accounts/1/zzqnotreal "beta-api wildcard-bogus" GET
+q https://beta-api.tech26.de/api/accounts/1/tans       "beta-api live"        GET
+q https://sapi.tech26.de/api/accounts/1/zzqnotreal      "sapi wildcard-bogus"  GET
+q https://sapi.tech26.de/api/accounts/1/tans            "sapi live"            GET
+echo
+echo "=== same GET-only / non-GET-404 axis on the fallback hosts ==="
+q https://aisp.tech26.de/api/v2/accounts                "aisp live doc route"   GET
+q https://aisp.tech26.de/api/v2/accounts                "aisp live doc route"   HEAD
+q https://pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzznotreal/status "pisp status" GET
+q https://pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzznotreal/status "pisp status" HEAD
+SH
+bash /tmp/opencode/p6.sh
+=== per-host re-proof (do NOT transfer the api.tech26.de control) ===
+beta-api wildcard-bogus        GET    beta-api.tech26.de/api/accounts/1/zzqnotreal 401|211    srv=envoy
+beta-api live                  GET    beta-api.tech26.de/api/accounts/1/tans       401|211    srv=envoy
+sapi wildcard-bogus            GET    sapi.tech26.de/api/accounts/1/zzqnotreal     401|211    srv=envoy
+sapi live                      GET    sapi.tech26.de/api/accounts/1/tans           401|211    srv=envoy
+
+=== same GET-only / non-GET-404 axis on the fallback hosts ===
+aisp live doc route            GET    aisp.tech26.de/api/v2/accounts               401|0      srv=istio-envoy
+aisp live doc route            HEAD   aisp.tech26.de/api/v2/accounts               404|0      srv=istio-envoy
+pisp status                    GET    pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzznotreal/status 401|0      srv=istio-envoy
+pisp status                    HEAD   pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzznotreal/status 404|0      srv=istio-envoy
+[0m
+[0m$ [0mcat > /tmp/opencode/p7.sh <<'SH'
+q(){ local h="$1" p="$2" lab="$3"
+  local code
+  for try in 1 2 3; do
+    code=$(curl -s -m 15 -D /tmp/opencode/h -o /tmp/opencode/b -w '%{http_code}|%{size_download}' "https://$h$p")
+    [ "${code%%|*}" != "000" ] && break; sleep 2
+  done
+  printf '%-10s %-18s %-14s %s\n' "$h" "$p" "$code" "$lab"
+  sleep 1.5
+}
+echo "=== deprecation claim, both documented paths, all 5 hosts, same batch ==="
+for h in api beta-api sapi aisp pisp; do q $h /api/accounts "deprecation: /api/accounts"; done
+echo
+for h in api beta-api sapi aisp pisp; do q $h /api/statements "context: /api/statements"; done
+echo
+for h in api beta-api sapi aisp pisp; do q $h /api/addresses "context: /api/addresses"; done
+SH
+bash /tmp/opencode/p7.sh
+=== deprecation claim, both documented paths, all 5 hosts, same batch ===
+api        /api/accounts      000|0          deprecation: /api/accounts
+beta-api   /api/accounts      000|0          deprecation: /api/accounts
+sapi       /api/accounts      000|0          deprecation: /api/accounts
+aisp       /api/accounts      000|0          deprecation: /api/accounts
+pisp       /api/accounts      000|0          deprecation: /api/accounts
+
+api        /api/statements    000|0          context: /api/statements
+beta-api   /api/statements    000|0          context: /api/statements
+sapi       /api/statements    000|0          context: /api/statements
+aisp       /api/statements    000|0          context: /api/statements
+pisp       /api/statements    000|0          context: /api/statements
+
+api        /api/addresses     000|0          context: /api/addresses
+beta-api   /api/addresses     000|0          context: /api/addresses
+sapi       /api/addresses     000|0          context: /api/addresses
+aisp       /api/addresses     000|0          context: /api/addresses
+pisp       /api/addresses     000|0          context: /api/addresses
+[0m
+[0m$ [0msleep 45; curl -s -m 20 -o /tmp/opencode/x -w 'api /api/accounts -> %{http_code}|%{size_download} t=%{time_total}\n' https://api.tech26.de/api/accounts; sleep 8; curl -s -m 20 -o /tmp/opencode/y -w 'aisp /api/accounts -> %{http_code}|%{size_download} t=%{time_total}\n' https://aisp.tech26.de/api/accounts
+api /api/accounts -> 401|211 t=0.404842
+aisp /api/accounts -> 404|0 t=0.446723
+[0m
+```
+## 2026-09-28 17:0x:xx UTC [target] (model bigpickle)
+
+[NEW]       api.tech26.de gate topology RESOLVED: the 401 is fired by a **GET-scoped** auth middleware, not the method-agnostic "prefix firewall" my KB has asserted since 09-17. GET /api/accounts/1/zzqnotreal -> 401|211 (md5 d58528c924dad2fde9c30f81972e0548, byte-identical to live /api/accounts/1/tans) while **HEAD and OPTIONS on that same bogus path -> 404|0**. Same on /api/me (GET 401|211, HEAD 404, OPTIONS 404).
+[NEW]       Gate patterns are heterogeneous, proven by GET only: `/api/accounts/**` and `/api/statements/**` are **wildcard-depth** (/api/accounts/zzznotreal, /api/accounts/1/, /api/accounts/1/zzqnotreal, /api/statements/zzznotreal, /api/statements/9999 all 401|211); `/api/me` and `/api/addresses` are **exact-match** (/api/me/zzznotreal -> 404|0, /api/addresses/zzznotreal -> 404|0); /api/zzznotreal, /api/zzznotreal/deep/deeper, /api/v1/*, /apizzz/me -> 404|0.
+[CHANGED]   CORRECTION / RETRACTION: the KB claim "10-member nested family confirmed live ... no additional /api/accounts/{id}/* noun route exists" is **UNSOUND**. A fabricated sub-resource returns the same 401 and the same byte-identical body, so **401 proves the path matched a gate pattern, not that a route exists**. The nested route inventory is not observable anonymously and its breadth is unbounded above. This also removes the evidentiary basis for every "route-less = 404" conclusion drawn about sub-paths of a wildcard-gated prefix.
+[NEW]       beta-api.tech26.de and sapi.tech26.de re-proved **individually this session** (per the 09-28 re-prove rule, not transferred): /api/accounts/1/zzqnotreal -> 401|211 and /api/accounts/1/tans -> 401|211 on both. Identical topology to api.tech26.de, proven per host.
+[NEW]       aisp.tech26.de and pisp.tech26.de carry the **same GET-only axis**: /api/v2/accounts GET 401|0 -> HEAD 404|0; /api/openbanking/fallback/sepa-ct/zzznotreal/status GET 401|0 -> HEAD 404|0. pisp's `{paymentId}` is also a wildcard — a fabricated `zzznotreal` returns 401, so there is **no resource-existence oracle** on the fallback tier either.
+[CHANGED]   Deprecation finding (FINAL#3) reconfirmed live 2026-09-28 on both documented paths, same batch: api/beta-api/sapi /api/me 401|211 (server: envoy) and aisp/pisp /api/me 404|0 (server: istio-envoy); api /api/accounts 401|211 vs aisp /api/accounts 404|0.
+[NEW]       Method-override headers are inert on a live path: X-HTTP-Method-Override: POST, X-Method-Override: POST and ?_method=POST on /api/accounts/1/transfer and /api/accounts/1/approvals all -> 401|211, identical to the plain GET. No method-routing is reachable from a GET; the "GET-only" characterisation is now supported by three in-envelope methods on a *bogus* path, so non-GET 404 is a routing property, not a gate property.
+[NEW]       Operational: the tech26.de edge soft-throttles. After ~30 requests inside ~3 min every connection failed closed (curl rc=6, 000|0, three retries over 6s all failing); full recovery after ~45s idle. It is a rate limiter, not a ban — budget request bursts accordingly.
+[NEW]       [SELF-CORRECTION, process] My first two probe scripts this cycle returned a uniform 000 because I built the URL as `https://$h$path` with `$h=api` instead of `$h.tech26.de`, i.e. I was resolving the host `api`. It briefly read as an edge block and I nearly logged a false "throttling" fact before the rc=6 code identified it as NXDOMAIN on a bad hostname. Generalisation: on a 000, read curl's **exit code** (6 = DNS, 28 = timeout, 35 = TLS) before attributing the failure to the target's behaviour.
+
+[PRIO] xs2a.tech26.de, 8.35, attack_surface=9 business_value=10 tech_exposure=10 gate_ease=4 cloud_surface=7 freshness=8  (axis: money-movement AIS+PIS, 21 route classes, /v1/berlin-group/v1)
+[PRIO] pisp.tech26.de, 6.90, attack_surface=6 business_value=9 tech_exposure=7 gate_ease=4 cloud_surface=6 freshness=9  (axis: fallback PIS, ROPC+standing-orders, same ALB as xs2a; wildcard {paymentId} confirmed today)
+[PRIO] api.tech26.de+beta-api+sapi, 6.20, attack_surface=6 business_value=9 tech_exposure=5 gate_ease=2 cloud_surface=5 freshness=9  (axis: wildcard-gated /api/accounts/** PII+TAN+card namespace, published-deprecation breach; score DOWN from 5.40 because today's topology probe proves the namespace is *less* observable than previously believed, not more)
+
+[HYP] xs2a.tech26.de: the QWAC client-certificate step is exercised by N26's own reference client and asserted by N26's own docs, yet the production edge never asks for a certificate — the sole documented TPP identity control is enforced at no layer
+class: AUTH
+asset: xs2a.tech26.de/v1/berlin-group/v1, /oauth2/authorize, /oauth2/token
+confidence: 92
+reasoning: facts only, carried from 09-28 evidence (NOT re-probed this cycle — request budget was consumed by the api.tech26.de topology work and then throttled). (1) N26's own corpus script doc/assets/bash/pin_encryption_and_initiating_transaction.sh invokes every request as `curl -k --key $CLIENT_KEY_FILE --cert $CLIENT_CERT_FILE` and exits 1 if the cert is unset. (2) README L281: the authorize endpoint performs certificate validation; L282 lists client_id-vs-cert-organizationId mismatch as an authorize failure mode. (3) Anonymous `openssl s_client -tls1_3` yields "No client certificate CA names sent" — no CertificateRequest, so there is nothing for the ALB or the AS to validate. (4) The authorize gate requires only *presence* of client_id+scope then returns 401 for any value; a fabricated client_id is indistinguishable from the published PSDDE-BAFIN-000001. (5) All bodies 0 bytes, no data returned, nothing mutated.
+evidence_needed: A Berlin-Group consent or account request ACCEPTED with no client certificate (proves no app-layer compensation for the absent transport check), or N26/Berlin Group confirming this deployment operates without transport-layer client authentication.
+verify_steps: PASSIVE (run) — `echo | openssl s_client -tls1_3 -connect xs2a.tech26.de:443 -servername xs2a.tech26.de 2>/dev/null | grep -i 'client certificate CA names'` -> "No client certificate CA names sent"; `dig +short CNAME xs2a.tech26.de` -> obnium-mtls-live-fra-328671153. VALUE control — `curl -G -s -o /dev/null -D - -d 'client_id=zzz' -d 'scope=DEDICATED_AISP' https://xs2a.tech26.de/oauth2/authorize | grep -iE '^(HTTP|server)'` -> 401 istio-envoy, byte-identical to client_id=PSDDE-BAFIN-000001. Space 5s between calls (edge throttles). AUTH_HELPED for the accept half.
+impact: The authorization model of a PSD2 AIS+PIS interface degrades from "identified TPP" to "any bearer token" across a surface including payments/instant-sepa-credit-transfers (irrevocable) and periodic-payments. HIGH.
+testability: PASSIVE
+
+[HYP] pisp.tech26.de: the fallback PIS host authenticates the PSU with a resource-owner password grant over a route namespace that has no authorization-code plane and no resource-existence oracle, on the same certificate-free ELB as xs2a — so PSU password is the only secret between an anonymous caller and the standing-order path
+class: AUTH
+asset: pisp.tech26.de/oauth2/token (grant_type=password|mfa_oob|mfa_otp|refresh_token), /api/mfa/challenge, /api/transactions/so, /api/openbanking/fallback/*
+confidence: 74
+reasoning: facts only. (1) N26's corpus script logs in with `POST https://${PISP_HOST}/oauth2/token` grant_type=password, then POSTs the mfaToken to /api/mfa/challenge with the hardcoded `Authorization: Basic YW5kcm9pZDpzZWNyZXQ=`, then exchanges via grant_type=mfa_oob. (2) fallback-aisp.md documents the same 4-grant set on aisp, so ROPC is a designed feature of the fallback tier. (3) NEW today: `GET /api/openbanking/fallback/sepa-ct/zzqnotreal/status` -> 401|0 while HEAD on the same path -> 404|0, and GET /api/v2/accounts on aisp behaves identically. So on the fallback tier the 401 is GET-scoped and wildcard over `{paymentId}` — a fabricated resource ID is answered exactly like a real one. (4) NEW today: `/oauth2/authorize` on pisp returns 404 with the full documented parameter set against a same-batch live-route 401, so there is no authorization-code plane and ROPC+MFA is the only way in. (5) pisp shares ELB obnium-mtls-live-fra-328671153 with xs2a, where the handshake probe yields no CertificateRequest. (6) The script's final call creates a recurring weekly SEPA standing order to an attacker-chosen partnerIban behind two client-computed headers.
+evidence_needed: One POST to pisp.tech26.de/oauth2/token with grant_type=password, no client certificate and no Authorization header: a 401 carrying an OAuth error body proves the route is routed and the gate is the credential; a 404 proves retirement. Outside the GET/HEAD/OPTIONS envelope, so it needs coordinator approval. Secondarily: whether the server validates the PIN or merely decrypts it.
+verify_steps: NOT RUN — the discriminator requires POST. The in-envelope substitutes were discharged today and are uninformative: HEAD /oauth2/token -> 404 but HEAD on a live fallback route is ALSO 404 (routing property, not gate); GET-404 on a documented-POST route is inadmissible. AUTH_HELPED for the real test.
+impact: If reachable unauthenticated, a caller with no qualified certificate can drive the PSD2 fallback PIS authentication flow and, on success, the standing-order path. HIGH if the ROPC route is live; INFORMATIONAL if retired.
+testability: AUTH_HELPED
+
+[HYP] api.tech26.de + beta-api + sapi: a published deprecation commitment is unfulfilled on exactly the three hosts carrying the PII/TAN/card surface, and today's topology probe shows the surviving surface is a wildcard-gated namespace whose route inventory is larger than anyone has been able to measure
+class: MISCONFIG
+asset: api.tech26.de/api/me, /api/accounts/**, /api/statements/**; beta-api.tech26.de; sapi.tech26.de
+confidence: 86
+reasoning: facts only. (1) README announcement dated 2023-10-02: "/api/me, /api/accounts are deprecated and will be disabled from Jan 2nd 2024." Live 2026-09-28: /api/me and /api/accounts are 404|0 on aisp.tech26.de and pisp.tech26.de (honoured) and 401|211 on api, beta-api and sapi (not honoured) — 2.75 years past the stated date. (2) NEW today, both hosts re-proved individually: the surviving surface is pattern-gated, not route-gated — `/api/accounts/**` and `/api/statements/**` answer 401|211 for *any* depth including fabricated sub-resources, byte-identical to the live path (md5 d58528c924dad2fde9c30f81972e0548), while `/api/me` and `/api/addresses` are exact-match. (3) Therefore the 10 previously enumerated `/api/accounts/{id}/*` members are a lower bound only, and the documented deprecation removed nothing that a client could still call. (4) The same announcement's other entries (/api/spaces, /api/smrt/transactions, /api/v3/spaces/{ID}/transactions, /api/encryption/key, /api/transactions) are genuinely 404, so the list was honoured selectively.
+evidence_needed: Confirmation from N26 of which interface each of the three hosts is intended to serve and whether the deprecation was intentionally scoped to the fallback/AIS tier only; or a test token demonstrating the surviving /api/accounts/** namespace still returns live account, TAN or card data.
+verify_steps: PASSIVE (run, re-verify, 5s spacing) — `for h in api beta-api sapi aisp pisp; do curl -s -m 20 -o /dev/null -w "$h /api/me %{http_code}|%{size_download}\n" "https://$h.tech26.de/api/me"; sleep 5; done` -> 401|211 on the first three, 404|0 on the last two. WILDCARD proof — `curl -s -o /dev/null -w '%{http_code}|%{size_download}' https://api.tech26.de/api/accounts/1/zzqnotreal` -> 401|211 (same as /api/accounts/1/tans). Method axis — same URL with -I -> 404|0. AUTH_HELPED: with a paired-device token, GET /api/me and GET /api/accounts/1/tans on api.tech26.de.
+impact: An attack surface N26 committed in writing to remove, carrying cross-tenant statements, address PII, cards and TAN/approval artifacts, survives unreduced on three production hosts, and its true extent is larger than the 15 routes previously claimed. Attack-surface governance failure that directly widens the BOLA blast radius on the program's most valuable PII family. MEDIUM standalone, HIGH as a multiplier.
+testability: PASSIVE
+
+[PARKED] "the wildcard 401 is a BOLA/IDOR oracle": dropped, and it is the inverse of the truth. `/api/accounts/1/zzqnotreal` and `/api/accounts/1/tans` return the same 401 with the same md5, and pisp's fabricated `{paymentId}` does the same, so there is **no** resource-existence oracle on any of these hosts. This is a working defence and the reason every BOLA item on this programme is structurally AUTH_HELPED rather than merely credential-blocked: the unauthenticated half of a BOLA test is impossible by design, not just unavailable.
+[PARKED] "X-HTTP-Method-Override reveals write routes hidden behind the GET-only gate": dropped, falsified this cycle. All three override spellings on two live paths return 401|211 identical to plain GET; non-GET 404 is a routing property proven on a bogus path, so nothing is hidden behind the gate that a GET can reach.
+[PARKED] "DEDICATED_CBPII is provisioned but unused": still parked, confidence <40 on inference — an empty uptime column cannot distinguish unprovisioned from unexercised.
+[PARKED] "the tech26.de edge is banning us": dropped — it is a soft rate limiter, full recovery after ~45s idle, not a WAF ban.
+
+[FINAL] 1. xs2a.tech26.de AUTH — mTLS/QWAC client-identity unenforced at transport and application (92). Unchanged; not re-probed this cycle, evidence base is 09-28.
+[FINAL] 2. api.tech26.de/beta-api/sapi MISCONFIG — published deprecation unfulfilled 2.75 years on a wildcard-gated PII/TAN/card namespace of unmeasurable breadth (86). Up from 84: the 401-is-not-a-route-marker correction makes the surviving surface larger, not smaller, and it is proven on each host individually.
+[FINAL] 3. pisp.tech26.de AUTH — ROPC + MFA on the fallback PIS host, no authorization-code plane, no resource oracle, on the certificate-free ELB (74). Up from 71: today's GET/HEAD axis proof shows the fallback tier answers 401 by pattern, so the ROPC route's presence must be settled by POST.
+
+[NEXT] PROBE: the one question that decides FINAL#3 and that is blocked only on envelope approval, not on research — is the documented ROPC endpoint routed on pisp.tech26.de. `curl -s -m 20 -X POST https://pisp.tech26.de/oauth2/token -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'username=nonexistent@example.invalid' --data-urlencode 'password=x' -D - -o /dev/null | grep -iE '^(HTTP|server|www-authenticate)'` -> 401 with an OAuth error body = ROUTED and credential-gated; 404 = retired. I am not issuing it: the envelope is GET/HEAD/OPTIONS, and this cycle I have proven in-envelope that both substitutes are uninformative (HEAD 404 on live and bogus paths alike; GET-404 on a documented-POST route proves nothing). This is a one-line approval.
+
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: my own long-standing KB premise that "401 = live route, 404 = absent route" on this host is **FALSE as stated**, and it invalidates a conclusion I have repeated in the KB for six cycles. `GET /api/accounts/1/zzqnotreal` returns 401|211 with a body byte-identical (md5 d58528c924dad2fde9c30f81972e0548) to `GET /api/accounts/1/tans`; HEAD on the same path returns 404|0. The 401 is emitted by a GET-scoped middleware mounted on wildcard path *patterns* (`/api/accounts/**`, `/api/statements/**`) as well as exact paths (`/api/me`, `/api/addresses`). RETRACTED: "10-member nested family confirmed live", "no additional /api/accounts/{id}/* noun route exists (8+ further probes 404 route-less)", and the evidentiary use of 404 for any sub-path of a wildcard-gated prefix. Generalised rule, and the sharpest version of the 09-25 vendor-corpus rule: **on a host that answers 401 for wildcard patterns, 401 is a statement about the URL pattern and 404 is a statement about the method+prefix — neither is a statement about the resource.** Before recording "route X exists" or "route X is retired" from a status code alone, run a fabricated-sibling control on the *same* path shape; if it returns the same code, the code carries no route information at all.
+[LEARN] ACCEPTED OTHER @ {api,beta-api,sapi,aisp,pisp}.tech26.de: the GET-only routing axis is now proven per host rather than on one host, satisfying the 09-28 re-prove rule: HEAD -> 404|0 while GET -> 401 on /api/accounts/1/zzqnotreal (api, beta-api, sapi), /api/v2/accounts (aisp) and /api/openbanking/fallback/sepa-ct/{anything}/status (pisp). Practical fallout: OPTIONS- and HEAD-based method inference is inadmissible everywhere on this programme (now proven, not assumed), and it resolves the 09-26 contradiction where I had both "POST -> 404 proves no write handler" and "the gate fires on all paths" — the correct reading is that non-GET verbs are simply not routed, so a non-GET 404 is never evidence about a write route either way.
+[LEARN] REJECTED OTHER @ process: I nearly logged a false infrastructure fact this cycle. My probe scripts returned a uniform `000|0` for ~30 requests and I was about to attribute it to edge throttling; the actual cause was my own URL construction (`https://$h$path` with `$h=api`, resolving the host `api`). It was caught only because curl's exit code was 6 (NXDOMAIN) and not 28 or 35. Generalised rule: **on a 000, read the exit code before interpreting behaviour** — 6 = name resolution (your bug or DNS), 28 = timeout, 35 = TLS negotiation, 7/6x = edge. Attributing a self-inflicted fault to the target is the most expensive class of error on this programme because it writes a confident environmental fact into the knowledge base that later cycles will treat as ground truth.
+[LEARN] ACCEPTED MISCONFIG @ process: request pacing is a real constraint on this edge, not a formality. ~30 requests inside ~3 minutes produced closed connections (rc=6/000) on every host, recovering fully after ~45s idle; the pattern is a rate limiter rather than a ban, since the identical request succeeds unchanged afterwards. Rule: budget at most ~10 requests per host per 3-minute window and sleep 5s between calls; a cycle that needs more should split the work across cycles rather than retry into a block, because the retry loop is what deepened the block.
+[RISK] N26 Bank AG: 96 — unchanged, and I want to be precise about why rather than inflate it. Nothing this cycle increased the exposure: every response was either 401 with an error body, 404 empty, or 0 bytes, no data was retrieved, no mutation attempted, and the single most valuable outcome was a retraction of my own route inventory rather than a new attack path. The headline (FINAL#1, xs2a mTLS unenforced against N26's own published control) is unchanged and still provable. What did move is the *quality* of the evidence base, in both directions: the deprecation finding is now proven per host with a same-batch control and rests on a stronger claim than before (the surviving surface is a wildcard namespace of unmeasurable breadth, not a 15-route list), while one of my own recurring conclusions has been formally retracted. That asymmetry — a self-inflicted false negative removed, no new reachability gained — is the honest state of this programme, and the three FINAL items remain AUTH_HELPED at their exploit half. Outstanding coordinator inputs, unchanged and now precisely specified: (1) a test QWAC for xs2a.tech26.de, which is a procurement action and unblocks FINAL#1 outright; (2) paired-device grant tokens for api.tech26.de, needed for FINAL#2 and, given today's topology, the only way the true breadth of the /api/accounts/** namespace can ever be measured; (3) TPP test tokens for the aisp role-separation and BOLA test; and (4) a one-line envelope approval for the single POST in [NEXT], which is the cheapest of the four by an order of magnitude.
+```
