@@ -52522,3 +52522,43 @@ So it is a **generic query-string WAF blocklist** on the shared ELB, not an OAut
 2. **Next probe queued** — SNI-bounding test (4 GETs) to establish whether xs2a is reachable without negotiating a QWAC. Still needs no approval.
 
 Cheapest unblock remains the one-line approval for the single `POST /oauth2/token`.
+===== ANALYST bigpickle 2026-09-29 08:41:57 UTC =====
+[0m
+> build · big-pickle
+[0m
+I'll work through the 8 steps, starting by testing whether I can run the in-envelope read-only probe I committed last cycle (the SNI-boundedness question on the xs2a ALB — GET-only, 4 requests, 5s apart).
+[0m$ [0mcurl -sS -o /dev/null -D - -m 20 "https://xs2a.tech26.de/v1/berlin-group/v1/accounts" 2>&1 | head -20; echo "EXIT=$?"
+HTTP/2 401 
+date: Tue, 29 Sep 2026 08:38:34 GMT
+content-length: 0
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+x-envoy-upstream-service-time: 27
+server: istio-envoy
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+
+EXIT=0
+[0m
+[93m[1m! [0mpermission requested: external_directory (/tmp/opencode/*, /tmp/*); auto-rejecting
+[0m✗ [0mcd /tmp/opencode 2>/dev/null || cd /tmp
+echo "=== resolve ==="
+getent hosts xs2a.tech26.de || nslookup xs2a.tech26.de 2>&1 | tail -5
+sleep 5
+IP=$(getent ahostsv4 xs2a.tech26.de | awk 'NR==1{print $1}')
+echo "IP=$IP"
+echo "=== R1 CONTROL: SNI present + Host present (--resolve) ==="
+curl -sS -k -o /dev/null -D - -m 20 --resolve "xs2a.tech26.de:443:$IP" "https://xs2a.tech26.de/v1/berlin-group/v1/accounts" 2>&1 | grep -iE '^(HTTP|server|content-length|x-envoy-upstream)'; echo "rc=$?"
+sleep 6
+echo "=== R2 SNI ABSENT + Host: xs2a.tech26.de (raw IP literal) ==="
+curl -sS -k -o /dev/null -D - -m 20 -H 'Host: xs2a.tech26.de' "https://$IP/v1/berlin-group/v1/accounts" 2>&1 | grep -iE '^(HTTP|server|content-length|x-envoy-upstream)'; echo "rc=$?"
+sleep 6
+echo "=== R3 SNI ABSENT + bogus Host (internal.example.com) ==="
+curl -sS -k -o /dev/null -D - -m 20 -H 'Host: internal.example.com' "https://$IP/v1/berlin-group/v1/accounts" 2>&1 | grep -iE '^(HTTP|server|content-length|x-envoy-upstream)'; echo "rc=$?"
+sleep 6
+echo "=== R4 default vhost: bare IP, no Host override ==="
+curl -sS -k -o /dev/null -D - -m 20 "https://$IP/v1/berlin-group/v1/accounts" 2>&1 | grep -iE '^(HTTP|server|content-length|x-envoy-upstream)'; echo "rc=$?" failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+Network is live and the control returns 401/istio-envoy as recorded. Now running the committed SNI-boundedness probe (GET-only, paced, exit codes captured per the 09-28 self-inflicted-fault rule).
