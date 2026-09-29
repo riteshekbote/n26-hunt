@@ -3773,3 +3773,25 @@
 - LEARN: REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: the corpus branch my own committed [NEXT] targeted is pure availability telemetry — 27 PDFs, th
 - LEARN: REJECTED MISCONFIG @ xs2a.tech26.de, aisp.tech26.de, pisp.tech26.de: my 09-26 KB claim that "OPTIONS is proven method-agnostic on this edge" is FALSE — live 09-
 - LEARN: REJECTED AUTH @ pisp.tech26.de /api/encryption/key: soundly closed, and closed the right way. The corpus script documents it as a GET, and a GET returning 404 a
+
+## RANKED HYPOTHESES 2026-09-29 15:08:29 UTC
+- [95] xs2a.tech26.de/v1/berlin-group/v1: xs2a.tech26.de production Berlin-Group XS2A API mTLS enforcement optional (empty CA list in CertificateRequest) (from art/lead_nemotron3.txt)
+- [95] xs2a.tech26.de/oauth2/authorize: SSRF-to-cloud-metadata via scheme-relative redirect_uri on xs2a.tech26.de OAuth authorize (production+sandbox) (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): PROBE: curl -v "https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&redirect_uri=//169.254.169.254/&response_type=code&scope=DEDICATED_AISP" -m
+- NEXT(hypotheses-nemotron3.txt): PROBE: `openssl s_client -connect xs2a-staging.tech26.de:443 -servername xs2a-staging.tech26.de -tls1_3 -msg 2>&1 | grep -A20 CertificateRequest` — confirm stag
+- LEARN: ACCEPTED SSRF @ xs2a.tech26.de/oauth2/authorize and /sandbox/oauth2/authorize: scheme-relative redirect_uri bypasses ALB substring blocklist (requires scheme://
+- LEARN: ACCEPTED IDOR @ api.tech26.de/api/accounts/**, beta-api.tech26.de, sapi.tech26.de: GET-scoped wildcard middleware returns identical 401 for live/fabricated sub-
+- LEARN: ACCEPTED AUTH @ pisp.tech26.de/api/openbanking/fallback/*: credential-blind pre-auth gate (identical 401 across credential shapes) on class-scoped money-movemen
+- LEARN: REJECTED OATH @ xs2a.tech26.de: redirect_uri blocklist is generic query-string substring filter (not scoped to redirect_uri field semantics) — OAuth control byp
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the production XS2A API sends TLS CertificateRequest with EMPTY certificate_authorities list — server requests client cert 
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share identical CertificateRequest behavior (empty CA list) on shared ELB obnium-mtls-live-fra-328671
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application l
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: PSD2 sandbox tier co-tenant on production host at `/sandbox/v1/berlin-group/v1/*` (7 classes 401) with identical ALB filter
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less" classification FALSE — both serve full legacy `/api/*` Bearer-gated family (15 endp
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — on this edge, `GET /api/mfa/challenge` 
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host, token m
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and a PKCE challenge in it
+- LEARN: REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: the corpus branch my own committed [NEXT] targeted is pure availability telemetry — 27 PDFs, th
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de, aisp.tech26.de, pisp.tech26.de: my 09-26 KB claim that "OPTIONS is proven method-agnostic on this edge" is FALSE — live 09-
+- LEARN: REJECTED AUTH @ pisp.tech26.de /api/encryption/key: soundly closed, and closed the right way. The corpus script documents it as a GET, and a GET returning 404 a
