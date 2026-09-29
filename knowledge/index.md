@@ -766,3 +766,7 @@
 - 2026-09-29 ACCEPTED IDOR @ api.tech26.de/api/accounts/**, beta-api.tech26.de, sapi.tech26.de: GET-scoped wildcard middleware returns identical 401 for live/fabricated sub-resources; deprecation unfulfilled 2.75 years.
 - 2026-09-29 ACCEPTED AUTH @ pisp.tech26.de/api/openbanking/fallback/*: credential-blind pre-auth gate (identical 401 across credential shapes) on class-scoped money-movement surface.
 - 2026-09-29 REJECTED OATH @ xs2a.tech26.de: redirect_uri blocklist is generic query-string substring filter (not scoped to redirect_uri field semantics) — OAuth control bypass not demonstrated.
+- 2026-09-29 ACCEPTED AUTH @ xs2a.tech26.de: mTLS on the production Berlin-Group XS2A API is offered and DISCARDED, not
+- 2026-09-29 REJECTED OTHER @ xs2a.tech26.de /oauth2/authorize: my 09-29 claim that the scheme-relative redirect_uri
+- 2026-09-29 ACCEPTED MISCONFIG @ xs2a.tech26.de edge: a SECOND, previously unrecorded 403 rule — User-Agent absence
+- 2026-09-29 ACCEPTED MISCONFIG @ api.tech26.de: gate is GET-scoped wildcard middleware — `GET /api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; HEAD → 404|0; invalidates prior "10-member nested family confirmed live" and "no additional noun routes exist (8+ probes 404)" claims

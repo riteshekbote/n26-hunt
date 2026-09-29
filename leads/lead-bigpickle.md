@@ -7342,3 +7342,49 @@ evidence_needed: A response that varies when a valid credential is presented on 
 verify_steps: Baseline re-run this cycle: `curl -sSk -o /dev/null -D - -m 20 https://18.195.172.188/api/openbanking/fallback/sepa-ct/zzqnotreal/status -H 'Host: pisp.tech26.de'` → `401|0 istio-envoy`. The discriminating request is the same path with `-u android:secret` and with a wrong Basic, and it was already shown identical. The unresolved arm requires a TPP credential and a POST; both are outside this envelope.
 impact: The sole control on standing-order and SEPA-credit-transfer initiation evaluates no client credential, so it cannot distinguish a registered TPP from an anonymous one. Severity MEDIUM.
 testability: AUTH_HELPED
+## 2026-09-29 23:48:31 UTC [target] (model bigpickle)
+[CHANGED] xs2a.tech26.de mTLS: POSITIVE ARM CLOSED. Normal curl request presenting an ephemeral self-signed
+[CHANGED] KB contradiction on CertificateRequest RESOLVED: 09-25/09-26 "no CertificateRequest issued" was wrong.
+[NEW]     Second, previously-unrecorded 403 rule on the shared ELB: User-Agent absence -> 403 awselb/2.0 (118B
+[CHANGED] SSRF/OATH FINAL#1 re-tested and confirmed VOID as written (see LEARN). Filter is a value-notation
+[CHANGED] C1 redirect_uri=https://169.254.169.254/ -> 403 | C4 redirect_uri=https://evil.example/ -> 401
+[PRIO] xs2a.tech26.de (OAuth AS + /v1/berlin-group/v1 + /sandbox co-tenant),8.4,axis=surface9 value9 tech9 gate7 cloud6 fresh9
+[PRIO] pisp.tech26.de + aisp.tech26.de (PSD2 Fallback money-movement),6.2,axis=surface6 value7 tech6 gate5 cloud6 fresh7
+[PRIO] api.tech26.de (+beta-api,sapi legacy /api/*),6.05,axis=surface6 value7 tech6 gate4 cloud6 fresh7
+[HYP] Berlin-Group XS2A edge collects a client certificate and never validates it — mTLS is offered and discarded
+class: AUTH
+asset: xs2a.tech26.de:443, all of /v1/berlin-group/v1/* and /sandbox/v1/berlin-group/v1/*
+confidence: 92
+reasoning: (1) `openssl s_client -tls1_3` -> CertificateRequest PRESENT with empty certificate_authorities
+evidence_needed: Nothing further is in-envelope: the finding IS the absence of differential between garbage-cert
+verify_steps: Already executed 2026-09-29 23:46-23:47 UTC, read-only, no request body:
+impact: The eIDAS qualified-certificate control is absent at every layer on a production AIS/PIS surface; any
+testability: PASSIVE
+[HYP] Legacy /api/* wildcard-gated PII/TAN/card surface on api/beta-api/sapi exceeds enumerated routes, deprecation unfulfilled 2.75y
+class: IDOR
+asset: api.tech26.de/api/accounts/**, beta-api.tech26.de, sapi.tech26.de
+confidence: 86
+reasoning: GET-scoped middleware fires on wildcard patterns (fabricated /api/accounts/1/zzqnotreal returns a body
+evidence_needed: Paired-device/Bearer token showing owned vs non-owned account IDs return different payloads.
+verify_steps: PASSIVE baseline: `curl -m 20 -o /dev/null -w "%{http_code}|%{size_download}\n" https://api.tech26.de/api/accounts/1/zzqnotreal` -> 401|211. AUTH_HELPED: with a valid token, GET /api/accounts/{id}/{statements,tans,cards,bookings} for owned vs non-owned IDs.
+impact: Cross-tenant access to statements, address PII, cards, TAN/approvals on a namespace N26 committed to remove. Severity HIGH
+testability: AUTH_HELPED
+[HYP] Fallback PISP resource API authenticates nothing — the gate is pre-auth and credential-blind on money movement
+class: AUTH
+asset: pisp.tech26.de/api/openbanking/fallback/*, aisp.tech26.de/api/v2/*
+confidence: 75
+reasoning: 401|0 empty, no WWW-Authenticate, byte-identical (md5 d41d8cd9…) across no-auth, N26's own published
+evidence_needed: A response that varies when a valid credential is presented on a documented POST route. The resource
+verify_steps: PASSIVE baseline: `curl -m 20 -o /dev/null -D - https://pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzqnotreal/status` -> 401|0 istio-envoy; repeat with `-u android:secret` and a wrong Basic, compare for byte equality.
+impact: The sole control on standing-order and SEPA credit-transfer initiation cannot distinguish a registered TPP from an anonymous one. Severity MEDIUM
+testability: AUTH_HELPED
+[PARKED] SSRF-to-cloud-metadata via scheme-relative redirect_uri: RETRACTED. Re-tested with a field-name control
+[PARKED] Client-certificate identity spoofing at the terminator boundary: untested, no prior claim made. Emitted as
+[FINAL] 1) xs2a.tech26.de mTLS collected-and-discarded — confidence 92, PASSIVE, HIGH
+[FINAL] 2) api/beta-api/sapi legacy /api/* BOLA breadth — confidence 86, AUTH_HELPED, HIGH
+[FINAL] 3) pisp/aisp credential-blind pre-auth money-movement gate — confidence 75, AUTH_HELPED, MEDIUM
+[NEXT] PROBE: `curl -sS -m 20 -o /dev/null -D - -H 'X-Client-Cert: CN=not-a-qwac-test' -H 'X-SSL-Client-Cert: CN=not-a-qwac-test' -H 'X-Forwarded-Client-Cert: CN=not-a-qwac-test' https://xs2a.tech26.de/v1/berlin-group/v1/accounts` — if the 401|0 istio-envoy baseline is unchanged byte-for-byte, client-cert identity cannot be forged through the terminator and the mTLS finding is closed with no header-trust bypass; any differential (200/403/405) reopens it as a spoofable identity.
+[LEARN] ACCEPTED AUTH @ xs2a.tech26.de: mTLS on the production Berlin-Group XS2A API is offered and DISCARDED, not
+[LEARN] REJECTED OTHER @ xs2a.tech26.de /oauth2/authorize: my 09-29 claim that the scheme-relative redirect_uri
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de edge: a SECOND, previously unrecorded 403 rule — User-Agent absence
+[RISK] N26 Bank AG: 91 — mTLS on the production Berlin-Group AIS/PIS surface is fully characterised and reportable

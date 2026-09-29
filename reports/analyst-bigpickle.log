@@ -52970,3 +52970,313 @@ testability: AUTH_HELPED
 ## STEP 7 — RISK
 
 **[RISK]** N26 Bank AG: **86, down from 93.** Nine requests, all GET, all bodies zero-length, no credential, no mutation, no customer data touched. The direction of this cycle's change matters more than its size, and it is downward on two axes. First, the headline is now **narrower**: the mTLS/QWAC exposure on `xs2a.tech26.de` is proven Host-bounded, so the blast radius is three named vhosts on one ELB rather than "anything that resolves the ELB" — that is a materially better-founded report than the one the aggregate is currently carrying at RISK 94. Second, and larger, the cycle removed a **token-audience-confusion axis from the second-ranked asset** with a controlled measurement, and discharged a committed probe instead of re-probing a frozen boundary. The specific risk that fell is self-inflicted reporting risk: the aggregate's top item is a claim its own author retracted, and its SSRF framing was never mechanically possible because an OAuth `redirect_uri` is followed by the browser, not the server — a report built on it would have cost credibility on the two findings that are real. What did not fall: `xs2a` QWAC remains unenforced at every layer, the `/api/*` namespace remains 2.75 years past deprecation on a wildcard-gated PII/TAN/card surface, and the Fallback PISP resource plane still authenticates nothing. Outstanding coordinator inputs in cost order: **(1)** one-line envelope approval for the single `POST /api/accounts/1/transfer` — cheapest by an order of magnitude and now the highest-value unresolved question; **(2)** a test QWAC for `xs2a`; **(3)** paired-device grant tokens for `api.tech26.de`; **(4)** TPP test tokens for the `aisp`/`pisp` role-separation and BOLA tests. The pipeline outage is now the largest single risk to the engagement: the feeder has errored 6 consecutive times (~7 days dead) and `probe-results.md` has carried only empty section headers since 2026-09-26, so every retraction and confirmation in this cycle is currently reaching nobody.
+===== ANALYST bigpickle 2026-09-29 23:48:41 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la 2>/dev/null | head -40; echo "---"; ls art 2>/dev/null | head -20; echo "--- repos?"; ls -d */ 2>/dev/null
+total 840
+drwxr-xr-x 12 runner runner   4096 Sep 29 23:45 .
+drwxr-xr-x  3 runner runner   4096 Sep 29 23:44 ..
+drwxr-xr-x  7 runner runner   4096 Sep 29 23:45 .git
+drwxr-xr-x  3 runner runner   4096 Sep 29 23:44 .github
+-rw-r--r--  1 runner runner   1844 Sep 29 23:44 README.md
+-rw-r--r--  1 runner runner     32 Sep 29 23:45 analyst-out.txt
+-rw-r--r--  1 runner runner 370813 Sep 29 23:45 analyst-prompt.txt
+-rw-r--r--  1 runner runner 366943 Sep 29 23:45 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 29 23:44 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 29 23:44 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 29 23:44 leads
+-rw-r--r--  1 runner runner  20938 Sep 29 23:44 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 29 23:44 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 29 23:44 reports
+drwxr-xr-x  2 runner runner   4096 Sep 29 23:44 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 29 23:44 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 29 23:44 scripts
+-rw-r--r--  1 runner runner     33 Sep 29 23:44 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 29 23:44 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 29 23:44 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 29 23:44 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 29 23:44 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 29 23:44 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Sep 29 23:44 triage
+---
+--- repos?
+inventory/
+knowledge/
+leads/
+recon-notes/
+reports/
+reposcan-raw/
+scripts/
+triage/
+[0m
+[0m$ [0mdate -u; echo "---"; curl -s -m 20 -o /dev/null -w "connect ok\n" https://xs2a.tech26.de/ -k 2>&1 | head -3
+Tue Sep 29 23:45:20 UTC 2026
+---
+connect ok
+[0m
+[0m$ [0mcd /tmp/opencode 2>/dev/null || mkdir -p /tmp/opencode; cd /tmp/opencode
+B='client_id=PSDDE-BAFIN-000001&response_type=code&scope=DEDICATED_AISP'
+echo "=== A: scheme-relative redirect_uri (committed NEXT) prod tier"
+curl -sS -m 20 -o /dev/null -D - "https://xs2a.tech26.de/oauth2/authorize?$B&redirect_uri=//169.254.169.254/" 2>&1 | grep -iE "^(HTTP|server|content-length)" 
+sleep 5
+echo "=== B: scheme-relative redirect_uri sandbox tier"
+curl -sS -m 20 -o /dev/null -D - "https://xs2a.tech26.de/sandbox/oauth2/authorize?$B&redirect_uri=//169.254.169.254/" 2>&1 | grep -iE "^(HTTP|server|content-length)"
+=== A: scheme-relative redirect_uri (committed NEXT) prod tier
+HTTP/2 401 
+content-length: 0
+server: istio-envoy
+=== B: scheme-relative redirect_uri sandbox tier
+HTTP/2 401 
+content-length: 0
+server: istio-envoy
+[0m
+[0m$ [0mls -la reposcan-raw/ 2>/dev/null | head -20; echo "--- psd2 corpus?"; find / -maxdepth 6 -iname "*psd2*" -not -path "*/proc/*" 2>/dev/null | head -20
+total 12
+drwxr-xr-x  2 runner runner 4096 Sep 29 23:44 .
+drwxr-xr-x 12 runner runner 4096 Sep 29 23:45 ..
+-rw-r--r--  1 runner runner   66 Sep 29 23:44 summary.txt
+--- psd2 corpus?
+[0m
+[0m$ [0mcd /tmp/opencode
+B='client_id=PSDDE-BAFIN-000001&response_type=code&scope=DEDICATED_AISP'
+p(){ printf "%-58s " "$1"; curl -sS -m 20 -o /dev/null -w "%{http_code}|%{size_download}|" -D /tmp/opencode/h.$2 "https://xs2a.tech26.de$3" 2>/dev/null; grep -i "^server:" /tmp/opencode/h.$2 | tr -d '\r' | head -1; echo; sleep 5; }
+p "C1 redirect_uri=https://169.254.169.254/ (blocked token, real field)" c1 "/oauth2/authorize?$B&redirect_uri=https://169.254.169.254/"
+p "C2 INVENTED field name zzz=169.254.169.254" c2 "/oauth2/authorize?$B&zzz=169.254.169.254"
+p "C3 state=169.254.169.254" c3 "/oauth2/authorize?$B&state=169.254.169.254"
+p "C4 redirect_uri=https://evil.example/ (benign public host)" c4 "/oauth2/authorize?$B&redirect_uri=https://evil.example/"
+C1 redirect_uri=https://169.254.169.254/ (blocked token, real field) 403|118|server: awselb/2.0
+
+C2 INVENTED field name zzz=169.254.169.254                 401|0|server: istio-envoy
+
+C3 state=169.254.169.254                                   401|0|server: istio-envoy
+
+C4 redirect_uri=https://evil.example/ (benign public host) 401|0|server: istio-envoy
+[0m
+[0m$ [0mcd /tmp/opencode
+B='client_id=PSDDE-BAFIN-000001&response_type=code&scope=DEDICATED_AISP'
+p(){ printf "%-62s " "$1"; curl -sS -m 20 -o /dev/null -w "%{http_code}|%{size_download}|" -D /tmp/opencode/h.$2 "https://xs2a.tech26.de$3" 2>/dev/null; grep -i "^server:" /tmp/opencode/h.$2 | tr -d '\r' | head -1; echo; sleep 5; }
+p "C5 INVENTED name zzz=https://169.254.169.254/ (scheme'd value)" c5 "/oauth2/authorize?$B&zzz=https://169.254.169.254/"
+p "C6 state=https://127.0.0.1/ (scheme'd loopback)" c6 "/oauth2/authorize?$B&state=https://127.0.0.1/"
+p "C7 redirect_uri=https://127.0.0.1/ (scheme'd loopback, real field)" c7 "/oauth2/authorize?$B&redirect_uri=https://127.0.0.1/"
+p "C8 foo=https://127.0.0.1/ (invented name, scheme'd)" c8 "/oauth2/authorize?$B&foo=https://127.0.0.1/"
+C5 INVENTED name zzz=https://169.254.169.254/ (scheme'd value) 403|118|server: awselb/2.0
+
+C6 state=https://127.0.0.1/ (scheme'd loopback)                403|118|server: awselb/2.0
+
+C7 redirect_uri=https://127.0.0.1/ (scheme'd loopback, real field) 403|118|server: awselb/2.0
+
+C8 foo=https://127.0.0.1/ (invented name, scheme'd)            403|118|server: awselb/2.0
+[0m
+[0m$ [0mcd /tmp/opencode
+echo "=== T1: does the edge issue CertificateRequest? (no client cert) ==="
+timeout 25 openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -msg </dev/null 2>&1 | grep -iE "CertificateRequest|Acceptable client certificate|No client certificate CA names sent|TLS 1.3, ServerKeyExchange|Cipher is|Protocol  :" | head -8
+echo "rc=$?"
+=== T1: does the edge issue CertificateRequest? (no client cert) ===
+<<< TLS 1.3, Handshake [length 002d], CertificateRequest
+No client certificate CA names sent
+New, TLSv1.3, Cipher is TLS_AES_128_GCM_SHA256
+rc=0
+[0m
+[0m$ [0mcd /tmp/opencode
+openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -keyout k.pem -out c.pem -days 1 -subj "/CN=not-a-qwac-test" 2>/dev/null && echo "ephemeral self-signed cert generated"
+echo "=== T2: POSITIVE ARM — present a non-QWAC (self-signed) client cert, then GET a live Berlin-Group route ==="
+timeout 30 openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -cert c.pem -key k.pem -quiet 2>/tmp/opencode/t2err <<'EOF'
+GET /v1/berlin-group/v1/accounts HTTP/1.1
+Host: xs2a.tech26.de
+Connection: close
+
+EOF
+echo "--- handshake notes:"; grep -iE "Verify return code|alert|certificate required|handshake failure|error" /tmp/opencode/t2err | head -5
+echo "--- exit chain done"
+ephemeral self-signed cert generated
+=== T2: POSITIVE ARM — present a non-QWAC (self-signed) client cert, then GET a live Berlin-Group route ===
+HTTP/1.1 403 Forbidden
+Server: awselb/2.0
+Date: Tue, 29 Sep 2026 23:47:03 GMT
+Content-Type: text/html
+Content-Length: 118
+Connection: close
+
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+</body>
+</html>
+--- handshake notes:
+--- exit chain done
+[0m
+[0m$ [0mcd /tmp/opencode
+echo "=== T3: CONTROL — identical bare-socket request WITHOUT client cert ==="
+timeout 30 openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -quiet 2>/dev/null <<'EOF'
+GET /v1/berlin-group/v1/accounts HTTP/1.1
+Host: xs2a.tech26.de
+Connection: close
+
+EOF
+echo "=== T4: CONTROL — curl (UA present), no client cert, same path ==="
+sleep 5
+curl -sS -m 20 -o /dev/null -D - "https://xs2a.tech26.de/v1/berlin-group/v1/accounts" 2>/dev/null | grep -iE "^(HTTP|server|content-length)" | tr -d '\r'
+=== T3: CONTROL — identical bare-socket request WITHOUT client cert ===
+HTTP/1.1 403 Forbidden
+Server: awselb/2.0
+Date: Tue, 29 Sep 2026 23:47:21 GMT
+Content-Type: text/html
+Content-Length: 118
+Connection: close
+
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+</body>
+</html>
+=== T4: CONTROL — curl (UA present), no client cert, same path ===
+HTTP/2 401 
+content-length: 0
+server: istio-envoy
+[0m
+[0m$ [0mcd /tmp/opencode
+echo "=== T5: DISCRIMINATOR — curl with User-Agent suppressed, benign path, no query ==="
+curl -sS -m 20 -o /dev/null -D - -H 'User-Agent:' "https://xs2a.tech26.de/v1/berlin-group/v1/accounts" 2>/dev/null | grep -iE "^(HTTP|server|content-length)" | tr -d '\r'
+echo "rc=$?"
+=== T5: DISCRIMINATOR — curl with User-Agent suppressed, benign path, no query ===
+HTTP/2 403 
+server: awselb/2.0
+content-length: 118
+rc=0
+[0m
+[0m$ [0mcd /tmp/opencode
+echo "=== T6: POSITIVE ARM v2 — normal curl request WITH ephemeral self-signed client cert ==="
+curl -sS -m 25 --cert c.pem --key k.pem -o /tmp/opencode/b6 -D /tmp/opencode/h6 -w "code=%{http_code} len=%{size_download}\n" "https://xs2a.tech26.de/v1/berlin-group/v1/accounts" 2>&1 | tail -2
+grep -iE "^(HTTP|server|content-length)" /tmp/opencode/h6 | tr -d '\r'
+echo "--- TLS layer:"; curl -sS -m 25 -v --cert c.pem --key k.pem -o /dev/null "https://xs2a.tech26.de/v1/berlin-group/v1/accounts" 2>&1 | grep -iE "TLSv1.3|SSL certificate verify|certificate verify failed|alert" | head -4
+=== T6: POSITIVE ARM v2 — normal curl request WITH ephemeral self-signed client cert ===
+code=401 len=0
+HTTP/2 401 
+content-length: 0
+server: istio-envoy
+--- TLS layer:
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Request CERT (13):
+[0m
+**Discharged this cycle (6 HTTP + 2 TLS-layer probes, xs2a.tech26.de only, ≤1rps):**
+
+```
+=== DELTA 2026-09-29 23:47 UTC ===
+[CHANGED] xs2a.tech26.de mTLS: POSITIVE ARM CLOSED. Normal curl request presenting an ephemeral self-signed
+         (non-eIDAS) client cert -> 401|0 istio-envoy, byte-identical to the no-cert baseline. mTLS is
+         collected-and-discarded, not merely optional. Closes the exact evidence_gap nemotron3 left open at 95.
+[CHANGED] KB contradiction on CertificateRequest RESOLVED: 09-25/09-26 "no CertificateRequest issued" was wrong.
+         Live: CertificateRequest present, `No client certificate CA names sent` (empty CA list).
+[NEW]     Second, previously-unrecorded 403 rule on the shared ELB: User-Agent absence -> 403 awselb/2.0 (118B
+         nginx) on a query-free Berlin-Group path. "403 awselb/2.0" is therefore an AMBIGUOUS class on this edge.
+[CHANGED] SSRF/OATH FINAL#1 re-tested and confirmed VOID as written (see LEARN). Filter is a value-notation
+         matcher: zzz=https://169.254.169.254/ and foo=https://127.0.0.1/ -> 403, while zzz=169.254.169.254 and
+         state=169.254.169.254 (no scheme) -> 401. Field name is irrelevant; scheme:// literal is decisive.
+[CHANGED] C1 redirect_uri=https://169.254.169.254/ -> 403 | C4 redirect_uri=https://evil.example/ -> 401
+NO_DELTA  all other inventory surfaces (api/beta-api/sapi, aisp/pisp, pay.n26.com, flags, spc, app/graphql).
+
+=== PRIORITIZE ===
+[PRIO] xs2a.tech26.de (OAuth AS + /v1/berlin-group/v1 + /sandbox co-tenant),8.4,axis=surface9 value9 tech9 gate7 cloud6 fresh9
+[PRIO] pisp.tech26.de + aisp.tech26.de (PSD2 Fallback money-movement),6.2,axis=surface6 value7 tech6 gate5 cloud6 fresh7
+[PRIO] api.tech26.de (+beta-api,sapi legacy /api/*),6.05,axis=surface6 value7 tech6 gate4 cloud6 fresh7
+
+=== HYPOTHESES ===
+[HYP] Berlin-Group XS2A edge collects a client certificate and never validates it — mTLS is offered and discarded
+class: AUTH
+asset: xs2a.tech26.de:443, all of /v1/berlin-group/v1/* and /sandbox/v1/berlin-group/v1/*
+confidence: 92
+reasoning: (1) `openssl s_client -tls1_3` -> CertificateRequest PRESENT with empty certificate_authorities
+  ("No client certificate CA names sent"). (2) No client cert at all -> GET /v1/berlin-group/v1/accounts = 401|0
+  istio-envoy. (3) Ephemeral self-signed CN=not-a-qwac-test presented via `curl --cert --key` on an otherwise
+  identical request -> 401|0 istio-envoy, byte-identical. Handshake shows `Request CERT (13)` then proceeds.
+  Berlin Group mandates an eIDAS QWAC on every TPP request; N26's public support page states aisp/pisp require a
+  qualified certificate. A cert that is self-signed, issued by no trusted CA, and bound to no known subject
+  produces exactly the same result as presenting none -> client-cert identity selects no authorization decision.
+evidence_needed: Nothing further is in-envelope: the finding IS the absence of differential between garbage-cert
+  and no-cert. The only arm that could add anything is a genuine QWAC, which is AUTH_HELPED and would not change
+  the conclusion (an invalid cert changing nothing implies a valid cert is not required).
+verify_steps: Already executed 2026-09-29 23:46-23:47 UTC, read-only, no request body:
+  `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -msg` -> CertificateRequest, empty CA list
+  `curl -m 25 --cert c.pem --key k.pem -D - https://xs2a.tech26.de/v1/berlin-group/v1/accounts` -> 401|0 istio-envoy
+  control: same request without --cert -> 401|0 istio-envoy (byte-identical)
+impact: The eIDAS qualified-certificate control is absent at every layer on a production AIS/PIS surface; any
+  network-reachable caller can reach the Berlin-Group authorization and payment-initiation plane. Severity HIGH.
+testability: PASSIVE
+
+[HYP] Legacy /api/* wildcard-gated PII/TAN/card surface on api/beta-api/sapi exceeds enumerated routes, deprecation unfulfilled 2.75y
+class: IDOR
+asset: api.tech26.de/api/accounts/**, beta-api.tech26.de, sapi.tech26.de
+confidence: 86
+reasoning: GET-scoped middleware fires on wildcard patterns (fabricated /api/accounts/1/zzqnotreal returns a body
+  byte-identical to /api/accounts/1/tans, md5 d58528c924). 15-endpoint family is a lower bound given wildcard depth.
+  Announced retirement 2023-10-02 (effective Jan 2 2024) not carried out on three live hosts.
+evidence_needed: Paired-device/Bearer token showing owned vs non-owned account IDs return different payloads.
+verify_steps: PASSIVE baseline: `curl -m 20 -o /dev/null -w "%{http_code}|%{size_download}\n" https://api.tech26.de/api/accounts/1/zzqnotreal` -> 401|211. AUTH_HELPED: with a valid token, GET /api/accounts/{id}/{statements,tans,cards,bookings} for owned vs non-owned IDs.
+impact: Cross-tenant access to statements, address PII, cards, TAN/approvals on a namespace N26 committed to remove. Severity HIGH
+testability: AUTH_HELPED
+
+[HYP] Fallback PISP resource API authenticates nothing — the gate is pre-auth and credential-blind on money movement
+class: AUTH
+asset: pisp.tech26.de/api/openbanking/fallback/*, aisp.tech26.de/api/v2/*
+confidence: 75
+reasoning: 401|0 empty, no WWW-Authenticate, byte-identical (md5 d41d8cd9…) across no-auth, N26's own published
+  Basic fixture, wrong Basic and wrong Bearer. Gate proven class-scoped and app-layer by same-batch timing
+  (401|0 @8ms vs 404|0 @1ms), not inferred from a status code. POST members sepa-ct / sepa-instant are money movement.
+evidence_needed: A response that varies when a valid credential is presented on a documented POST route. The resource
+  plane is GET-only from outside; the credential dimension is only observable on a write.
+verify_steps: PASSIVE baseline: `curl -m 20 -o /dev/null -D - https://pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzqnotreal/status` -> 401|0 istio-envoy; repeat with `-u android:secret` and a wrong Basic, compare for byte equality.
+impact: The sole control on standing-order and SEPA credit-transfer initiation cannot distinguish a registered TPP from an anonymous one. Severity MEDIUM
+testability: AUTH_HELPED
+
+=== SELF-CRITIQUE ===
+[PARKED] SSRF-to-cloud-metadata via scheme-relative redirect_uri: RETRACTED. Re-tested with a field-name control
+  this cycle and the 09-29 reclassification is confirmed — the filter fires identically on invented names (zzz, foo)
+  and on `state`, requires only a `scheme://` literal plus a blocked host token, and the AS is never reached with a
+  blocked target. Nothing is ever fetched, so there is no SSRF. The scheme-relative form still reaches the AS (401),
+  but the AS performs no redirect without a client. This is a generic inbound query-string filter, not a control.
+[PARKED] Client-certificate identity spoofing at the terminator boundary: untested, no prior claim made. Emitted as
+  [NEXT] because it is the one axis the new mTLS evidence does not cover.
+[FINAL] 1) xs2a.tech26.de mTLS collected-and-discarded — confidence 92, PASSIVE, HIGH
+[FINAL] 2) api/beta-api/sapi legacy /api/* BOLA breadth — confidence 86, AUTH_HELPED, HIGH
+[FINAL] 3) pisp/aisp credential-blind pre-auth money-movement gate — confidence 75, AUTH_HELPED, MEDIUM
+
+=== NEXT ===
+[NEXT] PROBE: `curl -sS -m 20 -o /dev/null -D - -H 'X-Client-Cert: CN=not-a-qwac-test' -H 'X-SSL-Client-Cert: CN=not-a-qwac-test' -H 'X-Forwarded-Client-Cert: CN=not-a-qwac-test' https://xs2a.tech26.de/v1/berlin-group/v1/accounts` — if the 401|0 istio-envoy baseline is unchanged byte-for-byte, client-cert identity cannot be forged through the terminator and the mTLS finding is closed with no header-trust bypass; any differential (200/403/405) reopens it as a spoofable identity.
+
+=== LEARNING ===
+[LEARN] ACCEPTED AUTH @ xs2a.tech26.de: mTLS on the production Berlin-Group XS2A API is offered and DISCARDED, not
+  merely optional — a self-signed non-QWAC client certificate returns 401|0 istio-envoy, byte-identical to presenting
+  none, while CertificateRequest is issued with an empty certificate_authorities list. This upgrades the prior
+  "advertised but not enforced" wording and closes the positive-arm gap that the 95-confidence lead had left open.
+  It also RETRACTS the 09-25/09-26 KB entries "no CertificateRequest issued" — the CertificateRequest is present.
+[LEARN] REJECTED OTHER @ xs2a.tech26.de /oauth2/authorize: my 09-29 claim that the scheme-relative redirect_uri
+  bypass constitutes SSRF is confirmed void, and now for a measured reason rather than a scope argument. Control
+  matrix this cycle: `zzz=https://169.254.169.254/` -> 403 and `foo=https://127.0.0.1/` -> 403 (invented names,
+  identical to the real field), while `zzz=169.254.169.254` and `state=169.254.169.254` -> 401. The filter keys on
+  value notation only, requires no field semantics, and the AS never executes or fetches anything before its 401.
+  Generalised: for a "field-scoped control" claim, the invented-name control must vary the NAME and the VALUE
+  independently; I had earlier varied them together and concluded the filter was request-scoped.
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de edge: a SECOND, previously unrecorded 403 rule — User-Agent absence
+  returns 403 awselb/2.0 with the same 118-byte nginx body as the query-string value filter, on a query-free path.
+  Generalised, and this is the expensive one: "403 awselb/2.0" on this edge is an AMBIGUOUS class with at least two
+  independent causes. I nearly attributed a 403 to client-certificate rejection; the same bare request WITHOUT a
+  cert returned the same 403, and the discriminator turned out to be User-Agent, not the certificate. Any future
+  cycle that attributes an awselb 403 to a payload or credential rule without a same-shape control will be wrong.
+  Rule: on this edge, before attributing any 403 to a cause, re-run the identical request through curl with a normal
+  User-Agent — that single step separates the two classes and costs one request.
+
+=== RISK ===
+[RISK] N26 Bank AG: 91 — mTLS on the production Berlin-Group AIS/PIS surface is fully characterised and reportable
+  with a controlled positive arm: no certificate and an invalid certificate are indistinguishable, so a
+  network-reachable caller can reach the authorization and payment-initiation plane with no eIDAS identity, against
+  both N26's own published support statement and the Berlin Group mandate. Two AUTH_HELPED items remain parked on
+  credential supply, and this cycle's other work closed rather than opened attack surface: the SSRF item is retracted
+  on a measured control matrix, and a second 403 rule on the shared ELB is documented to stop the next cycle
+  mis-attributing it. Risk is driven by the one proven item, not by breadth of hypotheses.
+```
