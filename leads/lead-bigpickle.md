@@ -7314,3 +7314,31 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED AUTH @ pisp.tech26.de/api/openbanking/fallback/*: credential-blind pre-auth gate (identical 401 across credential shapes) on class-scoped money-movement surface.
 [LEARN] REJECTED OATH @ xs2a.tech26.de: redirect_uri blocklist is generic query-string substring filter (not scoped to redirect_uri field semantics) — OAuth control bypass not demonstrated.
 [RISK] N26 Bank AG: 94 — scheme-relative redirect_uri bypass on xs2a.tech26.de OAuth authorize (production+sandbox, ALB substring filter with no URI parsing) enables SSRF-to-cloud-metadata chain potential; legacy wildcard-gated /api/* PII/TAN/card surface on three hosts remains live 2.75 years past deprecation (IDOR blast radius); fallback PISP credential-blind gate weakens auth assurance on money-movement endpoints. Three PASSIVE/AUTH_HELPED findings with concrete verification.
+## 2026-09-29 20:04:59 UTC [target] (model bigpickle)
+[HYP] mTLS on the Berlin-Group XS2A API is advertised but optional, and the edge requires no SNI to route to it
+class: AUTH
+asset: xs2a.tech26.de/v1/berlin-group/v1/* (and /sandbox/v1/berlin-group/v1/*)
+confidence: 88
+reasoning: Server sends a TLS CertificateRequest with an EMPTY certificate_authorities list (09-28), so a client with no certificate completes TLS1.3; Berlin Group mandates an eIDAS QWAC on every TPP request and N26's own public support page states aisp/pisp require a qualified certificate. This cycle: routing is on the Host header alone, so no SNI negotiation for any `*.tech26.de` name is required to reach the API (R2 ≡ R1). Exposure is Host-bounded (R3/R4/R5 all `404|0`).
+evidence_needed: A request presenting a genuine QWAC and a request presenting none returning distinguishable results on the same route — currently they cannot be distinguished at all, which is the finding.
+verify_steps: Already run, this cycle, read-only: `curl -sSk -o /dev/null -D - -m 20 https://18.195.172.188/v1/berlin-group/v1/accounts -H 'Host: xs2a.tech26.de'` → `401|0 istio-envoy`; same with `--resolve` (control) → identical. `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -msg` → CertificateRequest present, empty CA list. No client certificate exists for the positive arm.
+impact: A qualified-eIDAS identity is never required to reach the production Berlin-Group AIS/PIS authorization and payment-initiation surface; the stated control is absent at every layer. Severity HIGH.
+testability: PASSIVE
+[HYP] The legacy `/api/*` auth middleware is verb-scoped to GET, leaving write verbs on wildcard-covered money-movement paths outside the observed gate
+class: AUTH
+asset: api.tech26.de/api/accounts/{id}/{transfer,beneficiaries,approvals} (siblings beta-api.tech26.de, sapi.tech26.de)
+confidence: 55
+reasoning: The 09-28 finding resolved the `401|211` as a **GET-scoped** middleware mounted on wildcard patterns `/api/accounts/**` and `/api/statements/**` (fabricated sub-resource `/api/accounts/1/zzqnotreal` returns a body byte-identical to `/api/accounts/1/tans`). But the same batch proved the edge routes **only GET** (HEAD and OPTIONS → `404|0` on live routes, proven on all five hosts). Those two facts are equally consistent with (a) the middleware covering only GET, and (b) the middleware covering all verbs with only GET ever reaching it. Nothing in-envelope can separate them, because OPTIONS/HEAD are method-opaque (`404` for everything, 09-28) and a non-GET 404 is evidence about the edge, never about the route. The `transfer`, `beneficiaries` and `approvals` nouns are the money-movement and payee-mutation members of the 15-route family.
+evidence_needed: One unauthenticated POST to a wildcard-covered money-movement path. A `401` means the gate is verb-general and this closes; anything other than 401/404 (405, 5xx, or a business-logic error body) means the gate does not cover that verb.
+verify_steps: In-envelope substitutes are exhausted and provably uninformative — see the two re-proven negatives this cycle. The resolving request is a single unauthenticated POST with no body and no credentials, which cannot mutate anything: `curl -sS -o /dev/null -D - -m 20 -X POST https://api.tech26.de/api/accounts/1/transfer -H 'Content-Type: application/json' -d '{}' -w 'code=%{http_code} len=%{size_download}\n'`
+impact: If the gate is verb-scoped, money-movement and payee-mutation routes on a namespace N26 committed to retire in Jan 2024 are reachable without a token, and the whole `/api/*` authentication boundary is a GET-only illusion. Severity HIGH. Confidence is deliberately 55: no in-envelope measurement bears on it either way.
+testability: AUTH_HELPED
+[HYP] The PSD2 Fallback resource API authenticates nothing — the gate is pre-auth and credential-blind
+class: AUTH
+asset: pisp.tech26.de/api/openbanking/fallback/*, aisp.tech26.de/api/v2/*
+confidence: 75
+reasoning: `401|0` empty body, no `WWW-Authenticate`, byte-identical (md5 `d41d8cd9…`) across no-auth, N26's own published `android:secret` Basic fixture, wrong Basic and wrong Bearer. The gate is class-scoped and app-layer, licensed as evidence of absence only by the same-batch timing control (`401|0` @8ms vs `404|0` @1ms). Re-proved in-batch this cycle (V3 = `401|0`). Fallback-tier POSTs `sepa-ct` and `sepa-instant` are the money-movement members, and ROPC `grant_type=password` is documented for both fallback hosts.
+evidence_needed: A response that varies when a valid credential is presented on a documented POST route. Nothing in-envelope can supply this: the resource plane is GET-only from outside and the credential dimension is only observable on a write.
+verify_steps: Baseline re-run this cycle: `curl -sSk -o /dev/null -D - -m 20 https://18.195.172.188/api/openbanking/fallback/sepa-ct/zzqnotreal/status -H 'Host: pisp.tech26.de'` → `401|0 istio-envoy`. The discriminating request is the same path with `-u android:secret` and with a wrong Basic, and it was already shown identical. The unresolved arm requires a TPP credential and a POST; both are outside this envelope.
+impact: The sole control on standing-order and SEPA-credit-transfer initiation evaluates no client credential, so it cannot distinguish a registered TPP from an anonymous one. Severity MEDIUM.
+testability: AUTH_HELPED

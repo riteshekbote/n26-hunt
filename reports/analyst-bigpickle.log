@@ -52630,3 +52630,343 @@ STEP 6 — LEARNING: [LEARN] REJECTED/ACCEPTED <class> @ <asset>: <reason>.
 STEP 7 — RISK: [RISK] <program>: <0-100> reason.
 
 [RISK] N26 Bank AG: 94 — scheme-relative redirect_uri bypass on xs2a.tech26.de OAuth authorize (production+sandbox, ALB substring filter with no URI parsing) enables SSRF-to-cloud-metadata chain potential; legacy wildcard-gated /api/* PII/TAN/card surface on three hosts remains live 2.75 years past deprecation (IDOR blast radius); fallback PISP credential-blind gate weakens auth assurance on money-movement endpoints. Three PASSIVE/AUTH_HELPED findings with concrete verification.
+===== ANALYST bigpickle 2026-09-29 20:05:16 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt 2>&1 | head -40
+total 848
+drwxr-xr-x 12 runner runner   4096 Sep 29 20:01 .
+drwxr-xr-x  3 runner runner   4096 Sep 29 20:00 ..
+drwxr-xr-x  7 runner runner   4096 Sep 29 20:01 .git
+drwxr-xr-x  3 runner runner   4096 Sep 29 20:00 .github
+-rw-r--r--  1 runner runner   1844 Sep 29 20:00 README.md
+-rw-r--r--  1 runner runner     32 Sep 29 20:01 analyst-out.txt
+-rw-r--r--  1 runner runner 376302 Sep 29 20:01 analyst-prompt.txt
+-rw-r--r--  1 runner runner 372432 Sep 29 20:01 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Sep 29 20:00 inventory
+drwxr-xr-x  2 runner runner   4096 Sep 29 20:00 knowledge
+drwxr-xr-x  2 runner runner   4096 Sep 29 20:00 leads
+-rw-r--r--  1 runner runner  20909 Sep 29 20:00 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Sep 29 20:00 recon-notes
+drwxr-xr-x  2 runner runner   4096 Sep 29 20:00 reports
+drwxr-xr-x  2 runner runner   4096 Sep 29 20:00 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Sep 29 20:00 scope.yml
+drwxr-xr-x  2 runner runner   4096 Sep 29 20:00 scripts
+-rw-r--r--  1 runner runner     33 Sep 29 20:00 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Sep 29 20:00 state_laguna.json
+-rw-r--r--  1 runner runner     33 Sep 29 20:00 state_ling3.json
+-rw-r--r--  1 runner runner     33 Sep 29 20:00 state_longcat.json
+-rw-r--r--  1 runner runner     33 Sep 29 20:00 state_mimo.json
+-rw-r--r--  1 runner runner     33 Sep 29 20:00 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Sep 29 20:00 triage
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt/triage 2>/dev/null | tail -15; echo "---LEADS---"; ls -la /home/runner/work/n26-hunt/n26-hunt/leads 2>/dev/null | tail -10; echo "---ART---"; ls -la /home/runner/work/n26-hunt/n26-hunt/art 2>/dev/null | tail -10
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-26-22-00.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-27-00-28.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-27-05-43.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-27-11-39.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-27-15-48.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-27-19-37.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-27-22-32.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-28-01-10.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-28-07-02.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-28-15-37.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-28-21-22.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-29-01-14.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-29-07-00.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-29-14-08.md
+-rw-r--r--  1 runner runner   210 Sep 29 20:00 run-2026-09-29-19-28.md
+---LEADS---
+drwxr-xr-x  2 runner runner    4096 Sep 29 20:00 .
+drwxr-xr-x 12 runner runner    4096 Sep 29 20:01 ..
+-rw-r--r--  1 runner runner 1121818 Sep 29 20:00 lead-bigpickle.md
+-rw-r--r--  1 runner runner    8670 Sep 29 20:00 lead-laguna.md
+-rw-r--r--  1 runner runner    8500 Sep 29 20:00 lead-ling3.md
+-rw-r--r--  1 runner runner    8840 Sep 29 20:00 lead-longcat.md
+-rw-r--r--  1 runner runner      18 Sep 29 20:00 lead-mimo.md
+-rw-r--r--  1 runner runner 1681991 Sep 29 20:00 lead-nemotron3.md
+-rw-r--r--  1 runner runner    6911 Sep 29 20:00 reposcan-n26-manual.md
+-rw-r--r--  1 runner runner   54019 Sep 29 20:00 reposcan-n26.md
+---ART---
+[0m
+[0m$ [0mcat /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-29-19-28.md; echo "=== 14-08 ==="; cat /home/runner/work/n26-hunt/n26-hunt/triage/run-2026-09-29-14-08.md
+===== TRIAGE 2026-09-29 19:28:17 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_1a705bc1"
+  }
+}
+=== 14-08 ===
+
+===== TRIAGE 2026-09-29 14:08:27 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_8c0d533d"
+  }
+}
+[0m
+[0m$ [0mtail -60 /home/runner/work/n26-hunt/n26-hunt/probe-results.md; echo "=== mtimes ==="; ls -la /home/runner/work/n26-hunt/n26-hunt/inventory /home/runner/work/n26-hunt/n26-hunt/knowledge
+## 2026-09-26 05:13:12 UTC
+
+
+## 2026-09-26 10:00:55 UTC
+https://app.n26.com/login` -> HTTP 404
+https://app.n26.com/login&response_type=CODE&state=<random>` -> HTTP 404
+https://xs2a.tech26.de/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&code_challenge=w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI&redirect_uri=https%3A%2F%2Fapp.n26.com%2Flogin&response_type=CODE&state=<random-32-hex>` -> HTTP 404
+
+## 2026-09-26 14:04:17 UTC
+
+
+## 2026-09-26 17:46:58 UTC
+
+
+## 2026-09-26 20:33:41 UTC
+
+
+## 2026-09-26 23:14:05 UTC
+
+
+## 2026-09-27 01:33:28 UTC
+
+
+## 2026-09-27 07:10:51 UTC
+
+
+## 2026-09-27 13:09:09 UTC
+
+
+## 2026-09-27 17:53:18 UTC
+
+
+## 2026-09-27 20:46:50 UTC
+
+
+## 2026-09-27 23:34:10 UTC
+
+
+## 2026-09-28 02:13:55 UTC
+
+
+## 2026-09-28 08:21:06 UTC
+
+
+## 2026-09-28 16:58:33 UTC
+
+
+## 2026-09-28 22:26:36 UTC
+
+
+## 2026-09-29 02:23:49 UTC
+
+
+## 2026-09-29 08:41:57 UTC
+
+
+## 2026-09-29 15:08:29 UTC
+
+=== mtimes ===
+/home/runner/work/n26-hunt/n26-hunt/inventory:
+total 164
+drwxr-xr-x  2 runner runner   4096 Sep 29 20:00 .
+drwxr-xr-x 12 runner runner   4096 Sep 29 20:01 ..
+-rw-r--r--  1 runner runner 158410 Sep 29 20:00 n26.md
+
+/home/runner/work/n26-hunt/n26-hunt/knowledge:
+total 196
+drwxr-xr-x  2 runner runner   4096 Sep 29 20:00 .
+drwxr-xr-x 12 runner runner   4096 Sep 29 20:01 ..
+-rw-r--r--  1 runner runner 190809 Sep 29 20:00 index.md
+[0m
+[0m$ [0mcd /tmp/opencode && for h in xs2a.tech26.de aisp.tech26.de pisp.tech26.de; do echo "== $h"; getent ahostsv4 $h | awk '{print $1}' | sort -u; done; echo "== CNAME"; for h in xs2a.tech26.de; do python3 -c "import socket,sys; print(socket.gethostbyname_ex('$h'))"; done
+== xs2a.tech26.de
+18.195.172.188
+63.181.117.121
+63.183.253.185
+== aisp.tech26.de
+18.195.172.188
+63.181.117.121
+63.183.253.185
+== pisp.tech26.de
+18.195.172.188
+63.181.117.121
+63.183.253.185
+== CNAME
+('obnium-mtls-live-fra-328671153.eu-central-1.elb.amazonaws.com', ['xs2a.tech26.de'], ['18.195.172.188', '63.181.117.121', '63.183.253.185'])
+[0m
+[0m$ [0mcd /tmp/opencode && IP=18.195.172.188
+echo "### R1 CONTROL: SNI=xs2a Host=xs2a"
+curl -sS -o /dev/null -D - -m 20 --resolve xs2a.tech26.de:443:$IP https://xs2a.tech26.de/v1/berlin-group/v1/accounts -w 'EXIT_OK code=%{http_code} len=%{size_download}\n' 2>&1 | grep -iE '^(HTTP/|server:|content-length|www-authenticate|EXIT_OK)|curl:'
+sleep 5
+echo "### R2: SNI=<ip> Host=xs2a  (SNI-bypass test)"
+curl -sSk -o /dev/null -D - -m 20 https://$IP/v1/berlin-group/v1/accounts -H 'Host: xs2a.tech26.de' -w 'EXIT_OK code=%{http_code} len=%{size_download}\n' 2>&1 | grep -iE '^(HTTP/|server:|content-length|www-authenticate|EXIT_OK)|curl:'
+echo "rc=$?"
+### R1 CONTROL: SNI=xs2a Host=xs2a
+HTTP/2 401 
+content-length: 0
+server: istio-envoy
+EXIT_OK code=401 len=0
+### R2: SNI=<ip> Host=xs2a  (SNI-bypass test)
+HTTP/2 401 
+content-length: 0
+server: istio-envoy
+EXIT_OK code=401 len=0
+rc=0
+[0m
+[0m$ [0mcd /tmp/opencode && IP=18.195.172.188
+echo "### R3: bare IP, default vhost, path=API"
+curl -sSk -o /dev/null -D - -m 20 https://$IP/v1/berlin-group/v1/accounts -w 'EXIT_OK code=%{http_code} len=%{size_download}\n' 2>&1 | grep -iE '^(HTTP/|server:|content-length|www-authenticate|EXIT_OK)|curl:'
+echo "rc3=$?"
+sleep 5
+echo "### R4: Host=internal.example.com (foreign vhost)"
+curl -sSk -o /dev/null -D - -m 20 https://$IP/v1/berlin-group/v1/accounts -H 'Host: internal.example.com' -w 'EXIT_OK code=%{http_code} len=%{size_download}\n' 2>&1 | grep -iE '^(HTTP/|server:|content-length|www-authenticate|EXIT_OK)|curl:'
+echo "rc4=$?"
+sleep 5
+echo "### R5 CONTROL: foreign host + full bogus path (does a foreign vhost even exist?)"
+curl -sSk -o /dev/null -D - -m 20 https://$IP/v1/berlin-group/v1/zzqnotreal -H 'Host: internal.example.com' -w 'EXIT_OK code=%{http_code} len=%{size_download}\n' 2>&1 | grep -iE '^(HTTP/|server:|content-length|EXIT_OK)|curl:'
+### R3: bare IP, default vhost, path=API
+HTTP/2 404 
+content-length: 0
+server: istio-envoy
+EXIT_OK code=404 len=0
+rc3=0
+### R4: Host=internal.example.com (foreign vhost)
+HTTP/2 404 
+content-length: 0
+server: istio-envoy
+EXIT_OK code=404 len=0
+rc4=0
+### R5 CONTROL: foreign host + full bogus path (does a foreign vhost even exist?)
+HTTP/2 404 
+content-length: 0
+server: istio-envoy
+EXIT_OK code=404 len=0
+[0m
+[0m$ [0mcd /tmp/opencode && IP=18.195.172.188
+echo "### V1: BG path on PISP vhost (cross-plane reachability)"
+curl -sSk -o /dev/null -D - -m 20 https://$IP/v1/berlin-group/v1/accounts -H 'Host: pisp.tech26.de' -w 'v1_pisp_bg code=%{http_code} len=%{size_download}\n' 2>&1 | grep -iE '^(HTTP/|server:|content-length|v1_)|curl:'
+sleep 5
+echo "### V2: BG path on AISP vhost"
+curl -sSk -o /dev/null -D - -m 20 https://$IP/v1/berlin-group/v1/accounts -H 'Host: aisp.tech26.de' -w 'v2_aisp_bg code=%{http_code} len=%{size_download}\n' 2>&1 | grep -iE '^(HTTP/|server:|content-length|v2_)|curl:'
+sleep 5
+echo "### V3 CONTROL: FALLBACK path on PISP vhost (re-prove in-batch, 09-28 rule)"
+curl -sSk -o /dev/null -D - -m 20 https://$IP/api/openbanking/fallback/sepa-ct/zzqnotreal/status -H 'Host: pisp.tech26.de' -w 'v3_pisp_fb code=%{http_code} len=%{size_download}\n' 2>&1 | grep -iE '^(HTTP/|server:|content-length|v3_)|curl:'
+sleep 5
+echo "### V4: FALLBACK path on XS2A vhost (the reverse direction)"
+curl -sSk -o /dev/null -D - -m 20 https://$IP/api/openbanking/fallback/sepa-ct/zzqnotreal/status -H 'Host: xs2a.tech26.de' -w 'v4_xs2a_fb code=%{http_code} len=%{size_download}\n' 2>&1 | grep -iE '^(HTTP/|server:|content-length|v4_)|curl:'
+### V1: BG path on PISP vhost (cross-plane reachability)
+HTTP/2 404 
+content-length: 0
+server: istio-envoy
+v1_pisp_bg code=404 len=0
+### V2: BG path on AISP vhost
+HTTP/2 404 
+content-length: 0
+server: istio-envoy
+v2_aisp_bg code=404 len=0
+### V3 CONTROL: FALLBACK path on PISP vhost (re-prove in-batch, 09-28 rule)
+HTTP/2 401 
+content-length: 0
+server: istio-envoy
+v3_pisp_fb code=401 len=0
+### V4: FALLBACK path on XS2A vhost (the reverse direction)
+HTTP/2 404 
+content-length: 0
+server: istio-envoy
+v4_xs2a_fb code=404 len=0
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt/triage && echo "total runs: $(ls run-*.md | wc -l)"; echo "--- last 6 ---"; for f in $(ls run-*.md | tail -6); do printf "%s :: " "$f"; grep -oE '(err_[a-z0-9]+|LEADS empty|No leads provided|^$)' "$f" | head -1 | tr -d '\n'; grep -q 'err_' "$f" && echo "" || echo " [no-err]"; done; echo "--- ref list (last 8) ---"; grep -hoE 'err_[a-z0-9]+' run-*.md | tail -8
+total runs: 174
+--- last 6 ---
+run-2026-09-28-15-37.md :: err_7ff583c2
+run-2026-09-28-21-22.md :: err_ed472fed
+run-2026-09-29-01-14.md :: err_6b3f634b
+run-2026-09-29-07-00.md :: err_95bcb6ca
+run-2026-09-29-14-08.md :: err_8c0d533d
+run-2026-09-29-19-28.md :: err_1a705bc1
+--- ref list (last 8) ---
+err_57729933
+err_9a5c9130
+err_7ff583c2
+err_ed472fed
+err_6b3f634b
+err_95bcb6ca
+err_8c0d533d
+err_1a705bc1
+[0m
+## STEP 1 — DELTA
+
+- **[NEW]** `obnium-mtls-live-fra-328671153` (shared by `xs2a`/`aisp`/`pisp`.tech26.de) routes on the **Host header alone — SNI is not a routing key**. `https://18.195.172.188/v1/berlin-group/v1/accounts -H 'Host: xs2a.tech26.de'` (no SNI; RFC 6066 forbids IP literals in SNI, so none is sent) → `401|0 server: istio-envoy`, identical to the `--resolve xs2a.tech26.de:443:<ip>` control (R1). Two-layer route matching, not one.
+- **[NEW]** The mTLS-optional exposure is therefore **Host-bounded, not SNI-bounded**: bare-IP default vhost → `404|0` (R3); `Host: internal.example.com` → `404|0` (R4); same foreign Host + fabricated path → `404|0` (R5). No default or foreign vhost reaches the gate. This **narrows** FINAL#1's scope; it does not upgrade it.
+- **[NEW]** Cross-plane route-table separation on the shared ELB **re-proven with a same-batch live-route control**, which the 09-26 test lacked: `Host: pisp.tech26.de` + `/api/openbanking/fallback/sepa-ct/zzqnotreal/status` → `401|0` (control, gate fires, V3) while the *same vhost, same IP* + `/v1/berlin-group/v1/accounts` → `404` (V1); `Host: aisp.tech26.de` + Berlin-Group path → `404` (V2); `Host: xs2a.tech26.de` + fallback path → `404` (V4). The three tables are strictly disjoint **per vhost**. The 09-26 "audience separation enforced at routing layer" conclusion was right but under-evidenced — it used real hostnames, which is *consistent with* vhost routing without proving it. That gap is now closed.
+- **[CHANGED]** ELB node IPs rotated: `63.184.77.225` (hard-coded in my own last `[NEXT]`) → `18.195.172.188 / 63.181.117.121 / 63.183.253.185`. Same ELB name, zero surface delta. Caught by re-resolving instead of trusting the KB — second instance of the 09-28 self-inflicted-URL rule, this time in my own committed probe.
+- **[CHANGED]** The aggregated hypothesis file still ranks "SSRF-to-cloud-metadata via scheme-relative `redirect_uri`" at **confidence 95 as FINAL#1**, with RISK 94 — a claim its own author retracted on 09-29. The aggregate is stale relative to its own correction. No analyst re-raised it this cycle.
+- **[CHANGED]** Triage feeder: **6 consecutive** `Unexpected server error` runs (`err_7ff583c2`, `err_ed472fed`, `err_6b3f634b`, `err_95bcb6ca`, `err_8c0d533d`, `err_1a705bc1`); three new since my last cycle. Intake dead ~7 days.
+
+## STEP 2 — PRIORITIZE
+
+- **[PRIO]** xs2a.tech26.de,score=9.2,axis=a=9,b=10,t=10,g=7,c=10,f=9
+- **[PRIO]** api.tech26.de,score=8.3,axis=a=8,b=9,t=6,g=9,c=9,f=9
+- **[PRIO]** pisp.tech26.de,score=8.1,axis=a=7,b=9,t=7,g=9,c=9,f=8
+
+## STEP 3 — HYPOTHESES
+
+[HYP] mTLS on the Berlin-Group XS2A API is advertised but optional, and the edge requires no SNI to route to it
+class: AUTH
+asset: xs2a.tech26.de/v1/berlin-group/v1/* (and /sandbox/v1/berlin-group/v1/*)
+confidence: 88
+reasoning: Server sends a TLS CertificateRequest with an EMPTY certificate_authorities list (09-28), so a client with no certificate completes TLS1.3; Berlin Group mandates an eIDAS QWAC on every TPP request and N26's own public support page states aisp/pisp require a qualified certificate. This cycle: routing is on the Host header alone, so no SNI negotiation for any `*.tech26.de` name is required to reach the API (R2 ≡ R1). Exposure is Host-bounded (R3/R4/R5 all `404|0`).
+evidence_needed: A request presenting a genuine QWAC and a request presenting none returning distinguishable results on the same route — currently they cannot be distinguished at all, which is the finding.
+verify_steps: Already run, this cycle, read-only: `curl -sSk -o /dev/null -D - -m 20 https://18.195.172.188/v1/berlin-group/v1/accounts -H 'Host: xs2a.tech26.de'` → `401|0 istio-envoy`; same with `--resolve` (control) → identical. `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -msg` → CertificateRequest present, empty CA list. No client certificate exists for the positive arm.
+impact: A qualified-eIDAS identity is never required to reach the production Berlin-Group AIS/PIS authorization and payment-initiation surface; the stated control is absent at every layer. Severity HIGH.
+testability: PASSIVE
+
+[HYP] The legacy `/api/*` auth middleware is verb-scoped to GET, leaving write verbs on wildcard-covered money-movement paths outside the observed gate
+class: AUTH
+asset: api.tech26.de/api/accounts/{id}/{transfer,beneficiaries,approvals} (siblings beta-api.tech26.de, sapi.tech26.de)
+confidence: 55
+reasoning: The 09-28 finding resolved the `401|211` as a **GET-scoped** middleware mounted on wildcard patterns `/api/accounts/**` and `/api/statements/**` (fabricated sub-resource `/api/accounts/1/zzqnotreal` returns a body byte-identical to `/api/accounts/1/tans`). But the same batch proved the edge routes **only GET** (HEAD and OPTIONS → `404|0` on live routes, proven on all five hosts). Those two facts are equally consistent with (a) the middleware covering only GET, and (b) the middleware covering all verbs with only GET ever reaching it. Nothing in-envelope can separate them, because OPTIONS/HEAD are method-opaque (`404` for everything, 09-28) and a non-GET 404 is evidence about the edge, never about the route. The `transfer`, `beneficiaries` and `approvals` nouns are the money-movement and payee-mutation members of the 15-route family.
+evidence_needed: One unauthenticated POST to a wildcard-covered money-movement path. A `401` means the gate is verb-general and this closes; anything other than 401/404 (405, 5xx, or a business-logic error body) means the gate does not cover that verb.
+verify_steps: In-envelope substitutes are exhausted and provably uninformative — see the two re-proven negatives this cycle. The resolving request is a single unauthenticated POST with no body and no credentials, which cannot mutate anything: `curl -sS -o /dev/null -D - -m 20 -X POST https://api.tech26.de/api/accounts/1/transfer -H 'Content-Type: application/json' -d '{}' -w 'code=%{http_code} len=%{size_download}\n'`
+impact: If the gate is verb-scoped, money-movement and payee-mutation routes on a namespace N26 committed to retire in Jan 2024 are reachable without a token, and the whole `/api/*` authentication boundary is a GET-only illusion. Severity HIGH. Confidence is deliberately 55: no in-envelope measurement bears on it either way.
+testability: AUTH_HELPED
+
+[HYP] The PSD2 Fallback resource API authenticates nothing — the gate is pre-auth and credential-blind
+class: AUTH
+asset: pisp.tech26.de/api/openbanking/fallback/*, aisp.tech26.de/api/v2/*
+confidence: 75
+reasoning: `401|0` empty body, no `WWW-Authenticate`, byte-identical (md5 `d41d8cd9…`) across no-auth, N26's own published `android:secret` Basic fixture, wrong Basic and wrong Bearer. The gate is class-scoped and app-layer, licensed as evidence of absence only by the same-batch timing control (`401|0` @8ms vs `404|0` @1ms). Re-proved in-batch this cycle (V3 = `401|0`). Fallback-tier POSTs `sepa-ct` and `sepa-instant` are the money-movement members, and ROPC `grant_type=password` is documented for both fallback hosts.
+evidence_needed: A response that varies when a valid credential is presented on a documented POST route. Nothing in-envelope can supply this: the resource plane is GET-only from outside and the credential dimension is only observable on a write.
+verify_steps: Baseline re-run this cycle: `curl -sSk -o /dev/null -D - -m 20 https://18.195.172.188/api/openbanking/fallback/sepa-ct/zzqnotreal/status -H 'Host: pisp.tech26.de'` → `401|0 istio-envoy`. The discriminating request is the same path with `-u android:secret` and with a wrong Basic, and it was already shown identical. The unresolved arm requires a TPP credential and a POST; both are outside this envelope.
+impact: The sole control on standing-order and SEPA-credit-transfer initiation evaluates no client credential, so it cannot distinguish a registered TPP from an anonymous one. Severity MEDIUM.
+testability: AUTH_HELPED
+
+## STEP 4 — SELF-CRITIQUE
+
+- **[PARKED]** "SSRF-to-cloud-metadata via scheme-relative `redirect_uri`" (confidence 95 in the aggregate, was FINAL#1 at 93→94): **retracted, again.** Two independent grounds. First, the filter-scope control — it fires on invented parameter names (`state`, `foo`, `request_uri` → `403 awselb/2.0`), so it is a generic query-string blocklist and there was never a `redirect_uri` control to bypass. Second, and decisive, the SSRF framing was structurally impossible: an OAuth `redirect_uri` is followed by the **user's browser** in a 302, never fetched server-side, so no AS-side request to `169.254.169.254` can occur regardless of filter scope. The aggregate ranking it at 95 is a queue defect, not evidence.
+- **[PARKED]** "The AS performs no pre-auth `redirect_uri` value validation": a missing feature, not a bypass, and it is moot given the above. Closed 09-29, not re-raised.
+- **[PARKED]** "The SNI/Host question committed last cycle": **discharged, and it is a negative.** The answer is Host-bounded exposure, which produces no hypothesis. Logged because "the committed probe returned a narrowing answer" is report-relevant and stops a later cycle re-running it.
+- **[PARKED]** Duplicated `X-Content-Type-Options`/`X-Frame-Options`/`X-XSS-Protection` on the fallback hosts: descriptive headers only, explicitly out of scope.
+- **[FINAL]** 1. **xs2a.tech26.de AUTH (88)** — QWAC/mTLS advertised-but-optional at the production edge, and no SNI required to route. This cycle *narrowed* the scope (Host-bounded) without touching the core finding.
+- **[FINAL]** 2. **api/beta-api/sapi AUTH (55)** — verb-scoping of the wildcard auth middleware is genuinely unknown and is the cheapest unmeasured axis on the assigned target. Promoted into FINAL on the strength of the 09-28 GET-scoping resolution plus this cycle's proof that the edge routes only GET, which is what makes the ambiguity real rather than hypothetical.
+- **[FINAL]** 3. **pisp.tech26.de AUTH (75)** — credential-blind pre-auth gate on a money-movement surface, re-proved in-batch. Unchanged.
+- **[FINAL]** (demoted, informational) **api/beta-api/sapi MISCONFIG** — unfulfilled 2023-10-02 deprecation, 2.75 years, wildcard-gated PII/TAN/card namespace. Still true; still AUTH_HELPED; outranked this cycle only because the verb-scoping question is answerable sooner.
+
+## STEP 5 — NEXT ACTION
+
+**[NEXT]** PROBE: the single request that resolves FINAL#2's verb-scoping ambiguity — `curl -sS -o /dev/null -D - -m 20 -X POST https://api.tech26.de/api/accounts/1/transfer -H 'Content-Type: application/json' -d '{}' -w 'code=%{http_code} len=%{size_download}\n'`. Unauthenticated, empty body, no customer data, no valid credential, and therefore incapable of mutating anything. `401` closes the hypothesis (gate is verb-general); `404` is a route/edge answer and proves nothing per the 09-28 rule; anything else means the `/api/*` authentication boundary does not cover write verbs on money-movement paths. I am not issuing it: the envelope is GET/HEAD/OPTIONS, and this cycle re-proven in-envelope that both substitutes are uninformative (HEAD and OPTIONS are method-opaque on this host, `404|0` on live routes). One-line approval.
+
+## STEP 6 — LEARNING
+
+- **[LEARN]** ACCEPTED OTHER @ xs2a.tech26.de: the shared ELB routes on the **Host header alone**; SNI is not a routing key, and exposure to the mTLS-optional API is **Host-bounded**. Generalised: on a shared load balancer, "a different hostname" is not a deployment boundary. A cross-plane test must therefore be run by **selecting the vhost with a `Host` header against a fixed IP**, not by relying on the name typed into the URL — my 09-26 audience-separation test used real hostnames, which is *consistent with* vhost routing but does not prove it, and the re-run with a same-batch live-route control on the same vhost is what actually licenses the 404s as evidence of absence.
+- **[LEARN]** REJECTED OTHER @ api.tech26.de: the legacy `/api/*` auth middleware's **verb coverage is undetermined and cannot be determined within a GET/HEAD/OPTIONS envelope**. The 09-28 resolution called it a "GET-scoped" middleware, but the same batch proved the edge routes only GET — so "middleware is GET-only" and "middleware is verb-general but only GET ever reaches it" are observationally identical from outside. Rule: **where the transport itself is restricted, a control measured only on the permitted verb cannot be generalised across verbs.** The five 401s prove a path-pattern middleware; they say nothing about which methods it wraps.
+- **[LEARN]** REJECTED OTHER @ process: my own committed `[NEXT]` from last cycle hard-coded ELB IP `63.184.77.225`, which has since rotated. Had I run it as written I would have hit a stale or foreign address and recorded a confident negative about an IP that no longer fronts the service. Rule extension of the 09-28 NXDOMAIN lesson: **re-resolve every host and IP in a committed probe at execution time; a KB-recorded IP is a snapshot, and load-balancer node pools rotate on a timescale of days.** Two self-inflicted-URL events in two cycles is enough to make this a standing check.
+- **[LEARN]** ACCEPTED OTHER @ process: the 09-28 "run a fabricated-sibling control on the same path shape" rule paid off a fourth time, and this cycle it produced a *negative that closes an axis* rather than a positive — V3 (`401` on the pisp vhost, same batch, same IP, same path shape) is what made V1/V2/V4's `404`s meaningful. Without it I would have had four 404s and nothing to say. Rule: a control's value is not that it confirms your hypothesis; it is that it makes your negative admissible.
+
+## STEP 7 — RISK
+
+**[RISK]** N26 Bank AG: **86, down from 93.** Nine requests, all GET, all bodies zero-length, no credential, no mutation, no customer data touched. The direction of this cycle's change matters more than its size, and it is downward on two axes. First, the headline is now **narrower**: the mTLS/QWAC exposure on `xs2a.tech26.de` is proven Host-bounded, so the blast radius is three named vhosts on one ELB rather than "anything that resolves the ELB" — that is a materially better-founded report than the one the aggregate is currently carrying at RISK 94. Second, and larger, the cycle removed a **token-audience-confusion axis from the second-ranked asset** with a controlled measurement, and discharged a committed probe instead of re-probing a frozen boundary. The specific risk that fell is self-inflicted reporting risk: the aggregate's top item is a claim its own author retracted, and its SSRF framing was never mechanically possible because an OAuth `redirect_uri` is followed by the browser, not the server — a report built on it would have cost credibility on the two findings that are real. What did not fall: `xs2a` QWAC remains unenforced at every layer, the `/api/*` namespace remains 2.75 years past deprecation on a wildcard-gated PII/TAN/card surface, and the Fallback PISP resource plane still authenticates nothing. Outstanding coordinator inputs in cost order: **(1)** one-line envelope approval for the single `POST /api/accounts/1/transfer` — cheapest by an order of magnitude and now the highest-value unresolved question; **(2)** a test QWAC for `xs2a`; **(3)** paired-device grant tokens for `api.tech26.de`; **(4)** TPP test tokens for the `aisp`/`pisp` role-separation and BOLA tests. The pipeline outage is now the largest single risk to the engagement: the feeder has errored 6 consecutive times (~7 days dead) and `probe-results.md` has carried only empty section headers since 2026-09-26, so every retraction and confirmation in this cycle is currently reaching nobody.

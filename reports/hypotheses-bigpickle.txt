@@ -1,43 +1,28 @@
-## 2026-09-29 15:05:28 UTC [target] (model bigpickle)
-[NEW] xs2a.tech26.de/sandbox/oauth2/authorize: identical ALB blocklist bypass CONFIRMED — scheme-relative `//169.254.169.254/` reaches application layer (401 istio-envoy) while `https://127.0.0.1@evil.example/` blocked at ALB (403)
-[CHANGED] api.tech26.de / beta-api.tech26.de / sapi.tech26.de: legacy Bearer-gated `/api/*` family gate RESOLVED as GET-scoped wildcard middleware (fabricated sub-resources return same 401 as live) — invalidates prior prefix-firewall characterization
-[PRIO] xs2a.tech26.de (XS2A Berlin-Group + OAuth + sandbox co-tenant),score=9.6,axis=a=9,b=10,t=10,g=7,c=10,f=9
-[PRIO] api.tech26.de (legacy /api/* wildcard-gated PII/TAN family, unfulfilled deprecation),score=8.4,axis=a=8,b=9,t=6,g=9,c=9,f=9
-[PRIO] pisp.tech26.de (fallback PISP, credential-blind gate, money-movement surface),score=8.1,axis=a=7,b=9,t=7,g=9,c=9,f=8
-[HYP] SSRF-to-cloud-metadata via scheme-relative redirect_uri on xs2a.tech26.de OAuth authorize (production+sandbox)
-class: SSRF
-asset: xs2a.tech26.de/oauth2/authorize and /sandbox/oauth2/authorize
-confidence: 95
-reasoning: ALB-level redirect_uri blocklist requires scheme:// literal and performs no URI parsing; scheme-relative //169.254.169.254/ bypasses to application layer (401 istio-envoy) while https:// URIs with blocked hosts are cut at ALB (403 awselb/2.0). Identical behavior on sandbox co-tenant on production host.
-evidence_needed: HTTP 401 from application layer when redirect_uri=//169.254.169.254/ (not ALB 403), confirming bypass reaches AS and could be influenced by redirect target processing.
-verify_steps: PASSIVE: curl -v "https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&redirect_uri=//169.254.169.254/&response_type=code&scope=DEDICATED_AISP" -> confirm 401 istio-envoy (no awselb 403 body). PASSIVE: repeat against "https://xs2a.tech26.de/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&redirect_uri=//169.254.169.254/&response_type=code&scope=DEDICATED_AISP".
-impact: Authorization server reachable with redirect target pointing to cloud metadata (169.254.169.254) and other RFC1918/loopback via scheme-relative; can chain to metadata/token disclosure depending on AS redirect handling. Severity: HIGH
-testability: PASSIVE
-[HYP] Legacy /api/* wildcard-gated PII/TAN/card surface on api/beta-api/sapi exceeds enumerated routes (deprecation unfulfilled)
-class: IDOR
-asset: api.tech26.de/api/accounts/**, /api/statements/**; beta-api.tech26.de; sapi.tech26.de
-confidence: 86
-reasoning: GET-scoped wildcard middleware fires on /api/accounts/** and /api/statements/** (fabricated sub-resources return 401 len=211 identical to live, md5 d58528c924…); deprecation announced 2023-10-02 to disable /api/me,/api/accounts by Jan 2 2024 remains unfulfilled on three hosts; 15-endpoint family is lower bound due to wildcard depth.
-evidence_needed: Paired-device/Bearer token confirming live account/TAN/card data returned for valid account IDs and non-enumerable for others; route extent beyond enumerated 15.
-verify_steps: PASSIVE baseline (confirm): curl -s -o /dev/null -w "api/accounts/1/zzqnotreal %{http_code}|%{size_download}\n" https://api.tech26.de/api/accounts/1/zzqnotreal -> 401|211. AUTH_HELPED: with valid token, GET /api/accounts/{id}/{statements,tans,cards,bookings} for owned vs non-owned IDs to detect horizontal/vertical access.
-impact: Cross-tenant/account access to statements, addresses, cards, TAN/approvals on namespace N26 committed to remove. Severity: HIGH
-testability: AUTH_HELPED
-[HYP] Fallback PISP resource API is credential-blind pre-auth gate (money-movement surface lacks credential semantics)
+## 2026-09-29 20:04:59 UTC [target] (model bigpickle)
+[HYP] mTLS on the Berlin-Group XS2A API is advertised but optional, and the edge requires no SNI to route to it
 class: AUTH
-asset: pisp.tech26.de (PSD2 Fallback PISP)
-confidence: 75
-reasoning: 401|0/empty with no WWW-Authenticate identical across no-auth, Basic fixture, wrong Basic, wrong Bearer on class-scoped fallback routes; app-layer gate fires class-wide (401 vs 404 at class boundary) while not evaluating credentials. POST-only money-movement endpoints documented (sepa-ct, sepa-instant).
-evidence_needed: Response body/headers must vary when valid vs invalid credential presented on a documented POST route; if unchanged, gate is credential-blind.
-verify_steps: PASSIVE: curl -s -m 20 -o /dev/null -w "noauth %{http_code}|%{size_download}\n" https://pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzznotreal/status -> 401|0. PASSIVE: curl -s -m 20 -o /dev/null -w "badbasic %{http_code}|%{size_download}\n" -u nonexistent:wrong https://pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzznotreal/status -> expect code/size/headers to differ if credential evaluated; confirm equality (401|0, no WWW-Authenticate). AUTH_HELPED: test documented POST routes with valid TPP credential.
-impact: Authentication boundary on fallback PISP does not validate presented credential (gate is pre-auth only) — reduces assurance of TPP identity before money-movement operations. Severity: MEDIUM
+asset: xs2a.tech26.de/v1/berlin-group/v1/* (and /sandbox/v1/berlin-group/v1/*)
+confidence: 88
+reasoning: Server sends a TLS CertificateRequest with an EMPTY certificate_authorities list (09-28), so a client with no certificate completes TLS1.3; Berlin Group mandates an eIDAS QWAC on every TPP request and N26's own public support page states aisp/pisp require a qualified certificate. This cycle: routing is on the Host header alone, so no SNI negotiation for any `*.tech26.de` name is required to reach the API (R2 ≡ R1). Exposure is Host-bounded (R3/R4/R5 all `404|0`).
+evidence_needed: A request presenting a genuine QWAC and a request presenting none returning distinguishable results on the same route — currently they cannot be distinguished at all, which is the finding.
+verify_steps: Already run, this cycle, read-only: `curl -sSk -o /dev/null -D - -m 20 https://18.195.172.188/v1/berlin-group/v1/accounts -H 'Host: xs2a.tech26.de'` → `401|0 istio-envoy`; same with `--resolve` (control) → identical. `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -msg` → CertificateRequest present, empty CA list. No client certificate exists for the positive arm.
+impact: A qualified-eIDAS identity is never required to reach the production Berlin-Group AIS/PIS authorization and payment-initiation surface; the stated control is absent at every layer. Severity HIGH.
+testability: PASSIVE
+[HYP] The legacy `/api/*` auth middleware is verb-scoped to GET, leaving write verbs on wildcard-covered money-movement paths outside the observed gate
+class: AUTH
+asset: api.tech26.de/api/accounts/{id}/{transfer,beneficiaries,approvals} (siblings beta-api.tech26.de, sapi.tech26.de)
+confidence: 55
+reasoning: The 09-28 finding resolved the `401|211` as a **GET-scoped** middleware mounted on wildcard patterns `/api/accounts/**` and `/api/statements/**` (fabricated sub-resource `/api/accounts/1/zzqnotreal` returns a body byte-identical to `/api/accounts/1/tans`). But the same batch proved the edge routes **only GET** (HEAD and OPTIONS → `404|0` on live routes, proven on all five hosts). Those two facts are equally consistent with (a) the middleware covering only GET, and (b) the middleware covering all verbs with only GET ever reaching it. Nothing in-envelope can separate them, because OPTIONS/HEAD are method-opaque (`404` for everything, 09-28) and a non-GET 404 is evidence about the edge, never about the route. The `transfer`, `beneficiaries` and `approvals` nouns are the money-movement and payee-mutation members of the 15-route family.
+evidence_needed: One unauthenticated POST to a wildcard-covered money-movement path. A `401` means the gate is verb-general and this closes; anything other than 401/404 (405, 5xx, or a business-logic error body) means the gate does not cover that verb.
+verify_steps: In-envelope substitutes are exhausted and provably uninformative — see the two re-proven negatives this cycle. The resolving request is a single unauthenticated POST with no body and no credentials, which cannot mutate anything: `curl -sS -o /dev/null -D - -m 20 -X POST https://api.tech26.de/api/accounts/1/transfer -H 'Content-Type: application/json' -d '{}' -w 'code=%{http_code} len=%{size_download}\n'`
+impact: If the gate is verb-scoped, money-movement and payee-mutation routes on a namespace N26 committed to retire in Jan 2024 are reachable without a token, and the whole `/api/*` authentication boundary is a GET-only illusion. Severity HIGH. Confidence is deliberately 55: no in-envelope measurement bears on it either way.
 testability: AUTH_HELPED
-[FINAL] 1) SSRF-to-cloud-metadata via scheme-relative redirect_uri on xs2a.tech26.de OAuth authorize (production+sandbox) — confidence 95, PASSIVE
-[FINAL] 2) Legacy /api/* wildcard-gated PII/TAN/card surface on api/beta-api/sapi exceeds enumerated routes — confidence 86, AUTH_HELPED
-[FINAL] 3) Fallback PISP resource API is credential-blind pre-auth gate — confidence 75, AUTH_HELPED
-[PARKED] Redirect_uri blocklist findings reclassified as generic query-string filter (not OAuth redirect_uri control) — previously misread scope/field; no OAuth control bypass demonstrated by controls.
-[NEXT] PROBE: curl -v "https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&redirect_uri=//169.254.169.254/&response_type=code&scope=DEDICATED_AISP" -m 20 (and identical against /sandbox/oauth2/authorize) to confirm 401 istio-envoy (ALB bypass) vs 403 awselb/2.0.
-[LEARN] ACCEPTED SSRF @ xs2a.tech26.de/oauth2/authorize and /sandbox/oauth2/authorize: scheme-relative redirect_uri bypasses ALB substring blocklist (requires scheme://) reaching application layer; behavior confirmed identical across production and sandbox co-tenant.
-[LEARN] ACCEPTED IDOR @ api.tech26.de/api/accounts/**, beta-api.tech26.de, sapi.tech26.de: GET-scoped wildcard middleware returns identical 401 for live/fabricated sub-resources; deprecation unfulfilled 2.75 years.
-[LEARN] ACCEPTED AUTH @ pisp.tech26.de/api/openbanking/fallback/*: credential-blind pre-auth gate (identical 401 across credential shapes) on class-scoped money-movement surface.
-[LEARN] REJECTED OATH @ xs2a.tech26.de: redirect_uri blocklist is generic query-string substring filter (not scoped to redirect_uri field semantics) — OAuth control bypass not demonstrated.
-[RISK] N26 Bank AG: 94 — scheme-relative redirect_uri bypass on xs2a.tech26.de OAuth authorize (production+sandbox, ALB substring filter with no URI parsing) enables SSRF-to-cloud-metadata chain potential; legacy wildcard-gated /api/* PII/TAN/card surface on three hosts remains live 2.75 years past deprecation (IDOR blast radius); fallback PISP credential-blind gate weakens auth assurance on money-movement endpoints. Three PASSIVE/AUTH_HELPED findings with concrete verification.
+[HYP] The PSD2 Fallback resource API authenticates nothing — the gate is pre-auth and credential-blind
+class: AUTH
+asset: pisp.tech26.de/api/openbanking/fallback/*, aisp.tech26.de/api/v2/*
+confidence: 75
+reasoning: `401|0` empty body, no `WWW-Authenticate`, byte-identical (md5 `d41d8cd9…`) across no-auth, N26's own published `android:secret` Basic fixture, wrong Basic and wrong Bearer. The gate is class-scoped and app-layer, licensed as evidence of absence only by the same-batch timing control (`401|0` @8ms vs `404|0` @1ms). Re-proved in-batch this cycle (V3 = `401|0`). Fallback-tier POSTs `sepa-ct` and `sepa-instant` are the money-movement members, and ROPC `grant_type=password` is documented for both fallback hosts.
+evidence_needed: A response that varies when a valid credential is presented on a documented POST route. Nothing in-envelope can supply this: the resource plane is GET-only from outside and the credential dimension is only observable on a write.
+verify_steps: Baseline re-run this cycle: `curl -sSk -o /dev/null -D - -m 20 https://18.195.172.188/api/openbanking/fallback/sepa-ct/zzqnotreal/status -H 'Host: pisp.tech26.de'` → `401|0 istio-envoy`. The discriminating request is the same path with `-u android:secret` and with a wrong Basic, and it was already shown identical. The unresolved arm requires a TPP credential and a POST; both are outside this envelope.
+impact: The sole control on standing-order and SEPA-credit-transfer initiation evaluates no client credential, so it cannot distinguish a registered TPP from an anonymous one. Severity MEDIUM.
+testability: AUTH_HELPED
