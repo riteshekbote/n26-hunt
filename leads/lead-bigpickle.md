@@ -7475,3 +7475,4 @@ testability: AUTH_HELPED
 [LEARN] REJECTED OTHER @ xs2a.tech26.de OAuth plane: notation-hunting (hex/octal/userinfo/ports/scheme-relative forms) produced many reproducible bypasses of a generic ALB substring blocklist but did not demonstrate an OAuth redirect_uri control bypass (filter is field-agnostic and not scoped to redirect_uri semantics). The OAuth control bypass was retracted.
 [LEARN] ACCEPTED OTHER @ program: a control is a property of the request path it was measured on, not of the edge/cert/ELB shared across siblings; controls must be re-proved on each sibling tier before being treated as program-level.
 [RISK] N26 Bank AG: 92 — the highest item (xs2a.tech26.de mTLS collected and discarded) is now PASSIVE-VERIFIED and reportable as HIGH; the two AUTH_HELPED items are MEDIUM. Pipeline is blocked on credential/scope supply for the latter, not on further anonymous probing.
+## 2026-09-30 16:19:00 UTC [target] (model bigpickle)
