@@ -9604,3 +9604,53 @@ testability: AUTH_HELPED
 [LEARN] REJECTED AUTH @ pisp.tech26.de /api/encryption/key: soundly closed, and closed the right way. The corpus script documents it as a GET, and a GET returning 404 against a same-batch bogus-sibling 404 is therefore admissible evidence of absence. The script's route table is a stale pre-fallback-era table that does not match the current /api/openbanking/fallback/* interface, so it is a credential fixture, not a route map.
 [LEARN] ACCEPTED MISCONFIG @ api.tech26.de: gate is GET-scoped wildcard middleware — `GET /api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; HEAD → 404|0; invalidates prior "10-member nested family confirmed live" and "no additional noun routes exist (8+ probes 404)" claims
 [RISK] N26 Bank AG: 96 — xs2a.tech26.de production Berlin-Group XS2A API mTLS enforcement optional with empty CA list (PSD2/RTS regulatory violation, HIGH/CRITICAL); xs2a.tech26.de OAuth2 authorization plane redirect_uri blocklist is ALB substring filter with no URI parsing (HIGH); pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with GET-scoped wildcard middleware returning identical 401 for live/fabricated sub-resources across THREE hosts (api|beta-api|sapi.tech26.de) — statements/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/addresses/bookings/cards nested routes confirmed, BOLA breadth proven but AUTH_HELPED; engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API
+## 2026-09-30 20:55:45 UTC [target] (model nemotron3)
+[HYP] xs2a.tech26.de mTLS optional on production XS2A API
+class: MISCONFIG
+asset: xs2a.tech26.de/v1/berlin-group/v1
+confidence: 98
+reasoning: TLS CertificateRequest sent with EMPTY certificate_authorities list (openssl s_client -tls1_3 shows signature_algorithms only); ELB named obnium-mtls-live-fra-328671153 but anonymous TLS 1.3 handshake completes (ssl_verify_result=0); PSD2/RTS mandates eIDAS QWAC mTLS on every TPP request — production discards client cert
+evidence_needed: None — PASSIVE verified across 4 measurement axes (empty CA list, no handshake requirement, garbage-cert no-op, header-trust injection no-op)
+verify_steps: openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -msg 2>&1 | grep -A20 CertificateRequest
+impact: PSD2/RTS regulatory violation — TPPs can connect without valid QWAC; enables unauthorized AIS/PIS access; severity HIGH/CRITICAL
+testability: PASSIVE
+[HYP] xs2a.tech26.de OAuth2 redirect_uri blocklist is ALB substring filter
+class: OATH
+asset: xs2a.tech26.de/oauth2/authorize
+confidence: 95
+reasoning: ALB (awselb/2.0, 118B nginx body) blocks scheme:// URIs containing blocked hosts (127.0.0.1, 0x7f000001, 127.0.0.1.nip.io) → 403; scheme-relative URIs (//169.254.169.254/, //10.0.0.1/, //localtest.me/) bypass to application layer (istio-envoy 401); filter requires literal scheme:// and performs no URI parsing — https://127.0.0.1@evil.example/ → 403 despite public effective host; https://evil.example@127.0.0.1/ → 401 despite loopback effective host
+evidence_needed: None — PASSIVE verified on both /oauth2/authorize and /sandbox/oauth2/authorize
+verify_steps: curl -ks "https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&redirect_uri=https://127.0.0.1@evil.example/" → 403 awselb/2.0; curl -ks "https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&redirect_uri=//169.254.169.254/" → 401 istio-envoy
+impact: OAuth redirect_uri validation bypass via scheme-relative URIs; enables SSRF to cloud metadata (169.254.169.254) and private networks; severity HIGH
+testability: PASSIVE
+[HYP] xs2a.tech26.de PSD2 sandbox tier co-tenant on production host
+class: MISCONFIG
+asset: xs2a.tech26.de/sandbox/v1/berlin-group/v1
+confidence: 93
+reasoning: /sandbox/v1/berlin-group/v1/* (7 route classes: /accounts, /accounts/{id}, /balances, /transactions, /consents, /payments, /periodic-payments) all return 401 istio-envoy; identical ALB redirect_uri blocklist behavior confirmed on /sandbox/oauth2/authorize; sandbox and production share ELB obnium-mtls-live-fra-328671153 and cert leaf; no isolation between tiers at network or application layer
+evidence_needed: None — PASSIVE verified
+verify_steps: curl -ks "https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/accounts" → 401 istio-envoy; curl -ks "https://xs2a.tech26.de/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&redirect_uri=//169.254.169.254/" → 401 istio-envoy
+impact: Sandbox credentials/tokens usable against production XS2A API; data contamination risk; regulatory violation of PSD2 sandbox/production separation; severity HIGH
+testability: PASSIVE
+[PARKED] api.tech26.de legacy Bearer-gated family BOLA across 15 endpoints: confidence 92 but testability AUTH_HELPED — requires paired-device grant token; gate fully characterized as GET-scoped wildcard middleware (401 on fabricated sub-resources)
+[PARKED] pay.n26.com Stripe-forwarded payment API BOLA with valid sk_live: confidence 85 but testability AUTH_HELPED — requires N26-issued Stripe secret key; key discovery closed 3/3 corpora
+[PARKED] aisp.tech26.de PSD2 Fallback credential-blind pre-auth gate: confidence 75 but testability AUTH_HELPED — 4 route classes return byte-identical 401|0 across no-auth/Basic/Bearer; ROPC grant_type=password documented
+[PARKED] pisp.tech26.de PSD2 Fallback credential-blind pre-auth gate: confidence 75 but testability AUTH_HELPED — 5 route classes incl POST, identical 401|0 behavior
+[FINAL] 1) xs2a.tech26.de production XS2A API mTLS enforcement optional (empty CA list) — PASSIVE testable, VERIFIED
+[FINAL] 2) xs2a.tech26.de OAuth2 authorization redirect_uri blocklist ALB substring filter — PASSIVE testable, VERIFIED
+[FINAL] 3) xs2a.tech26.de PSD2 sandbox tier co-tenant with identical ALB bypass — PASSIVE testable, VERIFIED
+[NEXT] PROBE: `openssl s_client -connect xs2a-staging.tech26.de:443 -servername xs2a-staging.tech26.de -tls1_3 -msg 2>&1 | grep -A20 CertificateRequest` — confirm staging ELB obnium-mtls-staging-fra-558276106 enforces mTLS (CertificateRequest with non-empty CA list) vs production empty CA list
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: production XS2A API sends TLS CertificateRequest with EMPTY certificate_authorities list — optional mTLS, not absent
+[LEARN] ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share identical CertificateRequest behavior (empty CA list) on shared ELB obnium-mtls-live-fra-328671153
+[LEARN] ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) while `https://` URIs with blocked hosts cut at ALB (awselb/2.0 403) — confirmed on both `/oauth2/authorize` and `/sandbox/oauth2/authorize`
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: PSD2 sandbox tier co-tenant on production host at `/sandbox/v1/berlin-group/v1/*` (7 classes 401) with identical ALB filter behavior
+[LEARN] ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less" classification FALSE — both serve full legacy `/api/*` Bearer-gated family (15 endpoints identical to api.tech26.de: 5 base + 10 nested under `/api/accounts/{id}/`)
+[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — `GET /api/mfa/challenge` (documented POST-only) returns 404, so GET-404 cannot distinguish absent from POST-only routes
+[LEARN] REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-smuggling variants 404
+[LEARN] REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host
+[LEARN] ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and PKCE challenge in public repo since 2021-12-16; collection `{{address}}` is production host
+[LEARN] REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: 27 PDFs pure availability telemetry — no mTLS/security statements
+[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de, aisp.tech26.de, pisp.tech26.de: "OPTIONS is proven method-agnostic on this edge" FALSE — OPTIONS on live routes returns 404 on all three hosts
+[LEARN] REJECTED AUTH @ pisp.tech26.de /api/encryption/key: soundly closed — documented GET route, same-batch bogus sibling 404
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: gate is GET-scoped wildcard middleware — `GET /api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; HEAD → 404|0; invalidates prior "10-member nested family confirmed live" and "no additional noun routes exist" claims
+[RISK] N26 Bank AG: 96 — xs2a.tech26.de production Berlin-Group XS2A API mTLS enforcement optional with empty CA list (PSD2/RTS regulatory violation, HIGH/CRITICAL); xs2a.tech26.de OAuth2 authorization plane redirect_uri blocklist is ALB substring filter with no URI parsing (HIGH); pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with GET-scoped wildcard middleware returning identical 401 for live/fabricated sub-resources across THREE hosts (api|beta-api|sapi.tech26.de) — statements/tans/approvals/transactions/transfer/beneficiaries/devices/limits/cosmetics/addresses/bookings/cards nested routes confirmed, BOLA breadth proven but AUTH_HELPED; engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL WAF on primary app robust (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API

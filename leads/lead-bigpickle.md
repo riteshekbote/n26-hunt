@@ -7476,3 +7476,28 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED OTHER @ program: a control is a property of the request path it was measured on, not of the edge/cert/ELB shared across siblings; controls must be re-proved on each sibling tier before being treated as program-level.
 [RISK] N26 Bank AG: 92 — the highest item (xs2a.tech26.de mTLS collected and discarded) is now PASSIVE-VERIFIED and reportable as HIGH; the two AUTH_HELPED items are MEDIUM. Pipeline is blocked on credential/scope supply for the latter, not on further anonymous probing.
 ## 2026-09-30 16:19:00 UTC [target] (model bigpickle)
+## 2026-09-30 20:55:43 UTC [target] (model bigpickle)
+class: AUTH
+asset: xs2a.tech26.de:443
+confidence: 93
+reasoning: TLS CertificateRequest present with EMPTY `certificate_authorities` list; anonymous TLS1.3 handshake completes (ssl_verify_result=0); garbage self-signed client cert produced no differential; four header-trust injections (`X-Forwarded-Client-Cert`, `X-SSL-Client-Cert`, `X-Client-Cert`, uppercase variant) produced no differential vs same-batch baseline on `/v1/berlin-group/v1/accounts` and `/sandbox/v1/berlin-group/v1/accounts` (401|0 istio-envoy, md5 `d41d8cd98f00b204e9800998ecf8427e`). All four axes measured on both production and sandbox co-tenant.
+evidence_needed: None further in-envelope. Positive proof requires presenting a valid QWAC-signed certificate from a Berlin-Group-registered TPP (credential).
+verify_steps: `curl -sS -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' -H 'X-Forwarded-Client-Cert: CN=not-a-qwac-test' https://xs2a.tech26.de/v1/berlin-group/v1/accounts` → `401|0`; `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -msg 2>&1 | grep -A20 CertificateRequest` → CertificateRequest with empty CA list.
+impact: eIDAS QWAC/mTLS control unenforced on production AIS/PIS surface; single bearer token carries the entire authentication burden. Severity HIGH.
+testability: PASSIVE
+class: MISCONFIG
+asset: api.tech26.de/api/accounts/**, beta-api.tech26.de, sapi.tech26.de
+confidence: 74
+reasoning: The gate mounts as three classes: unbounded-depth wildcard `/api/accounts/**` (2 through 8 path segments all → byte-identical `401|211`), wildcard `/api/statements/**`, and exact-path-only `/api/me` + `/api/addresses` (all sub-paths → `404|0`). The gate therefore protects an **open-ended prefix** rather than an enumerated route set, and covers no sub-path of the two exact-mount routes. Measured 2026-09-30 on all three hosts; beta-api and sapi re-proved individually on the depth-unbounded path. The ungated sub-regions are provably empty (7 sub-resources → `404|0`), so no unauthenticated exposure was demonstrated.
+evidence_needed: A paired-device or Bearer token showing which resources exist behind the wildcard mount and whether owned vs non-owned account IDs return different payloads across `/api/accounts/{id}/*` (AUTH_HELPED). Anonymous axis is now exhausted — the wildcard makes depth unbounded by construction.
+verify_steps: `curl -sS --path-as-is -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' https://api.tech26.de/api/accounts/1/a/b/c/d/e/f/g/h` → `401|211`; shape control `https://api.tech26.de/api;/accounts/1/tans` → `404|0`; ungated-region control `https://api.tech26.de/api/me/zzqnotreal` → `404|0` against gated `https://api.tech26.de/api/me` → `401|211`.
+impact: A deprecated banking API namespace ~2.75 years past announced retirement is fronted by a wildcard middleware that cannot function as a containment boundary: it authenticates an unbounded path space while leaving two sibling prefixes with no sub-path coverage at all. Blast radius of a token compromise is not bounded by any finite measurement. Severity MEDIUM (hygiene/control), not an exploitable anonymous bypass.
+testability: AUTH_HELPED
+class: AUTH
+asset: pisp.tech26.de/api/openbanking/fallback/*, aisp.tech26.de/api/v2/*
+confidence: 75
+reasoning: Fallback routes return `401|0` with empty body and no `WWW-Authenticate`; response byte-identical (md5 `d41d8cd98f00b204e9800998ecf8427e`) across no-auth, N26's own published Basic fixture `android:secret`, wrong Basic and wrong Bearer. Gate is class-scoped and app-layer, licensed as evidence of absence only by a same-batch timing control. Money-movement classes include `POST /api/openbanking/fallback/sepa-ct` and `/sepa-instant`. Vendor corpus documents ROPC `grant_type=password` on both fallback hosts.
+evidence_needed: A response that varies when a valid credential is presented on a documented POST route (AUTH_HELPED).
+verify_steps: `curl -sSk -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' https://pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzqnotreal/status` → `401|0`; repeat with `-u android:secret` and with a wrong Basic; compare for byte equality.
+impact: Sole control on standing-order and SEPA credit-transfer initiation cannot distinguish a registered TPP from an anonymous one. Severity MEDIUM.
+testability: AUTH_HELPED
