@@ -1,17 +1,15 @@
-## 2026-10-01 13:29:12 UTC [target] (model nemotron3)
-[NEW] xs2a.tech26.de: Third dedicated role CBPII (Confirmation of Funds) deployed at `/v1/berlin-group/v1/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}` — returns 401|0 istio-envoy with 8-11ms app-layer timing vs 1ms bogus-path 404; mirrored on sandbox tier
-[NEW] xs2a.tech26.de: ALB substring blocklist is query-string-scoped, not request-scoped — `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` bypasses ALB (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` triggers 403 awselb/2.0
-[NEW] n26/psd2-tpp-docs: Three corpus files never opened (`doc/sandbox.md`, `doc/decoupled/dedicated-cbpii.md`, `doc/redirect/dedicated-aisp.md`) document production redirect flow via `TPP-Redirect-URI` header with `TPP-State` echo and `error=access_denied` on failure
-[NEW] xs2a.tech26.de: AS performs no pre-auth discrimination of `TPP-Redirect-*` — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9
-[NEW] api.tech26.de: Shared edge substring blocklist is query-string-scoped on customer API too — `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0; header `X-Foo: https://127.0.0.1@evil.example/` → 401|211 envoy
+## 2026-10-01 19:02:48 UTC [target] (model nemotron3)
+[NEW] xs2a.tech26.de CBPII consent flow deployed at `/v1/berlin-group/v1/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}` — returns 401|0 with 8-11ms timing vs 1ms bogus 404
+[NEW] xs2a.tech26.de ALB substring blocklist is query-string-scoped, not request-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+[NEW] n26/psd2-tpp-docs: Three never-opened corpus files (`doc/sandbox.md`, `doc/decoupled/dedicated-cbpii.md`, `doc/redirect/dedicated-aisp.md`) document production redirect flow via `TPP-Redirect-URI` header with `TPP-State` echoed
+[NEW] xs2a.tech26.de AS performs zero pre-auth discrimination of `TPP-Redirect-*` headers — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9
+[NEW] api.tech26.de shares the same edge substring blocklist (query-string-scoped) — `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0; header `X-Foo: https://127.0.0.1@evil.example/` → 401|211 envoy
 [CHANGED] NO_DELTA on probe surface since 2026-09-18 10:07 UTC (12+ days frozen); triage feeder degraded 18+ consecutive runs; coordinator credential/scope supply sole unblock for PARKED items
-[PRIO] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds,9.7,attack_surface:10,business_value:10,tech_exposure:10,gate_ease:9,cloud_surface:9,freshness:10
-[PRIO] xs2a.tech26.de/oauth2/authorize,9.3,attack_surface:10,business_value:10,tech_exposure:9,gate_ease:10,cloud_surface:9,freshness:8
-[PRIO] xs2a.tech26.de/sandbox/v1/berlin-group/v1,9.0,attack_surface:9,business_value:9,tech_exposure:9,gate_ease:9,cloud_surface:9,freshness:8
-[PRIO] api.tech26.de/api/accounts/{id}/*,8.8,attack_surface:9,business_value:9,tech_exposure:8,gate_ease:2,cloud_surface:8,freshness:9
-[PRIO] pay.n26.com/v1/*,8.2,attack_surface:8,business_value:10,tech_exposure:7,gate_ease:2,cloud_surface:8,freshness:7
-[PRIO] aisp.tech26.de/api/openbanking/fallback/*,7.5,attack_surface:7,business_value:8,tech_exposure:8,gate_ease:2,cloud_surface:7,freshness:8
-[PRIO] pisp.tech26.de/api/openbanking/fallback/*,7.5,attack_surface:7,business_value:8,tech_exposure:8,gate_ease:2,cloud_surface:7,freshness:8
+[PRIO] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds,9.3,attack_surface:10,business_value:10,tech_exposure:10,gate_ease:8,cloud_surface:9,freshness:10
+[PRIO] xs2a.tech26.de/oauth2/authorize,8.9,attack_surface:9,business_value:9,tech_exposure:10,gate_ease:9,cloud_surface:9,freshness:9
+[PRIO] xs2a.tech26.de/v1/berlin-group/v1,8.7,attack_surface:9,business_value:10,tech_exposure:9,gate_ease:7,cloud_surface:9,freshness:9
+[PRIO] api.tech26.de/api/accounts/{id}/*,8.1,attack_surface:9,business_value:9,tech_exposure:8,gate_ease:2,cloud_surface:8,freshness:8
+[PRIO] pay.n26.com/v1/*,7.8,attack_surface:8,business_value:10,tech_exposure:7,gate_ease:2,cloud_surface:8,freshness:7
 [HYP] xs2a.tech26.de CBPII consent flow redirect_uri header validation bypass
 class: OATH
 asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
@@ -30,7 +28,7 @@ evidence_needed: None — PASSIVE verified across 4 measurement axes (empty CA l
 verify_steps: openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -msg 2>&1 | grep -A20 CertificateRequest
 impact: PSD2/RTS regulatory violation — TPPs can connect without valid QWAC; enables unauthorized AIS/PIS access; severity HIGH/CRITICAL
 testability: PASSIVE
-[HYP] xs2a.tech26.de OAuth2 redirect_uri blocklist is ALB substring filter with no URI parsing
+[HYP] xs2a.tech26.de OAuth2 authorization redirect_uri blocklist is ALB substring filter with no URI parsing
 class: OATH
 asset: xs2a.tech26.de/oauth2/authorize
 confidence: 95
@@ -61,6 +59,7 @@ testability: PASSIVE
 [LEARN] REJECTED AUTH @ pisp.tech26.de /api/encryption/key: soundly closed — documented GET route, same-batch bogus sibling 404
 [LEARN] ACCEPTED MISCONFIG @ api.tech26.de: gate is GET-scoped wildcard middleware — `GET /api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; HEAD → 404|0; invalidates prior "10-member nested family confirmed live" and "no additional noun routes exist" claims
 [LEARN] ACCEPTED OATH @ xs2a.tech26.de: the ALB substring blocklist is **query-string-scoped**, not request-scoped, and the field it inspects is not the field the production redirect flow uses — `TPP-Redirect-URI` header bypasses ALB entirely
+[LEARN] ACCEPTED OTHER @ n26/psd2-tpp-docs: `
 [LEARN] ACCEPTED OTHER @ n26/psd2-tpp-docs: `doc/decoupled/dedicated-cbpii.md` and `doc/sandbox.md` reveal third dedicated role CBPII with own consent subtree live on production at 401|0 with 8-11ms timing
 [LEARN] REJECTED MISCONFIG @ xs2a.tech26.de `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers — corpus documents it as POST, so GET-404 is not evidence of absence
 [LEARN] ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
