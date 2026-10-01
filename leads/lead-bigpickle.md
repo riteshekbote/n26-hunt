@@ -7501,3 +7501,55 @@ evidence_needed: A response that varies when a valid credential is presented on 
 verify_steps: `curl -sSk -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' https://pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzqnotreal/status` → `401|0`; repeat with `-u android:secret` and with a wrong Basic; compare for byte equality.
 impact: Sole control on standing-order and SEPA credit-transfer initiation cannot distinguish a registered TPP from an anonymous one. Severity MEDIUM.
 testability: AUTH_HELPED
+## 2026-10-01 00:25:37 UTC [target] (model bigpickle)
+class: AUTH
+asset: xs2a.tech26.de:443
+confidence: 93
+reasoning: TLS CertificateRequest present with EMPTY `certificate_authorities` list; anonymous TLS1.3 handshake completes (ssl_verify_result=0); garbage self-signed client cert produced no differential; four header-trust injections (`X-Forwarded-Client-Cert`, `X-SSL-Client-Cert`, `X-Client-Cert`, uppercase variant) produced no differential vs same-batch baseline on `/v1/berlin-group/v1/accounts` and `/sandbox/v1/berlin-group/v1/accounts` (401|0 istio-envoy, md5 `d41d8cd98f00b204e9800998ecf8427e`). All four axes measured on both production and sandbox co-tenant.
+evidence_needed: None further in-envelope. Positive proof requires presenting a valid QWAC-signed certificate from a Berlin-Group-registered TPP (credential).
+verify_steps: `curl -sS -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' -H 'X-Forwarded-Client-Cert: CN=not-a-qwac-test' https://xs2a.tech26.de/v1/berlin-group/v1/accounts` → `401|0`; `openssl s_client -connect xs2a.tech26.de:443 -servername xs2a.tech26.de -tls1_3 -msg 2>&1 | grep -A20 CertificateRequest` → CertificateRequest with empty CA list.
+impact: eIDAS QWAC/mTLS control unenforced on production AIS/PIS surface; single bearer token carries the entire authentication burden. Severity HIGH.
+testability: PASSIVE
+class: MISCONFIG
+asset: api.tech26.de/api/accounts/**, beta-api.tech26.de, sapi.tech26.de
+confidence: 74
+reasoning: The gate mounts as three classes: unbounded-depth wildcard `/api/accounts/**` (2 through 8 path segments all → byte-identical `401|211`), wildcard `/api/statements/**`, and exact-path-only `/api/me` + `/api/addresses` (all sub-paths → `404|0`). The gate therefore protects an **open-ended prefix** rather than an enumerated route set, and covers no sub-path of the two exact-mount routes. Measured 2026-09-30 on all three hosts; beta-api and sapi re-proved individually on the depth-unbounded path. The ungated sub-regions are provably empty (7 sub-resources → `404|0`), so no unauthenticated exposure was demonstrated.
+evidence_needed: A paired-device or Bearer token showing which resources exist behind the wildcard mount and whether owned vs non-owned account IDs return different payloads across `/api/accounts/{id}/*` (AUTH_HELPED). Anonymous axis is now exhausted — the wildcard makes depth unbounded by construction.
+verify_steps: `curl -sS --path-as-is -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' https://api.tech26.de/api/accounts/1/a/b/c/d/e/f/g/h` → `401|211`; shape control `https://api.tech26.de/api;/accounts/1/tans` → `404|0`; ungated-region control `https://api.tech26.de/api/me/zzqnotreal` → `404|0` against gated `https://api.tech26.de/api/me` → `401|211`.
+impact: A deprecated banking API namespace ~2.75 years past announced retirement is fronted by a wildcard middleware that cannot function as a containment boundary: it authenticates an unbounded path space while leaving two sibling prefixes with no sub-path coverage at all. Blast radius of a token compromise is not bounded by any finite measurement. Severity MEDIUM (hygiene/control), not an exploitable anonymous bypass.
+testability: AUTH_HELPED
+class: AUTH
+asset: pisp.tech26.de/api/openbanking/fallback/*, aisp.tech26.de/api/v2/*
+confidence: 75
+reasoning: Fallback routes return `401|0` with empty body and no `WWW-Authenticate`; response byte-identical (md5 `d41d8cd98f00b204e9800998ecf8427e`) across no-auth, N26's own published Basic fixture `android:secret`, wrong Basic and wrong Bearer. Gate is class-scoped and app-layer, licensed as evidence of absence only by a same-batch timing control. Money-movement classes include `POST /api/openbanking/fallback/sepa-ct` and `/sepa-instant`. Vendor corpus documents ROPC `grant_type=password` on both fallback hosts.
+evidence_needed: A response that varies when a valid credential is presented on a documented POST route (AUTH_HELPED).
+verify_steps: `curl -sSk -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' https://pisp.tech26.de/api/openbanking/fallback/sepa-ct/zzqnotreal/status` → `401|0`; repeat with `-u android:secret` and with a wrong Basic; compare for byte equality.
+impact: Sole control on standing-order and SEPA credit-transfer initiation cannot distinguish a registered TPP from an anonymous one. Severity MEDIUM.
+testability: AUTH_HELPED
+[HYP] PSD2 sandbox tier on the production host exposes the complete money-movement surface, defeating sandbox/live tier separation
+class: MISCONFIG
+asset: xs2a.tech26.de/sandbox/v1/berlin-group/v1/*
+confidence: 71
+reasoning: Sandbox prefix enumerated this cycle against the production class list in a same-batch run: `/accounts`, `/consents`, `/payments/sepa-credit-transfers`, `/payments/instant-sepa-credit-transfers`, `/periodic-payments/sepa-credit-transfers` all → `401|0`, mirroring their live counterparts byte-for-byte. Fabricated siblings at top level (`/signing-processes/zzqnotreal`, `/bulk-payments/zzqnotreal/status`) → `404|0` against the same-batch live `/this-route-does-not-exist-xyz` → `404|0`, so the 401 is a real route and not a blind prefix firewall. The KB has carried "7 sandbox classes" since 2026-09-26; that count came from a partial wordlist and is now falsified — the sandbox tier is not a reduced tier. Both tiers sit on the same ELB `obnium-mtls-live-fra-328671153` with the same optional mTLS posture.
+evidence_needed: A sandbox-scoped bearer token accepted by the **production** Berlin-Group API plane, or sandbox consent state visible on the live plane. Requires credential (AUTH_HELPED).
+verify_steps: `curl -sS -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/payments/instant-sepa-credit-transfers` → `401|0`; tier-pairing control `https://xs2a.tech26.de/v1/berlin-group/v1/payments/instant-sepa-credit-transfers` → `401|0`; absence control `https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/signing-processes/zzqnotreal` → `404|0`.
+impact: Test payment-initiation traffic is co-tenant with production on one host behind an optional-mTLS, bearer-only edge; a sandbox token leak or a tier-selection flaw reaches a real payment surface. Severity MEDIUM (hygiene/containment), not an anonymous bypass.
+testability: AUTH_HELPED
+[HYP] OAuth2 pre-auth gate at xs2a.tech26.de validates exactly two parameters and ignores the entire PKCE control
+class: OATH
+asset: xs2a.tech26.de/oauth2/authorize
+confidence: 62
+reasoning: Same-batch 5-request run varying only `code_challenge` against a constant `client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&response_type=code&state=abc` base: valid S256 challenge `E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM` → `401|0`; `notabase64challenge` → `401|0`; `short` → `401|0`; parameter absent → `401|0`; absent `redirect_uri` with challenge present → `401|0`. All five byte-identical (`md5 d41d8cd9…`, empty body). N26's own public corpus (`psd2-tpp-docs`, collection + environment) documents PKCE S256 as the registered flow, so `code_challenge` is a protocol-mandated parameter that the pre-auth layer does not treat as required. The gate's only discriminating dimensions remain `client_id` and `scope` presence, each already established.
+evidence_needed: Response differentiating a request carrying a valid `code_challenge` from one carrying none **after** authentication (whether the AS enforces PKCE at the token endpoint or only at authorize). Requires an authenticated session (AUTH_HELPED).
+verify_steps: `curl -sS -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' 'https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&response_type=code&state=abc&redirect_uri=https%3A%2F%2Fexample.com%2Fcb&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM'` → `401|0`; identical request with `code_challenge` deleted → `401|0`; missing-parameter control `?scope=DEDICATED_AISP` → `404|0`.
+impact: PKCE is the control preventing authorization-code interception for the AIS/PIS consent grant; if it is not enforced at either plane, a code intercepted in transit (or via any referrer/log leak) is directly redeemable for an AIS/PIS token carrying payment-initiation rights. Severity MEDIUM pre-auth; severity would rise to HIGH if the token endpoint is also unguarded.
+testability: AUTH_HELPED
+[HYP] The two ungated exact-mount prefixes on the deprecated api.tech26.de namespace are provably empty
+class: MISCONFIG
+asset: api.tech26.de/api/me/*, api.tech26.de/api/addresses/*
+confidence: 68
+reasoning: The GET-scoped auth middleware mounts on wildcard patterns (`/api/accounts/**`, `/api/statements/**`, unbounded depth: `/api/accounts/1/a/b/c/d` → `401|211`) and on exact paths (`/api/me`, `/api/addresses` → `401|211`). The KB recorded that those two exact mounts cover no sub-path but had only tested 7 sub-resources. This cycle tested 11: `/api/me/{profile,settings,preferences,balances,transactions,statements,tans,cards}` and `/api/addresses/{1,1/geo,current}` — all `404|0`, matching the `404|0` of `/api/zzqnotreal` and `/api;/accounts/1/tans` in the same batch. The wildcard mounts remain depth-unbounded by construction.
+evidence_needed: A paired-device or Bearer token establishing whether any resource exists behind the wildcard mounts and whether owned vs non-owned account IDs return different payloads across `/api/accounts/{id}/{statements,tans,cards,bookings}` (AUTH_HELPED).
+verify_steps: `curl -sS --path-as-is -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' https://api.tech26.de/api/me/profile` → `404|0` against gated `https://api.tech26.de/api/me` → `401|211`; depth control `https://api.tech26.de/api/accounts/1/a/b/c/d` → `401|211`; mount-shape control `https://api.tech26.de/api;/accounts/1/tans` → `404|0`.
+impact: No unauthenticated exposure exists on the ungated regions — the two exact mounts cover only themselves, so the wildcard's unbounded coverage is the sole containment boundary and it cannot be bounded by any finite external measurement. Severity MEDIUM (hygiene), not an anonymous bypass.
+testability: AUTH_HELPED
