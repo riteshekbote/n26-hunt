@@ -4005,3 +4005,39 @@
 - LEARN: ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
 - LEARN: REJECTED OTHER @ xs2a.tech26.de: "redirect headers are parsed before the 401 gate" — rejected, 4 controls all byte-identical
 - LEARN: REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers explicitly not evidence of absence — corpus documents it as POST
+
+## RANKED HYPOTHESES 2026-10-01 23:28:52 UTC
+- [85] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds: xs2a.tech26.de CBPII consent flow TPP-Redirect-URI header SSRF to cloud metadata (from art/lead_nemotron3.txt)
+- [52] `xs2a.tech26.de`: Cert-only PSD2 token minting is reachable anonymously because mTLS is advertised with an empty CA list and never enforced at the edge (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): Re-run the class-A hop-1 legs with `-L` so **hop 2 is actually captured**, and diff one leaf three ways — real own-account `consentId` vs random UUID vs `zzz` —
+- NEXT(hypotheses-nemotron3.txt): PROBE: curl -ks -H "TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/" -H "TPP-State: test" -H "Authorization: Bearer INVALID" "https://xs2a.tech26.de/
+- LEARN: REJECTED OTHER @ `xs2a.tech26.de`: "redirect headers are parsed before the 401 gate." Rejected this batch, 4 controls, all byte-identical. Recorded so a future 
+- LEARN: REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers is **explicitly not** evidence of absence — the corpus documents it as `PO
+- LEARN: ACCEPTED OTHER @ `app.n26.com`: the SCA **handoff** surface is anonymously enumerable and has a three-class redirect taxonomy that the KB's "302 → login, redire
+- LEARN: ACCEPTED OTHER @ `app.n26.com`: **corpus-to-live correspondence is 5/5 on this surface.** The five class-A leaves are exactly the five `scaRedirect.href` values
+- LEARN: ACCEPTED OTHER @ `app.n26.com`: **two KB claims about this surface were wrong in shape, and I am retracting both.** (1) KB: "`/wl/open-banking/*` (`/{aisp,cbpii
+- LEARN: REJECTED OTHER @ `app.n26.com/open-banking`: **parameter injection through the reflected `state` does not work** — `state=a%26redirect%3Dhttps%3A%2F%2Fevil.exam
+- LEARN: REJECTED MISCONFIG @ `xs2a.tech26.de` + `api.tech26.de`: **no CORS surface on either host.** With `Origin: https://attacker.example` on gated (`401`) and ungate
+- LEARN: ACCEPTED AUTH @ `xs2a.tech26.de` + `api.tech26.de`: the edge gate is **route-level and GET-only**, now proven rather than inferred — the KB called it a "GET-sco
+- LEARN: ACCEPTED OTHER @ `app.n26.com`: operational budget — the app edge exposes `x-ratelimit-limit: 60` with `x-ratelimit-remaining: 54` after this cycle's 6 same-win
+- LEARN: ACCEPTED OTHER @ `app.n26.com/open-banking/{aisp,cbpii,pisp/*}`: hop 2 is the real answer to my own `[NEXT]`, and the apparent pre-auth consent oracle is **not*
+- LEARN: REJECTED IDOR @ `app.n26.com` handoff leaves: **no pre-auth consent/payment existence oracle in response size**, and I nearly reported the opposite — the fifth 
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: production XS2A API sends TLS CertificateRequest with EMPTY certificate_authorities list — optional mTLS, not absent
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share identical CertificateRequest behavior (empty CA list) on shared ELB obnium-mtls-live-fra-328671
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application l
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: PSD2 sandbox tier co-tenant on production host at `/sandbox/v1/berlin-group/v1/*` (7 classes 401) with identical ALB filter
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less" classification FALSE — both serve full legacy `/api/*` Bearer-gated family (15 endp
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — `GET /api/mfa/challenge` (documented PO
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and PKCE challenge in publ
+- LEARN: REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: 27 PDFs pure availability telemetry — no mTLS/security statements
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de, aisp.tech26.de, pisp.tech26.de: "OPTIONS is proven method-agnostic on this edge" FALSE — OPTIONS on live routes returns 404
+- LEARN: REJECTED AUTH @ pisp.tech26.de /api/encryption/key: soundly closed — documented GET route, same-batch bogus sibling 404
+- LEARN: ACCEPTED MISCONFIG @ api.tech26.de: gate is GET-scoped wildcard middleware — `GET /api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; HEAD → 40
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: the ALB substring blocklist is **query-string-scoped**, not request-scoped, and the field it inspects is not the field the produ
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: `doc/decoupled/dedicated-cbpii.md` and `doc/sandbox.md` reveal third dedicated role CBPII with own consent subtree live on p
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers — corpus documents it as POST, so GET-404 is not evidence o
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
+- LEARN: REJECTED OTHER @ xs2a.tech26.de: "redirect headers are parsed before the 401 gate" — rejected, 4 controls all byte-identical
+- LEARN: REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers explicitly not evidence of absence — corpus documents it as POST

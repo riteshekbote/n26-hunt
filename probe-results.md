@@ -788,3 +788,11 @@ https://pay.n26.com/v1/payments?limit=100 -> HTTP 401
 
 ## 2026-10-01 19:12:07 UTC
 
+
+## 2026-10-01 23:29:00 UTC
+https://app.n26.com/open-banking?requestId=…&state=…&authType=XS2A` -> ERR 'ascii' codec can't encode character '\u2026' in p
+https://app.n26.com/open-banking?requestId=0daa152a-…&state=1fL1nn7m9a&authType=XS2A` -> ERR 'ascii' codec can't encode character '\u2026' in p
+https://app.n26.com/login?requestId=<foreign-uuid>&state=<attacker>&authType=XS2A&redirect=…` -> ERR 'ascii' codec can't encode character '\u2026' in p
+https://app.n26.com/open-banking?requestId=11111111-1111-1111-1111-111111111111&state=abc123&authType=XS2A'` -> HTTP 401
+https://app.n26.com/open-banking?requestId=<requestId>&state=<Y≠X>&authType=XS2A` -> ERR 'ascii' codec can't encode character '\u2260' in p
+https://app.n26.com/wl/open-banking/aisp?consentId=11111111-1111-1111-1111-111111111111'` -> 200 len=317084
