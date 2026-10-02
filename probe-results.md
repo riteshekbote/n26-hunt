@@ -796,3 +796,8 @@ https://app.n26.com/login?requestId=<foreign-uuid>&state=<attacker>&authType=XS2
 https://app.n26.com/open-banking?requestId=11111111-1111-1111-1111-111111111111&state=abc123&authType=XS2A'` -> HTTP 401
 https://app.n26.com/open-banking?requestId=<requestId>&state=<Y≠X>&authType=XS2A` -> ERR 'ascii' codec can't encode character '\u2260' in p
 https://app.n26.com/wl/open-banking/aisp?consentId=11111111-1111-1111-1111-111111111111'` -> 200 len=317084
+
+## 2026-10-02 02:24:24 UTC
+https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js'` -> HTTP 404
+https://app.n26.com/login?redirect=https%3A%2F%2Fevil.example%2Fprobe'` -> 200 len=316305
+https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js' -> HTTP 404
