@@ -7895,3 +7895,4 @@ class: WAF_BYPASS | asset: app.n26.com/graphql multipart/form-data + application
 [PARKED] OATH /login?redirect (discharged at source) · FLAGSDUMP flags /v1/* (discharged, premise dead) · xs2a SSRF (AUTH_HELPED, uniform 401|0) ·
 [FINAL] 1) PREAUTH_MUT pre-auth mutation cluster (44)  2) XSA_PROBE class-B state fixation (42)
 [NEXT] SCAN+PROBE (read-only, <=1rps): resolve the app.n26.com/graphql WAF gate shape — compare `{"query":…}` JSON against `multipart/form-data` and `application/graphql` with the same `query { __typename }` body, recording status/length/md5 only. Every hypothesis on this target now bottoms out at that gate, so it is the single highest-leverage unknown left, and a bypass would unblock 9 enumerated pre-auth mutations at once.
+## 2026-10-02 23:41:44 UTC [target] (model bigpickle)
