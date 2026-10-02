@@ -804,3 +804,6 @@ https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.
 
 ## 2026-10-02 08:43:49 UTC
 https://app.n26.com/login?redirect=https://evil.example.com/callback -> 200 len=316307
+
+## 2026-10-02 15:19:01 UTC
+https://app.n26.com/login?redirect=https://evil.example.com/callback -> 200 len=316307
