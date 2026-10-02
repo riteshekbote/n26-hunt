@@ -58237,3 +58237,969 @@ Two options:
 2. **I stop here and file it as LOW** — reflected parameter, sanitized inconsistently, reachability unproven.
 
 I'd take option 1 if a test account exists; option 2 is the honest floor if it does not. Which?
+===== ANALYST bigpickle 2026-10-02 08:43:47 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la; echo "---"; ls -la art/ 2>/dev/null | head -30; echo "---STATE---"; cat state_bigpickle.json 2>/dev/null
+total 952
+drwxr-xr-x 12 runner runner   4096 Oct  2 08:38 .
+drwxr-xr-x  3 runner runner   4096 Oct  2 08:38 ..
+drwxr-xr-x  7 runner runner   4096 Oct  2 08:38 .git
+drwxr-xr-x  3 runner runner   4096 Oct  2 08:38 .github
+-rw-r--r--  1 runner runner   1844 Oct  2 08:38 README.md
+-rw-r--r--  1 runner runner     32 Oct  2 08:38 analyst-out.txt
+-rw-r--r--  1 runner runner 428747 Oct  2 08:38 analyst-prompt.txt
+-rw-r--r--  1 runner runner 424877 Oct  2 08:38 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 inventory
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 knowledge
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 leads
+-rw-r--r--  1 runner runner  22392 Oct  2 08:38 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 recon-notes
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 reports
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Oct  2 08:38 scope.yml
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 scripts
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_laguna.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_ling3.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_longcat.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_mimo.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Oct  2 08:38 triage
+---
+---STATE---
+{"phase": "POC", "target": "api"}
+[0m
+[0m$ [0mcd /tmp/opencode && curl -sk -A 'Mozilla/5.0' -m 30 'https://app.n26.com/login' -o login.html -w 'code=%{http_code} size=%{size_download}\n' ; ls -la login.html
+code=200 size=316197
+-rw-r--r-- 1 runner runner 316197 Oct  2 08:39 login.html
+[0m
+[0m$ [0mcd /tmp/opencode && grep -o '__successRedirect[^>]*' login.html | head -5; echo "=== FORM ==="; grep -o '<form[^>]*>' login.html | head -5
+__successRedirect" value="/login?verifyLogin=1"/
+=== FORM ===
+<form class="b c d" action="/graphql" method="POST">
+[0m
+[0m$ [0mcd /tmp/opencode && grep -o '/build/js/[A-Za-z0-9._-]*\.js' login.html | sort -u | head -40
+/build/js/1503.f68ea103.js
+/build/js/1535.b3f5ddc1.js
+/build/js/1992.1a249017.js
+/build/js/4264.f4140684.js
+/build/js/6759.dc0f50d5.js
+/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js
+/build/js/banking-features-auth-biometric-PreAppAuthPages.91311e3a.js
+/build/js/client.90a73858.js
+/build/js/react_vendor.85fb11fa.js
+/build/js/util_vendor.00e2ab05.js
+/build/js/webpack-runtime.7ec72cae.js
+[0m
+[0m$ [0mcd /tmp/opencode && curl -sk -A 'Mozilla/5.0' -m 30 'https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js' -o lp.js -w 'LoginPage code=%{http_code} size=%{size_download}\n'; sleep 1; curl -sk -A 'Mozilla/5.0' -m 30 'https://app.n26.com/build/js/client.90a73858.js' -o client.js -w 'client code=%{http_code} size=%{size_download}\n'
+LoginPage code=200 size=221646
+client code=200 size=1466289
+[0m
+[0m$ [0mcd /tmp/opencode && for f in lp.js client.js; do echo "=== $f ==="; echo -n "__successRedirect: "; grep -c '__successRedirect' $f; echo -n "__failureRedirect: "; grep -c '__failureRedirect' $f; echo -n "verifyLogin: "; grep -c 'verifyLogin' $f; done
+=== lp.js ===
+__successRedirect: 0
+__failureRedirect: 0
+verifyLogin: 1
+=== client.js ===
+__successRedirect: 1
+__failureRedirect: 1
+verifyLogin: 0
+[0m
+[0m$ [0mcd /tmp/opencode && grep -o '.\{300\}__successRedirect.\{500\}' client.js | head -3
+(I({},this.props.formProps),{className:this.props.className,action:s.QQ,method:"POST",ref:this.setFormRef,onSubmit:this.handleSubmit,children:[(0,n.jsx)(d.A,{}),(0,n.jsx)("input",{type:"hidden",name:"__mutation",value:g()(this.props.mutation.loc.source.body)}),(0,n.jsx)("input",{type:"hidden",name:"__successRedirect",value:this.getSuccessURL()}),(0,n.jsx)("input",{type:"hidden",name:"__failureRedirect",value:this.getFailureURL()}),this.props.children(_(I({},this.state),{formRef:this.formRef,resetForm:this.resetForm,submit:this.submit}))]}))}}])&&D(r.prototype,o),i&&D(r,i),t}(w.Component);C(F,"propTypes",{children:j().func.isRequired,mutation:j().object.isRequired,onSubmit:j().func,onSuccess:j().func,onFailure:j().func,successURL:j().string,failureURL:j().string,formProps:j().object,preserveFlags:j().bool,m
+[0m
+[0m$ [0mcd /tmp/opencode && grep -o '.\{700\}getSuccessURL=function.\{1400\}' client.js | head -1
+(no output)
+[0m
+[0m$ [0mcd /tmp/opencode && grep -o 'getSuccessURL[^,;]\{0,120\}' client.js | head -10; echo "--- FAILURE ---"; grep -o 'getFailureURL[^,;]\{0,120\}' client.js | head -10
+getSuccessURL"
+getSuccessURL())]):(n.isSubscribed&&n.setState({status:t.STATUSES.failure
+getSuccessURL()})
+--- FAILURE ---
+getFailureURL"
+getFailureURL()})
+[0m
+[0m$ [0mcd /tmp/opencode && grep -o '.\{600\}prototype.getSuccessURL.\{1600\}' client.js | head -1
+(no output)
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+d=open('client.js',encoding='utf-8',errors='replace').read()
+i=0
+import re
+for m in re.finditer(r'getSuccessURL', d):
+    print("=== idx", m.start(), "===")
+    print(d[max(0,m.start()-900):m.start()+900].replace('\n','\\n'))
+    print()
+EOF
+=== idx 304310 ===
+,C(r,"resetForm",function(){var e=r.getInitialState();r.isSubscribed&&r.setState(e,function(){r.formRef.reset()})}),C(r,"getInitialValues",function(){return r.props.mutationFormPayload.variables||{}}),C(r,"getErrors",function(){var e=Object.values(r.props.mutationFormPayload).find(function(e){return"FAILURE"===(null==e?void 0:e.status)});return(null==e?void 0:e.errors)||[]}),C(r,"getPathWithFlags",function(e){var t=r.props.queryParams.flags;if(!t)return e;var n=L(e.split("?"),2),o=n[0],i=n[1],a=_(I({},i?(0,l.J)(i):{}),{flags:t});return o+(0,l.c)(a,{addQueryPrefix:!0})}),C(r,"getPathWithQuery",function(e){return L(e.split("?"),1)[0]+(0,l.c)(r.props.queryParams,{addQueryPrefix:!0})}),C(r,"getUrl",function(e){var t=r.props.isWebview&&!e.startsWith("/webviews")?"/webviews":"",n=e;return r.props.preserveQuery?n=r.getPathWithQuery(e):r.props.preserveFlags&&(n=r.getPathWithFlags(e)),t+n}),C(r,"getSuccessURL",function(){return r.getUrl(r.props.successURL||r.props.history.location.pathname)}),C(r,"getFailureURL",function(){return r.getUrl(r.props.failureURL||r.props.history.location.pathname)}),C(r,"getFormData",function(){return h()(r.formRef,{hash:!0})}),C(r,"submit",function(e){return k(function(){var r,o,i,a,c,s,l,d;return M(this,function(p){switch(p.label){case 0:return"function"!=typeof n.props.onSubmit?[3,4]:(r=n.props.onSubmit(e),f=r,(null!=(b=Promise)&&"undefined"!=typeof Symbol&&b[Symbol.hasInstance]?b[Symbol.hasInstance](f):f instanceof b)?[4,r]:[3,2]);case 1:return o=p.sent(),[3,3];case 2:o=r,p.label=3;case 3:if(!1===o)return[2];p.label=4;case 4:n.isSubscribed&&n.setState({status:t.STATUSES.submitting,errors:[]}),p.label=5;case 5:return p.trys.push([5,7,,8]),i=n.getFormData(),a="function"==typeof n.props.mutateOptions?n.props.mutateOptions({variables:i}):n.props.muta
+
+=== idx 305592 ===
+turn"function"!=typeof n.props.onSubmit?[3,4]:(r=n.props.onSubmit(e),f=r,(null!=(b=Promise)&&"undefined"!=typeof Symbol&&b[Symbol.hasInstance]?b[Symbol.hasInstance](f):f instanceof b)?[4,r]:[3,2]);case 1:return o=p.sent(),[3,3];case 2:o=r,p.label=3;case 3:if(!1===o)return[2];p.label=4;case 4:n.isSubscribed&&n.setState({status:t.STATUSES.submitting,errors:[]}),p.label=5;case 5:return p.trys.push([5,7,,8]),i=n.getFormData(),a="function"==typeof n.props.mutateOptions?n.props.mutateOptions({variables:i}):n.props.mutateOptions,[4,n.props.mutate(I({variables:i},a))];case 6:return c=p.sent(),"SUCCESS"===(s=Object.values(c.data)[0]).status?(s.status,s.errors,l=B(s,["status","errors"]),(0,P.flushSync)(function(){n.isSubscribed&&n.setState({status:t.STATUSES.success,successResponse:l})}),"function"==typeof n.props.onSuccess?[2,n.props.onSuccess({variables:i,response:s})]:[2,n.props.history.push(n.getSuccessURL())]):(n.isSubscribed&&n.setState({status:t.STATUSES.failure,errors:(0,u.$)(s.errors)}),"function"==typeof n.props.onFailure?[2,n.props.onFailure(s)]:[3,8]);case 7:return d=p.sent(),n.isSubscribed&&n.setState({status:t.STATUSES.failure,errors:[]}),n.props.setGenericError(),"function"==typeof n.props.onFailure?[2,n.props.onFailure({errors:(0,u.$)(d)})]:[3,8];case 8:return[2]}var f,b})})()}),C(r,"handleSubmit",function(e){return k(function(){return M(this,function(t){return"function"!=typeof n.props.mutate?[2]:(e.preventDefault(),[2,n.submit(e)])})})()}),C(r,"setFormRef",function(e){r.formRef=e,"function"==typeof r.props.refCallback&&r.props.refCallback(e)}),r.formRef=null,r.state=r.getInitialState(),r.isSubscribed=!0,r}var r,o,i;return function(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function");e.prototype=Object.c
+
+=== idx 307044 ===
+submit(e)])})})()}),C(r,"setFormRef",function(e){r.formRef=e,"function"==typeof r.props.refCallback&&r.props.refCallback(e)}),r.formRef=null,r.state=r.getInitialState(),r.isSubscribed=!0,r}var r,o,i;return function(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function");e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,writable:!0,configurable:!0}}),t&&N(e,t)}(t,e),r=t,(o=[{key:"componentWillUnmount",value:function(){this.isSubscribed=!1}},{key:"render",value:function(){return(0,n.jsxs)("form",_(I({},this.props.formProps),{className:this.props.className,action:s.QQ,method:"POST",ref:this.setFormRef,onSubmit:this.handleSubmit,children:[(0,n.jsx)(d.A,{}),(0,n.jsx)("input",{type:"hidden",name:"__mutation",value:g()(this.props.mutation.loc.source.body)}),(0,n.jsx)("input",{type:"hidden",name:"__successRedirect",value:this.getSuccessURL()}),(0,n.jsx)("input",{type:"hidden",name:"__failureRedirect",value:this.getFailureURL()}),this.props.children(_(I({},this.state),{formRef:this.formRef,resetForm:this.resetForm,submit:this.submit}))]}))}}])&&D(r.prototype,o),i&&D(r,i),t}(w.Component);C(F,"propTypes",{children:j().func.isRequired,mutation:j().object.isRequired,onSubmit:j().func,onSuccess:j().func,onFailure:j().func,successURL:j().string,failureURL:j().string,formProps:j().object,preserveFlags:j().bool,mutateOptions:j().oneOfType([j().object,j().func]),preserveQuery:j().bool}),C(F,"STATUSES",{pristine:"PRISTINE",success:"SUCCESS",failure:"FAILURE",submitting:"SUBMITTING"}),C(F,"defaultProps",{formProps:{},preserveFlags:!0,mutateOptions:{},preserveQuery:!1});const H=(0,m.A)(function(e){var t=(0,b.A)(),r=L((0,o.n)(e.mutation),1)[0],n=(0,w.useContext)(p.A).setError;return{localise:(0,f.A)(),isWebview:(0,w.useCon
+[0m
+[0m$ [0mcd /tmp/opencode && for f in lp.js banking-features-auth-biometric-PreAppAuthPages.91311e3a.js; do curl -sk -A 'Mozilla/5.0' -m 30 "https://app.n26.com/build/js/$f" -o "$(basename $f)" -w "$f code=%{http_code} size=%{size_download}\n"; sleep 1; done; echo "=== successURL in lp ==="; grep -c 'successURL' banking-features-auth-biometric-LoginPage.6fd49c7e.js
+lp.js code=403 size=43561
+banking-features-auth-biometric-PreAppAuthPages.91311e3a.js code=200 size=7800
+=== successURL in lp ===
+grep: banking-features-auth-biometric-LoginPage.6fd49c7e.js: No such file or directory
+[0m
+[0m$ [0mcd /tmp/opencode && curl -sk -A 'Mozilla/5.0' -m 30 'https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js' -o loginpage.js -w 'code=%{http_code} size=%{size_download}\n'; echo "=== successURL count ==="; grep -c 'successURL' loginpage.js; echo "=== verifyLogin ctx ==="; python3 -c "
+import re
+d=open('loginpage.js',encoding='utf-8',errors='replace').read()
+for m in re.finditer('verifyLogin',d):
+    print(d[max(0,m.start()-700):m.start()+500]); print('---')
+"
+code=200 size=221646
+=== successURL count ===
+1
+=== verifyLogin ctx ===
+){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(function(e){l.add(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"requestMfaFlow")},45411(e,n,t){"use strict";t.d(n,{A:()=>l});var r=t(65723),i=t(53408),o=t(64881),a=t(38968);function l(){return(0,r.jsx)(i.A.Blank,{extend:a.Ay.logoLink,to:"/login",children:(0,r.jsx)(o.A,{extend:a.Ay.logo})})}},54014(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",operation:"query",name:{kind:"Name",value:"verifyLoginWithQRQuery"},variableDefinitions:[{kind:"VariableDefinition",variable:{kind:"Variable",name:{kind:"Name",value:"tokenId"}},type:{kind:"NonNullType",type:{kind:"NamedType",name:{kind:"Name",value:"String"}}},directives:[]}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"verifyLoginWithQR"},arguments:[{kind:"Argument",name:{kind:"Name",value:"tokenId"},value:{kind:"Variable",name:{kind:"Name",value:"tokenId"}}}],directives:[],selectio
+---
+ions.push(r)}),t}(n,"requestMfaFlow")},45411(e,n,t){"use strict";t.d(n,{A:()=>l});var r=t(65723),i=t(53408),o=t(64881),a=t(38968);function l(){return(0,r.jsx)(i.A.Blank,{extend:a.Ay.logoLink,to:"/login",children:(0,r.jsx)(o.A,{extend:a.Ay.logo})})}},54014(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",operation:"query",name:{kind:"Name",value:"verifyLoginWithQRQuery"},variableDefinitions:[{kind:"VariableDefinition",variable:{kind:"Variable",name:{kind:"Name",value:"tokenId"}},type:{kind:"NonNullType",type:{kind:"NamedType",name:{kind:"Name",value:"String"}}},directives:[]}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"verifyLoginWithQR"},arguments:[{kind:"Argument",name:{kind:"Name",value:"tokenId"},value:{kind:"Variable",name:{kind:"Name",value:"tokenId"}}}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directives:[]},{kind:"Field",n
+---
+nId"},value:{kind:"Variable",name:{kind:"Name",value:"tokenId"}}}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"message"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"field"},arguments:[],directives:[]}]}},{kind:"Field",name:{kind:"Name",value:"tokenStatus"},arguments:[],directives:[]}]}}]}}],loc:{start:0,end:190}};n.loc.source={body:"query verifyLoginWithQRQuery($tokenId: String!) {\n  verifyLoginWithQR(tokenId: $tokenId) {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    tokenStatus\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefini
+---
+value:"tokenId"}}}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"message"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"field"},arguments:[],directives:[]}]}},{kind:"Field",name:{kind:"Name",value:"tokenStatus"},arguments:[],directives:[]}]}}]}}],loc:{start:0,end:190}};n.loc.source={body:"query verifyLoginWithQRQuery($tokenId: String!) {\n  verifyLoginWithQR(tokenId: $tokenId) {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    tokenStatus\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e
+---
+      field\n    }\n    tokenStatus\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.length;t++){var r=e.definitions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.verifyLoginWithQRQuery=function(e,n){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(function(e){l.add(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"verifyLoginWithQRQuery")},55356(e,n,t){"use strict";t.r(n),t.d(n,{default:()=>Nu});var r=t(65723),i=t(72035),o
+---
+ction(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.length;t++){var r=e.definitions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.verifyLoginWithQRQuery=function(e,n){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(function(e){l.add(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"verifyLoginWithQRQuery")},55356(e,n,t){"use strict";t.r(n),t.d(n,{default:()=>Nu});var r=t(65723),i=t(72035),o=t(71974),a=t.n(o),l=t(21791),c={HELP:"HELP",PUSH:"PUSH",VERIFY_PUSH_STEP_1:"VERIFY_PUSH_STEP_1",VERIFY_PUSH_STEP_2:"VERIFY_PUSH_STEP_2",VERIFY_PUSH_STEP_3:"VERIFY_PUSH_STEP_3"},u="HANDLE_LOG_IN",s="HANDLE_SUCCESS",d="HANDLE_FAILURE",f="SWITCH_SCREEN",v="START_POLLING",p="STOP_POLLING",m="HANDLE_OPEN_BANKING_REDIRECTION",y=t(14131),h=t(79626),b=t(95151),g=t(8399),S=t(92990),E=t(67457),k=
+---
+ber(O)/4)+2),4);return tl(nl({},e),{shouldPoll:j,pollDelay:A});case f:var C=Xa(n.screen);return tl(nl({},e),{shouldPoll:C,loginScreen:n.screen});case v:var I;return tl(nl({},e),{shouldPoll:!0,pollDelay:null!==(I=n.pollDelay)&&void 0!==I?I:e.pollDelay});case p:return tl(nl({},e),{shouldPoll:!1});case m:return n.response?tl(nl({},e),{redirectUrl:n.response.redirectUrl,loginScreen:l.kv.OPEN_BANKING_REDIRECTION}):e;default:return e}};function il(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}var ol=function(e){var n,t,r,i=e.location,o=e.queryParams,a=e.mutationFormPayload,c=e.hasJavaScript,u=e.loginState,s=null!==(n=[null==a?void 0:a.verifyLoginWithSMS,null==a?void 0:a.verifyLoginWithPush,null==a?void 0:a.requestSMSChallenge,null==a?void 0:a.requestPushChallenge,null==a?void 0:a.requestBiometricChallenge].filter(Boolean).find(function(e){return null==e?void 0:e.status}))&&void 0!==n?n:{},d=s.challengeType,f=s.challengeData,v=s.shouldAbortLoginAttempt,p=s.errors,m=i.pathname+(0,wa.c)({redirect:o.redirect,verifyLogin:c?void 0:"1"},{addQueryPrefix:!0}),y=Boolean(o.help),h=null!==(t=null==u?void 0:u.loginScreen)&&void 0!==t?t:fu
+---
+shouldPoll:j,pollDelay:A});case f:var C=Xa(n.screen);return tl(nl({},e),{shouldPoll:C,loginScreen:n.screen});case v:var I;return tl(nl({},e),{shouldPoll:!0,pollDelay:null!==(I=n.pollDelay)&&void 0!==I?I:e.pollDelay});case p:return tl(nl({},e),{shouldPoll:!1});case m:return n.response?tl(nl({},e),{redirectUrl:n.response.redirectUrl,loginScreen:l.kv.OPEN_BANKING_REDIRECTION}):e;default:return e}};function il(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}var ol=function(e){var n,t,r,i=e.location,o=e.queryParams,a=e.mutationFormPayload,c=e.hasJavaScript,u=e.loginState,s=null!==(n=[null==a?void 0:a.verifyLoginWithSMS,null==a?void 0:a.verifyLoginWithPush,null==a?void 0:a.requestSMSChallenge,null==a?void 0:a.requestPushChallenge,null==a?void 0:a.requestBiometricChallenge].filter(Boolean).find(function(e){return null==e?void 0:e.status}))&&void 0!==n?n:{},d=s.challengeType,f=s.challengeData,v=s.shouldAbortLoginAttempt,p=s.errors,m=i.pathname+(0,wa.c)({redirect:o.redirect,verifyLogin:c?void 0:"1"},{addQueryPrefix:!0}),y=Boolean(o.help),h=null!==(t=null==u?void 0:u.loginScreen)&&void 0!==t?t:function(e,n,t){return n?l.kv.LOGIN:e?
+---
+een:l.kv.OPEN_BANKING_REDIRECTION}):e;default:return e}};function il(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}var ol=function(e){var n,t,r,i=e.location,o=e.queryParams,a=e.mutationFormPayload,c=e.hasJavaScript,u=e.loginState,s=null!==(n=[null==a?void 0:a.verifyLoginWithSMS,null==a?void 0:a.verifyLoginWithPush,null==a?void 0:a.requestSMSChallenge,null==a?void 0:a.requestPushChallenge,null==a?void 0:a.requestBiometricChallenge].filter(Boolean).find(function(e){return null==e?void 0:e.status}))&&void 0!==n?n:{},d=s.challengeType,f=s.challengeData,v=s.shouldAbortLoginAttempt,p=s.errors,m=i.pathname+(0,wa.c)({redirect:o.redirect,verifyLogin:c?void 0:"1"},{addQueryPrefix:!0}),y=Boolean(o.help),h=null!==(t=null==u?void 0:u.loginScreen)&&void 0!==t?t:function(e,n,t){return n?l.kv.LOGIN:e?l.kv.HELP:l.kv[null!=t?t:""]||l.kv.LOGIN}(y,v,d);return function(e){for(var n=1;n<arguments.length;n++){var t=null!=arguments[n]?arguments[n]:{},r=Object.keys(t);"function"==typeof Object.getOwnPropertySymbols&&(r=r.concat(Object.getOwnPropertySymbols(t).filter(function(e){return Object.getOwnPropertyDescriptor(t,e).enumerable}))),r.forEac
+---
+}i[2]&&o.ops.pop(),o.trys.pop();continue}l=n.call(e,o)}catch(c){l=[6,c],r=0}finally{t=i=0}if(5&l[0])throw l[1];return{value:l[0]?l[1]:void 0,done:!0}}([l,c])}}}var kc=function(){var e=Sc((0,Rn._)(hc(),{errorPolicy:"all",fetchPolicy:"network-only",onError:function(e){return at.A.error("Error verifying Login with QR flow:",e)}}),1)[0],n=(0,k.useCallback)(function(n){return(t=function(){return Ec(this,function(t){switch(t.label){case 0:return[4,e({variables:{tokenId:n}})];case 1:return[2,t.sent()]}})},function(){var e=this,n=arguments;return new Promise(function(r,i){var o=t.apply(e,n);function a(e){gc(o,r,i,a,l,"next",e)}function l(e){gc(o,r,i,a,l,"throw",e)}a(void 0)})})();var t},[e]);return{verifyLoginWithQR:n}};function _c(e,n){(null==n||n>e.length)&&(n=e.length);for(var t=0,r=new Array(n);t<n;t++)r[t]=e[t];return r}function jc(e,n,t,r,i,o,a){try{var l=e[o](a),c=l.value}catch(u){return void t(u)}l.done?n(c):Promise.resolve(c).then(r,i)}function wc(e){return function(){var n=this,t=arguments;return new Promise(function(r,i){var o=e.apply(n,t);function a(e){jc(o,r,i,a,l,"next",e)}function l(e){jc(o,r,i,a,l,"throw",e)}a(void 0)})}}function Oc(e,n,t){return n in e?Object.definePropert
+---
+=l;break;case 4:return o.label++,{value:l[1],done:!1};case 5:o.label++,r=l[1],l=[0];continue;case 7:l=o.ops.pop(),o.trys.pop();continue;default:if(!(i=o.trys,(i=i.length>0&&i[i.length-1])||6!==l[0]&&2!==l[0])){o=0;continue}if(3===l[0]&&(!i||l[1]>i[0]&&l[1]<i[3])){o.label=l[1];break}if(6===l[0]&&o.label<i[1]){o.label=i[1],i=l;break}if(i&&o.label<i[2]){o.label=i[2],o.ops.push(l);break}i[2]&&o.ops.pop(),o.trys.pop();continue}l=n.call(e,o)}catch(c){l=[6,c],r=0}finally{t=i=0}if(5&l[0])throw l[1];return{value:l[0]?l[1]:void 0,done:!0}}([l,c])}}}var Tc=function(){var e,n=(0,k.useRef)(null),t=(0,k.useRef)(!1),i=Cc((0,k.useState)(null),2),o=i[0],a=i[1],l=Cc((0,k.useState)(!1),2),c=l[0],u=l[1],s=kc().verifyLoginWithQR,d=ic().requestQRChallenge,f={state:(e=uc((0,k.useReducer)(mc,sc),2))[0],dispatch:e[1]}.dispatch,v=Jl().generateQRCode,p=(0,Ca.A)(),m=(0,k.useContext)(Li.A),y=(0,C.zy)(),h=(0,O.A)(),b=!o||c,g=y.pathname+(0,wa.c)({redirect:p.redirect,verifyLogin:m?void 0:"1"},{addQueryPrefix:!0}),S=(0,k.useCallback)(function(){n.current&&(clearInterval(n.current),n.current=null),t.current=!1},[]),E=(0,k.useCallback)(function(e){return e===It.FS.TOKEN_EXPIRED&&(a(null),u(!0),S(),!0)},[S]),_=(0,k.u
+---
+&&l[1]<i[3])){o.label=l[1];break}if(6===l[0]&&o.label<i[1]){o.label=i[1],i=l;break}if(i&&o.label<i[2]){o.label=i[2],o.ops.push(l);break}i[2]&&o.ops.pop(),o.trys.pop();continue}l=n.call(e,o)}catch(c){l=[6,c],r=0}finally{t=i=0}if(5&l[0])throw l[1];return{value:l[0]?l[1]:void 0,done:!0}}([l,c])}}}var Tc=function(){var e,n=(0,k.useRef)(null),t=(0,k.useRef)(!1),i=Cc((0,k.useState)(null),2),o=i[0],a=i[1],l=Cc((0,k.useState)(!1),2),c=l[0],u=l[1],s=kc().verifyLoginWithQR,d=ic().requestQRChallenge,f={state:(e=uc((0,k.useReducer)(mc,sc),2))[0],dispatch:e[1]}.dispatch,v=Jl().generateQRCode,p=(0,Ca.A)(),m=(0,k.useContext)(Li.A),y=(0,C.zy)(),h=(0,O.A)(),b=!o||c,g=y.pathname+(0,wa.c)({redirect:p.redirect,verifyLogin:m?void 0:"1"},{addQueryPrefix:!0}),S=(0,k.useCallback)(function(){n.current&&(clearInterval(n.current),n.current=null),t.current=!1},[]),E=(0,k.useCallback)(function(e){return e===It.FS.TOKEN_EXPIRED&&(a(null),u(!0),S(),!0)},[S]),_=(0,k.useCallback)(function(e){return e===It.WQ.SUCCESS&&(S(),(0,Gl.S)(g),!0)},[S,g]),j=(0,k.useCallback)(function(){a(null),u(!0),S()},[S]),w=(0,k.useCallback)(function(e){var r=arguments.length>1&&void 0!==arguments[1]?arguments[1]:5e3;S(),t.current=!0,n.
+---
+yLogin:m?void 0:"1"},{addQueryPrefix:!0}),S=(0,k.useCallback)(function(){n.current&&(clearInterval(n.current),n.current=null),t.current=!1},[]),E=(0,k.useCallback)(function(e){return e===It.FS.TOKEN_EXPIRED&&(a(null),u(!0),S(),!0)},[S]),_=(0,k.useCallback)(function(e){return e===It.WQ.SUCCESS&&(S(),(0,Gl.S)(g),!0)},[S,g]),j=(0,k.useCallback)(function(){a(null),u(!0),S()},[S]),w=(0,k.useCallback)(function(e){var r=arguments.length>1&&void 0!==arguments[1]?arguments[1]:5e3;S(),t.current=!0,n.current=setInterval(function(){return wc(function(){var n,t,r,i,o,a,l;return Ic(this,function(c){switch(c.label){case 0:return c.trys.push([0,2,,3]),[4,s(e)];case 1:if(n=c.sent().data,!(t=null==n?void 0:n.verifyLoginWithQR))throw new Error("No data received from verifyLoginWithQR");return r=t.tokenStatus,i=t.errors,o=Cc(i||[],1),a=o[0],E(null==a?void 0:a.message)||_(r)?[2]:[3,3];case 2:return l=c.sent(),at.A.error("Polling error:",l),j(),[3,3];case 3:return[2]}})})()},r)},[s,S,E,_,j]);(0,k.useEffect)(function(){return function(){return S()}},[S]);return(0,r.jsxs)(rr.B,{display:"flex",flexDirection:"column",alignItems:"center",gap:"8",children:[(0,r.jsx)(Ki.H,{level:3,children:h.string("login.qr_c
+---
+ck)(function(){n.current&&(clearInterval(n.current),n.current=null),t.current=!1},[]),E=(0,k.useCallback)(function(e){return e===It.FS.TOKEN_EXPIRED&&(a(null),u(!0),S(),!0)},[S]),_=(0,k.useCallback)(function(e){return e===It.WQ.SUCCESS&&(S(),(0,Gl.S)(g),!0)},[S,g]),j=(0,k.useCallback)(function(){a(null),u(!0),S()},[S]),w=(0,k.useCallback)(function(e){var r=arguments.length>1&&void 0!==arguments[1]?arguments[1]:5e3;S(),t.current=!0,n.current=setInterval(function(){return wc(function(){var n,t,r,i,o,a,l;return Ic(this,function(c){switch(c.label){case 0:return c.trys.push([0,2,,3]),[4,s(e)];case 1:if(n=c.sent().data,!(t=null==n?void 0:n.verifyLoginWithQR))throw new Error("No data received from verifyLoginWithQR");return r=t.tokenStatus,i=t.errors,o=Cc(i||[],1),a=o[0],E(null==a?void 0:a.message)||_(r)?[2]:[3,3];case 2:return l=c.sent(),at.A.error("Polling error:",l),j(),[3,3];case 3:return[2]}})})()},r)},[s,S,E,_,j]);(0,k.useEffect)(function(){return function(){return S()}},[S]);return(0,r.jsxs)(rr.B,{display:"flex",flexDirection:"column",alignItems:"center",gap:"8",children:[(0,r.jsx)(Ki.H,{level:3,children:h.string("login.qr_code.title","Scan QR Code")}),(0,r.jsx)(ir.T,{color:"neutra
+---
+.abortLoginAttemptErrors,U=R.redirectUrl,M=R.shouldPoll,F=R.pollDelay,B=R.challengeId,G=R.challengeData,K=ju((0,i.n)(a()),1)[0];(0,k.useEffect)(function(){I(Au,"/login",null,l.A$)},[I]),t=(0,g.$)().trackAnalyticsCustomEvent,o=(0,E.n)(),c=o.guessedDeviceType,s=o.guessedOSName,f=(0,S.gB)(),m=(0,k.useRef)(!1),(0,k.useEffect)(function(){f||m.current||(0,b.V)(document.referrer,window.location.origin)&&(m.current=!0,t("password_reset_web_login_displayed",1,{device_type:c,os:s}))},[f,t,c,s]),(0,h.A)(function(){return(e=function(){var e,n;return wu(this,function(t){switch(t.label){case 0:P({type:p}),t.label=1;case 1:return t.trys.push([1,3,,4]),[4,K()];case 2:return e=t.sent().data,"SUCCESS"===(n=e.verifyLoginWithPush).status?(I(Cu,L,null,l.A$),[2,P({type:u})]):(n.isAuthorizationPending||I(Iu,L,null,l.A$),P({type:d,response:n}),[3,4]);case 3:return t.sent(),P({type:v}),I(Iu,L,null,l.A$),[3,4];case 4:return[2]}})},function(){var n=this,t=arguments;return new Promise(function(r,i){var o=e.apply(n,t);function a(e){ku(o,r,i,a,l,"next",e)}function l(e){ku(o,r,i,a,l,"throw",e)}a(void 0)})})();var e},M?1e3*(null!=F?F:0):null),(0,h.A)(function(){if(L&&L!==l.kv.LOGIN&&L!==l.kv.HELP&&L!==l.kv.OPEN_B
+---
+r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.requestBiometricChallengeMutation=function(e,n){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(function(e){l.add(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"requestBiometricChallengeMutation")},71974(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",operation:"mutation",name:{kind:"Name",value:"verifyLoginWithPushMutation"},variableDefinitions:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"verifyLoginWithPush"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},
+---
+ometricChallengeMutation=function(e,n){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(function(e){l.add(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"requestBiometricChallengeMutation")},71974(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",operation:"mutation",name:{kind:"Name",value:"verifyLoginWithPushMutation"},variableDefinitions:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"verifyLoginWithPush"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"message"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"field"},
+---
+,directives:[]},{kind:"Field",name:{kind:"Name",value:"field"},arguments:[],directives:[]}]}},{kind:"Field",name:{kind:"Name",value:"isAuthorizationPending"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"shouldAbortLoginAttempt"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"challengeType"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"rateLimit"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"limit"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"current"},arguments:[],directives:[]}]}}]}}]}}],loc:{start:0,end:267}};n.loc.source={body:"mutation verifyLoginWithPushMutation {\n  verifyLoginWithPush {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    isAuthorizationPending\n    shouldAbortLoginAttempt\n    challengeType\n    rateLimit {\n      limit\n      current\n    }\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selec
+---
+e:{kind:"Name",value:"field"},arguments:[],directives:[]}]}},{kind:"Field",name:{kind:"Name",value:"isAuthorizationPending"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"shouldAbortLoginAttempt"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"challengeType"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"rateLimit"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"limit"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"current"},arguments:[],directives:[]}]}}]}}]}}],loc:{start:0,end:267}};n.loc.source={body:"mutation verifyLoginWithPushMutation {\n  verifyLoginWithPush {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    isAuthorizationPending\n    shouldAbortLoginAttempt\n    challengeType\n    rateLimit {\n      limit\n      current\n    }\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selection
+---
+\n      limit\n      current\n    }\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.length;t++){var r=e.definitions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.verifyLoginWithPushMutation=function(e,n){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(function(e){l.add(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"verifyLoginWithPushMutation")},78723(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",o
+---
+(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.length;t++){var r=e.definitions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.verifyLoginWithPushMutation=function(e,n){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(function(e){l.add(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"verifyLoginWithPushMutation")},78723(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",operation:"mutation",name:{kind:"Name",value:"verifyLoginWithSMSMutation"},variableDefinitions:[{kind:"VariableDefinition",variable:{kind:"Variable",name:{kind:"Name",value:"verificationCode"}},type:{kind:"NonNullType",type:{kind:"NamedType",name:{kind:"Name",value:"String"}}},directives:[]}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"ver
+---
+tions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.verifyLoginWithPushMutation=function(e,n){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(function(e){l.add(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"verifyLoginWithPushMutation")},78723(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",operation:"mutation",name:{kind:"Name",value:"verifyLoginWithSMSMutation"},variableDefinitions:[{kind:"VariableDefinition",variable:{kind:"Variable",name:{kind:"Name",value:"verificationCode"}},type:{kind:"NonNullType",type:{kind:"NamedType",name:{kind:"Name",value:"String"}}},directives:[]}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"verifyLoginWithSMS"},arguments:[{kind:"Argument",name:{kind:"Name",value:"verificationCode"},value:{kind:"Variable",name:{kind:"Name",value:"verification
+---
+d(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"verifyLoginWithPushMutation")},78723(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",operation:"mutation",name:{kind:"Name",value:"verifyLoginWithSMSMutation"},variableDefinitions:[{kind:"VariableDefinition",variable:{kind:"Variable",name:{kind:"Name",value:"verificationCode"}},type:{kind:"NonNullType",type:{kind:"NamedType",name:{kind:"Name",value:"String"}}},directives:[]}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"verifyLoginWithSMS"},arguments:[{kind:"Argument",name:{kind:"Name",value:"verificationCode"},value:{kind:"Variable",name:{kind:"Name",value:"verificationCode"}}}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directives:
+---
+directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"message"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"field"},arguments:[],directives:[]}]}},{kind:"Field",name:{kind:"Name",value:"attemptLimitExceeded"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"shouldAbortLoginAttempt"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"challengeType"},arguments:[],directives:[]}]}}]}}],loc:{start:0,end:280}};n.loc.source={body:"mutation verifyLoginWithSMSMutation($verificationCode: String!) {\n  verifyLoginWithSMS(verificationCode: $verificationCode) {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    attemptLimitExceeded\n    shouldAbortLoginAttempt\n    challengeType\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value
+---
+"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"message"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"field"},arguments:[],directives:[]}]}},{kind:"Field",name:{kind:"Name",value:"attemptLimitExceeded"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"shouldAbortLoginAttempt"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"challengeType"},arguments:[],directives:[]}]}}]}}],loc:{start:0,end:280}};n.loc.source={body:"mutation verifyLoginWithSMSMutation($verificationCode: String!) {\n  verifyLoginWithSMS(verificationCode: $verificationCode) {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    attemptLimitExceeded\n    shouldAbortLoginAttempt\n    challengeType\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function
+---
+bortLoginAttempt\n    challengeType\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.length;t++){var r=e.definitions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.verifyLoginWithSMSMutation=function(e,n){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(function(e){l.add(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"verifyLoginWithSMSMutation")},87045(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",ope
+---
+n(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.length;t++){var r=e.definitions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.verifyLoginWithSMSMutation=function(e,n){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(function(e){l.add(e)});l.size>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"verifyLoginWithSMSMutation")},87045(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",operation:"mutation",name:{kind:"Name",value:"requestSMSChallengeMutation"},variableDefinitions:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"requestSMSChallenge"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Na
+---
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+files={'lp':'loginpage.js','cl':'client.js'}
+pats={
+ 's.QQ / action target':r's\.QQ\s*=',
+ 'window.location.assign':r'window\.location\.(assign|replace|href)',
+ 'location.assign':r'location\.assign\(',
+ 'new URL(':r'new URL\(',
+ 'startsWith("http')':r'startsWith\(["\']http',
+ 'sameOrigin/allowlist':r'(allowlist|whitelist|allowedRedirect|isSameOrigin|sameOrigin|isValidRedirect|isExternalRedirect)',
+ 'redirectUrl':r'redirectUrl',
+ 'Gl.S def':r'Gl\.S\s*=',
+}
+for name,d in [(files['lp'],open('loginpage.js',encoding='utf-8',errors='replace').read()),
+               (files['cl'],open('client.js',encoding='utf-8',errors='replace').read())]:
+    print("#####",name)
+    for k,p in pats.items():
+        ms=list(re.finditer(p,d))
+        print(f"  {k}: {len(ms)}")
+EOF
+File "<stdin>", line 8
+    'startsWith("http')':r'startsWith\(["\']http',
+                      ^
+SyntaxError: closing parenthesis ')' does not match opening parenthesis '{' on line 3
+[0m
+## Objective
+- Continue the N26 bug-bounty analyst cycle for `target: api`.
+- Execute the committed passive scan of N26’s login bundle to determine whether `__successRedirect`/`__failureRedirect` cause real off-origin navigation, then emit the required structured report blocks.
+
+## Important Details
+- State: `{"phase": "POC", "target": "api"}`.
+- Existing OATH finding: `https://app.n26.com/login?redirect=...` copies the external URL into both Relay hidden fields, including `__failureRedirect`.
+- Baseline hidden value: `/login?verifyLogin=1`; external value: `/login?redirect=https%3A%2F%2Fevil.example%2Fprobe&verifyLogin=1`.
+- Current live constraints: passive-first, ≤1 rps, GET/HEAD/OPTIONS only; no form submission, mutating requests, customer data, or secrets.
+- `app.n26.com` exposes `x-ratelimit-limit: 60`; avoid burst probing.
+- The `api.tech26.de` 401/404 oracle only identifies gate-pattern membership, not resource existence; further noun enumeration is parked.
+- Final output must contain only `[NEW]`, `[CHANGED]`/`NO_DELTA`, `[PRIO]`, up to three strict-schema `[HYP]` blocks, `[PARKED]`, `[FINAL]`, exactly one `[NEXT]`, `[LEARN]`, and `[RISK]`.
+
+## Work State
+### Completed
+- Confirmed `https://app.n26.com/login` returns `200`, downloaded size `316197`.
+- Confirmed login form markup: `<form class="b c d" action="/graphql" method="POST">`.
+- Confirmed baseline hidden field `__successRedirect" value="/login?verifyLogin=1"/>`.
+- Extracted current bundle paths, including:
+  - `/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js`
+  - `/build/js/client.90a73858.js`
+- Downloaded `/tmp/opencode/lp.js` successfully: `200`, `221646` bytes.
+- Downloaded `/tmp/opencode/client.js` successfully: `200`, `1466289` bytes.
+
+### Active
+- Static analysis of `lp.js` and `client.js` for `__successRedirect`, `__failureRedirect`, `verifyLogin`, `redirect=`, and Relay continuation handling.
+- Need determine whether navigation is server-executed by GraphQL Relay or client-executed by JavaScript, and whether continuation parameters are appended.
+
+### Blocked
+- Actual browser navigation after login remains unobserved without bundle confirmation or an authorized test account.
+- Response-size comparisons must control `Accept-Encoding`; prior sizes vary because of dynamic `_csrf`/challenge content and compression.
+
+## Next Move
+1. Run `grep -nE '__successRedirect|__failureRedirect|verifyLogin|redirect' /tmp/opencode/lp.js /tmp/opencode/client.js` and inspect matching minified-module context.
+2. If bundle logic is absent, inspect `sourceMappingURL` or fetch the relevant source map/chunks passively, then record the scan result as `[CHANGED]`, `[NEW]`, or `NO_DELTA`.
+
+## Relevant Files
+- `/tmp/opencode/login.html`: downloaded N26 login page and Relay form markup.
+- `/tmp/opencode/lp.js`: current `LoginPage` bundle requiring analysis.
+- `/tmp/opencode/client.js`: current client runtime bundle requiring analysis.
+- `/tmp/opencode/state_bigpickle.json`: current phase/target state.
+- `/tmp/opencode/analyst-prompt.txt`: analyst instructions and prior-cycle context.
+- `/tmp/opencode/ctx.txt`: knowledge base, hypotheses, leads, and current surface.
+- `/tmp/opencode/probe-results.md`: latest probe evidence.
+- `/tmp/opencode/scope.yml`: authorized scope.
+- `/tmp/opencode/inventory/n26.md`: N26 asset inventory.
+- `/tmp/opencode/leads/`: prior and ranked lead artifacts.
+- `/tmp/opencode/knowledge/`: persisted findings and retractions.
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+[0m$ [0mcd /tmp/opencode && python3 - <<'PY'
+import re
+pats = {
+ 'action target (s.QQ)': r's\.QQ\s*=',
+ 'location.assign/replace/href': r'location\.(assign|replace)\(|location\.href\s*=',
+ 'new URL(': r'new URL\(',
+ 'startsWith http': r'startsWith\(["\x27]http',
+ 'allowlist/validator': r'allowlist|whitelist|allowedRedirect|isSameOrigin|sameOrigin|isValidRedirect|isExternalRedirect',
+ 'redirectUrl': r'redirectUrl',
+ 'sourceMappingURL': r'sourceMappingURL',
+}
+for f in ('loginpage.js','client.js'):
+    d=open(f,encoding='utf-8',errors='replace').read()
+    print('#####',f,len(d))
+    for k,p in pats.items():
+        print('  %-28s %d' % (k, len(list(re.finditer(p,d)))))
+PY
+##### loginpage.js 221646
+  action target (s.QQ)         0
+  location.assign/replace/href 2
+  new URL(                     5
+  startsWith http              0
+  allowlist/validator          0
+  redirectUrl                  9
+  sourceMappingURL             0
+##### client.js 1466289
+  action target (s.QQ)         0
+  location.assign/replace/href 6
+  new URL(                     2
+  startsWith http              0
+  allowlist/validator          0
+  redirectUrl                  0
+  sourceMappingURL             0
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'PY'
+import re
+d=open('loginpage.js',encoding='utf-8',errors='replace').read()
+for p in (r'new URL\(', r'location\.(assign|replace)\(|location\.href\s*='):
+    print('### pattern',p)
+    for m in re.finditer(p,d):
+        print(d[max(0,m.start()-350):m.start()+450].replace('\n','\\n'))
+        print('----')
+PY
+### pattern new URL\(
+r=r.concat(Object.getOwnPropertySymbols(t).filter(function(e){return Object.getOwnPropertyDescriptor(t,e).enumerable}))),r.forEach(function(n){d(e,n,t[n])})}return e}({},o.o,u.u1),"div");const y=function(e){var n=e.redirectURL,t=(0,a.A)(),o=f((0,l.useState)("login_open_banking_redirection"),2),c=o[0],u=o[1];return(0,i.A)(function(){try{if(n){var e=new URL(n);if(/^(https?):$/.test(e.protocol))return void(window.location.href=e.toString())}}catch(t){}u("login_open_banking_redirection_failed")},3e3),(0,r.jsxs)(v,{isWide:!0,children:[(0,r.jsx)(m,{}),(0,r.jsx)(p,{role:"alert","aria-live":"assertive",children:t.string(c)})]})}},38968(e,n,t){"use strict";t.d(n,{Ay:()=>m,fW:()=>y,u1:()=>d});var r=t(76031),i=t(47094);function o(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,c
+----
+(0,w.O)().trackStructuredEvent,d=Ml(),f=d.fingerprint,v=d.components,p=Tl(),y=p.delayState,h=p.handleDelayOnFailure,b=(0,jl.B)().handleLoginFailureError,g=(0,Tn.Zv)(),S=g.isLoginWithQrCodeEnabled,E=g.isObApp2AppEnabled,_=(0,gl.A)({shouldSkipQuery:!0}),j=_.authType,A=_.requestId,C=_.tppRole,I=j===Sl.Yj.XS2A,T=function(e){if(!e)return null;try{var n=new URL(e,"https://n26.com"),t=n.pathname,r=n.searchParams.get("redirect");return r?new URL(r,"https://n26.com").pathname:t}catch(i){return null}}(n),N=!!T&&Sl.$E.includes(T),x=Lc((0,k.useState)(!0),2),R=x[0],P=x[1];return(0,r.jsxs)(rr.B,{display:"flex",flexDirection:{mobile:"column",tablet:"column",desktop:"row"},alignItems:"center",gap:"8",children:[(0,r.jsxs)(Uc,{isWide:!0,children:[(0,r.jsx)(Qa.V,{as:"h1",children:a.string("login_title","Logi
+----
+yState,h=p.handleDelayOnFailure,b=(0,jl.B)().handleLoginFailureError,g=(0,Tn.Zv)(),S=g.isLoginWithQrCodeEnabled,E=g.isObApp2AppEnabled,_=(0,gl.A)({shouldSkipQuery:!0}),j=_.authType,A=_.requestId,C=_.tppRole,I=j===Sl.Yj.XS2A,T=function(e){if(!e)return null;try{var n=new URL(e,"https://n26.com"),t=n.pathname,r=n.searchParams.get("redirect");return r?new URL(r,"https://n26.com").pathname:t}catch(i){return null}}(n),N=!!T&&Sl.$E.includes(T),x=Lc((0,k.useState)(!0),2),R=x[0],P=x[1];return(0,r.jsxs)(rr.B,{display:"flex",flexDirection:{mobile:"column",tablet:"column",desktop:"row"},alignItems:"center",gap:"8",children:[(0,r.jsxs)(Uc,{isWide:!0,children:[(0,r.jsx)(Qa.V,{as:"h1",children:a.string("login_title","Login")}),(0,r.jsx)(Dc,{formProps:{onChange:function(){return P(!1)}},onSuccess:function
+----
+ze>0;){var c=l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"verifyUserKeylessDataQuery")},95151(e,n,t){"use strict";t.d(n,{B:()=>r,V:()=>i});var r="/reset-password/success",i=function(e,n){if(!e||!n)return!1;try{var t=new URL(e),i=new URL(n);return t.protocol===i.protocol&&t.hostname===i.hostname&&t.pathname===r}catch(o){return!1}}}}]);
+----
+l;l=new Set,c.forEach(function(e){a.has(e)||(a.add(e),(r[e]||new Set).forEach(function(e){l.add(e)}))})}return a.forEach(function(n){var r=i(e,n);r&&t.definitions.push(r)}),t}(n,"verifyUserKeylessDataQuery")},95151(e,n,t){"use strict";t.d(n,{B:()=>r,V:()=>i});var r="/reset-password/success",i=function(e,n){if(!e||!n)return!1;try{var t=new URL(e),i=new URL(n);return t.protocol===i.protocol&&t.hostname===i.hostname&&t.pathname===r}catch(o){return!1}}}}]);
+----
+### pattern location\.(assign|replace)\(|location\.href\s*=
+turn Object.getOwnPropertyDescriptor(t,e).enumerable}))),r.forEach(function(n){d(e,n,t[n])})}return e}({},o.o,u.u1),"div");const y=function(e){var n=e.redirectURL,t=(0,a.A)(),o=f((0,l.useState)("login_open_banking_redirection"),2),c=o[0],u=o[1];return(0,i.A)(function(){try{if(n){var e=new URL(n);if(/^(https?):$/.test(e.protocol))return void(window.location.href=e.toString())}}catch(t){}u("login_open_banking_redirection_failed")},3e3),(0,r.jsxs)(v,{isWide:!0,children:[(0,r.jsx)(m,{}),(0,r.jsx)(p,{role:"alert","aria-live":"assertive",children:t.string(c)})]})}},38968(e,n,t){"use strict";t.d(n,{Ay:()=>m,fW:()=>y,u1:()=>d});var r=t(76031),i=t(47094);function o(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}function a(e){for(var n=1;
+----
+(r=r.concat(Object.getOwnPropertySymbols(t).filter(function(e){return Object.getOwnPropertyDescriptor(t,e).enumerable}))),r.forEach(function(n){ll(e,n,t[n])})}return e}({},h&&{loginScreen:h},b&&{challengeId:b},g&&{challengeData:g},S&&{challengeStep:S})},[h,b,g,S]);return(0,k.useEffect)(function(){m&&((0,Za.A)(l.oU.WEBAPP_USER_LOGGED_IN),y&&(window.location.href=y))},[y,m]),(0,k.useEffect)(function(){var e=function(){(0,Za.A)(l.oU.LOGIN_ABORTED,h,null,l.A$)};return window.addEventListener("beforeunload",e),function(){return window.removeEventListener("beforeunload",e)}},[h,i]),(0,k.useEffect)(function(){E&&(0,Za.A)(l.oU.LOGIN_MFA_SESSION_EXPIRED,h,null,l.A$)},[h,E]),(0,k.useEffect)(function(){switch(null==j?void 0:j.loginScreen){case l.kv.KEYLESS:return s(!0),u(j);case l.kv.LOGIN:return s(!
+----
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'PY'
+import re
+d=open('loginpage.js',encoding='utf-8',errors='replace').read()
+i=d.find('WEBAPP_USER_LOGGED_IN')
+print(d[i-2600:i+400].replace('\n','\\n'))
+PY
+ion"==typeof Object.getOwnPropertySymbols&&(r=r.concat(Object.getOwnPropertySymbols(t).filter(function(e){return Object.getOwnPropertyDescriptor(t,e).enumerable}))),r.forEach(function(n){il(e,n,t[n])})}return e}({shouldAbortLoginAttempt:v,shouldShowCloseButton:!0,shouldLogUserIn:!1,loginScreen:h,challengeData:null!==(r=null==u?void 0:u.challengeData)&&void 0!==r?r:f,redirectUrl:m,shouldPoll:!1,pollDelay:2,abortLoginAttemptErrors:v?p:[]},(null==u?void 0:u.challengeId)&&{challengeId:u.challengeId})};function al(e,n){(null==n||n>e.length)&&(n=e.length);for(var t=0,r=new Array(n);t<n;t++)r[t]=e[t];return r}function ll(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}function cl(e,n){return function(e){if(Array.isArray(e))return e}(e)||function(e,n){var t=null==e?null:"undefined"!=typeof Symbol&&e[Symbol.iterator]||e["@@iterator"];if(null!=t){var r,i,o=[],a=!0,l=!1;try{for(t=t.call(e);!(a=(r=t.next()).done)&&(o.push(r.value),!n||o.length!==n);a=!0);}catch(c){l=!0,i=c}finally{try{a||null==t.return||t.return()}finally{if(l)throw i}}return o}}(e,n)||function(e,n){if(!e)return;if("string"==typeof e)return al(e,n);var t=Object.prototype.toString.call(e).slice(8,-1);"Object"===t&&e.constructor&&(t=e.constructor.name);if("Map"===t||"Set"===t)return Array.from(t);if("Arguments"===t||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t))return al(e,n)}(e,n)||function(){throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}var ul=function(){var e=(0,C.zy)(),n=(0,Ca.A)(),t=(0,k.useContext)(_.A),r=(0,k.useContext)(Li.A),i=(0,w.O)().trackStructuredEvent,o=(0,Tn.Zv)().loginState,a=void 0===o?{}:o,c=Mt(),u=c.setBiometricAuthLoginState,s=c.setIsKeylessEligible,d={location:e,queryParams:n,mutationFormPayload:t,hasJavaScript:r,loginState:a},f=cl((0,k.useReducer)(rl,d,ol),2),v=f[0],p=f[1],m=v.shouldLogUserIn,y=v.redirectUrl,h=v.loginScreen,b=v.challengeId,g=v.challengeData,S=v.challengeStep,E=v.shouldAbortLoginAttempt,j=(0,k.useMemo)(function(){return function(e){for(var n=1;n<arguments.length;n++){var t=null!=arguments[n]?arguments[n]:{},r=Object.keys(t);"function"==typeof Object.getOwnPropertySymbols&&(r=r.concat(Object.getOwnPropertySymbols(t).filter(function(e){return Object.getOwnPropertyDescriptor(t,e).enumerable}))),r.forEach(function(n){ll(e,n,t[n])})}return e}({},h&&{loginScreen:h},b&&{challengeId:b},g&&{challengeData:g},S&&{challengeStep:S})},[h,b,g,S]);return(0,k.useEffect)(function(){m&&((0,Za.A)(l.oU.WEBAPP_USER_LOGGED_IN),y&&(window.location.href=y))},[y,m]),(0,k.useEffect)(function(){var e=function(){(0,Za.A)(l.oU.LOGIN_ABORTED,h,null,l.A$)};return window.addEventListener("beforeunload",e),function(){return window.removeEventListener("beforeunload",e)}},[h,i]),(0,k.useEffect)(function(){E&&(0,Za.A)(l.oU.LOGIN_MFA_SESSION_EXPIRED,h,null,l.A$)},[h,E]),(0,k.useEffect)(function(){switch(null==j?
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'PY'
+import re
+d=open('loginpage.js',encoding='utf-8',errors='replace').read()
+# find $E (allowlist) definition
+for m in re.finditer(r'\.\$E\s*=', d):
+    print('=== $E def ===')
+    print(d[m.start():m.start()+700].replace('\n','\\n')); print('---')
+for m in re.finditer(r'\$E\.includes', d):
+    print('=== $E.includes ctx ===')
+    print(d[max(0,m.start()-500):m.start()+700].replace('\n','\\n')); print('---')
+PY
+=== $E.includes ctx ===
+trackStructuredEvent,d=Ml(),f=d.fingerprint,v=d.components,p=Tl(),y=p.delayState,h=p.handleDelayOnFailure,b=(0,jl.B)().handleLoginFailureError,g=(0,Tn.Zv)(),S=g.isLoginWithQrCodeEnabled,E=g.isObApp2AppEnabled,_=(0,gl.A)({shouldSkipQuery:!0}),j=_.authType,A=_.requestId,C=_.tppRole,I=j===Sl.Yj.XS2A,T=function(e){if(!e)return null;try{var n=new URL(e,"https://n26.com"),t=n.pathname,r=n.searchParams.get("redirect");return r?new URL(r,"https://n26.com").pathname:t}catch(i){return null}}(n),N=!!T&&Sl.$E.includes(T),x=Lc((0,k.useState)(!0),2),R=x[0],P=x[1];return(0,r.jsxs)(rr.B,{display:"flex",flexDirection:{mobile:"column",tablet:"column",desktop:"row"},alignItems:"center",gap:"8",children:[(0,r.jsxs)(Uc,{isWide:!0,children:[(0,r.jsx)(Qa.V,{as:"h1",children:a.string("login_title","Login")}),(0,r.jsx)(Dc,{formProps:{onChange:function(){return P(!1)}},onSuccess:function(e){var n=e.response;return I?t({type:m,response:n}):n.challengeType?(c(l.oU.LOGIN_CREDENTIALS_SUCCESS,o,null,l.A$),void t({type:s,response:n})):t({type:u})},onFailure:function(e){var n=e.errors;b(n)&&(c(l.oU.LOGIN_CREDENTIALS_FAILURE,o,null,l.A$),h(e),P(!0))},successURL:n,failureURL:n,mutation:Bl(),children:function(e){var 
+---
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'PY'
+import re
+d=open('loginpage.js',encoding='utf-8',errors='replace').read()
+for i,m in enumerate(re.finditer(r'redirectUrl', d)):
+    print('===',i,'@',m.start(),'===')
+    print(d[max(0,m.start()-600):m.start()+400].replace('\n','\\n'))
+    print()
+PY
+=== 0 @ 129075 ===
+lengeType,_=g.rateLimit;if(S)return tl(nl({},e),{shouldAbortLoginAttempt:S,shouldPoll:!1,abortLoginAttemptErrors:null!=E?E:[],loginScreen:l.kv.LOGIN});var j=Xa(k);if(!_)return tl(nl({},e),{shouldPoll:j});var w=_.current,O=_.limit,A=Math.min(Math.floor(Number(w)/(Number(O)/4)+2),4);return tl(nl({},e),{shouldPoll:j,pollDelay:A});case f:var C=Xa(n.screen);return tl(nl({},e),{shouldPoll:C,loginScreen:n.screen});case v:var I;return tl(nl({},e),{shouldPoll:!0,pollDelay:null!==(I=n.pollDelay)&&void 0!==I?I:e.pollDelay});case p:return tl(nl({},e),{shouldPoll:!1});case m:return n.response?tl(nl({},e),{redirectUrl:n.response.redirectUrl,loginScreen:l.kv.OPEN_BANKING_REDIRECTION}):e;default:return e}};function il(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}var ol=function(e){var n,t,r,i=e.location,o=e.queryParams,a=e.mutationFormPayload,c=e.hasJavaScript,u=e.loginState,s=null!==(n=[null==a?void 0:a.verifyLoginWithSMS,null==a?void 0:
+
+=== 1 @ 129098 ===
+;if(S)return tl(nl({},e),{shouldAbortLoginAttempt:S,shouldPoll:!1,abortLoginAttemptErrors:null!=E?E:[],loginScreen:l.kv.LOGIN});var j=Xa(k);if(!_)return tl(nl({},e),{shouldPoll:j});var w=_.current,O=_.limit,A=Math.min(Math.floor(Number(w)/(Number(O)/4)+2),4);return tl(nl({},e),{shouldPoll:j,pollDelay:A});case f:var C=Xa(n.screen);return tl(nl({},e),{shouldPoll:C,loginScreen:n.screen});case v:var I;return tl(nl({},e),{shouldPoll:!0,pollDelay:null!==(I=n.pollDelay)&&void 0!==I?I:e.pollDelay});case p:return tl(nl({},e),{shouldPoll:!1});case m:return n.response?tl(nl({},e),{redirectUrl:n.response.redirectUrl,loginScreen:l.kv.OPEN_BANKING_REDIRECTION}):e;default:return e}};function il(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}var ol=function(e){var n,t,r,i=e.location,o=e.queryParams,a=e.mutationFormPayload,c=e.hasJavaScript,u=e.loginState,s=null!==(n=[null==a?void 0:a.verifyLoginWithSMS,null==a?void 0:a.verifyLoginWithPush,n
+
+=== 2 @ 130514 ===
+ginScreen)&&void 0!==t?t:function(e,n,t){return n?l.kv.LOGIN:e?l.kv.HELP:l.kv[null!=t?t:""]||l.kv.LOGIN}(y,v,d);return function(e){for(var n=1;n<arguments.length;n++){var t=null!=arguments[n]?arguments[n]:{},r=Object.keys(t);"function"==typeof Object.getOwnPropertySymbols&&(r=r.concat(Object.getOwnPropertySymbols(t).filter(function(e){return Object.getOwnPropertyDescriptor(t,e).enumerable}))),r.forEach(function(n){il(e,n,t[n])})}return e}({shouldAbortLoginAttempt:v,shouldShowCloseButton:!0,shouldLogUserIn:!1,loginScreen:h,challengeData:null!==(r=null==u?void 0:u.challengeData)&&void 0!==r?r:f,redirectUrl:m,shouldPoll:!1,pollDelay:2,abortLoginAttemptErrors:v?p:[]},(null==u?void 0:u.challengeId)&&{challengeId:u.challengeId})};function al(e,n){(null==n||n>e.length)&&(n=e.length);for(var t=0,r=new Array(n);t<n;t++)r[t]=e[t];return r}function ll(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}function cl(e,n){return function(e){if
+
+=== 3 @ 132132 ===
+rray$/.test(t))return al(e,n)}(e,n)||function(){throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}var ul=function(){var e=(0,C.zy)(),n=(0,Ca.A)(),t=(0,k.useContext)(_.A),r=(0,k.useContext)(Li.A),i=(0,w.O)().trackStructuredEvent,o=(0,Tn.Zv)().loginState,a=void 0===o?{}:o,c=Mt(),u=c.setBiometricAuthLoginState,s=c.setIsKeylessEligible,d={location:e,queryParams:n,mutationFormPayload:t,hasJavaScript:r,loginState:a},f=cl((0,k.useReducer)(rl,d,ol),2),v=f[0],p=f[1],m=v.shouldLogUserIn,y=v.redirectUrl,h=v.loginScreen,b=v.challengeId,g=v.challengeData,S=v.challengeStep,E=v.shouldAbortLoginAttempt,j=(0,k.useMemo)(function(){return function(e){for(var n=1;n<arguments.length;n++){var t=null!=arguments[n]?arguments[n]:{},r=Object.keys(t);"function"==typeof Object.getOwnPropertySymbols&&(r=r.concat(Object.getOwnPropertySymbols(t).filter(function(e){return Object.getOwnPropertyDescriptor(t
+
+=== 4 @ 198924 ===
+nt(),t({type:f,screen:l.kv.VERIFY_PUSH_STEP_1}),[2]}})},function(){var n=this,t=arguments;return new Promise(function(r,i){var o=e.apply(n,t);function a(e){Ea(o,r,i,a,l,"next",e)}function l(e){Ea(o,r,i,a,l,"throw",e)}a(void 0)})})();var e},[t,o]);return(0,r.jsx)(Cn,{challengeId:n,exitKeyless:a,children:(0,r.jsx)(ga,{dispatch:t})})}),_u(Ou,l.kv.HELP,ml),_u(Ou,l.kv.LOGGING_IN,hl),_u(Ou,l.kv.OPEN_BANKING_REDIRECTION,Hc.A),Ou);const Nu=function(){var e,n,t,o,c,s,f,m,I=(0,w.O)().trackStructuredEvent,T=(0,O.A)(),N=(0,C.W6)(),x=ju(ul(),2),R=x[0],P=x[1],L=R.loginScreen,D=R.abortLoginAttemptErrors,U=R.redirectUrl,M=R.shouldPoll,F=R.pollDelay,B=R.challengeId,G=R.challengeData,K=ju((0,i.n)(a()),1)[0];(0,k.useEffect)(function(){I(Au,"/login",null,l.A$)},[I]),t=(0,g.$)().trackAnalyticsCustomEvent,o=(0,E.n)(),c=o.guessedDeviceType,s=o.guessedOSName,f=(0,S.gB)(),m=(0,k.useRef)(!1),(0,k.useEffect)(function(){f||m.current||(0,b.V)(document.referrer,window.location.origin)&&(m.current=!0,t("password_res
+
+=== 5 @ 200320 ===
+se:n}),[3,4]);case 3:return t.sent(),P({type:v}),I(Iu,L,null,l.A$),[3,4];case 4:return[2]}})},function(){var n=this,t=arguments;return new Promise(function(r,i){var o=e.apply(n,t);function a(e){ku(o,r,i,a,l,"next",e)}function l(e){ku(o,r,i,a,l,"throw",e)}a(void 0)})})();var e},M?1e3*(null!=F?F:0):null),(0,h.A)(function(){if(L&&L!==l.kv.LOGIN&&L!==l.kv.HELP&&L!==l.kv.OPEN_BANKING_REDIRECTION&&L!==l.kv.LOGGING_IN)return N.push("/pages/login-feedback/timeout")},l.r1);var V=L?Tu[L]:Wc,W=null!=V?V:Wc,H=null!==(e=(0,k.useContext)(_.A))&&void 0!==e?e:{};return(null===(n=H.login)||void 0===n?void 0:n.redirectUrl)?(0,r.jsx)(j.rd,{from:"/login",to:H.login.redirectUrl}):(0,r.jsxs)(r.Fragment,{children:[(0,r.jsx)(W,{dispatch:P,abortLoginAttemptErrors:D,redirectURL:U,loginScreen:L,challengeId:B,challengeData:G}),(0,r.jsx)(y.A,{title:T.string("login_title","Login"),description:T.string("login_description","Login"),path:"/login"}),(0,r.jsx)(A.mg,{children:(0,r.jsx)("meta",{name:"apple-itunes-app",con
+
+=== 6 @ 200374 ===
+L,null,l.A$),[3,4];case 4:return[2]}})},function(){var n=this,t=arguments;return new Promise(function(r,i){var o=e.apply(n,t);function a(e){ku(o,r,i,a,l,"next",e)}function l(e){ku(o,r,i,a,l,"throw",e)}a(void 0)})})();var e},M?1e3*(null!=F?F:0):null),(0,h.A)(function(){if(L&&L!==l.kv.LOGIN&&L!==l.kv.HELP&&L!==l.kv.OPEN_BANKING_REDIRECTION&&L!==l.kv.LOGGING_IN)return N.push("/pages/login-feedback/timeout")},l.r1);var V=L?Tu[L]:Wc,W=null!=V?V:Wc,H=null!==(e=(0,k.useContext)(_.A))&&void 0!==e?e:{};return(null===(n=H.login)||void 0===n?void 0:n.redirectUrl)?(0,r.jsx)(j.rd,{from:"/login",to:H.login.redirectUrl}):(0,r.jsxs)(r.Fragment,{children:[(0,r.jsx)(W,{dispatch:P,abortLoginAttemptErrors:D,redirectURL:U,loginScreen:L,challengeId:B,challengeData:G}),(0,r.jsx)(y.A,{title:T.string("login_title","Login"),description:T.string("login_description","Login"),path:"/login"}),(0,r.jsx)(A.mg,{children:(0,r.jsx)("meta",{name:"apple-itunes-app",content:"app-id=956857223"})})]})}},59951(e){var n={kind:
+
+=== 7 @ 209397 ===
+ctionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"message"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"field"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"userMessage"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"title"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"detail"},arguments:[],directives:[]}]}}]}},{kind:"Field",name:{kind:"Name",value:"redirectUrl"},arguments:[],directives:[]}]}}]}}],loc:{start:0,end:704}};n.loc.source={body:"mutation requestBiometricChallengeMutation(\n  $username: String!\n  $password: String!\n  $fp: String\n  $fpc: String\n  $requestId: String\n) {\n  requestBiometricChallenge(\n    username: $username\n    password: $password\n    fp: $fp\n    fpc: $fpc\n    requestId: $requestId\n  ) {\n    status\n    sho
+
+=== 8 @ 210212 ===
+requestId: String\n) {\n  requestBiometricChallenge(\n    username: $username\n    password: $password\n    fp: $fp\n    fpc: $fpc\n    requestId: $requestId\n  ) {\n    status\n    shouldDelay\n    challengeId\n    challengeType\n    challengeStep\n    # In case of an invalid_state error, the user would directly go to the SMS\n    # flow.\n    challengeData {\n      obfuscatedPhoneNumber\n      remainingResendCodeCount\n      waitingTimeInSeconds\n    }\n\n    errors {\n      translationKey\n      message\n      field\n      userMessage {\n        title\n        detail\n      }\n    }\n\n    redirectUrl\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e){t(e,n)}),e.definitions&&e
+[0m
+[0m$ [0mcd /tmp/opencode && ls -la && echo --- && ls -la knowledge leads evidence 2>/dev/null && echo --- && grep -n -i 'oath\|redirect' knowledge/*.md 2>/dev/null | head -40
+total 2024
+drwxr-xr-x  2 runner runner    4096 Oct  2 08:40 .
+drwxrwxrwt 15 root   root      4096 Oct  2 08:39 ..
+-rw-r--r--  1 runner runner    7800 Oct  2 08:40 banking-features-auth-biometric-PreAppAuthPages.91311e3a.js
+-rw-r--r--  1 runner runner 1466289 Oct  2 08:39 client.js
+-rw-r--r--  1 runner runner  316197 Oct  2 08:39 login.html
+-rw-r--r--  1 runner runner  221646 Oct  2 08:40 loginpage.js
+-rw-r--r--  1 runner runner   43561 Oct  2 08:40 lp.js
+---
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt && echo --- && find /home/runner/work/n26-hunt/n26-hunt -maxdepth 2 -type d | head -40
+total 1020
+drwxr-xr-x 12 runner runner   4096 Oct  2 08:38 .
+drwxr-xr-x  3 runner runner   4096 Oct  2 08:38 ..
+drwxr-xr-x  7 runner runner   4096 Oct  2 08:38 .git
+drwxr-xr-x  3 runner runner   4096 Oct  2 08:38 .github
+-rw-r--r--  1 runner runner   1844 Oct  2 08:38 README.md
+-rw-r--r--  1 runner runner  70722 Oct  2 08:41 analyst-out.txt
+-rw-r--r--  1 runner runner 428747 Oct  2 08:38 analyst-prompt.txt
+-rw-r--r--  1 runner runner 424877 Oct  2 08:38 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 inventory
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 knowledge
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 leads
+-rw-r--r--  1 runner runner  22392 Oct  2 08:38 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 recon-notes
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 reports
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Oct  2 08:38 scope.yml
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 scripts
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_laguna.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_ling3.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_longcat.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_mimo.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Oct  2 08:38 triage
+---
+/home/runner/work/n26-hunt/n26-hunt
+/home/runner/work/n26-hunt/n26-hunt/leads
+/home/runner/work/n26-hunt/n26-hunt/.git
+/home/runner/work/n26-hunt/n26-hunt/.git/objects
+/home/runner/work/n26-hunt/n26-hunt/.git/refs
+/home/runner/work/n26-hunt/n26-hunt/.git/hooks
+/home/runner/work/n26-hunt/n26-hunt/.git/logs
+/home/runner/work/n26-hunt/n26-hunt/.git/info
+/home/runner/work/n26-hunt/n26-hunt/reports
+/home/runner/work/n26-hunt/n26-hunt/.github
+/home/runner/work/n26-hunt/n26-hunt/.github/workflows
+/home/runner/work/n26-hunt/n26-hunt/recon-notes
+/home/runner/work/n26-hunt/n26-hunt/scripts
+/home/runner/work/n26-hunt/n26-hunt/knowledge
+/home/runner/work/n26-hunt/n26-hunt/reposcan-raw
+/home/runner/work/n26-hunt/n26-hunt/inventory
+/home/runner/work/n26-hunt/n26-hunt/triage
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && cat state_bigpickle.json && echo && ls knowledge leads && echo === && ls triage | head && echo === && wc -l analyst-out.txt
+{"phase": "POC", "target": "api"}
+knowledge:
+index.md
+
+leads:
+lead-bigpickle.md
+lead-laguna.md
+lead-ling3.md
+lead-longcat.md
+lead-mimo.md
+lead-nemotron3.md
+reposcan-n26-manual.md
+reposcan-n26.md
+===
+run-2026-09-02-21-44.md
+run-2026-09-02-23-54.md
+run-2026-09-03-03-32.md
+run-2026-09-03-08-17.md
+run-2026-09-03-12-53.md
+run-2026-09-03-16-58.md
+run-2026-09-03-19-43.md
+run-2026-09-03-22-24.md
+run-2026-09-04-00-26.md
+run-2026-09-04-05-04.md
+===
+423 analyst-out.txt
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && cat knowledge/index.md && echo ===LEAD=== && cat leads/lead-bigpickle.md && echo ===ANALYST-OUT-TAIL=== && tail -80 analyst-out.txt
+...output truncated...
+
+Full output saved to: /home/runner/.local/share/opencode/tool-output/tool_0fbc6e8d2001OjMsKkcSjGn7tO
+
+-rw-r--r--  1 runner runner    7800 Oct  2 08:40 banking-features-auth-biometric-PreAppAuthPages.91311e3a.js
+-rw-r--r--  1 runner runner 1466289 Oct  2 08:39 client.js
+-rw-r--r--  1 runner runner  316197 Oct  2 08:39 login.html
+-rw-r--r--  1 runner runner  221646 Oct  2 08:40 loginpage.js
+-rw-r--r--  1 runner runner   43561 Oct  2 08:40 lp.js
+---
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt && echo --- && find /home/runner/work/n26-hunt/n26-hunt -maxdepth 2 -type d | head -40
+total 1020
+drwxr-xr-x 12 runner runner   4096 Oct  2 08:38 .
+drwxr-xr-x  3 runner runner   4096 Oct  2 08:38 ..
+drwxr-xr-x  7 runner runner   4096 Oct  2 08:38 .git
+drwxr-xr-x  3 runner runner   4096 Oct  2 08:38 .github
+-rw-r--r--  1 runner runner   1844 Oct  2 08:38 README.md
+-rw-r--r--  1 runner runner  70722 Oct  2 08:41 analyst-out.txt
+-rw-r--r--  1 runner runner 428747 Oct  2 08:38 analyst-prompt.txt
+-rw-r--r--  1 runner runner 424877 Oct  2 08:38 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 inventory
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 knowledge
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 leads
+-rw-r--r--  1 runner runner  22392 Oct  2 08:38 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 recon-notes
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 reports
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Oct  2 08:38 scope.yml
+drwxr-xr-x  2 runner runner   4096 Oct  2 08:38 scripts
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_laguna.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_ling3.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_longcat.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_mimo.json
+-rw-r--r--  1 runner runner     33 Oct  2 08:38 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Oct  2 08:38 triage
+---
+/home/runner/work/n26-hunt/n26-hunt
+/home/runner/work/n26-hunt/n26-hunt/leads
+/home/runner/work/n26-hunt/n26-hunt/.git
+/home/runner/work/n26-hunt/n26-hunt/.git/objects
+/home/runner/work/n26-hunt/n26-hunt/.git/refs
+/home/runner/work/n26-hunt/n26-hunt/.git/hooks
+/home/runner/work/n26-hunt/n26-hunt/.git/logs
+/home/runner/work/n26-hunt/n26-hunt/.git/info
+/home/runner/work/n26-hunt/n26-hunt/reports
+/home/runner/work/n26-hunt/n26-hunt/.github
+/home/runner/work/n26-hunt/n26-hunt/.github/workflows
+/home/runner/work/n26-hunt/n26-hunt/recon-notes
+/home/runner/work/n26-hunt/n26-hunt/scripts
+/home/runner/work/n26-hunt/n26-hunt/knowledge
+/home/runner/work/n26-hunt/n26-hunt/reposcan-raw
+/home/runner/work/n26-hunt/n26-hunt/inventory
+/home/runner/work/n26-hunt/n26-hunt/triage
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && cat state_bigpickle.json && echo && ls knowledge leads && echo === && ls triage | head && echo === && wc -l analyst-out.txt
+{"phase": "POC", "target": "api"}
+knowledge:
+index.md
+
+leads:
+lead-bigpickle.md
+lead-laguna.md
+lead-ling3.md
+lead-longcat.md
+lead-mimo.md
+lead-nemotron3.md
+reposcan-n26-manual.md
+reposcan-n26.md
+===
+run-2026-09-02-21-44.md
+run-2026-09-02-23-54.md
+run-2026-09-03-03-32.md
+run-2026-09-03-08-17.md
+run-2026-09-03-12-53.md
+run-2026-09-03-16-58.md
+run-2026-09-03-19-43.md
+run-2026-09-03-22-24.md
+run-2026-09-04-00-26.md
+run-2026-09-04-05-04.md
+===
+423 analyst-out.txt
+[0m
+[0m
+[0m→ [0mRead knowledge/index.md
+[0m→ [0mRead leads/lead-bigpickle.md
+[0m→ [0mRead leads/lead-bigpickle.md[90m [offset=410][0m
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && wc -l leads/lead-bigpickle.md && tail -n 260 leads/lead-bigpickle.md | grep -n '2026-10-0\|OATH\|OPEN_REDIRECT\|redirect'
+7768 leads/lead-bigpickle.md
+31:class: OATH
+34:reasoning: Same-batch 5-request run varying only `code_challenge` against a constant `client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&response_type=code&state=abc` base: valid S256 challenge `E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM` → `401|0`; `notabase64challenge` → `401|0`; `short` → `401|0`; parameter absent → `401|0`; absent `redirect_uri` with challenge present → `401|0`. All five byte-identical (`md5 d41d8cd9…`, empty body). N26's own public corpus (`psd2-tpp-docs`, collection + environment) documents PKCE S256 as the registered flow, so `code_challenge` is a protocol-mandated parameter that the pre-auth layer does not treat as required. The gate's only discriminating dimensions remain `client_id` and `scope` presence, each already established.
+36:verify_steps: `curl -sS -A 'Mozilla/5.0' -m 20 -o /dev/null -w '%{http_code}|%{size_download}\n' 'https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_AISP&response_type=code&state=abc&redirect_uri=https%3A%2F%2Fexample.com%2Fcb&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM'` → `401|0`; identical request with `code_challenge` deleted → `401|0`; missing-parameter control `?scope=DEDICATED_AISP` → `404|0`.
+48:## 2026-10-01 06:14:08 UTC [target] (model bigpickle)
+51:[NEW] `n26/psd2-tpp-docs` — three corpus files never opened by any cycle: `doc/sandbox.md`, `doc/decoupled/dedicated-cbpii.md`, `doc/redirect/dedicated-aisp.md` (42KB). They document the **production** redirect control the KB never knew existed: `TPP-Redirect-Preferred` / `TPP-Redirect-URI` / `TPP-State` **headers** on consent+payment creation, where N26 redirects the PSU to `TPP-Redirect-URI?state=…` or `?error=access_denied&state=…`. Production, not sandbox-only.
+53:[PRIO] xs2a.tech26.de header-borne redirect plane (`TPP-Redirect-URI` on consent/payment creation),6.75 — a:6, b:9, t:9 OAuth redirect, g:3, c:4, f:8 (filter covers query string only)
+55:[HYP] The ALB redirect blocklist protects the OAuth query parameter and is blind to the header that actually carries the production PSU redirect, so a loopback or cloud-metadata callback destination is deliverable
+56:class: OATH
+59:reasoning: The vendor corpus (`doc/sandbox.md` L131-141, `doc/redirect/dedicated-aisp.md` L238-240, L988-991) documents that on the **production** Berlin-Group plane the PSU redirect destination is carried in the request **header** `TPP-Redirect-URI` (with `TPP-Redirect-Preferred: true` and optional `TPP-State`), and that N26 issues `GET <TPP-Redirect-URI>?state=<TPP-State>` on success or `?error=access_denied&state=…` on failure. Measured this batch: a loopback/metadata token in that header (`http://169.254.169.254/latest/meta-data/`) returns `401|0` istio-envoy, while the *same* token in any query-string position returns `403|118` awselb/2.0 — including under an invented parameter name `foo=`, so the filter is query-string-scoped and field-agnostic, and header values are not inspected at all. `X-Forwarded-Host: 127.0.0.1@evil.example` likewise `401|0`. Therefore the only redirect-host filtering in front of this host provides **zero coverage of the field the production flow uses**. The KB's 09-29 retraction ("no OAuth control exists, notation-hunting proved nothing") is correct about the *query* `redirect_uri` and wrong about the conclusion: a real production redirect control exists, it is in a header, and the deployed filter cannot see it. Whether the AS itself validates `TPP-Redirect-URI` against the TPP's registered value is **unmeasured** — every route on the plane is `401` pre-auth.
+62:impact: A consent-approval callback redirected to an attacker-chosen internal or metadata host on the AIS/PIS surface. If the AS performs a server-side fetch of the callback (per OAuth BCP it must not, but PSFs do), this is SSRF-to-metadata; if it is a browser redirect it is a PSU-session open redirect on a payment-consent flow. Severity MEDIUM, HIGH if metadata-reachable. Not an anonymous bypass — the plane is `401` pre-auth.
+64:[HYP] The Confirmation-of-Funds (CBPII) dedicated interface is a third live consent class on the production Berlin-Group plane, and its own redirect/consent surface is uncharacterised
+86:[LEARN] ACCEPTED OATH @ xs2a.tech26.de: the ALB substring blocklist is **query-string-scoped**, not request-scoped, and the field it inspects is not the field the production redirect flow uses. Proven in one batch with paired invented-field controls in both directions: query `foo=https://127.0.0.1@evil.example/` → `403|118` awselb/2.0 (field-agnostic, confirmed 09-29), while header `X-Foo: https://127.0.0.1@evil.example/` → `401|0` istio-envoy and header `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0` (headers not inspected). This **supersedes** the 09-29 retraction: that entry was right that no OAuth control was bypassed *in the query parameter*, and wrong to conclude no redirect control exists — `doc/sandbox.md` and `doc/redirect/dedicated-aisp.md` (both never opened before this cycle) document a production redirect destination carried in the `TPP-Redirect-URI` **header**, with `TPP-State` echoed to it and `error=access_denied` on failure. Generalised rule, and the fourth instance of this programme's recurring error family: **before characterising a filter's parsing, prove its channel.** I spent 09-26 → 09-29 (four cycles, ~25 requests) refining notation on a query string, and the decisive dimension — header vs query string — cost three requests and had been sitting in unread vendor prose the whole time.
+89:[RISK] n26: 34 — Two accepted-but-unproven MEDIUM items now sit behind credentials on a live Berlin-Group AIS/PIS/CBPII surface whose edge posture is now measurably asymmetric (a redirect-host filter installed on one channel, absent from the channel the product actually uses). The evidence-quality risk is the larger one: my own 09-29 finding was retracted for scope, three prior GET-404 negatives were retracted for method, and a 21-class "complete" map was found incomplete by a file nobody opened. Nine days of NO_DELTA ended only when vendor prose was read, so the pipeline's blind spot is corpus coverage, not attacker access. No customer data touched; all probes anonymous, read-only, ≤1 rps, 5s pacing.
+90:[NEW] `xs2a.tech26.de` — the AS does **not** discriminate `TPP-Redirect-*` pre-authentication. Four legs, all byte-identical: absent headers → `401|0` md5 `d41d8cd9`; `TPP-Redirect-Preferred: true` with URI absent → `401|0`; URI `not-a-url` → `401|0`; URI `http://169.254.169.254/x` → `401|0`. The `400 Bad Request` documented at `doc/sandbox.md` L142 for a missing/malformed redirect URI is **not reachable anonymously**. The STEP 5 discriminator is retired.
+95:[HYP] The redirect-host blocklist installed in front of the N26 edge inspects exactly one channel (the query string), while the field the production PSD2 redirect flow actually uses is a request header — so a loopback or cloud-metadata PSU callback destination is deliverable on both the API and Berlin-Group hosts
+96:class: OATH
+99:reasoning: The vendor's own corpus establishes the product behaviour: `doc/sandbox.md` L131-141 and `doc/redirect/dedicated-aisp.md` L238-240, L988-991 document `TPP-Redirect-Preferred` / `TPP-Redirect-URI` / `TPP-State` **headers** on consent creation, with N26 issuing `GET <TPP-Redirect-URI>?state=…` on success and `?error=access_denied&state=…` on failure. The filter's scope was then measured with invented-field controls in both directions, twice, on two hosts: query `foo=https://127.0.0.1@evil.example/` → `403|118` awselb/2.0 (field-agnostic) while header `X-Foo:` with the identical value → `401|0` istio-envoy and `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0` (channel-blind); same split reproduced on `api.tech26.de` as `403|118` awselb vs `401|211` envoy. `X-Forwarded-Host: 127.0.0.1@evil.example` → `401|0`. This supersedes the 09-29 retraction, which correctly found no bypass in the query `redirect_uri` but drew the wrong conclusion that no redirect control exists. The anonymous axis is now closed: four differential legs show the AS ignores all redirect-header variants identically (`401|0`, empty body), so validation, if any, is strictly post-auth.
+102:impact: Callback for an account-information or payment consent redirected to an attacker-chosen internal host. Browser-redirect case is a PSU-session open redirect on a payment flow; any server-side fetch of the callback is SSRF-to-metadata (HIGH). Not anonymously reachable. MEDIUM.
+108:reasoning: `doc/decoupled/dedicated-cbpii.md` — never opened by any prior cycle — documents a dedicated role absent from the KB's "21 classes complete" map, which was derived from the Postman/OpenAPI branches. Licensing control: `401|0` at `us=8-11` against a same-batch bogus path `404|0` at `us=1`, which separates a deployed app-layer route from a router-timing miss; mirrored `/sandbox/.../consents/confirmation-of-funds` → `401|0` vs `/sandbox/.../zzqnotreal-not-a-route` → `404|0`. `/v1/berlin-group/v1/funds-confirmations` → `404|0` on both tiers. The unresolved question is cross-role: whether a CoF consent or its `funds-confirmation` result is accepted by `/accounts` or `/payments`, and whether CoF honours the redirect headers.
+116:[NEXT] RAG: pass `doc/redirect/dedicated-aisp.md`, `doc/redirect/dedicated-cbpii.md` and `doc/redirect/dedicated-pisp.md` (84KB, one never opened) through retrieval against the redirect/OATH canon to answer a question no live probe can reach anonymously — **whether the redirect headers are declared on the *sandbox* endpoints only, or on production endpoints too.** All three documents describe `TPP-Redirect-Preferred` on `/consents` for the redirect SCA; the production-vs-sandbox distinction decides whether HYP 1 is a reportable production finding or sandbox-only, and that single fact is worth more than any further anonymous probing. Live GET probing on this asset is now exhausted — every leg returns `401|0` md5 `d41d8cd9`.
+117:[LEARN] ACCEPTED OATH @ `xs2a.tech26.de`: the edge substring blocklist is **query-string-scoped**, not request-scoped, and it is a shared rule fronting both `xs2a.tech26.de` and `api.tech26.de`. Proven with invented-field controls in both directions on both hosts in a single batch: query `foo=<blocked>` → `403|118` `awselb/2.0`; header `X-Foo: <blocked>` → `401|0` istio-envoy (`xs2a`) and `401|211` envoy (`api`); `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0`; `X-Forwarded-Host: 127.0.0.1@evil.example` → `401|0`. This **supersedes** the 09-29 retraction: that entry was right that no control was bypassed in the query `redirect_uri` and wrong to conclude no redirect control exists, because `doc/sandbox.md` and `doc/redirect/dedicated-aisp.md` (both unopened until this cycle) document a production redirect destination carried in a **header**. Generalised rule, and the fourth instance of this programme's recurring error family: **before characterising a filter's parsing, prove its channel.** Four cycles and ~25 requests (09-26 → 09-29) went into notation on a query string; the decisive dimension cost three requests and had been sitting in unread vendor prose.
+118:[LEARN] ACCEPTED OTHER @ `xs2a.tech26.de`: the AS performs **no** pre-auth discrimination of `TPP-Redirect-*`. Four legs — headers absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254` — all returned `401|0` with empty body, md5 `d41d8cd9`. This is the retirement rule for the 401-collision family, established the strongest way yet: a **within-batch 4-leg differential on one endpoint**, instead of the cross-day comparisons that produced the two earlier false positives. The `400 Bad Request` promised by `doc/sandbox.md` L142 for a malformed redirect URI is therefore unreachable pre-auth, which retires the STEP 5 discriminator and bounds HYP 1 to post-auth verification only.
+119:[LEARN] REJECTED OTHER @ `xs2a.tech26.de`: "redirect headers are parsed before the 401 gate." Rejected this batch, 4 controls, all byte-identical. Recorded so a future cycle does not spend a probe re-deriving it.
+121:[RISK] n26: 35 — Anonymous probing on the redirect axis is now exhausted and correctly stopped. Two accepted items sit behind credentials on a live Berlin-Group AIS/PIS/CBPII surface whose edge posture is measurably asymmetric: a redirect-host filter installed on the query-string channel, absent from the header channel the product actually uses, and deployed identically across two hosts. The dominant risk remains evidence quality rather than attacker access — my own 09-29 finding was retracted for scope, three GET-404 negatives were retracted for method, a "21 classes complete" map was found incomplete by a file nobody opened, and nine days of NO_DELTA ended only when vendor prose was read. The pipeline's blind spot is corpus coverage and credentialed depth, not reach. No customer data touched; every probe anonymous, read-only, GET only, ≤1 rps, 5s pacing.
+122:## 2026-10-01 13:33:44 UTC [target] (model bigpickle)
+123:## 2026-10-01 19:11:54 UTC [target] (model bigpickle)
+133:[HYP] The edge redirect-host blocklist inspects only the query string, while production consent **and payment-initiation** flows carry the PSU redirect destination in a request header that no filter covers
+134:class: OATH
+137:reasoning: Scoped to **production** this cycle, answering my own committed `[NEXT]`: `doc/redirect/dedicated-{aisp,cbpii,pisp}.md` document `TPP-Redirect-Preferred`/`TPP-Redirect-URI`/`TPP-State` headers on the production paths above against `https://xs2a.tech26.de` with a production QWAC (L26-29, L94, L229, L155, L319), and pisp L1030 places the `TPP-State` echo "**on payment initiation**" — so the header channel extends to the three money-movement POSTs, not only consent creation. Zero whitelist/registration/allowlist language exists across all four redirect documents; the sole documented validation is syntactic (`400 FORMAT_ERROR`). The filter's scope was measured with invented-field controls in both directions on two hosts: query `foo=https://127.0.0.1@evil.example/` → `403|118` `awselb/2.0`, header `X-Foo:` with the identical value → `401|0` `istio-envoy`, and `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0`; same split on `api.tech26.de` (`403|118` awselb vs `401|211` envoy). The anonymous axis is correctly exhausted: four `TPP-Redirect-*` legs (absent / `Preferred` only / `URI: not-a-url` / `URI: 169.254.169.254`) are byte-identical `401|0` md5 `d41d8cd9`, so the AS performs no pre-auth discrimination and validation is strictly post-auth.
+140:impact: A PSU completing SCA on an account-information or payment consent is bounced by the N26 app to an attacker-chosen host with `state` (and the SCA outcome) appended. Browser-mediated open redirect on a regulated payment flow; phishing of a PSU mid-authorisation. **SSRF-to-metadata is withdrawn** — the corpus documents only a browser redirect, no server-side fetch. MEDIUM, not anonymously reachable.
+151:## 2026-10-01 23:28:07 UTC [target] (model bigpickle)
+152:[LEARN] REJECTED OTHER @ `xs2a.tech26.de`: "redirect headers are parsed before the 401 gate." Rejected this batch, 4 controls, all byte-identical. Recorded so a future cycle does not spend a probe re-deriving it.
+154:[RISK] n26: 35 — Anonymous probing on the redirect axis is now exhausted and correctly stopped. Two accepted items sit behind credentials on a live Berlin-Group AIS/PIS/CBPII surface whose edge posture is measurably asymmetric: a redirect-host filter installed on the query-string channel, absent from the header channel the product actually uses, and deployed identically across two hosts. The dominant risk remains evidence quality rather than attacker access — my own 09-29 finding was retracted for scope, three GET-404 negatives were retracted for method, a "21 classes complete" map was found incomplete by a file nobody opened, and nine days of NO_DELTA ended only when vendor prose was read. The pipeline's blind spot is corpus coverage and credentialed depth, not reach. No customer data touched; every probe anonymous, read-only, GET only, ≤1 rps, 5s pacing.
+164:[HYP] The edge redirect-host blocklist inspects only the query string, while production consent **and payment-initiation** flows carry the PSU redirect destination in a request header that no filter covers
+165:class: OATH
+168:reasoning: Scoped to **production** this cycle, answering my own committed `[NEXT]`: `doc/redirect/dedicated-{aisp,cbpii,pisp}.md` document `TPP-Redirect-Preferred`/`TPP-Redirect-URI`/`TPP-State` headers on the production paths above against `https://xs2a.tech26.de` with a production QWAC (L26-29, L94, L229, L155, L319), and pisp L1030 places the `TPP-State` echo "**on payment initiation**" — so the header channel extends to the three money-movement POSTs, not only consent creation. Zero whitelist/registration/allowlist language exists across all four redirect documents; the sole documented validation is syntactic (`400 FORMAT_ERROR`). The filter's scope was measured with invented-field controls in both directions on two hosts: query `foo=https://127.0.0.1@evil.example/` → `403|118` `awselb/2.0`, header `X-Foo:` with the identical value → `401|0` `istio-envoy`, and `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0`; same split on `api.tech26.de` (`403|118` awselb vs `401|211` envoy). The anonymous axis is correctly exhausted: four `TPP-Redirect-*` legs (absent / `Preferred` only / `URI: not-a-url` / `URI: 169.254.169.254`) are byte-identical `401|0` md5 `d41d8cd9`, so the AS performs no pre-auth discrimination and validation is strictly post-auth.
+171:impact: A PSU completing SCA on an account-information or payment consent is bounced by the N26 app to an attacker-chosen host with `state` (and the SCA outcome) appended. Browser-mediated open redirect on a regulated payment flow; phishing of a PSU mid-authorisation. **SSRF-to-metadata is withdrawn** — the corpus documents only a browser redirect, no server-side fetch. MEDIUM, not anonymously reachable.
+182:[LEARN] ACCEPTED OTHER @ `app.n26.com`: the SCA **handoff** surface is anonymously enumerable and has a three-class redirect taxonomy that the KB's "302 → login, redirect rebuilt from matched route path" model does not describe. Measured this cycle, anonymous, read-only GET, 5s pacing, 24 requests. **Class A — 5 leaves, `302` with NO login hop, query string echoed verbatim, parameter-name agnostic:** `/wl/open-banking/aisp`, `/wl/open-banking/cbpii`, `/wl/open-banking/pisp/sepa`, `/wl/open-banking/pisp/sepa-ict`, `/wl/open-banking/pisp/periodic` → `302 /open-banking/<same path>?<same query>`. **Class B — 1 leaf, never probed by any prior cycle:** root-level `/open-banking` (no `/wl`, no role segment) → `302 /login?requestId=…&state=…&authType=…&redirect=%2Fopen-banking%3F…` i.e. the whole query is mirrored as top-level login params **and** re-encoded whole into `redirect`. **Class C — everything else:** `302 /feed` with the query string **dropped**, then `302 /login?redirect=%2Ffeed`. The AISP/CBPII legs are parameter-name agnostic (`?zzz=`, `?consentId=`, `?requestId=`, and both params together all MATCH identically), so leaf presence is a pure function of the path — a clean pre-auth route-registration oracle.
+183:[LEARN] ACCEPTED OTHER @ `app.n26.com`: **corpus-to-live correspondence is 5/5 on this surface.** The five class-A leaves are exactly the five `scaRedirect.href` values documented at `doc/redirect/dedicated-aisp.md` L281 + L1003, `doc/redirect/dedicated-cbpii.md` L201 + L402, and `doc/redirect/dedicated-pisp.md` L265 / L506 / L762 + L1018-1020 (`pisp/sepa`, `pisp/sepa-ict`, `pisp/periodic`). Class B is exactly the `location:` line common to `doc/decoupled/dedicated-{aisp,pisp,cbpii}.md` L141/L113/L109 and `doc/sandbox.md` L66 (`https://app.n26.com/open-banking?requestId=…&state=…&authType=XS2A`). Fifth consecutive instance of the 09-25 rule: reading the vendor's own prose produced the entire route map, and the one leaf the KB had never touched (`/open-banking`, the decoupled OAuth pre-step entry) was the structurally distinct one.
+184:[LEARN] ACCEPTED OTHER @ `app.n26.com`: **two KB claims about this surface were wrong in shape, and I am retracting both.** (1) KB: "`/wl/open-banking/*` (`/{aisp,cbpii,pisp}` each 302 → login)". False on both counts — `pisp` is not a one-segment leaf (it is three two-segment leaves under `pisp/`), and the AISP/CBPII leaves do **not** redirect to login at hop 1; they redirect to the same path minus `/wl` with no login hop. The earlier "302 → login" was an artifact of following a redirect through the class-C `/feed` fallback into `/login`, i.e. the finding described the *fallback*, not the leaf. (2) KB: "redirect is rebuilt server-side from the matched route path". True but incomplete: on class B the builder carries the **entire request query** into `redirect`, re-encoded — nested `&` becomes `%2526` (`state=a%26redirect%3D…` → `state=a%2526redirect%253D…%26authType%3DXS2A`). Both errors are the 09-25 generic-wordlist error and the cross-day-comparison error recurring on a host nobody had characterised before.
+185:[LEARN] REJECTED OTHER @ `app.n26.com/open-banking`: **parameter injection through the reflected `state` does not work** — `state=a%26redirect%3Dhttps%3A%2F%2Fevil.example%2F` lands in `redirect` double-encoded (`state=a%2526redirect%253D…`) and the attacker value is inert. **Attacker-supplied `redirect=` is discarded** — appending `&redirect=https%3A%2F%2Fevil.example%2F` to the request yields `location` containing only the server-built `redirect=%2Fopen-banking%3F…%26authType%3DXS2A`, no `evil.example` anywhere. `authType` is unvalidated: `authType=ZZZ` is echoed into the login URL exactly as `XS2A` is. Recorded so no future cycle spends requests re-deriving an open redirect that is not there.
+193:reasoning: `doc/decoupled/dedicated-{aisp,pisp,cbpii}.md` L141/L113/L109 and `doc/sandbox.md` L66 document the decoupled pre-step as `302 location: https://app.n26.com/open-banking?requestId=0daa152a-…&state=1fL1nn7m9a&authType=XS2A`, where `requestId` is N26-minted and `state` is **TPP-chosen**. This cycle that exact path was probed for the first time by any cycle and answers `302 /login?requestId=11111111-…&state=abc123&authType=XS2A&redirect=%2Fopen-banking%3FrequestId%3D…%26state%3Dabc123%26authType%3DXS2A` — i.e. all three query values are mirrored as **top-level parameters of the login page URL**, and the continuation is carried inside `redirect`. Both `requestId` and `state` are therefore attacker-suppliable and attacker-readable in a pre-auth URL. `state` is the OAuth CSRF-binding value whose entire purpose is to tie the callback to one authorize request; if any part of the login/post-login navigation re-derives the destination from the mirrored query rather than from a server-side binding between the `requestId` and the authorize session, then the binding the standard mandates is not the binding in force. Two facts bound this to a real test rather than a shape: `authType` is echoed with **no value validation** (`authType=ZZZ` behaves identically to `XS2A`), and the builder carries the query whole, so any parameter the pre-step starts accepting is automatically attacker-controlled post-login. Two mitigating facts are already proven and are why this is 58 and not 75: nested `&` is double-encoded (`%2526`) so classic parameter smuggling fails, and a client-supplied `redirect=` is discarded in favour of the server-built one.
+194:evidence_needed: One authenticated (victim-session) GET of `https://app.n26.com/login?requestId=<foreign-uuid>&state=<attacker>&authType=XS2A&redirect=…` showing the post-login landing URL derived from the mirrored `requestId`/`state` rather than from the session's own authorize binding — ideally a landing on a page belonging to another user's SCA session, or on an attacker-chosen continuation.
+195:verify_steps: Anonymous leg (done, re-run as control): `curl -sSk -A 'Mozilla/5.0' -m 20 -o /dev/null -D - 'https://app.n26.com/open-banking?requestId=11111111-1111-1111-1111-111111111111&state=abc123&authType=XS2A'` → `302` with all three params mirrored into `location` plus `redirect=%2Fopen-banking%3F…`. Victim leg (needs a test PSU account): issue a real `GET /oauth2/authorize?scope=DEDICATED_PISP&state=<X>&redirect_uri=…`, capture N26's `requestId`, then open `https://app.n26.com/open-banking?requestId=<requestId>&state=<Y≠X>&authType=XS2A` and log in — if the app resumes the session bound to `requestId` while returning `state=Y`, the mandated `state` equality check is absent and the session is hijackable by anyone holding a requestId.
+202:reasoning: The five class-A leaves return `302` **without any login hop** and echo the caller-supplied identifier back verbatim, so the identifier is consumed by a route handler that runs before authentication, and they are parameter-name agnostic (`?zzz=`, `?consentId=`, `?requestId=`, and `consentId`+`requestId` together all produce byte-identical hop-1 responses), which means the leaf cannot be validating the identifier's role or format at hop 1 either. `consentId` is N26-generated (`doc/redirect/dedicated-cbpii.md` L201 `55ecfaab-786a-4363-94af-2401f0a4bc65`, `dedicated-aisp.md` L281 `fb44eb9c-…`) and `paymentId` likewise (`dedicated-pisp.md` L265/L506/L762), i.e. UUIDv4, so guessing is infeasible but **any single leaked or logged identifier becomes a resolvable pre-auth object reference**. The exploitable step is hop 2, which this cycle did not reach: whether the destination distinguishes a live consent/payment from a random UUID in page length, body hash, timing, or wording. If it does, the five leaves are a pre-auth oracle over consent existence and payment state (amount, counterparty, scheme, SCA outcome) on exactly the flows that move money — a materially stronger primitive than the header-filter finding because it needs no privileged TPP position, only one identifier.
+204:verify_steps: `curl -sSkL -A 'Mozilla/5.0' -m 20 -o /dev/null -D - -w 'code=%{http_code} size=%{size_download} t=%{time_total}\n' 'https://app.n26.com/wl/open-banking/aisp?consentId=11111111-1111-1111-1111-111111111111'` and the same with `consentId=zzz`, both **with `-L` so hop 2 is captured** — hop 1 is a known-identical `302`. Then repeat the pair with a real own-account `consentId`. Control: class-B `/open-banking?requestId=<uuid>` already measured as a different shape (`302 → /login?…&redirect=…`), which proves the two handoff families are handled by different code.
+211:reasoning: Proven this cycle with three-method same-path batches rather than the GET-only inference the KB carried: `GET /v1/berlin-group/v1/accounts` → `401|0` and `GET /api/accounts/1/tans` → `401|211`, but `HEAD` and `OPTIONS` on those same gated paths → `404|0` empty, identical to the fabricated-path controls. A `HEAD`/`OPTIONS` miss returning `404` rather than `401` proves the exclusion is **method matching on the route**, not a preflight-aware middleware. The consequence is structural: the 401s that have anchored this asset for five days are evidence about the read plane only, and the entire Berlin-Group write plane — consent creation, payment initiation, periodic payments, funds confirmation, and the token endpoint itself — sits outside the edge gate, with the application layer as its sole access control. That is precisely the precondition the cert-only token-mint hypothesis needs: the one control the docs say is mandatory (a production eIDAS QWAC, `doc/redirect/dedicated-cbpii.md` L26) is enforced by the same application layer that the edge has already been shown to decline to collect, since `xs2a.tech26.de` sends a TLS `CertificateRequest` with an **empty** `certificate_authorities` list and anonymous handshakes complete. This is an architecture finding that raises the priority of every write-plane hypothesis on this asset rather than a standalone exploit, and it is reported as such — INFO-to-LOW on its own, and only as dangerous in combination.
+216:[NEXT] Re-run the class-A hop-1 legs with `-L` so **hop 2 is actually captured**, and diff one leaf three ways — real own-account `consentId` vs random UUID vs `zzz` — on status, `content-length`, body hash and `x-envoy-upstream-service-time`. This is the decisive discriminator for HYP 2 (pre-auth consent/payment resolution) and it costs three requests; every class-A hop-1 leg measured this cycle was byte-identical, so the entire value of those leaves is in the response I did not fetch. Same batch, one control each for the two families: class-B `/open-banking?requestId=…` (known `302 → /login?…&redirect=…`) and class-C `/wl/open-banking/pisp/zzqnotreal` (known `302 → /feed`), so a hop-2 difference cannot be mistaken for the fallback path. Paced ≤1 rps against `x-ratelimit-limit: 60` on app.n26.com.
+217:[RISK] n26: 36 — Two knowledge-base claims about the SCA handoff surface were wrong **in shape** (`pisp` was recorded as a one-segment leaf when it is three two-segment leaves; the AISP/CBPII leaves were recorded as "302 → login" when the login hop belonged to the fallback path and the real hop 1 is a bare `/wl`-stripping redirect). Both errors came from the same two sources the 09-25 rule names — a generic wordlist instead of the vendor's own prose, and reading a followed redirect instead of the response that produced it — and both survived five days because nothing ever characterised this host. That is the real finding of this cycle: the anchor is not the redirect, it is that `app.n26.com`'s handoff surface had never been measured, and 24 anonymous requests plus one unread document produced a 5/5 corpus-to-live route map, three redirect classes, and two retractions. The open risk is now concentrated in evidence quality rather than access: HYP 1 and HYP 2 both terminate at hop 2 or at a victim session, and I have deliberately left the one request that would settle the write plane (`POST /oauth2/token`) unperformed because it falls outside this cycle's read-only envelope. No customer data touched; every probe this cycle anonymous, read-only, GET/HEAD only, 5s pacing, well inside the 60/window app budget.
+220:[LEARN] ACCEPTED OTHER @ `app.n26.com/open-banking/{aisp,cbpii,pisp/*}`: hop 2 is the real answer to my own `[NEXT]`, and the apparent pre-auth consent oracle is **not** there. With `-L` every class-A leaf resolves identically in shape: `302 /open-banking/<leaf>?<id>` → `302 /login?<idParam>=<id>&redirect=%2Fopen-banking%2F<leaf>%3F<idParam>%3D<id>` → login page `200`. The identifier is **also mirrored as a top-level login parameter** on class A (`?consentId=`/`?paymentId=`), exactly as on class B (`?requestId=&state=&authType=`), so the "pre-auth values land in the login URL" mechanism of HYP 1 is confirmed on **all six** handoff entries, not just the decoupled pre-step. The identifier is echoed into the login URL **unvalidated**: `consentId=zzz-not-a-uuid` and `consentId=zzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz` are both carried verbatim into `location` with no format check, and an empty `consentId=` is dropped entirely (`/login?redirect=%2Fopen-banking%2Faisp`).
+223:## 2026-10-02 02:24:09 UTC [target] (model bigpickle)
+224:[NEW] app.n26.com `/login` — GraphQL-Relay form POSTs to `/graphql` (`__mutation=requestBiometricChallengeMutation`) with hidden `__successRedirect` / `__failureRedirect`. The `redirect` query param is copied into BOTH, unvalidated: `?redirect=https%3A%2F%2Fevil.example%2Fprobe` → `value="/login?redirect=https%3A%2F%2Fevil.example%2Fprobe&amp;verifyLogin=1"`, size invariant 316306B (3/3). Protocol-relative `//evil.example/probe` likewise accepted (316290B). 12 anonymous GETs, UA set, `Accept-Encoding: identity`, 6s pacing.
+225:[NEW] app.n26.com edge query-string content filter characterised: `?redirect=%22%3E%3Cimg...` and `?redirect=javascript%3A...` → `403|520` nginx page, byte-identical md5 `2e40045e…`; absolute/protocol-relative URLs pass. Host-specific measurement — NOT transferred from the tech26.de `403|118 awselb` rule.
+226:[NEW] app.n26.com `/login` reflection is a raw-query-slice echo, not a parsed value: `?redirect=%22` and `?redirect="` both surface as `%22`, `&quot;` count 0, hidden-input attribute never terminates early → no attribute breakout, no DOM-XSS via this parameter.
+227:[CHANGED] RETRACTION: KB line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` only and does NOT hold on `/login`. Same control, different path — the 09-28 "a control is a property of the request path it was measured on" rule violated by my own prior entry.
+229:[CHANGED] Field-scoping control: `?zzz=https%3A%2F%2Fevil.example%2Fprobe` → `200|316210B` (baseline-identical), 0 reflections. The echo is scoped to the `redirect` field, not a generic query-string reflect.
+233:[HYP] The N26 login page propagates an unvalidated `redirect` query parameter into the GraphQL-Relay `__successRedirect` and `__failureRedirect` hidden inputs, so a link on the genuine bank login origin sends the user — authenticated or not — to an attacker host
+234:class: OATH
+235:asset: app.n26.com — `GET /login?redirect=`
+237:reasoning: The login page is a Relay form: `action="/graphql" method="POST"`, `__mutation=requestBiometricChallengeMutation($username,$password,$fp,$fpc,$requestId)`, plus `_csrf`, `__successRedirect`, `__failureRedirect`. Relay executes a server-side 302 to `__successRedirect`/`__failureRedirect` after the mutation resolves. Both fields are built server-side from the caller's `redirect` param with no scheme/host allowlist: absent → `/login?verifyLogin=1`; `redirect=https%3A%2F%2Fevil.example%2Fprobe` → `/login?redirect=https%3A%2F%2Fevil.example%2Fprobe&verifyLogin=1`; `redirect=%2F%2Fevil.example%2Fprobe` → same, protocol-relative. Scoped to the `redirect` field, not a generic echo (`?zzz=` → baseline-identical 316210B, 0 hits). Determinism controlled: baseline 316210B ×3, redirect legs invariant at 316306/316290/316250/316244. `__failureRedirect` carries the identical attacker value, so the off-site bounce fires even when the password is wrong. The XSS axis is closed with evidence rather than assumed: the page echoes the raw query slice unparsed (`%22` stays `%22`, `&quot;`=0, input attribute never terminates), and the edge blocks `<`/`javascript:` in the query with `403|520`. Nothing here touches customer data — the form was never submitted, only fetched.
+239:verify_steps: Passive first — `curl -sk -A 'Mozilla/5.0' -m 20 -o /dev/null 'https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js'` then grep for `__successRedirect`, `__failureRedirect`, `redirect`. Confirmed control already in hand: `curl -sk -A 'Mozilla/5.0' -H 'Accept-Encoding: identity' -D - -o /dev/null 'https://app.n26.com/login?redirect=https%3A%2F%2Fevil.example%2Fprobe'` → `200|316306` with `__successRedirect`/`__failureRedirect` = `…redirect=https%3A%2F%2Fevil.example%2Fprobe&verifyLogin=1`; same with `?zzz=` → `200|316210`, no reflection.
+240:impact: Unvalidated redirect parameter (CWE-601) on the online-banking login origin of a PSD2 bank. Primary value is trusted-origin phishing: a link that renders on real `app.n26.com`, collects N26 credentials, and hands the victim to an attacker host even on failed login. Secondary: if the post-login continuation appends authorization artefacts, it becomes OAuth/SCA code theft on the same channel the app itself uses for SCA handoff. MEDIUM as demonstrated; HIGH if continuation parameters are appended (untested — needs a session).
+246:reasoning: Proven with same-path three-method batches rather than the GET-only inference the KB carried: `GET /v1/berlin-group/v1/accounts` → `401|0` and `GET /api/accounts/1/tans` → `401|211`, while `HEAD` and `OPTIONS` on those same gated paths → `404|0`, identical to fabricated-path controls. A `HEAD`/`OPTIONS` miss returning `404` rather than `401` proves exclusion by method matching on the route, not a preflight-aware middleware. The control the docs call mandatory (`doc/redirect/dedicated-cbpii.md` L26 production QWAC) is enforced by the same application layer the edge declines to collect: the production XS2A API sends a TLS `CertificateRequest` with an **empty** `certificate_authorities` list and anonymous handshakes complete, closed across four axes including certificate-trust header injection. Structural amplifier, not a standalone exploit.
+252:[PARKED] DOM-XSS via `redirect` on app.n26.com — closed with evidence, not deferred: the page reflects the raw query slice unparsed, `&quot;`=0, the input attribute never terminates, and `<`/`javascript:` are cut at the edge (`403|520`, identical md5). No sink.
+253:[FINAL] 1. app.n26.com `/login?redirect=` unvalidated-redirect → Relay post-auth off-site navigation — 75, OATH, demonstrated.
+255:[NEXT] SCAN: fetch N26's own login bundle and determine whether the Relay continuation is server- or client-executed and whether anything is appended to it — `curl -sk -A 'Mozilla/5.0' -m 30 'https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js' -o lp.js` (plus `client.90a73858.js`), then grep `__successRedirect`, `__failureRedirect`, `redirect=` and `verifyLogin`. Passive, one GET, decides whether HYP 1 is a Relay-spec server 302 (MEDIUM→HIGH if session material is appended) or an inert hidden field, using N26's own code instead of a credentialed form submission.
+256:[LEARN] ACCEPTED OATH @ `app.n26.com/login`: the `redirect` query parameter is copied unvalidated into the GraphQL-Relay `__successRedirect` AND `__failureRedirect` hidden inputs (absolute and protocol-relative external hosts both accepted), on a form that POSTs to `/graphql` with `requestBiometricChallengeMutation`. Field-scoped by control (`?zzz=` → baseline-identical, 0 reflections) and size-deterministic (baseline 316210B ×3; redirect legs invariant). `__failureRedirect` means the off-site bounce survives a failed login. Confidence bounded at 75 because the relay's execution is spec-inferred, not observed.
+257:[LEARN] REJECTED OTHER @ `app.n26.com/login` (DOM-XSS via `redirect`): closed with evidence rather than assumed. The page echoes the raw query slice unparsed — `?redirect=%22` and a literal `"` both surface as `%22`, `&quot;`=0, the hidden-input attribute never terminates — and the edge drops `<`/`javascript:` with a byte-identical `403|520` nginx page. No breakout, no script execution path.
+258:[LEARN] REJECTED OTHER @ my own KB: the line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` and does not hold on `/login`. Sixth instance of the 09-28 rule — a control is a property of the request path it was measured on, not of the parameter name. The generalisation was wrong in the direction that *hides* a finding, which is the expensive direction: read literally, the old line told a later cycle the parameter was safe everywhere on the host.
+[0m
+[0m$ [0mcd /tmp/opencode && sha256sum loginpage.js client.js login.html && date -u +%Y-%m-%dT%H:%M:%SZ && grep -c 'hash' /dev/null
+c1154bbb51161a3eedb3433c80ea02d5182a0805d9f4d6d586ed2d0d030cb887  loginpage.js
+3e304f5a7103565faf0202a764f0925126830025fadd076ec481f23c0f3da6ae  client.js
+02f5e74da59964feb0e3c80b4d50063748726fc3294e3e281fb054aeb581e725  login.html
+2026-10-02T08:42:15Z
+0
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && tail -n 60 probe-results.md && echo "=====README=====" && cat README.md
+## 2026-09-28 08:21:06 UTC
+
+
+## 2026-09-28 16:58:33 UTC
+
+
+## 2026-09-28 22:26:36 UTC
+
+
+## 2026-09-29 02:23:49 UTC
+
+
+## 2026-09-29 08:41:57 UTC
+
+
+## 2026-09-29 15:08:29 UTC
+
+
+## 2026-09-29 20:05:16 UTC
+
+
+## 2026-09-29 23:48:41 UTC
+
+
+## 2026-09-30 03:35:11 UTC
+
+
+## 2026-09-30 10:01:05 UTC
+
+
+## 2026-09-30 16:22:11 UTC
+https://pay.n26.com/v1/payments?limit=100 -> HTTP 401
+
+## 2026-09-30 20:55:58 UTC
+
+
+## 2026-10-01 00:25:48 UTC
+
+
+## 2026-10-01 06:14:18 UTC
+
+
+## 2026-10-01 13:34:01 UTC
+
+
+## 2026-10-01 19:12:07 UTC
+
+
+## 2026-10-01 23:29:00 UTC
+https://app.n26.com/open-banking?requestId=…&state=…&authType=XS2A` -> ERR 'ascii' codec can't encode character '\u2026' in p
+https://app.n26.com/open-banking?requestId=0daa152a-…&state=1fL1nn7m9a&authType=XS2A` -> ERR 'ascii' codec can't encode character '\u2026' in p
+https://app.n26.com/login?requestId=<foreign-uuid>&state=<attacker>&authType=XS2A&redirect=…` -> ERR 'ascii' codec can't encode character '\u2026' in p
+https://app.n26.com/open-banking?requestId=11111111-1111-1111-1111-111111111111&state=abc123&authType=XS2A'` -> HTTP 401
+https://app.n26.com/open-banking?requestId=<requestId>&state=<Y≠X>&authType=XS2A` -> ERR 'ascii' codec can't encode character '\u2260' in p
+https://app.n26.com/wl/open-banking/aisp?consentId=11111111-1111-1111-1111-111111111111'` -> 200 len=317084
+
+## 2026-10-02 02:24:24 UTC
+https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js'` -> HTTP 404
+https://app.n26.com/login?redirect=https%3A%2F%2Fevil.example%2Fprobe'` -> 200 len=316305
+https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js' -> HTTP 404
+=====README=====
+# n26-hunt
+
+24/7 deep multi-model bug-hunting automation for **N26 Bank AG** (Oliver Maicher bug-bounty hub).
+
+Scope: All company-owned infrastructure, online banking platforms, mobile applications, APIs, customer portals, authentication systems, internal banking services, websites, and domains operated by N26 Bank AG and its subsidiaries
+(full exclusion + rules list in `scope.yml`)
+
+Pipeline (all workflows run every 20 minutes):
+
+- **Deep Hunt** (`hunt.yml`): analyst hunts the discovered inventory + hypotheses, emits structured
+  leads, chains primitives, self-critiques. Models: mimo.
+- **Triager** (`triage.yml`): second-model 7-Question Gate validation + live passive probe; keeps
+  running count in `reports/valid-bugs.md`.
+- **Reposcan** (`reposcan.yml`): deep source scan of any public GitHub org (if configured).
+- **Sync Issues** (`sync-issues.yml`): mirrors leads to GitHub issues.
+
+Testing discipline: rate-limited (1 rps), no DoS/account-lockout, writes only on non-prod/test
+assets, no exposure of customer/employee/financial/auth data, secrets committed only as hashes.
+
+> IMPORTANT: the pipeline produces CANDIDATE leads. A reportable, validated finding requires
+> human triage + proof against the program's gate. No finding is fabricated; scanner output alone
+> is never accepted. Active testing is gated behind the in-scope hosts in `inventory/n26.md` and
+> must stay within the program's published scope.
+
+Artifacts:
+
+| Artifact | Purpose |
+|---|---|
+| `leads/` | Candidate findings (UNVALIDATED) |
+| `triage/` | Validation verdicts |
+| `reports/valid-bugs.md` | Validated findings + running count |
+| `scope.yml` | Program scope and exclusions (edit to adjust) |
+
+Program description: German digital bank providing retail banking, payments, savings, investments, and financial services through mobile and web platforms
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'PY'
+import re
+d=open('loginpage.js',encoding='utf-8',errors='replace').read()
+i=d.find('\$E.includes')
+seg=d[i:i+12000]
+# search for uses of N variable: occurrences of ",N" or "N," tokens after def are common; show JSX region
+print('--- 12000 chars after $E.includes(T) ---')
+print(seg[-9000:].replace('\n','\\n'))
+PY
+<stdin>:3: SyntaxWarning: invalid escape sequence '\$'
+--- 12000 chars after $E.includes(T) ---
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'PY'
+import re
+d=open('loginpage.js',encoding='utf-8',errors='replace').read()
+i=d.find('$E.includes')
+print('idx',i)
+print(d[i+50:i+3000].replace('\n','\\n'))
+PY
+idx 164538
+=x[1];return(0,r.jsxs)(rr.B,{display:"flex",flexDirection:{mobile:"column",tablet:"column",desktop:"row"},alignItems:"center",gap:"8",children:[(0,r.jsxs)(Uc,{isWide:!0,children:[(0,r.jsx)(Qa.V,{as:"h1",children:a.string("login_title","Login")}),(0,r.jsx)(Dc,{formProps:{onChange:function(){return P(!1)}},onSuccess:function(e){var n=e.response;return I?t({type:m,response:n}):n.challengeType?(c(l.oU.LOGIN_CREDENTIALS_SUCCESS,o,null,l.A$),void t({type:s,response:n})):t({type:u})},onFailure:function(e){var n=e.errors;b(n)&&(c(l.oU.LOGIN_CREDENTIALS_FAILURE,o,null,l.A$),h(e),P(!0))},successURL:n,failureURL:n,mutation:Bl(),children:function(e){var n=e.status,t=e.errors,l=!!R&&t.length>0,c=R&&!t.length?i:[],u=R?t:[];return(0,r.jsxs)(r.Fragment,{children:[(0,r.jsx)(bl.A,{}),I&&(0,r.jsx)(Fc,{"data-testid":"open-banking-message-".concat(j),children:(0,r.jsx)(Bc,{children:a.string("login_open_banking_".concat(C))})}),I&&(0,r.jsx)("input",{type:"hidden",name:"requestId",value:A}),(0,r.jsx)("input",{type:"hidden",name:"fp",value:f||""}),(0,r.jsx)("input",{type:"hidden",name:"fpc",value:JSON.stringify(v)||""}),(0,r.jsx)(Kc,{hasErrors:l}),(0,r.jsx)(Vc,{hasErrors:l,status:n,loginScreen:o}),(0,r.jsx)(Ka.A,{extend:Ga.Ay.errors,errors:c,id:"abort-login-attempt-errors"}),(0,r.jsx)(Ka.A,{extend:Ga.Ay.errors,errors:u,id:"login-errors"}),(0,r.jsx)(Oa.A.Default,{extend:Ga.Ay.button,type:"submit",loading:n===Aa.A.STATUSES.submitting||y.isDelayed,disabled:n===Aa.A.STATUSES.success,"data-testid":"login-button",children:a.string("login_button","Log in")})]})}}),(0,r.jsx)(Mc,{top:"var(--spacing-2-xs)",children:(0,r.jsx)(Oa.A.Blank,{extend:Ga.Ay.linkButton,href:"https://get.n26.com",onClick:function(){return c(l.oU.LOGIN_SIGNUP,o,null,l.A$)},children:a.string("login_register","Create an account")})}),N&&E&&(0,r.jsx)(Mc,{top:"var(--spacing-2-xs)",children:(0,r.jsx)(uo.H,{icon:(0,r.jsx)(so.I,{}),withBackground:!0,width:"full",children:a.string("login_open_banking_hint_text","Enter your log in credentials to proceed")})})]}),S&&(0,r.jsx)(Uc,{isWide:!0,children:(0,r.jsx)(Tc,{})})]})};var Hc=t(38398),qc=t(57609),Yc=t(57642),$c=t(46968);const Qc=[{code:"AD",emoji:"\ud83c\udde6\ud83c\udde9",dialCode:"+376"},{code:"AE",emoji:"\ud83c\udde6\ud83c\uddea",dialCode:"+971"},{code:"AF",emoji:"\ud83c\udde6\ud83c\uddeb",dialCode:"+93"},{code:"AG",emoji:"\ud83c\udde6\ud83c\uddec",dialCode:"+1268"},{code:"AI",emoji:"\ud83c\udde6\ud83c\uddee",dialCode:"+1-264"},{code:"AL",emoji:"\ud83c\udde6\ud83c\uddf1",dialCode:"+355"},{code:"AM",emoji:"\ud83c\udde6\ud83c\uddf2",dialCode:"+374"},{code:"AO",emoji:"\ud83c\udde6\ud83c\uddf4",dialCode:"+244"},{code:"AQ",emoji:"\ud83c\udde6\ud83c\uddf6",dialCode:null},{code:"AR",emoji:"\ud83c\udde6\ud83c\uddf7",dialCode:"+54"},{code:"AS",emoji:"\ud83c\udde6\ud83c\uddf8",dialCode:"+1-684"},{code:"AT",emoji:"\ud83c\udde6\ud83c\uddf9",dialCode:"+43"},{code:"AU",emoji:"\ud83c\udde6\ud83c\uddfa",dialCode:"+61"},{code:"AW
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && tail -n 3 knowledge/index.md && echo "=====LEAD=====" && tail -n 3 leads/lead-bigpickle.md && echo "=====PROBE=====" && tail -n 4 probe-results.md
+- 2026-10-02 ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
+- 2026-10-02 REJECTED OTHER @ xs2a.tech26.de: "redirect headers are parsed before the 401 gate" — rejected, 4 controls all byte-identical
+- 2026-10-02 REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers explicitly not evidence of absence — corpus documents it as POST
+=====LEAD=====
+[LEARN] REJECTED OTHER @ my own KB: the line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` and does not hold on `/login`. Sixth instance of the 09-28 rule — a control is a property of the request path it was measured on, not of the parameter name. The generalisation was wrong in the direction that *hides* a finding, which is the expensive direction: read literally, the old line told a later cycle the parameter was safe everywhere on the host.
+[LEARN] ACCEPTED MISCONFIG @ `app.n26.com` edge: a query-string content filter that returns `403|520` (nginx body) on markup and `javascript:` in the query while passing absolute and protocol-relative URLs. Recorded as host-specific on its own measurements; explicitly NOT transferred from the tech26.de `403|118 awselb` rule despite the shared 403/ALB family, per the same rule.
+[RISK] n26: 41 — The finding is real and the evidence discipline held: field-scoping control, determinism loop, and a closed XSS axis rather than an assumed one, on 12 anonymous GETs with the form never submitted. What keeps this at 41 rather than 70 is one specific unknown — Relay's `__successRedirect` is executed server-side per spec, but I have not observed the navigation, and the severity split (MEDIUM phishing vs HIGH code theft) turns entirely on whether the post-login continuation appends `code=`/`state=`/session material. My prior cycle's retraction on `/open-banking*` is the cautionary half: the same parameter name behaved in the opposite direction one path away, so the decisive artifact is N26's own bundle, not another status code. Residual program risk is unchanged elsewhere — xs2a/api write-plane and BOLA items stay credential-blocked, and no customer data was touched at any point this cycle.
+=====PROBE=====
+## 2026-10-02 02:24:24 UTC
+https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js'` -> HTTP 404
+https://app.n26.com/login?redirect=https%3A%2F%2Fevil.example%2Fprobe'` -> 200 len=316305
+https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js' -> HTTP 404
+[0m
+[0m← [0mEdit leads/lead-bigpickle.md
+Index: /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
+===================================================================
+--- /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
++++ /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
+@@ -7765,4 +7765,54 @@
+ [LEARN] REJECTED OTHER @ `app.n26.com/login` (DOM-XSS via `redirect`): closed with evidence rather than assumed. The page echoes the raw query slice unparsed — `?redirect=%22` and a literal `"` both surface as `%22`, `&quot;`=0, the hidden-input attribute never terminates — and the edge drops `<`/`javascript:` with a byte-identical `403|520` nginx page. No breakout, no script execution path.
+ [LEARN] REJECTED OTHER @ my own KB: the line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` and does not hold on `/login`. Sixth instance of the 09-28 rule — a control is a property of the request path it was measured on, not of the parameter name. The generalisation was wrong in the direction that *hides* a finding, which is the expensive direction: read literally, the old line told a later cycle the parameter was safe everywhere on the host.
+ [LEARN] ACCEPTED MISCONFIG @ `app.n26.com` edge: a query-string content filter that returns `403|520` (nginx body) on markup and `javascript:` in the query while passing absolute and protocol-relative URLs. Recorded as host-specific on its own measurements; explicitly NOT transferred from the tech26.de `403|118 awselb` rule despite the shared 403/ALB family, per the same rule.
+ [RISK] n26: 41 — The finding is real and the evidence discipline held: field-scoping control, determinism loop, and a closed XSS axis rather than an assumed one, on 12 anonymous GETs with the form never submitted. What keeps this at 41 rather than 70 is one specific unknown — Relay's `__successRedirect` is executed server-side per spec, but I have not observed the navigation, and the severity split (MEDIUM phishing vs HIGH code theft) turns entirely on whether the post-login continuation appends `code=`/`state=`/session material. My prior cycle's retraction on `/open-banking*` is the cautionary half: the same parameter name behaved in the opposite direction one path away, so the decisive artifact is N26's own bundle, not another status code. Residual program risk is unchanged elsewhere — xs2a/api write-plane and BOLA items stay credential-blocked, and no customer data was touched at any point this cycle.
++## 2026-10-02 08:42:15 UTC [target] (model bigpickle)
++[NEW] app.n26.com login bundle resolved for the committed [NEXT] SCAN — the relay-continuation execution question is now answered from N26's own code, and it REFUTES the OATH finding. Fetched with browser UA (200s): `banking-features-auth-biometric-LoginPage.6fd49c7e.js` (221646 B, sha256 c1154bbb51161a3eedb3433c80ea02d5182a0805d9f4d6d586ed2d0d030cb887), `client.90a73858.js` (1466289 B, sha256 3e304f5a7103565faf0202a764f0925126830025fadd076ec481f23c0f3da6ae), and `banking-features-auth-biometric-PreAppAuthPages.91311e3a.js` (7800 B). The 02:24 cycle's probe-results logged this bundle path as 404 twice; the identical path returned 200 here — the earlier 404 was a malformed-URL command artifact (trailing apostrophe), not a gate.
++[CHANGED] RETRACTION — OATH `/login?redirect=` (10-02 02:24, conf 75, [FINAL] #1) is REFUTED by the vendor bundle, resolving the committed [NEXT]. The attacker value is NEVER a navigation target; it is carried as an encoded query VALUE on a same-origin continuation path. Minified-at proof, de-obfuscated:
++- Continuation build (loginpage.js): `m = location.pathname + qs.stringify({redirect: queryParams.redirect, verifyLogin: hasJavaScript ? undefined : "1"}, {addQueryPrefix:true})`; identical `m` seeds reducer-init `state.redirectUrl` AND the MutationForm `successURL`/`failureURL` props. Path is `/login`; external `redirect` appears only URL-encoded inside the query.
++- MutationForm (client.js): `handleSubmit` → `preventDefault()` + client Relay `submit()` whenever `props.mutate` is a function; success → `history.push(getSuccessURL())`. `getUrl`/`getPathWithFlags` rebuild from `e.split("?")[0]` → always the `/login`-family path; even a worst-case external `successURL` would hit `history.push` → browser `pushState` throws SecurityError on cross-origin, so no off-host client navigation is possible by construction.
++- SSR/no-JS parity: server-rendered `__successRedirect`/`__failureRedirect` = `/login?redirect=…&verifyLogin=1` matches the same formula; a native POST (WAF-403 for anonymous anyway) would also carry a same-origin path.
++- The ONLY external-host sinks are server-supplied `redirectUrl` from GraphQL responses: (a) the OPEN_BANKING_REDIRECTION screen runs `new URL(redirectURL)` + protocol regex `/^(https?):$/` before `window.location.href = e.toString()`; (b) the container renders `<Redirect from="/login" to={H.login.redirectUrl}/>` when preloaded `login.redirectUrl` exists. Both derive from `requestBiometricChallengeMutation.redirectUrl` / `login.redirectUrl` — post-auth, server-controlled, no anonymous request field feeds them (TPP/app2app XS2A handoff only).
++- The `$E.includes(new URL(decodedRedirect).pathname)` check IS PRESENT but gates only a UI hint (`N&&E&&` → "Enter your log in credentials to proceed"), NOT the redirect authorization — not an allowlist control.
++[CHANGED] NO_DELTA on environment: login.html this cycle 316197 B vs recorded baselines (316210 / 316306-4) — drift is dynamic `_csrf`/challenge content; SSPR form still `action="/graphql" method="POST"` + `__mutation=requestBiometricChallengeMutation`; LoginPage bundle hash matches the build the SSR HTML references (no rotation).
++[PRIO] /wl/open-banking/{aisp,cbpii,pisp/sepa,pisp/sepa-ict,pisp/periodic} class-A hop-2 consent/payment resolution, 8.6, a:9 b:9 t:8 g:2 c:8 f:9 — TRAGIC_BURNS controlled-id surface; ids echoed unvalidated pre-auth (10-01), hop-2 NEVER measured; needs a real consentId/paymentId
++[PRIO] /open-banking class-B pre-step (requestId/state/authType mirror; authType unvalidated), 7.9, a:8 b:9 t:8 g:1 c:7 f:8 — XSA_PROBE proxy-plane; state-equality test needs a victim session (AUTH_HELPED)
++[PRIO] app.n26.com login bundle server `redirectUrl` sinks (biometric/TTP XS2A), 6.9, a:7 b:9 t:8 g:1 c:7 f:8 — off-origin nav exists but strictly post-auth; AUTH_HELPED
++[HYP] N26 SCA handoff consent/payment ids are resolvable pre-auth through the class-A leaves' hop-2 (controlled-id oracle)
++class: IDOR
++asset: app.n26.com — /wl/open-banking/{aisp,cbpii,pisp/*}?consentId=|paymentId=
++confidence: 58
++reasoning: The five class-A leaves answer `302 /open-banking/<leaf>?<id>` with NO login hop and mirror the caller's identifier verbatim as a top-level login parameter, parameter-name-agnostically (`?zzz=` identical) — so the id is consumed by a pre-auth handler that does not validate role or format at hop 1. Bundle analysis this cycle adds: these leaves are the `scaRedirect.href` values in the vendor corpus (5/5), ids are UUIDv4 (unguessable), and no client-side navigation consumes the id — the discriminator is entirely server-side hop 2. If hop 2 distinguishes a live consent/payment from a random UUID (page length, hash, wording, x-envoy time), the leaves are a pre-auth oracle over consent existence and payment state on money-moving flows, requiring only ONE leaked identifier — no TPP position.
++evidence_needed: a hop-2 differential between a real own-account consentId/paymentId and a random UUID (status/content-length/body-hash/x-envoy-upstream-service-time).
++verify_steps: (done, local) bundle grep shows no client sink consumes the ids. (needs own N26 account core id) `curl -sSkL -A 'Mozilla/5.0' -m 20 -D - -o /dev/null -w 'code=%{http_code} size=%{size_download} t=%{time_total}\n' 'https://app.n26.com/wl/open-banking/aisp?consentId=<real>'` vs `<random-uuid>` vs `consentId=zzz`; repeat for pisp/sepa with paymentId; controls: class-B `/open-banking?requestId=…` (known 302→/login mirror) and class-C `/wl/open-banking/pisp/zzqnotreal` (known 302→/feed).
++impact: pre-auth oracle over live consent/payment state on AIS/PIS flows (amount/counterparty/scheme/SCA outcome) given one leaked id — MEDIUM-HIGH; needs an account-holder to mint the control id.
++testability: PASSIVE (hop-1 shape) / AUTH_HELPED (hop-2 control id)
++[HYP] The class-B `/open-banking` pre-step mirrors attacker-suppliable `requestId`/`state`/`authType` into the login URL, so the SCA continuation may be resumed by session-requestId rather than bound to the authorize `state` (proxy-plane state binding)
++class: XSA_PROBE
++asset: app.n26.com — /open-banking + /login?requestId=&state=&authType=
++confidence: 58
++reasoning: 10-01 measured the decoupled pre-step: `302 /login?requestId=<N26-minted-uuid>&state=<TPP-chosen>&authType=XS2A&redirect=%2Fopen-banking%3F…` — all three query values mirrored into top-level login params and re-encoded whole into `redirect`; `authType=ZZZ` echoed identically (no value validation); nested `&` double-encoded (`%2526`) and caller `redirect=` discarded (no param smuggling). Bundle analysis this cycle adds: on `authType=XS2A` the login mutation's `onSuccess` dispatches OPEN_BANKING_REDIRECTION from `response.redirectUrl`, and the container redirects to preloaded `login.redirectUrl` — the destination is whatever the authenticated GraphQL response supplies, and `state` is only echoed. If the post-login resume key is the mirrored `requestId` (attacker-suppliable in a pre-auth URL) rather than the authorize-session's `state`, the OAuth CSRF binding is not in force.
++evidence_needed: authenticated observation that opening `/login?requestId=<own-fresh-step>&state=<attacker-different>` resumes the authorize session bound to that requestId and lands on the state-less continuation.
++verify_steps: (needs victim-like session) mint a real `GET /oauth2/authorize?scope=DEDICATED_PISP&state=<X>`, capture N26's `requestId`, open `https://app.n26.com/open-banking?requestId=<captured>&state=<Y≠X>&authType=XS2A`, log in, and record the post-login landing + echoed state. If landing derives from requestId with state=Y, the mandated state-equality is absent.
++impact: SCA-session continuation hijack on AIS/PIS consent flows (state CSRF binding absent) — MEDIUM-HIGH; strictly AUTH_HELPED.
++testability: AUTH_HELPED
++[HYP] (discharge, encode-parameter parser class) the `/login` continuation parser round-trips `redirect` with a single qs encode/decode and the surface is a raw-query-slice echo, so no re-decode/allowlist mismatch is reachable on it
++class: OTHER
++asset: app.n26.com — /login?redirect= round-trip
++confidence: 15
++reasoning: 10-02 closed the reflection axis (raw-slice echo, `%22` stays `%22`, `&quot;`=0, no attribute breakout; `<`/`javascript:` cut at edge 403|520) and this cycle shows the value is re-serialized once by `qs` on a fixed `/login` pathname; the `$E.includes(pathname)` check operates on `new URL()`-normalized decoded path and gates UI only. There is no second decode step to confuse, and nested-`&` is double-encoded as `%2526`. Parser-level significance is description-only; no effect observed.
++evidence_needed: a second decoder that changes the value between reflection and consumption (would require the server side of the no-JS POST, which is WAF-403 anonymous).
++verify_steps: (done) bundle round-trip traced; reflection closed 10-02; native-POST server parser unreachable anonymously (09-05).
++impact: none demonstrated — park at description-only.
++testability: PASSIVE
++[PARKED] OATH `/login?redirect=` open redirect — REFUTED by N26's bundle this cycle (same-origin continuation by construction) AND filter-step-5 mandates suppressing/parking the OATH class on app.n26.com permanently.
++[PARKED] GraphQL PQ/WS schema exposure (conf 25, AUTH_HELPED, needs app session) — unchanged.
++[PARKED] class-B XSA_PROBE state-equality proof (conf 58, AUTH_HELPED, needs victim session).
++[PARKED] encode-parameter parser class (conf 15 — fails the 40 gate; discharged at description-only).
++[FINAL] 1) TRAGIC_BURNS class-A hop-2 consent/payment resolution (58 — survives: in-scope, conf≥40, verify_steps present, high value; blocked only on minting a real control id). 2) XSA_PROBE class-B SCA-session state binding (58 — survives: verify_steps present; blocked on a victim session, AUTH_HELPED). 3) encode-parameter parser (15 — fails confidence gate, parked).
++[NEXT] SCAN: local, zero-network — extract the `Sl.$E` page set and the `login`/`requestBiometricChallengeMutation` `redirectUrl` model from client.js/loginpage.js to enumerate which in-app paths the post-login continuation may target and to confirm there is no anonymous request field that can prime a preloaded `login.redirectUrl`; only if a NEW in-scope continuation path surfaces from `$E`, re-probe its SSR reflection on `/login` with `-L` (≤1 rps anonymous GET/HEAD/OPTIONS only).
++[LEARN] ACCEPTED OTHER @ app.n26.com/login: the Relay continuation (`__successRedirect`/`__failureRedirect`) is a SAME-ORIGIN path rebuild — `location.pathname + qs.stringify({redirect, verifyLogin})` — carrying the `redirect` value only as an encoded query value; external-host navigation exists only via server-supplied GraphQL `redirectUrl` (`requestBiometricChallengeMutation.redirectUrl`, preloaded `login.redirectUrl`) guarded by a protocol check `/^(https?):$/` or react-router `<Redirect>`, all post-auth. The 10-02 02:24 OATH (conf 75) is therefore refuted by the vendor's own bundle and parked permanently — the seventh instance of the 09-28 rule, now in the *hiding* direction again: 'redirect' inside `__successRedirect` is a continuation VALUE on a same-origin path, not a navigation host, and the control that looked absent was never a control because there is no parameter→navigation channel on `/login`.
++[LEARN] REJECTED OTHER @ app.n26.com/login: "the mutating form issues a server 302 to the attacker host carried by `__successRedirect`" — refuted this cycle: same-origin path by construction (bundle), client Relay path is `preventDefault` + `history.push` (same-origin), native no-JS path is WAF-403 anonymous. The only `window.location.href` in the login bundle consumes server-GraphQL `redirectUrl` with a protocol regex guard.
++[LEARN] ACCEPTED OTHER @ app.n26.com/login bundle: the `$E` continuation-path check gates a UI hint ("Enter your log in credentials to proceed"), NOT redirect authorization — do not cite `$E` as an allowlist control.
++[LEARN] ACCEPTED OTHER @ pipeline: 02:24 probe-results logged the LoginPage bundle path as 404; identical path returned 200 this cycle — the log line was a malformed-URL artifact (trailing apostrophe), confirming bundle-deion metadata should be re-verified before use.
++[RISK] n26: 24 — The 10-02 OATH anchor is retracted on the vendor's own code and permanently parked, dropping the high-confidence-but-unverified item from the stack. What remains live and unburned: TRAGIC_BURNS class-A hop-2 (controlled-id consent/payment oracle, needs a real id) and XSA_PROBE class-B state binding (needs a session) — both AUTH_HELPED but each independently decisive and cheap once an account exists. The cycle's discipline win is self-correction: a 75-confidence finding reversed by one readonly bundle fetch in the direction that *hides* a finding, which is the expensive direction to reverse. No customer data touched; all probes anonymous, read-only, GET/HEAD/OPTIONS only, ≤1 rps.
+
+[0m
+[0m← [0mEdit leads/lead-bigpickle.md
+Index: /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
+===================================================================
+--- /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
++++ /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
+@@ -7776,9 +7776,9 @@
+ - The `$E.includes(new URL(decodedRedirect).pathname)` check IS PRESENT but gates only a UI hint (`N&&E&&` → "Enter your log in credentials to proceed"), NOT the redirect authorization — not an allowlist control.
+ [CHANGED] NO_DELTA on environment: login.html this cycle 316197 B vs recorded baselines (316210 / 316306-4) — drift is dynamic `_csrf`/challenge content; SSPR form still `action="/graphql" method="POST"` + `__mutation=requestBiometricChallengeMutation`; LoginPage bundle hash matches the build the SSR HTML references (no rotation).
+ [PRIO] /wl/open-banking/{aisp,cbpii,pisp/sepa,pisp/sepa-ict,pisp/periodic} class-A hop-2 consent/payment resolution, 8.6, a:9 b:9 t:8 g:2 c:8 f:9 — TRAGIC_BURNS controlled-id surface; ids echoed unvalidated pre-auth (10-01), hop-2 NEVER measured; needs a real consentId/paymentId
+ [PRIO] /open-banking class-B pre-step (requestId/state/authType mirror; authType unvalidated), 7.9, a:8 b:9 t:8 g:1 c:7 f:8 — XSA_PROBE proxy-plane; state-equality test needs a victim session (AUTH_HELPED)
+-[PRIO] app.n26.com login bundle server `redirectUrl` sinks (biometric/TTP XS2A), 6.9, a:7 b:9 t:8 g:1 c:7 f:8 — off-origin nav exists but strictly post-auth; AUTH_HELPED
++[PRIO] app.n26.com login bundle server `redirectUrl` sinks (biometric/TPP XS2A), 6.9, a:7 b:9 t:8 g:1 c:7 f:8 — off-origin nav exists but strictly post-auth; AUTH_HELPED
+ [HYP] N26 SCA handoff consent/payment ids are resolvable pre-auth through the class-A leaves' hop-2 (controlled-id oracle)
+ class: IDOR
+ asset: app.n26.com — /wl/open-banking/{aisp,cbpii,pisp/*}?consentId=|paymentId=
+ confidence: 58
+
+[0m
+[0m← [0mEdit leads/lead-bigpickle.md
+Index: /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
+===================================================================
+--- /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
++++ /home/runner/work/n26-hunt/n26-hunt/leads/lead-bigpickle.md
+@@ -7813,6 +7813,6 @@
+ [NEXT] SCAN: local, zero-network — extract the `Sl.$E` page set and the `login`/`requestBiometricChallengeMutation` `redirectUrl` model from client.js/loginpage.js to enumerate which in-app paths the post-login continuation may target and to confirm there is no anonymous request field that can prime a preloaded `login.redirectUrl`; only if a NEW in-scope continuation path surfaces from `$E`, re-probe its SSR reflection on `/login` with `-L` (≤1 rps anonymous GET/HEAD/OPTIONS only).
+ [LEARN] ACCEPTED OTHER @ app.n26.com/login: the Relay continuation (`__successRedirect`/`__failureRedirect`) is a SAME-ORIGIN path rebuild — `location.pathname + qs.stringify({redirect, verifyLogin})` — carrying the `redirect` value only as an encoded query value; external-host navigation exists only via server-supplied GraphQL `redirectUrl` (`requestBiometricChallengeMutation.redirectUrl`, preloaded `login.redirectUrl`) guarded by a protocol check `/^(https?):$/` or react-router `<Redirect>`, all post-auth. The 10-02 02:24 OATH (conf 75) is therefore refuted by the vendor's own bundle and parked permanently — the seventh instance of the 09-28 rule, now in the *hiding* direction again: 'redirect' inside `__successRedirect` is a continuation VALUE on a same-origin path, not a navigation host, and the control that looked absent was never a control because there is no parameter→navigation channel on `/login`.
+ [LEARN] REJECTED OTHER @ app.n26.com/login: "the mutating form issues a server 302 to the attacker host carried by `__successRedirect`" — refuted this cycle: same-origin path by construction (bundle), client Relay path is `preventDefault` + `history.push` (same-origin), native no-JS path is WAF-403 anonymous. The only `window.location.href` in the login bundle consumes server-GraphQL `redirectUrl` with a protocol regex guard.
+ [LEARN] ACCEPTED OTHER @ app.n26.com/login bundle: the `$E` continuation-path check gates a UI hint ("Enter your log in credentials to proceed"), NOT redirect authorization — do not cite `$E` as an allowlist control.
+-[LEARN] ACCEPTED OTHER @ pipeline: 02:24 probe-results logged the LoginPage bundle path as 404; identical path returned 200 this cycle — the log line was a malformed-URL artifact (trailing apostrophe), confirming bundle-deion metadata should be re-verified before use.
++[LEARN] ACCEPTED OTHER @ pipeline: 02:24 probe-results logged the LoginPage bundle path as 404; identical path returned 200 this cycle — the log line was a malformed-URL artifact (trailing apostrophe), confirming bundle metadata should be re-verified before use.
+ [RISK] n26: 24 — The 10-02 OATH anchor is retracted on the vendor's own code and permanently parked, dropping the high-confidence-but-unverified item from the stack. What remains live and unburned: TRAGIC_BURNS class-A hop-2 (controlled-id consent/payment oracle, needs a real id) and XSA_PROBE class-B state binding (needs a session) — both AUTH_HELPED but each independently decisive and cheap once an account exists. The cycle's discipline win is self-correction: a 75-confidence finding reversed by one readonly bundle fetch in the direction that *hides* a finding, which is the expensive direction to reverse. No customer data touched; all probes anonymous, read-only, GET/HEAD/OPTIONS only, ≤1 rps.
+
+[0m
+[0m← [0mEdit probe-results.md
+Index: /home/runner/work/n26-hunt/n26-hunt/probe-results.md
+===================================================================
+--- /home/runner/work/n26-hunt/n26-hunt/probe-results.md
++++ /home/runner/work/n26-hunt/n26-hunt/probe-results.md
+@@ -800,4 +800,13 @@
+ ## 2026-10-02 02:24:24 UTC
+ https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js'` -> HTTP 404
+ https://app.n26.com/login?redirect=https%3A%2F%2Fevil.example%2Fprobe'` -> 200 len=316305
+ https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js' -> HTTP 404
++
++## 2026-10-02 08:42:15 UTC
++https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js -> 200 len=221646 sha256 c1154bbb51161a3eedb3433c80ea02d5182a0805d9f4d6d586ed2d0d030cb887 (browser UA)
++https://app.n26.com/build/js/client.90a73858.js -> 200 len=1466289 sha256 3e304f5a7103565faf0202a764f0925126830025fadd076ec481f23c0f3da6ae (browser UA)
++https://app.n26.com/build/js/banking-features-auth-biometric-PreAppAuthPages.91311e3a.js -> 200 len=7800
++https://app.n26.com/login -> 200 len=316197 (dynamic _csrf band; recorded baselines 316210/316306-4)
++grep loginpage.js: continuation build `location.pathname + qs({redirect, verifyLogin})`; `__successRedirect`/`__failureRedirect` NO 302-target semantics; `$E.includes(decoded path)` gates UI hint only
++grep client.js: `__successRedirect`=1 `__failureRedirect`=1; MutationForm `history.push(getUrl(split('?')[0]))`; `window.location.href` sinks consume only server `redirectUrl` (protocol regex /^(https?)$/)
++conclusion: OATH /login?redirect= continuation is same-origin by construction -> RETRACTED (park OATH)
+
+[0m
+[0m← [0mEdit knowledge/index.md
+Index: /home/runner/work/n26-hunt/n26-hunt/knowledge/index.md
+===================================================================
+--- /home/runner/work/n26-hunt/n26-hunt/knowledge/index.md
++++ /home/runner/work/n26-hunt/n26-hunt/knowledge/index.md
+@@ -854,4 +854,6 @@
+ - 2026-10-02 REJECTED MISCONFIG @ xs2a.tech26.de `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers — corpus documents it as POST, so GET-404 is not evidence of absence
+ - 2026-10-02 ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
+ - 2026-10-02 REJECTED OTHER @ xs2a.tech26.de: "redirect headers are parsed before the 401 gate" — rejected, 4 controls all byte-identical
+ - 2026-10-02 REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers explicitly not evidence of absence — corpus documents it as POST
++- 2026-10-02 REJECTED OATH @ app.n26.com/login: `/login?redirect=` is refuted by N26's own bundle (LoginPage.6fd49c7e.js, client.90a73858.js) — the Relay continuation `__successRedirect`/`__failureRedirect` is a SAME-ORIGIN path rebuild `location.pathname + qs({redirect, verifyLogin})`; the attacker value is an encoded query VALUE, never a navigation host; client path is `preventDefault`+`history.push` (same-origin), no-JS path is WAF-403 anonymous. External-host nav exists only via server-GraphQL `redirectUrl` (`requestBiometricChallengeMutation.redirectUrl`, preloaded `login.redirectUrl`), protocol-guarded and post-auth. The 10-02 02:24 OATH (conf 75) is retracted; OATH class parked permanently on app.n26.com.
++- 2026-10-02 ACCEPTED OTHER @ app.n26.com/login bundle: the `$E` continuation-path check gates a UI hint only ("Enter your log in credentials to proceed") — NOT a redirect authorization allowlist; the only `window.location.href` sink in the login bundle consumes server `redirectUrl` with a `^(https?)$` protocol regex before assignment. Surviving live primitives: TRAGIC_BURNS class-A hop-2 id resolution and XSA_PROBE class-B state binding (both AUTH_HELPED).
+
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && tail -n 4 knowledge/index.md && echo "==PROBE==" && tail -n 12 probe-results.md && echo "==GIT==" && git status --short | head -20
+- 2026-10-02 REJECTED OTHER @ xs2a.tech26.de: "redirect headers are parsed before the 401 gate" — rejected, 4 controls all byte-identical
+- 2026-10-02 REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers explicitly not evidence of absence — corpus documents it as POST
+- 2026-10-02 REJECTED OATH @ app.n26.com/login: `/login?redirect=` is refuted by N26's own bundle (LoginPage.6fd49c7e.js, client.90a73858.js) — the Relay continuation `__successRedirect`/`__failureRedirect` is a SAME-ORIGIN path rebuild `location.pathname + qs({redirect, verifyLogin})`; the attacker value is an encoded query VALUE, never a navigation host; client path is `preventDefault`+`history.push` (same-origin), no-JS path is WAF-403 anonymous. External-host nav exists only via server-GraphQL `redirectUrl` (`requestBiometricChallengeMutation.redirectUrl`, preloaded `login.redirectUrl`), protocol-guarded and post-auth. The 10-02 02:24 OATH (conf 75) is retracted; OATH class parked permanently on app.n26.com.
+- 2026-10-02 ACCEPTED OTHER @ app.n26.com/login bundle: the `$E` continuation-path check gates a UI hint only ("Enter your log in credentials to proceed") — NOT a redirect authorization allowlist; the only `window.location.href` sink in the login bundle consumes server `redirectUrl` with a `^(https?)$` protocol regex before assignment. Surviving live primitives: TRAGIC_BURNS class-A hop-2 id resolution and XSA_PROBE class-B state binding (both AUTH_HELPED).
+==PROBE==
+https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js'` -> HTTP 404
+https://app.n26.com/login?redirect=https%3A%2F%2Fevil.example%2Fprobe'` -> 200 len=316305
+https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js' -> HTTP 404
+
+## 2026-10-02 08:42:15 UTC
+https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js -> 200 len=221646 sha256 c1154bbb51161a3eedb3433c80ea02d5182a0805d9f4d6d586ed2d0d030cb887 (browser UA)
+https://app.n26.com/build/js/client.90a73858.js -> 200 len=1466289 sha256 3e304f5a7103565faf0202a764f0925126830025fadd076ec481f23c0f3da6ae (browser UA)
+https://app.n26.com/build/js/banking-features-auth-biometric-PreAppAuthPages.91311e3a.js -> 200 len=7800
+https://app.n26.com/login -> 200 len=316197 (dynamic _csrf band; recorded baselines 316210/316306-4)
+grep loginpage.js: continuation build `location.pathname + qs({redirect, verifyLogin})`; `__successRedirect`/`__failureRedirect` NO 302-target semantics; `$E.includes(decoded path)` gates UI hint only
+grep client.js: `__successRedirect`=1 `__failureRedirect`=1; MutationForm `history.push(getUrl(split('?')[0]))`; `window.location.href` sinks consume only server `redirectUrl` (protocol regex /^(https?)$/)
+conclusion: OATH /login?redirect= continuation is same-origin by construction -> RETRACTED (park OATH)
+==GIT==
+ M knowledge/index.md
+ M leads/lead-bigpickle.md
+ M probe-results.md
+?? analyst-out.txt
+?? analyst-prompt.txt
+?? ctx.txt
+[0m
+Run complete — the committed `[NEXT]` SCAN was executed against N26's own login bundle, and it **refutes the 10-02 OATH finding**. Persisted to `probe-results.md`, `leads/lead-bigpickle.md`, and `knowledge/index.md`.
+
+## Processed evidence — `app.n26.com` `/login` bundle scan
+
+**Steps covered:** (1) scope = `app.n26.com` login/SCA surface, 5 assets / 5 probe-team decisions bounded to read-only ≤1 rps; (2) significance discharge — encode-param parser class found description-only, no effect; (3) analysis role fixed; (4) technique chosen = same-origin continuation verification against N26's own minified code (no form submission); (5) stop-rule — OATH class suppressed and parked permanently, HYP blocks forced to XSA_PROBE / TRAGIC_BURNS / encode-parser only; (6) hypotheses tested below; (7) one `[NEXT]` committed, anonymous GET/HEAD/OPTIONS only.
+
+**Key finding.** The Relay continuation `__successRedirect`/`__failureRedirect` is a **same-origin path rebuild**, not a navigation target:
+`location.pathname + qs.stringify({redirect, verifyLogin}, {addQueryPrefix:true})` — the external value only ever appears as an encoded query *value* on `/login`. Client path: `preventDefault()` + `history.push(getUrl(e.split("?")[0]))` → same-origin by construction. The only `window.location.href` sinks consume server-supplied GraphQL `redirectUrl` (`requestBiometricChallengeMutation.redirectUrl`, preloaded `login.redirectUrl`) guarded by a `^(https?)$` protocol regex — all post-auth. The `$E` decoded-path check gates a **UI hint only**, not authorization.
+
+---
+
+**[NEW]** `LoginPage.6fd49c7e.js` (200, 221646B, sha256 `c1154bbb…`), `client.90a73858.js` (200, 1466289B), `PreAppAuthPages.91311e3a.js` (200, 7800B) fetched with browser UA; previously logged 404 was a malformed-URL artifact.
+
+**[CHANGED] RETRACTION** — OATH `/login?redirect=` (10-02 02:24, conf 75, `[FINAL]#1`): refuted by N26's own bundle. Same-origin continuation by construction; `__failureRedirect` value is a query value, not a server 302 target; cross-origin `history.push` would throw `SecurityError` regardless. Confidence 75 → 0; **OATH parked permanently** (evidence + step-5 mandate).
+
+**[CHANGED] NO_DELTA** — login.html 316197B vs 316210/316306-4 band (dynamic `_csrf`); SSPR form unchanged; no bundle rotation.
+
+Provisionally assigned roles: `CAA` (continued), `EDA` for retroactive contradiction traces (OATH tombstone).
+
+---
+
+```
+[PRIO] /wl/open-banking/{aisp,cbpii,pisp/*}, 8.6, a:9 b:9 t:8 g:2 c:8 f:9
+[PRIO] /open-banking class-B, 7.9, a:8 b:9 t:8 g:1 c:7 f:8
+[PRIO] login bundle server redirectUrl sinks, 6.9, a:7 b:9 t:8 g:1 c:7 f:8
+
+[HYP] (1/3 — TRAGIC_BURNS) class-A hop-2 consent/payment resolution oracle
+class: IDOR | asset: /wl/open-banking/*?consentId=|paymentId= | confidence: 58
+PASSIVE hop-1 shape (measured 10-01) + hop-2 needs a real own-account id (AUTH_HELPED)
+
+[HYP] (2/3 — XSA_PROBE) class-B SCA-session state binding
+class: XSA_PROBE | asset: /open-banking + /login?requestId=&state=&authType= | confidence: 58
+authType unvalidated + requestId/state mirrored pre-auth; resume-vs-state test needs a victim session (AUTH_HELPED)
+
+[HYP] (3/3 — encode-parser, discharged) single qs round-trip, no second decoder
+confidence: 15 → parked (fails 40 gate); significance description-only
+
+[PARKED] OATH /login?redirect (refuted, permanently) · GraphQL PQ/WS · class-B proof ·
+         encode-param parser
+
+[FINAL] 1) TRAGIC_BURNS class-A hop-2 (58)  2) XSA_PROBE class-B state binding (58)
+        3) encode-param (15) — parked
+
+[NEXT] SCAN (0 network): extract $E page-set + login/requestBiometricChallengeMutation
+redirectUrl model from client.js/loginpage.js; only if a NEW in-scope continuation path
+surfaces, re-probe its /login SSR reflection with -L (≤1 rps anonymous GET).
+
+[LEARN] ACCEPTED OTHER @ app.n26.com/login: continuation is same-origin by construction;
+off-origin nav only via server GraphQL redirectUrl (protocol-guarded, post-auth). 7th
+instance of the 09-28 rule, in the hiding direction.
+[LEARN] ACCEPTED $E decodes-only-for-UI-hint — not an allowlist control.
+[LEARN] ACCEPTED bundle 404 log was a URL artifact; re-verify before trusting.
+
+[RISK] n26: 24 — OATH anchor retracted on vendor code; remaining live primitives
+(TRAGIC_BURNS, XSA_PROBE) preserved and AUTH_HELPED; no customer data touched, ≤1 rps.
+```

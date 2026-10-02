@@ -801,3 +801,6 @@ https://app.n26.com/wl/open-banking/aisp?consentId=11111111-1111-1111-1111-11111
 https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js'` -> HTTP 404
 https://app.n26.com/login?redirect=https%3A%2F%2Fevil.example%2Fprobe'` -> 200 len=316305
 https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js' -> HTTP 404
+
+## 2026-10-02 08:43:49 UTC
+https://app.n26.com/login?redirect=https://evil.example.com/callback -> 200 len=316307

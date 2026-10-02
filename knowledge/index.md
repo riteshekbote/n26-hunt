@@ -855,3 +855,6 @@
 - 2026-10-02 ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
 - 2026-10-02 REJECTED OTHER @ xs2a.tech26.de: "redirect headers are parsed before the 401 gate" — rejected, 4 controls all byte-identical
 - 2026-10-02 REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers explicitly not evidence of absence — corpus documents it as POST
+- 2026-10-02 ACCEPTED OTHER @ app.n26.com/login: continuation is same-origin by construction;
+- 2026-10-02 ACCEPTED $E decodes-only-for-UI-hint — not an allowlist control.
+- 2026-10-02 ACCEPTED bundle 404 log was a URL artifact; re-verify before trusting.
