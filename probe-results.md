@@ -807,3 +807,7 @@ https://app.n26.com/login?redirect=https://evil.example.com/callback -> 200 len=
 
 ## 2026-10-02 15:19:01 UTC
 https://app.n26.com/login?redirect=https://evil.example.com/callback -> 200 len=316307
+
+## 2026-10-02 20:03:12 UTC
+https://app.n26.com/login?redirect=https://evil.example.com/callback -> 200 len=316307
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
