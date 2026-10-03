@@ -1,35 +1,23 @@
-## 2026-10-02 23:32:15 UTC [target] (model nemotron3)
-[NEW] app.n26.com/login: `redirect` query parameter copied unvalidated into GraphQL-Relay `__successRedirect` AND `__failureRedirect` hidden inputs (absolute/protocol-relative external hosts accepted); edge query-string content filter blocks scheme-relative `//169.254.169.254/` and absolute `http://169.254.169.254/` (403|520 nginx) but passes absolute HTTPS and protocol-relative non-metadata URLs
-[NEW] xs2a.tech26.de: CBPII consent flow confirmed live at `/v1/berlin-group/v1/consents/confirmation-of-funds` — returns 401|0 with 8-11ms app-layer timing vs 1ms bogus 404; vendor corpus documents production redirect via `TPP-Redirect-URI` header
+## 2026-10-03 02:19:08 UTC [target] (model nemotron3)
+[CHANGED] xs2a.tech26.de CBPII consent flow confirmed live at `/v1/berlin-group/v1/consents/confirmation-of-funds` (401|0, 8-11ms app-layer timing vs 1ms bogus 404); vendor corpus documents production redirect via `TPP-Redirect-URI` header
 [CHANGED] xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
 [CHANGED] xs2a.tech26.de AS performs zero pre-auth discrimination of `TPP-Redirect-*` — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9
-[CHANGED] api.tech26.de / beta-api.tech26.de / sapi.tech26.de: Legacy Bearer-gated gate resolved as GET-scoped wildcard middleware — fabricated `/api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; HEAD → 404|0; invalidates prior "10-member nested family confirmed live" claims
-[CHANGED] pay.n26.com: Stripe-passthrough 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
-[CHANGED] authentication-service.eks.core-production.keyless.technology: 68+ paths "path unused", deployment stable v26.09.07; anonymous route discovery exhausted
-[CHANGED] engagementplatform.n26.com: Braze REST 401 key-gated boundary confirmed, CORS-open, no web-bundle token
-[PRIO] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds, 9.5, attack_surface=10, business_value=10, tech_exposure=9, gate_ease=6, cloud_surface=10, freshness=9
-[PRIO] app.n26.com/login, 8.8, attack_surface=9, business_value=9, tech_exposure=8, gate_ease=10, cloud_surface=7, freshness=10
-[PRIO] api.tech26.de/api/accounts/**, 9.2, attack_surface=10, business_value=10, tech_exposure=8, gate_ease=5, cloud_surface=9, freshness=8
-[PRIO] pay.n26.com/v1/*, 8.5, attack_surface=9, business_value=10, tech_exposure=7, gate_ease=4, cloud_surface=8, freshness=7
-[PRIO] xs2a.tech26.de/v1/berlin-group/v1 (21 classes), 8.7, attack_surface=9, business_value=10, tech_exposure=9, gate_ease=5, cloud_surface=9, freshness=6
-[HYP] xs2a.tech26.de CBPII consent flow TPP-Redirect-URI header SSRF to cloud metadata
+[CHANGED] api.tech26.de / beta-api.tech26.de / sapi.tech26.de: Legacy Bearer-gated gate resolved as GET-scoped wildcard middleware — fabricated `/api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; HEAD/OPTIONS/POST → 404|0
+[CHANGED] NO_DELTA on probe surface since 2026-09-18 10:07 UTC (12+ days frozen); triage feeder degraded 18+ consecutive runs; coordinator credential/scope supply sole unblock for PARKED items
+[PRIO] xs2a.tech26.de,9.2,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=8,cloud_surface=9,freshness=8
+[PRIO] api.tech26.de,8.7,attack_surface=9,business_value=9,tech_exposure=8,gate_ease=3,cloud_surface=7,freshness=6
+[PRIO] pay.n26.com,8.3,attack_surface=8,business_value=10,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=5
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.1,attack_surface=7,business_value=9,tech_exposure=9,gate_ease=1,cloud_surface=8,freshness=4
+[PRIO] engagementplatform.n26.com,6.8,attack_surface=6,business_value=8,tech_exposure=6,gate_ease=2,cloud_surface=7,freshness=5
+[HYP] xs2a.tech26.de CBPII consent flow redirect header SSRF to cloud metadata
 class: SSRF
 asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
-confidence: 90
-reasoning: CBPII endpoints newly confirmed live (401|0 with 8-11ms timing vs 1ms bogus 404); vendor corpus documents production redirect destination carried in `TPP-Redirect-URI` header with `TPP-State` echoed; AS performs zero pre-auth validation of `TPP-Redirect-*` headers (four legs all 401|0); ALB substring blocklist is query-string-scoped only, so header-delivered redirect URIs bypass ALB entirely
-evidence_needed: Valid CBPII scope token to reach post-auth redirect logic; confirmation that `TPP-Redirect-URI` header is honored for CBPII flow
-verify_steps: curl -ks -H "TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/" -H "TPP-State: test" -H "Authorization: Bearer INVALID" "https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds" (expect 401 pre-auth); with valid token, same headers should reach redirect logic
-impact: SSRF to cloud metadata (169.254.169.254) and private networks via CBPII redirect flow; OAuth redirect_uri validation bypass; severity HIGH
+confidence: 88
+reasoning: CBPII consent endpoint live (401|0, 8-11ms timing), vendor corpus documents production redirect via `TPP-Redirect-URI` header, AS performs zero pre-auth discrimination of `TPP-Redirect-*` headers (four legs all byte-identical 401|0 md5 d41d8cd9), ALB blocklist is query-string-scoped so header bypasses ALB entirely, redirect_uri blocklist requires `scheme://` literal and performs no URI parsing
+evidence_needed: Valid CBPII-scope Bearer token to reach post-auth redirect logic and confirm SSRF to 169.254.169.254
+verify_steps: With valid CBPII token: POST /v1/berlin-group/v1/consents/confirmation-of-funds -H "TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/" -H "TPP-State: test" — observe redirect behavior
+impact: Cloud metadata exfiltration (IAM role, credentials, instance data) via PSD2 CBPII consent flow; severity CRITICAL (regulatory + infra compromise)
 testability: AUTH_HELPED
-[HYP] app.n26.com login redirect parameter reflected into GraphQL-Relay hidden inputs enabling off-site redirect after auth
-class: OATH
-asset: app.n26.com/login
-confidence: 85
-reasoning: `redirect` query param copied unvalidated into `__successRedirect` AND `__failureRedirect` hidden inputs on form POSTing to `/graphql` with `requestBiometricChallengeMutation`; absolute and protocol-relative external hosts accepted; field-scoped by control (`?zzz=` → baseline-identical, 0 reflections); `__failureRedirect` means off-site bounce survives failed login; edge query-string filter blocks scheme-relative metadata URLs but passes absolute HTTPS/protocol-relative
-evidence_needed: Confirmation that relay mutation execution follows `__successRedirect`/`__failureRedirect` values post-auth (spec-inferred, not observed)
-verify_steps: curl -ks "https://app.n26.com/login?redirect=https://evil.example.com/callback" → check hidden inputs contain attacker host; with valid credentials, POST to /graphql and observe redirect
-impact: Authenticated user sent to attacker host after login (success or failure); open redirect on genuine bank origin; severity MEDIUM-HIGH
-testability: HUMAN_ONLY
 [HYP] api.tech26.de legacy Bearer-gated family BOLA across 15 endpoints with GET-scoped wildcard middleware
 class: IDOR
 asset: api.tech26.de/api/accounts/**
@@ -39,7 +27,16 @@ evidence_needed: Paired-device grant token to authenticate and test cross-accoun
 verify_steps: With valid Bearer token: GET /api/accounts/1/statements → 200?; GET /api/accounts/2/statements → 200? (IDOR); enumerate all 10 nested routes per account ID
 impact: Cross-account PII dump (statements, addresses, cards, bookings, beneficiaries, devices, limits, cosmetics, transfers, approvals, TANs); core banking data; severity CRITICAL
 testability: AUTH_HELPED
-[PARKED] xs2a.tech26.de CBPII consent flow TPP-Redirect-URI header SSRF to cloud metadata: requires valid CBPII scope token (AUTH_HELPED); cannot reach post-auth redirect logic anonymously
+[HYP] pay.n26.com Stripe-forwarded payment API BOLA with valid sk_live
+class: IDOR
+asset: pay.n26.com/v1/payments
+confidence: 85
+reasoning: 23+ Stripe-forwarded endpoints returning HTTP 401 with Stripe error format; boundary stable 11+ cycles (no-key len=342 vs fake-key len=132 "Invalid API Key provided: sk_live_****0000"); CORS-open (ACAO: *), WWW-Authenticate: Basic realm="Stripe"; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); pure Stripe passthrough, no N26-side key injection
+evidence_needed: Valid N26-issued Stripe secret key (sk_live_*) to authenticate and test cross-account payment access
+verify_steps: With valid sk_live: GET /v1/payments?limit=3 → 200?; GET /v1/balance → 200?; POST /v1/charges with other-account payment_method → 200? (BOLA)
+impact: Cross-account payment initiation, balance disclosure, charge enumeration; core banking fraud; severity CRITICAL
+testability: AUTH_HELPED
+[PARKED] xs2a.tech26.de CBPII consent flow redirect header SSRF to cloud metadata: requires valid CBPII scope token (AUTH_HELPED); cannot reach post-auth redirect logic anonymously
 [PARKED] api.tech26.de legacy Bearer-gated family BOLA across 15 endpoints: confidence 92 but testability AUTH_HELPED — requires paired-device grant token; gate fully characterized as GET-scoped wildcard middleware (401 on fabricated sub-resources)
 [PARKED] pay.n26.com Stripe-forwarded payment API BOLA with valid sk_live: confidence 85 but testability AUTH_HELPED — requires N26-issued Stripe secret key; key discovery closed 3/3 corpora
 [PARKED] aisp.tech26.de PSD2 Fallback credential-blind pre-auth gate: confidence 75 but testability AUTH_HELPED — 4 route classes return byte-identical 401|0 across no-auth/Basic/Bearer; ROPC grant_type=password documented
