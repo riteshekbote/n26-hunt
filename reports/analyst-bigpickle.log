@@ -64843,3 +64843,568 @@ priority formula: 0.25a+0.25b+0.15t+0.15g+0.10c+0.10f
 **STEP 7 — RISK**
 
 [RISK] n26: 16 (down from 18). Two hypotheses discharged at premise level (anonymous GraphQL reachability false, open redirect discharged at source). Remaining items are all **AUTH_HELPED** by construction; no anonymous vector clears 40 gate. Attack surface effectively frozen since 2026-09-18 (probe-results frozen 12+ days). Correct posture: pause anonymous probing (zero-signal), complete the local bundle parse (0 requests), then test the 3 AUTH_HELPED hypotheses against provisioned test accounts only. No customer data access, no mutations beyond necessary read-only observations.
+===== ANALYST bigpickle 2026-10-03 17:54:59 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mfind /home/runner/work/n26-hunt/n26-hunt -iname "*.js" -o -iname "*bundle*" -o -iname "*LoginPage*" 2>/dev/null | head -20; echo "---ctx---"; ls /home/runner/work/n26-hunt/n26-hunt/*.txt /home/runner/work/n26-hunt/n26-hunt/*.md 2>/dev/null | head -20
+---ctx---
+/home/runner/work/n26-hunt/n26-hunt/README.md
+/home/runner/work/n26-hunt/n26-hunt/analyst-out.txt
+/home/runner/work/n26-hunt/n26-hunt/analyst-prompt.txt
+/home/runner/work/n26-hunt/n26-hunt/ctx.txt
+/home/runner/work/n26-hunt/n26-hunt/probe-results.md
+[0m
+[0m$ [0mls -la /home/runner/work/n26-hunt/n26-hunt 2>/dev/null | head -40; echo "---JS---"; ls -la /tmp/opencode 2>/dev/null | head -20
+total 1032
+drwxr-xr-x 12 runner runner   4096 Oct  3 17:34 .
+drwxr-xr-x  3 runner runner   4096 Oct  3 17:34 ..
+drwxr-xr-x  7 runner runner   4096 Oct  3 17:34 .git
+drwxr-xr-x  3 runner runner   4096 Oct  3 17:34 .github
+-rw-r--r--  1 runner runner   1844 Oct  3 17:34 README.md
+-rw-r--r--  1 runner runner     32 Oct  3 17:34 analyst-out.txt
+-rw-r--r--  1 runner runner 470464 Oct  3 17:34 analyst-prompt.txt
+-rw-r--r--  1 runner runner 466594 Oct  3 17:34 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Oct  3 17:34 inventory
+drwxr-xr-x  2 runner runner   4096 Oct  3 17:34 knowledge
+drwxr-xr-x  2 runner runner   4096 Oct  3 17:34 leads
+-rw-r--r--  1 runner runner  23725 Oct  3 17:34 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Oct  3 17:34 recon-notes
+drwxr-xr-x  2 runner runner   4096 Oct  3 17:34 reports
+drwxr-xr-x  2 runner runner   4096 Oct  3 17:34 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Oct  3 17:34 scope.yml
+drwxr-xr-x  2 runner runner   4096 Oct  3 17:34 scripts
+-rw-r--r--  1 runner runner     33 Oct  3 17:34 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Oct  3 17:34 state_laguna.json
+-rw-r--r--  1 runner runner     33 Oct  3 17:34 state_ling3.json
+-rw-r--r--  1 runner runner     33 Oct  3 17:34 state_longcat.json
+-rw-r--r--  1 runner runner     33 Oct  3 17:34 state_mimo.json
+-rw-r--r--  1 runner runner     33 Oct  3 17:34 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Oct  3 17:34 triage
+---JS---
+total 8
+drwxr-xr-x  2 runner runner 4096 Oct  3 17:34 .
+drwxrwxrwt 15 root   root   4096 Oct  3 17:34 ..
+[0m
+[0m→ [0mRead scope.yml
+[0m
+[0m$ [0mcd /tmp/opencode && curl -sS -o lp.js -w "http=%{http_code} size=%{size_download} time=%{time_total}\n" --max-time 30 -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36" "https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js" ; echo "---"; ls -la lp.js; md5sum lp.js
+http=200 size=221646 time=1.017571
+---
+-rw-r--r-- 1 runner runner 221646 Oct  3 17:40 lp.js
+f2077cc831c8e4f9f82eb9ae87605c04  lp.js
+[0m
+## Objective
+- Continue the N26 Bank AG POC for `api`, primarily converting the anonymous `app.n26.com` login bundle into precise, ready-to-run MFA/SCA test specifications for credentialed validation.
+
+## Important Details
+- State: `{"phase":"POC","target":"api"}`; risk score last recorded as `16`.
+- Scope: only N26-owned infrastructure, applications, APIs, authentication systems, and domains.
+- Live testing must remain passive-first, `GET/HEAD/OPTIONS` only, at `≤1 rps`; no mutations, authentication bypass, customer data, or credential attacks.
+- Required output: only the eight structured analyst blocks; exactly one `[NEXT]` action.
+- Apply Step 4 literally: confidence `<40` should be parked. Historical state retained `KEYLESS_JWT` at 38 and `BEARER_ART` at 34, but that conflicts with the current instruction and must be re-evaluated.
+- `app.n26.com` exposes `x-ratelimit-limit: 60`; pace at `≤1 rps` to avoid manufactured throttling.
+- Core discipline: bundle presence ≠ reachability; status code ≠ rule; controls are path/channel-specific; count ≠ finding.
+
+## Work State
+### Completed
+- Discharged anonymous GraphQL bypass: six transports return byte-identical `403|43561B`, md5 `66b3c78fc6553b34cdcf2af8db884158`; the Express application denies before GraphQL parsing.
+- Corrected “WAF” framing: headers show `server: envoy`, `x-powered-by: Express`, `x-envoy-upstream-service-time: 13`; this is an application-layer deny.
+- Established route-specific controls: `GET /zzqnotreal-abc` → `404|43717B`, md5 `d70be822`; `GET /graphql` stalls for 20s with zero bytes.
+- Withdrawn Relay-modern claim: N26 uses legacy form fields `__mutation`, `__successRedirect`, and `__failureRedirect`, not `operations`/`variables`.
+- Corrected bundle attribution: all 13 auth operations are in `banking-features-auth-biometric-LoginPage.6fd49c7e.js`, not `client.ae5f81a2.js`.
+- Extracted schemas:
+  - Zero-variable: `enrollUserMutation`, `requestPushChallengeMutation`, `requestQRChallengeMutation`, `requestSMSChallengeMutation`, `verifyLoginWithPushMutation`, `verifyUserKeylessDataQuery`, `verifyUserKeylessStatusQuery`.
+  - Variable: `requestBiometricChallengeMutation`, `requestMfaFlow`, `sendKeylessErrorMutation`, `validateKeylessSignedTokenMutation`, `verifyLoginWithSMSMutation`, `verifyLoginWithQRQuery`.
+- Discharged `/login?redirect=` open redirect at source; module `12273` in `1535.5a20cb49.js:155006` collapses off-origin values to `https://app.n26.com`.
+- Discharged DOM-XSS through `redirect`; no attribute breakout, while `<` and `javascript:` receive `403|520`.
+- Discharged Statsig flag-dump premise: `/v1/sdk_exception` now `403|19B`; `download_config_specs` remains `401|12B`.
+- Corrected `{api,beta-api,sapi}.tech26.de`: GET-scoped wildcard middleware returns the same `401` for fabricated subpaths; `401` proves gate-pattern membership, not resource existence.
+- `mcp-tools.fra.tech26.de` is a fresh cert-without-DNS leaf: NXDOMAIN, specific-name island, no anonymous surface.
+
+### Active
+- Resolve `__mutation` encoding: `g()(body)`, where `g = r.n`; determine whether it is a plain wrapper without asserting compression.
+- Map invocation order and prerequisites for the 13 auth operations, especially `challengeId`, `challengeStep`, `challengeType`, QR `tokenId`, and keyless `keylessId`.
+- Map `requestBiometricChallengeMutation` response fields `challengeId`, `challengeType`, `challengeStep`, and `redirectUrl` to subsequent operations.
+- Ranked hypotheses:
+  1. `XSA_PROBE`: attacker-controlled `requestId` → biometric challenge → server `redirectUrl`, confidence `44`, `AUTH_HELPED`.
+  2. `KEYLESS_JWT`: claim trust in `validateKeylessSignedToken`, confidence `38`, `AUTH_HELPED`.
+  3. `BEARER_ART`: QR `tokenId` / keyless `keylessId` exposure, confidence `34`, `AUTH_HELPED`.
+
+### Blocked
+- No N26 test account/session, paired-device token, WebAuthn credential, SCA `requestId`, or other authorization context has been provisioned.
+- Anonymous `POST /graphql` is deliberately denied, so live mutation testing is both out of the current request envelope and route-blocked.
+- `r.n` remains unresolved; the login chunk is not retained locally.
+- Automated prober is stuck since `2026-09-19 21:15 UTC`, repeatedly testing discharged `/login?redirect=` and failing its second URL with `ERR <urlopen error [Errno -2] Name or service not known>`.
+
+## Next Move
+1. Fetch `https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js` once, store it locally, resolve `r.n`, and reconstruct the login state-machine ordering without sending mutations.
+2. Produce exact credentialed request specifications using legacy form-post fields `__mutation`, `__successRedirect`, and `__failureRedirect` for the surviving hypotheses.
+
+## Relevant Files
+- `scope.yml`: authoritative in-scope assets.
+- `inventory/n26.md`: N26 inventory and historical observations.
+- `state_bigpickle.json`: current POC state.
+- `probe-results.md`: stale automated probe output; last meaningful data `2026-09-19 21:15:28 UTC`.
+- `triage/`: empty/errored feeder runs and run artifacts.
+- `leads/`: prior analyst leads.
+- `hypotheses.md`: current ranked hypotheses.
+- `knowledge/`: accumulated accepted/rejected knowledge.
+- `https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js`: primary source chunk, 221646B, md5 `f2077cc8`.
+- `https://app.n26.com/build/js/client.ae5f81a2.js`: Relay/form machinery, 1466288B, md5 `0886c4d3`.
+- `https://app.n26.com/build/js/PreAppAuthPages.91311e3a.js`: pre-auth routing, 7800B.
+- `n26/psd2-tpp-docs/doc/decoupled/dedicated-aisp.md`: AISP flow and redirect semantics.
+- `n26/psd2-tpp-docs/doc/decoupled/dedicated-cbpii.md`: CBPII consent semantics.
+- `n26/psd2-tpp-docs/doc/redirect/dedicated-aisp.md`: redirect flow details.
+- `n26/psd2-tpp-docs/doc/sandbox.md`: sandbox and production control semantics.
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+[0m# [0mTodos
+[✓] Fetch + verify login chunk (md5 f2077cc8 / 221646B)
+[•] Confirm 13 auth op definitions + exact variable schemas locally
+[ ] Resolve r.n (__mutation encoder) via webpack module map
+[ ] Map invocation order / state machine (challengeId gating)
+[ ] Map biometric challenge response -> redirectUrl consumption
+[ ] Emit ready-to-run credentialed request spec for 3 hypotheses
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('lp.js',encoding='utf-8',errors='replace').read()
+print("len",len(s),"lines",s.count(chr(10))+1)
+ops=re.findall(r'(mutation|query)\s+([A-Za-z_][A-Za-z0-9_]*)',s)
+print("op-ish tokens:",len(ops))
+for kind,name in ops: print(f"  {kind:8} {name}")
+EOF
+len 221646 lines 1
+op-ish tokens: 13
+  mutation requestQRChallengeMutation
+  mutation sendKeylessErrorMutation
+  mutation enrollUserMutation
+  query    verifyUserKeylessStatusQuery
+  mutation requestMfaFlow
+  query    verifyLoginWithQRQuery
+  mutation requestPushChallengeMutation
+  mutation validateKeylessSignedTokenMutation
+  mutation requestBiometricChallengeMutation
+  mutation verifyLoginWithPushMutation
+  mutation verifyLoginWithSMSMutation
+  mutation requestSMSChallengeMutation
+  query    verifyUserKeylessDataQuery
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('lp.js',encoding='utf-8',errors='replace').read()
+for pat in ['__mutation','__successRedirect','__failureRedirect','r.n','redirectUrl','requestId','challengeId','keylessId','tokenId']:
+    idxs=[m.start() for m in re.finditer(re.escape(pat),s)]
+    print(f"{pat:20} count={len(idxs)}")
+EOF
+__mutation           count=0
+__successRedirect    count=0
+__failureRedirect    count=0
+r.n                  count=93
+redirectUrl          count=9
+requestId            count=10
+challengeId          count=34
+keylessId            count=11
+tokenId              count=13
+[0m
+Bundle verified byte-identical to my prior extraction (221646B, md5 `f2077cc8`). Now parsing locally — zero further network.
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('lp.js',encoding='utf-8',errors='replace').read()
+pat=re.compile(r'(mutation|query)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(')
+for m in pat.finditer(s):
+    # capture balanced parens
+    i=m.end()-1; depth=0; j=i
+    while j<len(s):
+        if s[j]=='(':depth+=1
+        elif s[j]==')':
+            depth-=1
+            if depth==0:break
+        j+=1
+    body=s[m.start():j+1]
+    # trim the trailing Relay fragment (subscription/type selections) -> keep up to first '}'
+    b=body
+    k=b.find('}')
+    if k>0: b=b[:k+1]
+    print("="*100)
+    print(f"offset={m.start()}  {b}")
+EOF
+====================================================================================================
+offset=6252  mutation sendKeylessErrorMutation(\n  $challengeId: String!\n  $challengeStep: String!\n  $payload: SendKeylessErrorPayload!\n)
+====================================================================================================
+offset=20213  mutation requestMfaFlow($source: MfaSource!)
+====================================================================================================
+offset=22803  query verifyLoginWithQRQuery($tokenId: String!)
+====================================================================================================
+offset=204801  mutation validateKeylessSignedTokenMutation(\n  $challengeId: String\n  $transactionJwt: String!\n)
+====================================================================================================
+offset=209489  mutation requestBiometricChallengeMutation(\n  $username: String!\n  $password: String!\n  $fp: String\n  $fpc: String\n  $requestId: String\n)
+====================================================================================================
+offset=215531  mutation verifyLoginWithSMSMutation($verificationCode: String!)
+[0m
+13/13 ops confirmed independently. Note: `__mutation` fields are **absent** from this chunk (count=0) — they live in `client.ae5f81a2.js`. Let me extract exact op bodies.
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('lp.js',encoding='utf-8',errors='replace').read()
+pat=re.compile(r'\b(mutation|query)\s+([A-Za-z_][A-Za-z0-9_]*)')
+seen=set()
+for m in pat.finditer(s):
+    kind,name=m.group(1),m.group(2)
+    if name in seen: continue
+    seen.add(name)
+    seg=s[m.start():m.start()+420]
+    seg=seg.split('subscription')[0]
+    print("="*100)
+    print(f"[{kind}] {name}  @offset {m.start()}")
+    print(seg[:400])
+EOF
+====================================================================================================
+[mutation] requestQRChallengeMutation  @offset 1945
+mutation requestQRChallengeMutation {\n  requestQRChallenge {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    tokenId\n    deepLink\n    expiresInSeconds\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&
+====================================================================================================
+[mutation] sendKeylessErrorMutation  @offset 6252
+mutation sendKeylessErrorMutation(\n  $challengeId: String!\n  $challengeStep: String!\n  $payload: SendKeylessErrorPayload!\n) {\n  sendKeylessError(\n    challengeId: $challengeId\n    challengeStep: $challengeStep\n    payload: $payload\n  ) {\n    status\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if(
+====================================================================================================
+[mutation] enrollUserMutation  @offset 8925
+mutation enrollUserMutation {\n  enrollUserKeyless {\n    keylessId\n    errors {\n      translationKey\n      message\n      field\n    }\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.sel
+====================================================================================================
+[query] verifyUserKeylessStatusQuery  @offset 18233
+query verifyUserKeylessStatusQuery {\n  verifyUserKeylessStatus {\n    shouldRequestBiometricConsent\n    shouldEnroll\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(func
+====================================================================================================
+[mutation] requestMfaFlow  @offset 20213
+mutation requestMfaFlow($source: MfaSource!) {\n  requestMfaFlow(source: $source) {\n    flow\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variab
+====================================================================================================
+[query] verifyLoginWithQRQuery  @offset 22803
+query verifyLoginWithQRQuery($tokenId: String!) {\n  verifyLoginWithQR(tokenId: $tokenId) {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    tokenStatus\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n
+====================================================================================================
+[mutation] requestPushChallengeMutation  @offset 202189
+mutation requestPushChallengeMutation {\n  requestPushChallenge {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    shouldAbortLoginAttempt\n\n    challengeType\n    # In case of an invalid_state error, the user would directly go to the SMS\n    # flow.\n    challengeData {\n      obfuscatedPhoneNumber\n      remainingResendCodeCount\n      waitingTimeInSecond
+====================================================================================================
+[mutation] validateKeylessSignedTokenMutation  @offset 204801
+mutation validateKeylessSignedTokenMutation(\n  $challengeId: String\n  $transactionJwt: String!\n) {\n  validateKeylessSignedToken(\n    challengeId: $challengeId\n    transactionJwt: $transactionJwt\n  ) {\n    status\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.
+====================================================================================================
+[mutation] requestBiometricChallengeMutation  @offset 209489
+mutation requestBiometricChallengeMutation(\n  $username: String!\n  $password: String!\n  $fp: String\n  $fpc: String\n  $requestId: String\n) {\n  requestBiometricChallenge(\n    username: $username\n    password: $password\n    fp: $fp\n    fpc: $fpc\n    requestId: $requestId\n  ) {\n    status\n    shouldDelay\n    challengeId\n    challengeType\n    challengeStep\n    # In case of an invalid
+====================================================================================================
+[mutation] verifyLoginWithPushMutation  @offset 212725
+mutation verifyLoginWithPushMutation {\n  verifyLoginWithPush {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    isAuthorizationPending\n    shouldAbortLoginAttempt\n    challengeType\n    rateLimit {\n      limit\n      current\n    }\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name
+====================================================================================================
+[mutation] verifyLoginWithSMSMutation  @offset 215531
+mutation verifyLoginWithSMSMutation($verificationCode: String!) {\n  verifyLoginWithSMS(verificationCode: $verificationCode) {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    attemptLimitExceeded\n    shouldAbortLoginAttempt\n    challengeType\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.a
+====================================================================================================
+[mutation] requestSMSChallengeMutation  @offset 218337
+mutation requestSMSChallengeMutation {\n  requestSMSChallenge {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    shouldAbortLoginAttempt\n\n    challengeType\n    challengeData {\n      obfuscatedPhoneNumber\n      remainingResendCodeCount\n      waitingTimeInSeconds\n    }\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if
+====================================================================================================
+[query] verifyUserKeylessDataQuery  @offset 220233
+query verifyUserKeylessDataQuery {\n  verifyUserKeylessData {\n    keylessId\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('lp.js',encoding='utf-8',errors='replace').read()
+for name in ['requestBiometricChallengeMutation','requestPushChallengeMutation','requestQRChallengeMutation']:
+    m=re.search(r'\b(mutation|query)\s+'+name+r'\b',s)
+    seg=s[m.start():m.start()+1400]
+    # end at the Relay terminator
+    end=seg.find('locationOffset')
+    body=seg[:end] if end>0 else seg[:1400]
+    print("="*100)
+    print(body)
+    print("--- sha256:",__import__('hashlib').sha256(body.encode()).hexdigest()[:16])
+EOF
+====================================================================================================
+mutation requestBiometricChallengeMutation(\n  $username: String!\n  $password: String!\n  $fp: String\n  $fpc: String\n  $requestId: String\n) {\n  requestBiometricChallenge(\n    username: $username\n    password: $password\n    fp: $fp\n    fpc: $fpc\n    requestId: $requestId\n  ) {\n    status\n    shouldDelay\n    challengeId\n    challengeType\n    challengeStep\n    # In case of an invalid_state error, the user would directly go to the SMS\n    # flow.\n    challengeData {\n      obfuscatedPhoneNumber\n      remainingResendCodeCount\n      waitingTimeInSeconds\n    }\n\n    errors {\n      translationKey\n      message\n      field\n      userMessage {\n        title\n        detail\n      }\n    }\n\n    redirectUrl\n  }\n}\n",name:"GraphQL request",
+--- sha256: ea25a5e925c3dd7a
+====================================================================================================
+mutation requestPushChallengeMutation {\n  requestPushChallenge {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    shouldAbortLoginAttempt\n\n    challengeType\n    # In case of an invalid_state error, the user would directly go to the SMS\n    # flow.\n    challengeData {\n      obfuscatedPhoneNumber\n      remainingResendCodeCount\n      waitingTimeInSeconds\n    }\n  }\n}\n",name:"GraphQL request",
+--- sha256: 240e43397d327469
+====================================================================================================
+mutation requestQRChallengeMutation {\n  requestQRChallenge {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    tokenId\n    deepLink\n    expiresInSeconds\n  }\n}\n",name:"GraphQL request",
+--- sha256: 7febdf776b9a7279
+[0m
+All 13 bodies extracted. Now the full selections for the biometric/push/QR ops — `redirectUrl` is the core of hypothesis #1.
+`redirectUrl` confirmed returned server-side alongside `challengeId`, and the op takes **username+password** (so AUTH_HELPED, as scored). Now the client-side sink.
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('lp.js',encoding='utf-8',errors='replace').read()
+for i,m in enumerate(re.finditer(r'redirectUrl',s)):
+    a=max(0,m.start()-260); b=min(len(s),m.end()+260)
+    print("="*100)
+    print(f"### occurrence {i+1} @offset {m.start()}")
+    print(s[a:b])
+EOF
+====================================================================================================
+### occurrence 1 @offset 129075
+C=Xa(n.screen);return tl(nl({},e),{shouldPoll:C,loginScreen:n.screen});case v:var I;return tl(nl({},e),{shouldPoll:!0,pollDelay:null!==(I=n.pollDelay)&&void 0!==I?I:e.pollDelay});case p:return tl(nl({},e),{shouldPoll:!1});case m:return n.response?tl(nl({},e),{redirectUrl:n.response.redirectUrl,loginScreen:l.kv.OPEN_BANKING_REDIRECTION}):e;default:return e}};function il(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}var ol=function(e){var n,t,r,i=e.location,o=e.quer
+====================================================================================================
+### occurrence 2 @offset 129098
+l(nl({},e),{shouldPoll:C,loginScreen:n.screen});case v:var I;return tl(nl({},e),{shouldPoll:!0,pollDelay:null!==(I=n.pollDelay)&&void 0!==I?I:e.pollDelay});case p:return tl(nl({},e),{shouldPoll:!1});case m:return n.response?tl(nl({},e),{redirectUrl:n.response.redirectUrl,loginScreen:l.kv.OPEN_BANKING_REDIRECTION}):e;default:return e}};function il(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}var ol=function(e){var n,t,r,i=e.location,o=e.queryParams,a=e.mutationFor
+====================================================================================================
+### occurrence 3 @offset 130514
+urn Object.getOwnPropertyDescriptor(t,e).enumerable}))),r.forEach(function(n){il(e,n,t[n])})}return e}({shouldAbortLoginAttempt:v,shouldShowCloseButton:!0,shouldLogUserIn:!1,loginScreen:h,challengeData:null!==(r=null==u?void 0:u.challengeData)&&void 0!==r?r:f,redirectUrl:m,shouldPoll:!1,pollDelay:2,abortLoginAttemptErrors:v?p:[]},(null==u?void 0:u.challengeId)&&{challengeId:u.challengeId})};function al(e,n){(null==n||n>e.length)&&(n=e.length);for(var t=0,r=new Array(n);t<n;t++)r[t]=e[t];return r}function ll(e,n,t){return n in
+====================================================================================================
+### occurrence 4 @offset 132132
+t,o=(0,Tn.Zv)().loginState,a=void 0===o?{}:o,c=Mt(),u=c.setBiometricAuthLoginState,s=c.setIsKeylessEligible,d={location:e,queryParams:n,mutationFormPayload:t,hasJavaScript:r,loginState:a},f=cl((0,k.useReducer)(rl,d,ol),2),v=f[0],p=f[1],m=v.shouldLogUserIn,y=v.redirectUrl,h=v.loginScreen,b=v.challengeId,g=v.challengeData,S=v.challengeStep,E=v.shouldAbortLoginAttempt,j=(0,k.useMemo)(function(){return function(e){for(var n=1;n<arguments.length;n++){var t=null!=arguments[n]?arguments[n]:{},r=Object.keys(t);"function"==typeof Obje
+====================================================================================================
+### occurrence 5 @offset 198924
+,l.kv.HELP,ml),_u(Ou,l.kv.LOGGING_IN,hl),_u(Ou,l.kv.OPEN_BANKING_REDIRECTION,Hc.A),Ou);const Nu=function(){var e,n,t,o,c,s,f,m,I=(0,w.O)().trackStructuredEvent,T=(0,O.A)(),N=(0,C.W6)(),x=ju(ul(),2),R=x[0],P=x[1],L=R.loginScreen,D=R.abortLoginAttemptErrors,U=R.redirectUrl,M=R.shouldPoll,F=R.pollDelay,B=R.challengeId,G=R.challengeData,K=ju((0,i.n)(a()),1)[0];(0,k.useEffect)(function(){I(Au,"/login",null,l.A$)},[I]),t=(0,g.$)().trackAnalyticsCustomEvent,o=(0,E.n)(),c=o.guessedDeviceType,s=o.guessedOSName,f=(0,S.gB)(),m=(0,k.useR
+====================================================================================================
+### occurrence 6 @offset 200320
+GIN&&L!==l.kv.HELP&&L!==l.kv.OPEN_BANKING_REDIRECTION&&L!==l.kv.LOGGING_IN)return N.push("/pages/login-feedback/timeout")},l.r1);var V=L?Tu[L]:Wc,W=null!=V?V:Wc,H=null!==(e=(0,k.useContext)(_.A))&&void 0!==e?e:{};return(null===(n=H.login)||void 0===n?void 0:n.redirectUrl)?(0,r.jsx)(j.rd,{from:"/login",to:H.login.redirectUrl}):(0,r.jsxs)(r.Fragment,{children:[(0,r.jsx)(W,{dispatch:P,abortLoginAttemptErrors:D,redirectURL:U,loginScreen:L,challengeId:B,challengeData:G}),(0,r.jsx)(y.A,{title:T.string("login_title","Login"),descrip
+====================================================================================================
+### occurrence 7 @offset 200374
+&L!==l.kv.LOGGING_IN)return N.push("/pages/login-feedback/timeout")},l.r1);var V=L?Tu[L]:Wc,W=null!=V?V:Wc,H=null!==(e=(0,k.useContext)(_.A))&&void 0!==e?e:{};return(null===(n=H.login)||void 0===n?void 0:n.redirectUrl)?(0,r.jsx)(j.rd,{from:"/login",to:H.login.redirectUrl}):(0,r.jsxs)(r.Fragment,{children:[(0,r.jsx)(W,{dispatch:P,abortLoginAttemptErrors:D,redirectURL:U,loginScreen:L,challengeId:B,challengeData:G}),(0,r.jsx)(y.A,{title:T.string("login_title","Login"),description:T.string("login_description","Login"),path:"/logi
+====================================================================================================
+### occurrence 8 @offset 209397
+:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"title"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"detail"},arguments:[],directives:[]}]}}]}},{kind:"Field",name:{kind:"Name",value:"redirectUrl"},arguments:[],directives:[]}]}}]}}],loc:{start:0,end:704}};n.loc.source={body:"mutation requestBiometricChallengeMutation(\n  $username: String!\n  $password: String!\n  $fp: String\n  $fpc: String\n  $requestId: String\n) {\n  requestBiometricChallenge(\n  
+====================================================================================================
+### occurrence 9 @offset 210212
+.\n    challengeData {\n      obfuscatedPhoneNumber\n      remainingResendCodeCount\n      waitingTimeInSeconds\n    }\n\n    errors {\n      translationKey\n      message\n      field\n      userMessage {\n        title\n        detail\n      }\n    }\n\n    redirectUrl\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.s
+[0m
+Now the critical trace: where does `redirectURL` actually navigate, and is `requestId` client-controlled?
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('lp.js',encoding='utf-8',errors='replace').read()
+for pat in ['redirectURL','OPEN_BANKING_REDIRECTION','location.href','location.replace','window.location']:
+    ms=[m.start() for m in re.finditer(re.escape(pat),s)]
+    print(f"### {pat}: {len(ms)}")
+    for o in ms[:14]:
+        print(f"  @{o}: ...{s[max(0,o-150):o+200]}...")
+        print("  -")
+EOF
+### redirectURL: 9
+  @11812: ...urn Object.getOwnPropertyDescriptor(t,e).enumerable}))),r.forEach(function(n){d(e,n,t[n])})}return e}({},o.o,u.u1),"div");const y=function(e){var n=e.redirectURL,t=(0,a.A)(),o=f((0,l.useState)("login_open_banking_redirection"),2),c=o[0],u=o[1];return(0,i.A)(function(){try{if(n){var e=new URL(n);if(/^(https?):$/.test(e.protocol))return void(window.l...
+  -
+  @123288: ...LimitExceeded&&r(Ua,e,n,l.A$))}}},Fa=t(87045),Ba=t.n(Fa),Ga=t(38968),Ka=t(84944),Va=t(73264),Wa=(0,Va.A)(Ga.Ay.copy,"p");const Ha=function(e){var n=e.redirectURL,t=(0,O.A)();return(0,r.jsx)(Aa.A,{mutation:a(),successURL:n,failureURL:n,children:function(e){var n=e.errors;return(0,r.jsxs)(Di.S,{space:"8",children:[(0,r.jsx)(Ka.A,{id:"login-push-error...
+  -
+  @124380: ...extend:Ga.Ay.linkButton,hasJavaScript:t,type:l,"data-testid":i,width:"100%",children:o})},$a=function(e){var n,t,i,o,a=e.dispatch,c=e.loginScreen,u=e.redirectURL,s=(0,k.useContext)(Li.A),v=(0,C.zy)(),p=(0,Ca.A)(),m=Ma(),y=m.handleSMSRequestSubmitEvents,h=m.handleSMSRequestSuccessEvents,b=m.handleSMSRequestFailureEvents,g=(0,w.O)().trackStructuredEv...
+  -
+  @125701: ...",justifyContent:"center",children:(0,r.jsx)(Mi.A,{src:"/build/media/enable-notifications.67155931e8141a0665102cb287e7ef76.svg"})}),!s&&(0,r.jsx)(Ha,{redirectURL:u})]})}),A&&(0,r.jsx)(ja.P.Actions,{children:(n=S.string("login.biometric_auth.another_method.push.fallback","Lost access to your mobile device?"),t="verify-login-help-button-step-1",i=v.p...
+  -
+  @134642: ...},onFailure:function(n){i("login_mfa_help_sms_requested_failure",e.loginScreen,null,"digital_identity"),e.dispatch({type:d,response:n})},successURL:e.redirectURL,failureURL:e.redirectURL,children:function(e){var t=e.status;return(0,r.jsx)(Oa.A.Default,{loading:t===Aa.A.STATUSES.submitting,disabled:t===Aa.A.STATUSES.success,extend:Ga.Ay.button,type:...
+  -
+  @134667: ...("login_mfa_help_sms_requested_failure",e.loginScreen,null,"digital_identity"),e.dispatch({type:d,response:n})},successURL:e.redirectURL,failureURL:e.redirectURL,children:function(e){var t=e.status;return(0,r.jsx)(Oa.A.Default,{loading:t===Aa.A.STATUSES.submitting,disabled:t===Aa.A.STATUSES.success,extend:Ga.Ay.button,type:"submit","data-testid":"v...
+  -
+  @163945: ...nction(){return p(l.oU.LOGIN_FORGOT_PASSWORD,i,null,l.A$)},children:o.string("login_forgot_password","Forgot?")})}))}})};const Wc=function(e){var n=e.redirectURL,t=e.dispatch,i=e.abortLoginAttemptErrors,o=e.loginScreen,a=(0,O.A)(),c=(0,w.O)().trackStructuredEvent,d=Ml(),f=d.fingerprint,v=d.components,p=Tl(),y=p.delayState,h=p.handleDelayOnFailure,b...
+  -
+  @186443: ...SMS_RESEND_FAILURE,bu=l.oU.LOGIN_MFA_SMS_SUPPORT_CENTER,gu=/^\d+$/;const Su=function(e){var n,t=e.challengeData,o=void 0===t?{}:t,a=e.loginScreen,c=e.redirectURL,v=e.dispatch,p=(0,ar.A)().css,m=(0,O.A)(),y=(0,w.O)().trackStructuredEvent,h=null!==(n=(0,k.useContext)(Li.A))&&void 0!==n&&n,b=(0,k.useRef)(null),g=(0,k.useRef)(null),S=su((0,k.useState)(...
+  -
+  @200471: ...edirectUrl)?(0,r.jsx)(j.rd,{from:"/login",to:H.login.redirectUrl}):(0,r.jsxs)(r.Fragment,{children:[(0,r.jsx)(W,{dispatch:P,abortLoginAttemptErrors:D,redirectURL:U,loginScreen:L,challengeId:B,challengeData:G}),(0,r.jsx)(y.A,{title:T.string("login_title","Login"),description:T.string("login_description","Login"),path:"/login"}),(0,r.jsx)(A.mg,{child...
+  -
+### OPEN_BANKING_REDIRECTION: 4
+  @24456: ...H_STEP_3:"VERIFY_PUSH_STEP_3"},u="HANDLE_LOG_IN",s="HANDLE_SUCCESS",d="HANDLE_FAILURE",f="SWITCH_SCREEN",v="START_POLLING",p="STOP_POLLING",m="HANDLE_OPEN_BANKING_REDIRECTION",y=t(14131),h=t(79626),b=t(95151),g=t(8399),S=t(92990),E=t(67457),k=t(22155),_=t(39479),j=t(50909),w=t(92172),O=t(53490),A=t(78345),C=t(62934),I=t(59951),T=t.n(I),N=t(36340),x...
+  -
+  @129127: ...?I:e.pollDelay});case p:return tl(nl({},e),{shouldPoll:!1});case m:return n.response?tl(nl({},e),{redirectUrl:n.response.redirectUrl,loginScreen:l.kv.OPEN_BANKING_REDIRECTION}):e;default:return e}};function il(e,n,t){return n in e?Object.defineProperty(e,n,{value:t,enumerable:!0,configurable:!0,writable:!0}):e[n]=t,e}var ol=function(e){var n,t,r,i=...
+  -
+  @198716: ...,o]);return(0,r.jsx)(Cn,{challengeId:n,exitKeyless:a,children:(0,r.jsx)(ga,{dispatch:t})})}),_u(Ou,l.kv.HELP,ml),_u(Ou,l.kv.LOGGING_IN,hl),_u(Ou,l.kv.OPEN_BANKING_REDIRECTION,Hc.A),Ou);const Nu=function(){var e,n,t,o,c,s,f,m,I=(0,w.O)().trackStructuredEvent,T=(0,O.A)(),N=(0,C.W6)(),x=ju(ul(),2),R=x[0],P=x[1],L=R.loginScreen,D=R.abortLoginAttemptErr...
+  -
+  @200089: ...nction l(e){ku(o,r,i,a,l,"throw",e)}a(void 0)})})();var e},M?1e3*(null!=F?F:0):null),(0,h.A)(function(){if(L&&L!==l.kv.LOGIN&&L!==l.kv.HELP&&L!==l.kv.OPEN_BANKING_REDIRECTION&&L!==l.kv.LOGGING_IN)return N.push("/pages/login-feedback/timeout")},l.r1);var V=L?Tu[L]:Wc,W=null!=V?V:Wc,H=null!==(e=(0,k.useContext)(_.A))&&void 0!==e?e:{};return(null===(n...
+  -
+### location.href: 2
+  @12011: ..._open_banking_redirection"),2),c=o[0],u=o[1];return(0,i.A)(function(){try{if(n){var e=new URL(n);if(/^(https?):$/.test(e.protocol))return void(window.location.href=e.toString())}}catch(t){}u("login_open_banking_redirection_failed")},3e3),(0,r.jsxs)(v,{isWide:!0,children:[(0,r.jsx)(m,{}),(0,r.jsx)(p,{role:"alert","aria-live":"assertive",children:t.s...
+  -
+  @132779: ...engeId:b},g&&{challengeData:g},S&&{challengeStep:S})},[h,b,g,S]);return(0,k.useEffect)(function(){m&&((0,Za.A)(l.oU.WEBAPP_USER_LOGGED_IN),y&&(window.location.href=y))},[y,m]),(0,k.useEffect)(function(){var e=function(){(0,Za.A)(l.oU.LOGIN_ABORTED,h,null,l.A$)};return window.addEventListener("beforeunload",e),function(){return window.removeEventLis...
+  -
+### location.replace: 0
+### window.location: 4
+  @12004: ...("login_open_banking_redirection"),2),c=o[0],u=o[1];return(0,i.A)(function(){try{if(n){var e=new URL(n);if(/^(https?):$/.test(e.protocol))return void(window.location.href=e.toString())}}catch(t){}u("login_open_banking_redirection_failed")},3e3),(0,r.jsxs)(v,{isWide:!0,children:[(0,r.jsx)(m,{}),(0,r.jsx)(p,{role:"alert","aria-live":"assertive",child...
+  -
+  @52967: ...,v,d,f]),_=(0,k.useCallback)(function(){return Et(function(){var e,n;return _t(this,function(t){switch(t.label){case 0:return t.trys.push([0,2,,3]),e=window.location.origin,[4,(0,P.pl)({url:{file:"".concat(e,"/build/keyless/wasm.wasm"),script:"".concat(e,"/build/keyless/wasm.js")}})];case 1:return t.sent(),[3,3];case 2:return n=t.sent(),g(wt(n),"Ke...
+  -
+  @132772: ...&{challengeId:b},g&&{challengeData:g},S&&{challengeStep:S})},[h,b,g,S]);return(0,k.useEffect)(function(){m&&((0,Za.A)(l.oU.WEBAPP_USER_LOGGED_IN),y&&(window.location.href=y))},[y,m]),(0,k.useEffect)(function(){var e=function(){(0,Za.A)(l.oU.LOGIN_ABORTED,h,null,l.A$)};return window.addEventListener("beforeunload",e),function(){return window.removeE...
+  -
+  @199270: ...=(0,E.n)(),c=o.guessedDeviceType,s=o.guessedOSName,f=(0,S.gB)(),m=(0,k.useRef)(!1),(0,k.useEffect)(function(){f||m.current||(0,b.V)(document.referrer,window.location.origin)&&(m.current=!0,t("password_reset_web_login_displayed",1,{device_type:c,os:s}))},[f,t,c,s]),(0,h.A)(function(){return(e=function(){var e,n;return wu(this,function(t){switch(t.la...
+  -
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('lp.js',encoding='utf-8',errors='replace').read()
+print("=== dispatch sites passing a response ===")
+for m in re.finditer(r'dispatch\(\{type:([A-Za-z0-9_$_.]+)\s*,\s*response:([^}]{0,90})',s):
+    print(f"@{m.start()}  type={m.group(1)}  response={m.group(2)}")
+print()
+print("=== requestId provenance ===")
+for i,m in enumerate(re.finditer(r'requestId',s)):
+    o=m.start()
+    print(f"[{i+1}] @{o}: ...{s[max(0,o-230):o+170]}...")
+    print("-"*80)
+EOF
+=== dispatch sites passing a response ===
+@134421  type=s  response=t
+@134598  type=d  response=n
+
+=== requestId provenance ===
+[1] @7893: ...[["dedicated_aisp","aisp"],["aisp","aisp"],["cbpii","aisp"],["dedicated_cbpii","aisp"],["dedicated_pisp","pisp"],["pisp","pisp"]]);const o=function(e){var n=(0,r.A)(),t=n.auth_request_id,o=n["linking-request-id"],a=n.authType,l=n.requestId,c=n.provider,u=n.scope,s=null!=t?t:o,d=u?u.toLowerCase().trim():"",f=i.get(d);return{referenceId:s,authType:a,requestId:l,provider:c,tppRole:null!=f?f:"pisp",ce...
+--------------------------------------------------------------------------------
+[2] @8013: ...,"pisp"]]);const o=function(e){var n=(0,r.A)(),t=n.auth_request_id,o=n["linking-request-id"],a=n.authType,l=n.requestId,c=n.provider,u=n.scope,s=null!=t?t:o,d=u?u.toLowerCase().trim():"",f=i.get(d);return{referenceId:s,authType:a,requestId:l,provider:c,tppRole:null!=f?f:"pisp",certification:{}}}},28450(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",operation:"mutation",name:{ki...
+--------------------------------------------------------------------------------
+[3] @164297: ...=d.fingerprint,v=d.components,p=Tl(),y=p.delayState,h=p.handleDelayOnFailure,b=(0,jl.B)().handleLoginFailureError,g=(0,Tn.Zv)(),S=g.isLoginWithQrCodeEnabled,E=g.isObApp2AppEnabled,_=(0,gl.A)({shouldSkipQuery:!0}),j=_.authType,A=_.requestId,C=_.tppRole,I=j===Sl.Yj.XS2A,T=function(e){if(!e)return null;try{var n=new URL(e,"https://n26.com"),t=n.pathname,r=n.searchParams.get("redirect");return r?new U...
+--------------------------------------------------------------------------------
+[4] @165550: ...xs)(r.Fragment,{children:[(0,r.jsx)(bl.A,{}),I&&(0,r.jsx)(Fc,{"data-testid":"open-banking-message-".concat(j),children:(0,r.jsx)(Bc,{children:a.string("login_open_banking_".concat(C))})}),I&&(0,r.jsx)("input",{type:"hidden",name:"requestId",value:A}),(0,r.jsx)("input",{type:"hidden",name:"fp",value:f||""}),(0,r.jsx)("input",{type:"hidden",name:"fpc",value:JSON.stringify(v)||""}),(0,r.jsx)(Kc,{hasE...
+--------------------------------------------------------------------------------
+[5] @207072: ..."VariableDefinition",variable:{kind:"Variable",name:{kind:"Name",value:"fpc"}},type:{kind:"NamedType",name:{kind:"Name",value:"String"}},directives:[]},{kind:"VariableDefinition",variable:{kind:"Variable",name:{kind:"Name",value:"requestId"}},type:{kind:"NamedType",name:{kind:"Name",value:"String"}},directives:[]}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kin...
+--------------------------------------------------------------------------------
+[6] @207773: ...ame:{kind:"Name",value:"fp"},value:{kind:"Variable",name:{kind:"Name",value:"fp"}}},{kind:"Argument",name:{kind:"Name",value:"fpc"},value:{kind:"Variable",name:{kind:"Name",value:"fpc"}}},{kind:"Argument",name:{kind:"Name",value:"requestId"},value:{kind:"Variable",name:{kind:"Name",value:"requestId"}}}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",val...
+--------------------------------------------------------------------------------
+[7] @207833: ...nd:"Name",value:"fp"}}},{kind:"Argument",name:{kind:"Name",value:"fpc"},value:{kind:"Variable",name:{kind:"Name",value:"fpc"}}},{kind:"Argument",name:{kind:"Name",value:"requestId"},value:{kind:"Variable",name:{kind:"Name",value:"requestId"}}}],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:...
+--------------------------------------------------------------------------------
+[8] @209612: ...:"Name",value:"redirectUrl"},arguments:[],directives:[]}]}}]}}],loc:{start:0,end:704}};n.loc.source={body:"mutation requestBiometricChallengeMutation(\n  $username: String!\n  $password: String!\n  $fp: String\n  $fpc: String\n  $requestId: String\n) {\n  requestBiometricChallenge(\n    username: $username\n    password: $password\n    fp: $fp\n    fpc: $fpc\n    requestId: $requestId\n  ) {\n    ...
+--------------------------------------------------------------------------------
+[9] @209748: ...lengeMutation(\n  $username: String!\n  $password: String!\n  $fp: String\n  $fpc: String\n  $requestId: String\n) {\n  requestBiometricChallenge(\n    username: $username\n    password: $password\n    fp: $fp\n    fpc: $fpc\n    requestId: $requestId\n  ) {\n    status\n    shouldDelay\n    challengeId\n    challengeType\n    challengeStep\n    # In case of an invalid_state error, the user would ...
+--------------------------------------------------------------------------------
+[10] @209760: ...n(\n  $username: String!\n  $password: String!\n  $fp: String\n  $fpc: String\n  $requestId: String\n) {\n  requestBiometricChallenge(\n    username: $username\n    password: $password\n    fp: $fp\n    fpc: $fpc\n    requestId: $requestId\n  ) {\n    status\n    shouldDelay\n    challengeId\n    challengeType\n    challengeStep\n    # In case of an invalid_state error, the user would directly go ...
+--------------------------------------------------------------------------------
+[0m
+Sink resolved — and it differs materially from the discharged `/login?redirect=` sink. Let me confirm the dispatch site and `requestId` provenance.
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('lp.js',encoding='utf-8',errors='replace').read()
+print("=== 'type:m' / open-banking dispatch ===")
+for m in re.finditer(r'type:\s*m\b',s):
+    o=m.start(); print(f"@{o}: ...{s[max(0,o-500):o+200]}...\n{'-'*90}")
+print("=== action const block ===")
+print(s[24330:24700])
+EOF
+=== 'type:m' / open-banking dispatch ===
+@164945: ...irect");return r?new URL(r,"https://n26.com").pathname:t}catch(i){return null}}(n),N=!!T&&Sl.$E.includes(T),x=Lc((0,k.useState)(!0),2),R=x[0],P=x[1];return(0,r.jsxs)(rr.B,{display:"flex",flexDirection:{mobile:"column",tablet:"column",desktop:"row"},alignItems:"center",gap:"8",children:[(0,r.jsxs)(Uc,{isWide:!0,children:[(0,r.jsx)(Qa.V,{as:"h1",children:a.string("login_title","Login")}),(0,r.jsx)(Dc,{formProps:{onChange:function(){return P(!1)}},onSuccess:function(e){var n=e.response;return I?t({type:m,response:n}):n.challengeType?(c(l.oU.LOGIN_CREDENTIALS_SUCCESS,o,null,l.A$),void t({type:s,response:n})):t({type:u})},onFailure:function(e){var n=e.errors;b(n)&&(c(l.oU.LOGIN_CREDENTIALS_FAILUR...
+------------------------------------------------------------------------------------------
+=== action const block ===
+EP_3"},u="HANDLE_LOG_IN",s="HANDLE_SUCCESS",d="HANDLE_FAILURE",f="SWITCH_SCREEN",v="START_POLLING",p="STOP_POLLING",m="HANDLE_OPEN_BANKING_REDIRECTION",y=t(14131),h=t(79626),b=t(95151),g=t(8399),S=t(92990),E=t(67457),k=t(22155),_=t(39479),j=t(50909),w=t(92172),O=t(53490),A=t(78345),C=t(62934),I=t(59951),T=t.n(I),N=t(36340),x=t(86537),R=t(73174),P=t(36564),L="IDLE",D="
+[0m
+`requestId` is client-controlled (from parsed login context) and reaches `requestBiometricChallenge`. Let me close the dispatch trace and `challengeId` gating.
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('lp.js',encoding='utf-8',errors='replace').read()
+print("=== challengeId: distinct contexts ===")
+seen=set()
+for m in re.finditer(r'challengeId',s):
+    o=m.start()
+    key=s[max(0,o-70):o+40]
+    if key in seen: continue
+    seen.add(key)
+    print(f"@{o}: ...{s[max(0,o-90):o+60]}...")
+print(f"\ndistinct challengeId contexts: {len(seen)} / total {s.count('challengeId')}")
+EOF
+=== challengeId: distinct contexts ===
+@5066: ...efinitions:[{kind:"VariableDefinition",variable:{kind:"Variable",name:{kind:"Name",value:"challengeId"}},type:{kind:"NonNullType",type:{kind:"NamedTyp...
+@5751: ...ind:"Name",value:"sendKeylessError"},arguments:[{kind:"Argument",name:{kind:"Name",value:"challengeId"},value:{kind:"Variable",name:{kind:"Name",value...
+@5813: ...t",name:{kind:"Name",value:"challengeId"},value:{kind:"Variable",name:{kind:"Name",value:"challengeId"}}},{kind:"Argument",name:{kind:"Name",value:"ch...
+@6291: ...]}}]}}],loc:{start:0,end:255}};n.loc.source={body:"mutation sendKeylessErrorMutation(\n  $challengeId: String!\n  $challengeStep: String!\n  $payload:...
+@6408: ...allengeStep: String!\n  $payload: SendKeylessErrorPayload!\n) {\n  sendKeylessError(\n    challengeId: $challengeId\n    challengeStep: $challengeStep...
+@6422: ...tring!\n  $payload: SendKeylessErrorPayload!\n) {\n  sendKeylessError(\n    challengeId: $challengeId\n    challengeStep: $challengeStep\n    payload:...
+@29055: ...erator]() method.")}()}var Sn={status:L,screen:he,cameraDevice:null,cameraPermission:null,challengeId:null,enrollmentActions:{shouldRequestBiometricCo...
+@32908: ...Sn),An=(0,N.v)("VerifyKeylessDispatchContext",x.noop);function Cn(e){var n=e.children,t=e.challengeId,i=e.exitKeyless,o=wn((0,k.useReducer)(En,jn(func...
+@33296: ...ertyDescriptor(t,e).enumerable}))),r.forEach(function(n){_n(e,n,t[n])})}return e}({},Sn),{challengeId:t,exitKeyless:i})),2),a=o[0],l=o[1];return(0,r.j...
+@47718: ...(e=null==ve?void 0:ve[t])&&void 0!==e?e:ve.DENIED]}})})()},At=function(){var e,n=xn(),t=n.challengeId,r=n.keylessId,i=Nn(),o=i.keylessProcessConnected...
+@51442: ...eturn{videoRef:v,setupCameraStream:m,startKeylessProcess:O}},Ct=function(){var e=xn(),n=e.challengeId,t=e.keylessId,r=e.enrollmentActions,i=e.keylessS...
+@63784: ...{return(r=function(){var r,i;return Ht(this,function(o){switch(o.label){case 0:return r=n.challengeId,i=n.challengeStep,r&&i?[4,t({variables:{challeng...
+@63836: ...(o){switch(o.label){case 0:return r=n.challengeId,i=n.challengeStep,r&&i?[4,t({variables:{challengeId:r,challengeStep:i,payload:e}})]:[3,2];case 1:o.s...
+@70028: ...e:l[0]?l[1]:void 0,done:!0}}([l,c])}}}var tr=function(){var e=xn(),n=e.transactionJwt,t=e.challengeId,r=Nn(),o=r.validateTokenFailure,a=r.validateToke...
+@70391: ...=function(){return nr(this,function(e){switch(e.label){case 0:return a(),[4,u({variables:{challengeId:t,transactionJwt:n}})];case 1:return e.sent(),[2...
+@128137: ...ton:!1,shouldPoll:!1});case s:var r,i=n.response;if(!i)return e;var o=i.challengeData,a=i.challengeId,c=i.challengeStep,y=null!==(r=i.challengeType)&&...
+@128308: ...l===l.kv||void 0===l.kv?void 0:l.kv[y],b=Xa(h);return tl(nl({},e,o&&{challengeData:o},a&&{challengeId:a},h&&{loginScreen:h},c&&{challengeStep:c}),{sho...
+@130604: ...redirectUrl:m,shouldPoll:!1,pollDelay:2,abortLoginAttemptErrors:v?p:[]},(null==u?void 0:u.challengeId)&&{challengeId:u.challengeId})};function al(e,n)...
+@130619: ...houldPoll:!1,pollDelay:2,abortLoginAttemptErrors:v?p:[]},(null==u?void 0:u.challengeId)&&{challengeId:u.challengeId})};function al(e,n){(null==n||n>e....
+@130633: ...ollDelay:2,abortLoginAttemptErrors:v?p:[]},(null==u?void 0:u.challengeId)&&{challengeId:u.challengeId})};function al(e,n){(null==n||n>e.length)&&(n=e....
+@132164: ...educer)(rl,d,ol),2),v=f[0],p=f[1],m=v.shouldLogUserIn,y=v.redirectUrl,h=v.loginScreen,b=v.challengeId,g=v.challengeData,S=v.challengeStep,E=v.shouldAb...
+@132624: ...).enumerable}))),r.forEach(function(n){ll(e,n,t[n])})}return e}({},h&&{loginScreen:h},b&&{challengeId:b},g&&{challengeData:g},S&&{challengeStep:S})},[...
+@198142: ...t answers here")})]})})]})]})}),_u(Ou,l.kv.SMS,Su),_u(Ou,l.kv.KEYLESS,function(e){var n=e.challengeId,t=e.dispatch,o=ka((0,i.n)(T()),1)[0],a=(0,k.useC...
+@198591: ...)}function l(e){Ea(o,r,i,a,l,"throw",e)}a(void 0)})})();var e},[t,o]);return(0,r.jsx)(Cn,{challengeId:n,exitKeyless:a,children:(0,r.jsx)(ga,{dispatch:...
+@198969: ....loginScreen,D=R.abortLoginAttemptErrors,U=R.redirectUrl,M=R.shouldPoll,F=R.pollDelay,B=R.challengeId,G=R.challengeData,K=ju((0,i.n)(a()),1)[0];(0,k.u...
+@200499: ...,{children:[(0,r.jsx)(W,{dispatch:P,abortLoginAttemptErrors:D,redirectURL:U,loginScreen:L,challengeId:B,challengeData:G}),(0,r.jsx)(y.A,{title:T.strin...
+@203945: ...efinitions:[{kind:"VariableDefinition",variable:{kind:"Variable",name:{kind:"Name",value:"challengeId"}},type:{kind:"NamedType",name:{kind:"Name",valu...
+@204410: ...,value:"validateKeylessSignedToken"},arguments:[{kind:"Argument",name:{kind:"Name",value:"challengeId"},value:{kind:"Variable",name:{kind:"Name",value...
+@204850: ...c:{start:0,end:218}};n.loc.source={body:"mutation validateKeylessSignedTokenMutation(\n  $challengeId: String\n  $transactionJwt: String!\n) {\n  vali...
+@204939: ...$challengeId: String\n  $transactionJwt: String!\n) {\n  validateKeylessSignedToken(\n    challengeId: $challengeId\n    transactionJwt: $transactionJ...
+@204953: ...String\n  $transactionJwt: String!\n) {\n  validateKeylessSignedToken(\n    challengeId: $challengeId\n    transactionJwt: $transactionJwt\n  ) {\n   ...
+@208104: ...",value:"shouldDelay"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"challengeId"},arguments:[],directives:[]},{kind:"Field",name...
+@209811: ...p: $fp\n    fpc: $fpc\n    requestId: $requestId\n  ) {\n    status\n    shouldDelay\n    challengeId\n    challengeType\n    challengeStep\n    # In ...
+
+distinct challengeId contexts: 33 / total 34
+[0m
+Complete chain now source-confirmed. One GET left to resolve the `__mutation` encoder for the reproduction spec.
+[0m$ [0mcd /tmp/opencode && sleep 1 && curl -sS -o cl.js -w "http=%{http_code} size=%{size_download} time=%{time_total}\n" --max-time 40 -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36" "https://app.n26.com/build/js/client.ae5f81a2.js"; md5sum cl.js; python3 - <<'EOF'
+import re
+s=open('cl.js',encoding='utf-8',errors='replace').read()
+print("len",len(s))
+for p in ['__mutation','__successRedirect','__failureRedirect']:
+    print(f"{p:20} count={s.count(p)}")
+for m in list(re.finditer(r'__mutation',s))[:4]:
+    o=m.start(); print("="*90); print(s[max(0,o-700):o+700])
+EOF
+http=200 size=1466288 time=1.744893
+0886c4d3eeb57d56a3939be6a7037e80  cl.js
+len 1466288
+__mutation           count=1
+__successRedirect    count=1
+__failureRedirect    count=1
+==========================================================================================
+"==typeof r.props.refCallback&&r.props.refCallback(e)}),r.formRef=null,r.state=r.getInitialState(),r.isSubscribed=!0,r}var r,o,i;return function(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function");e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,writable:!0,configurable:!0}}),t&&N(e,t)}(t,e),r=t,(o=[{key:"componentWillUnmount",value:function(){this.isSubscribed=!1}},{key:"render",value:function(){return(0,n.jsxs)("form",_(I({},this.props.formProps),{className:this.props.className,action:s.QQ,method:"POST",ref:this.setFormRef,onSubmit:this.handleSubmit,children:[(0,n.jsx)(d.A,{}),(0,n.jsx)("input",{type:"hidden",name:"__mutation",value:g()(this.props.mutation.loc.source.body)}),(0,n.jsx)("input",{type:"hidden",name:"__successRedirect",value:this.getSuccessURL()}),(0,n.jsx)("input",{type:"hidden",name:"__failureRedirect",value:this.getFailureURL()}),this.props.children(_(I({},this.state),{formRef:this.formRef,resetForm:this.resetForm,submit:this.submit}))]}))}}])&&D(r.prototype,o),i&&D(r,i),t}(w.Component);C(F,"propTypes",{children:j().func.isRequired,mutation:j().object.isRequired,onSubmit:j().func,onSuccess:j().func,onFailure:j().func,successURL:j().string,failureURL:j().string,formProps:j().object,preserveFlags:j().bool,mutateOptions:j().oneOfType([j().object,j().func]),preserveQuery:j().bool}),C(F,"STA
+[0m
+Verified: 1466288B, md5 `0886c4d3` — matches record. Form confirmed. Now resolving `g`, `r.n`, and the action URL `s.QQ`.
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('cl.js',encoding='utf-8',errors='replace').read()
+o=s.index('__mutation')
+seg=s[max(0,o-4200):o+120]
+# find candidate bindings
+for pat in [r'\bg\s*=\s*[A-Za-z0-9_$.]+\(\)', r'\br\s*=\s*[A-Za-z0-9_$.]+', r'\bvar\s+[^;]{0,200}?g\s*=\s*[^,;]{1,60}']:
+    print("### pat:",pat)
+    for m in re.finditer(pat,seg):
+        print("   ",repr(m.group(0)))
+print("\n=== raw 2600 chars before __mutation ===")
+print(seg[-2600:-200])
+EOF
+### pat: \bg\s*=\s*[A-Za-z0-9_$.]+\(\)
+### pat: \br\s*=\s*[A-Za-z0-9_$.]+
+    'r=E'
+    'r=n.props.onSubmit'
+    'r=t'
+### pat: \bvar\s+[^;]{0,200}?g\s*=\s*[^,;]{1,60}
+
+=== raw 2600 chars before __mutation ===
+ion(){return r.getUrl(r.props.failureURL||r.props.history.location.pathname)}),C(r,"getFormData",function(){return h()(r.formRef,{hash:!0})}),C(r,"submit",function(e){return k(function(){var r,o,i,a,c,s,l,d;return M(this,function(p){switch(p.label){case 0:return"function"!=typeof n.props.onSubmit?[3,4]:(r=n.props.onSubmit(e),f=r,(null!=(b=Promise)&&"undefined"!=typeof Symbol&&b[Symbol.hasInstance]?b[Symbol.hasInstance](f):f instanceof b)?[4,r]:[3,2]);case 1:return o=p.sent(),[3,3];case 2:o=r,p.label=3;case 3:if(!1===o)return[2];p.label=4;case 4:n.isSubscribed&&n.setState({status:t.STATUSES.submitting,errors:[]}),p.label=5;case 5:return p.trys.push([5,7,,8]),i=n.getFormData(),a="function"==typeof n.props.mutateOptions?n.props.mutateOptions({variables:i}):n.props.mutateOptions,[4,n.props.mutate(I({variables:i},a))];case 6:return c=p.sent(),"SUCCESS"===(s=Object.values(c.data)[0]).status?(s.status,s.errors,l=B(s,["status","errors"]),(0,P.flushSync)(function(){n.isSubscribed&&n.setState({status:t.STATUSES.success,successResponse:l})}),"function"==typeof n.props.onSuccess?[2,n.props.onSuccess({variables:i,response:s})]:[2,n.props.history.push(n.getSuccessURL())]):(n.isSubscribed&&n.setState({status:t.STATUSES.failure,errors:(0,u.$)(s.errors)}),"function"==typeof n.props.onFailure?[2,n.props.onFailure(s)]:[3,8]);case 7:return d=p.sent(),n.isSubscribed&&n.setState({status:t.STATUSES.failure,errors:[]}),n.props.setGenericError(),"function"==typeof n.props.onFailure?[2,n.props.onFailure({errors:(0,u.$)(d)})]:[3,8];case 8:return[2]}var f,b})})()}),C(r,"handleSubmit",function(e){return k(function(){return M(this,function(t){return"function"!=typeof n.props.mutate?[2]:(e.preventDefault(),[2,n.submit(e)])})})()}),C(r,"setFormRef",function(e){r.formRef=e,"function"==typeof r.props.refCallback&&r.props.refCallback(e)}),r.formRef=null,r.state=r.getInitialState(),r.isSubscribed=!0,r}var r,o,i;return function(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function");e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,writable:!0,configurable:!0}}),t&&N(e,t)}(t,e),r=t,(o=[{key:"componentWillUnmount",value:function(){this.isSubscribed=!1}},{key:"render",value:function(){return(0,n.jsxs)("form",_(I({},this.props.formProps),{className:this.props.className,action:s.QQ,method:"POST",ref:this.setFormRef,onSubmit:this.
+[0m
+`g` is module-scoped. Let me find the enclosing webpack module and its import header.
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('cl.js',encoding='utf-8',errors='replace').read()
+o=s.index('__mutation')
+mods=[m.start() for m in re.finditer(r'(?:^|[{,;])\s*(\d{3,6})\s*:\s*(?:function|\()',s)]
+prev=[m for m in mods if m<o]
+start=prev[-1]
+m=re.match(r'(?:^|[{,;])\s*(\d{3,6})\s*:',s[start:])
+print("enclosing module id:",m.group(1),"at",start,"dist to __mutation:",o-start)
+print("="*100)
+print(s[start:start+2400])
+EOF
+Traceback (most recent call last):
+  File "<stdin>", line 6, in <module>
+IndexError: list index out of range
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+s=open('cl.js',encoding='utf-8',errors='replace').read()
+o=s.index('__mutation')
+print("### structural samples")
+for pat in [r'\d{3,6}:function\(',r'\d{3,6}:',r'\d{3,6}:\(',r'function\(e,t,r',r'\(e,t,r(?:,\w+)?\)\s*=>']:
+    c=len(re.findall(pat,s)); print(f"  {pat:28} {c}")
+print()
+print("### first 700 chars of file")
+print(s[:700])
+print()
+print("### 400 chars before __mutation module guess: look backwards for 'var ' import header")
+print(s[max(0,o-9000):max(0,o-8600)])
+EOF
+### structural samples
+  \d{3,6}:function\(           0
+  \d{3,6}:                     9
+  \d{3,6}:\(                   0
+  function\(e,t,r              44
+  \(e,t,r(?:,\w+)?\)\s*=>      0
+
+### first 700 chars of file
+(self.__LOADABLE_LOADED_CHUNKS__=self.__LOADABLE_LOADED_CHUNKS__||[]).push([[3818],{2(e,t,r){"use strict";r.d(t,{A:()=>p});var n=r(11014),o=r(84818),i=r(22155),a=r(62934),c={TRIAL_DETAILS:"trial-details",OPTIONAL_CARD:"optional-card",DESIGN:"design",NAME_ON_CARD:"name-on-card",CHECKOUT:"checkout"},s=[c.TRIAL_DETAILS,c.OPTIONAL_CARD],l=function(e){return Object.values(c).includes(e)},u=function(e){var t=e.split("/").filter(Boolean),r=t[t.length-1];return r&&l(r)?r:""},d=function(e,t,r){if(!l(e))return 20..toString();var n,o=function(e){var t=e.acceptedFreeTrial,r=e.hasNameOptions,n=[];return t&&n.push(c.TRIAL_DETAILS,c.OPTIONAL_CARD),n.push(c.DESIGN),r&&n.push(c.NAME_ON_CARD),n.push(c.CHECKOU
+
+### 400 chars before __mutation module guess: look backwards for 'var ' import header
+one?t(s):Promise.resolve(s).then(n,o)}function k(e){return function(){var t=this,r=arguments;return new Promise(function(n,o){var i=e.apply(t,r);function a(e){S(i,n,o,a,c,"next",e)}function c(e){S(i,n,o,a,c,"throw",e)}a(void 0)})}}function E(e,t,r){return t=T(t),function(e,t){return!t||"object"!==function(e){return e&&"undefined"!=typeof Symbol&&e.constructor===Symbol?"symbol":typeof e}(t)&&"funct
+[0m
