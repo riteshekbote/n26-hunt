@@ -4463,3 +4463,69 @@
 - LEARN: REJECTED OTHER @ `app.n26.com/login` (DOM-XSS via `redirect`): closed with evidence rather than assumed. The page echoes the raw query slice unparsed — `?redire
 - LEARN: REJECTED OTHER @ my own KB: the line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` and does not hold on `/login`. Sixth instance
 - LEARN: ACCEPTED MISCONFIG @ `app.n26.com` edge: a query-string content filter that returns `403|520` (nginx body) on markup and `javascript:` in the query while passin
+
+## RANKED HYPOTHESES 2026-10-03 20:17:57 UTC
+- [85] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds: xs2a.tech26.de CBPII consent flow SSRF via TPP-Redirect-URI header to cloud metadata (from art/lead_nemotron3.txt)
+- [0] ?: (3/3 — BEARER_ART) session-bound bearer artifacts in the MFA machine (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): SCAN (local, 0 requests): finish the login state machine in `loginpage.js` — (a) which of the 7 zero-arg ops are invoked pre-credential vs. only after `requestB
+- NEXT(hypotheses-nemotron3.txt): PROBE: curl -ks -H "TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/" -H "TPP-State: test" -H "Authorization: Bearer INVALID" "https://xs2a.tech26.de/
+- LEARN: CORRECTION @ my own 10-02 CORPUS entry: chunk attribution was wrong. All 13 auth ops live in `banking-features-auth-biometric-LoginPage.6fd49c7e.js` (221646B, m
+- LEARN: CORPUS @ login chunk: **7 ops take zero variables** — `enrollUserMutation`{enrollUserKeyless{keylessId,errors}}, `requestPushChallengeMutation`, `requestQRChall
+- LEARN: CORRECTION @ my own KB: `enrollUser` was filed post-auth. Wrong — it is one of the **zero-argument** ops in the pre-auth login chunk with an empty input space. 
+- LEARN: ACCEPTED NEGATIVE-CONTROL @ `tppRole` is a closed allowlist: `new Map([["dedicated_aisp","aisp"],["aisp","aisp"],["cbpii","aisp"],["dedicated_cbpii","aisp"],["d
+- LEARN: METHOD FIX @ my own 10-03 test: I attached "the exact shape N26's own login form submits" to the wrong transport. N26 uses Relay's **legacy** form-post (`Mutati
+- LEARN: UNRESOLVED: `__mutation` encoding is `g()(body)` where `g = r.n`, a curried transform from an unresolvable webpack module binding. client.js has zero brotli/def
+- LEARN: REJECTED XSS @ `app.n26.com/login` (DOM-XSS via redirect): Closed with evidence. Page echoes query slice unparsed but edge drops `<`/`javascript:` with byte-ide
+- LEARN: ACCEPTED CORRECTION @ `app.n26.com/graphql`: No WAF — app-layer deny (Express) returning invariant 403 HTML across 6 transports; deny precedes GraphQL parsing. 
+- LEARN: ACCEPTED NEGATIVE-CONTROL @ `api.tech26.de` family: Gate is **GET-scoped wildcard middleware**, not prefix-firewall. `GET /api/accounts/1/zzqnotreal` → 401|211 
+- LEARN: ACCEPTED CORRECTION @ `xs2a.tech26.de/oauth2/authorize`: 404→401 discriminator is **parameter presence** (missing `client_id` and/or `scope` → 404 len=0; both p
+- LEARN: ACCEPTED OTHER @ program: Control is property of **request path/channel** it was measured on, not shared edge/cert by default. Corpus-driven enumeration (vendor
+- LEARN: PROBER DEFECT, PROVEN @ `triage/prober` reported `HTTP 404` for `https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js` and `.../cl
+- LEARN: CORRECTION @ my own 10-03 "METHOD FIX" entry. Both halves were half-right. `MutationForm` (module 39528) is defined in `client.ae5f81a2.js`, **not** the login c
+- LEARN: RESOLVED — `r.n` / the `__mutation` encoder. `g = r.n(r(81678))`; module `81678` is a vendored **browserify bundle whose global is `Tokenizr`** (a GraphQL token
+- LEARN: CORRECTION with opposite operational consequence @ the "true Relay MutationForm wire format" plan. `handleSubmit` is `if (typeof props.mutate !== 'function') re
+- LEARN: NEW PRIMITIVE @ `MutationForm.defaultProps = {formProps:{}, preserveFlags:!0, mutateOptions:{}, preserveQuery:!1}`. With `preserveFlags` defaulting **true**, `g
+- LEARN: REJECTED FALSE LEAD, recorded so it is not retried @ `flags.primary.*` / `flags.secondary.*` appear 10× in the `/login` HTML and look like a feature-flag namesp
+- LEARN: SINK LOCATED PRECISELY @ XSA_PROBE. The terminal redirect is `<Redirect from="/login" to={mutationFormPayload.login.redirectUrl} />`, and the state initializer 
+- LEARN: STATE-MACHINE MAPPING (closes item (c) of last cycle's [NEXT]) @ `ol` selects the first entry with a `.status` from `[verifyLoginWithSMS, verifyLoginWithPush, r
+- LEARN: SINK LOCATED PRECISELY @ XSA_PROBE. The terminal redirect is `<Redirect from="/login" to={mutationFormPayload.login.redirectUrl} />`, and the state init
+- LEARN: STATE-MACHINE MAPPING (closes item (c) of last cycle's [NEXT]) @ `ol` selects the first entry with a `.status` from `[verifyLoginWithSMS, verifyLoginWit
+- LEARN: REJECTED OTHER @ my own KB: the line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` and does not hold on `/login`. Sixth instance
+- LEARN: ACCEPTED MISCONFIG @ `app.n26.com` edge: a query-string content filter that returns `403|520` (nginx body) on markup and `javascript:` in the query while passin
+- LEARN: ACCEPTED OTHER @ app.n26.com/login: continuation is same-origin by construction; `$E` decodes-only-for-UI-hint — not an allowlist control
+- LEARN: ACCEPTED bundle 404 log was a URL artifact; re-verify before trusting
+- LEARN: REJECTED AUTH @ `app.n26.com/graphql`: the WAF gate is not session-cookie-conditioned. 10+ cycles of GraphQL probes varied only Content-Type/method; the cookie 
+- LEARN: REJECTED OTHER @ `app.n26.com`: `n26.graphql_form_payload` is a signed opaque 50-char handle (`s%3A`, does not base64-decode to JSON), not a Relay formData payl
+- LEARN: REJECTED IDOR @ class-A hop-2: no pre-auth oracle on the content channel, not just the size channel. real == fake == replay at normlen 202133 sha `ce234e0e` aft
+- LEARN: ACCEPTED AUTH @ `app.n26.com/login`: `authType` PRESENCE alone triggers an app-layer `401 Unauthorized` (12B, Express, upstream 11ms, 0.33s vs 0.95s); the value
+- LEARN: ACCEPTED OTHER @ `app.n26.com`: the class-A leaf set is enforced — unknown leaf and extra segments both fall back to `302 /feed`, and `/feed` is auth-gated, so 
+- LEARN: CORRECTION @ my own KB: the `403|520` edge page is shared by two rules (query content; `%2F..%2F` encoded traversal), is double-decode aware, and `..%2F` at pat
+- LEARN: DISCHARGED OATH @ `app.n26.com/login`: the `/login?redirect=` open-redirect hypothesis is closed by N26's own source, not by a status code. Chain resolved end t
+- LEARN: RETRACTION @ my own 08:41 acceptance: I read the *nested* `redirect` query parameter as if it were the Relay continuation target. It is a value nested inside a 
+- LEARN: ACCEPTED NEGATIVE-CONTROL @ `app.n26.com`: the real redirect sink is module `12273` (`1535.5a20cb49.js:155006`), the `PreAppAuthPages` `redirectPath` resolver. 
+- LEARN: CORPUS @ `app.n26.com` unauthenticated bundle: 40 GraphQL operations extract cleanly. Pre-auth-reachable auth surface is exactly 9 mutations plus 3 queries. XS2
+- LEARN: DISCHARGED FLAGSDUMP @ `flags.n26.com`: premise dead on re-measurement. `/v1/sdk_exception` now `403 | 19B "RBAC: access denied"`; `initialize`(GET), `flags`, `
+- LEARN: ACCEPTED INFO @ `app.n26.com`: Statsig initialises with `globalAttributes.custom.domain:"shark"` — an internal codename shipped to every anonymous visitor
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: production XS2A API sends TLS CertificateRequest with EMPTY certificate_authorities list — optional mTLS, not absent
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share identical CertificateRequest behavior (empty CA list) on shared ELB obnium-mtls-live-fra-328671
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application l
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: PSD2 sandbox tier co-tenant on production host at `/sandbox/v1/berlin-group/v1/*` (7 classes 401) with identical ALB filter
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less" classification FALSE — both serve full legacy `/api/*` Bearer-gated family (15 endp
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — `GET /api/mfa/challenge` (documented PO
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and PKCE challenge in publ
+- LEARN: REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: 27 PDFs pure availability telemetry — no mTLS/security statements
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de, aisp.tech26.de, pisp.tech26.de: "OPTIONS is proven method-agnostic on this edge" FALSE — OPTIONS on live routes returns 404
+- LEARN: REJECTED AUTH @ pisp.tech26.de /api/encryption/key: soundly closed — documented GET route, same-batch bogus sibling 404
+- LEARN: ACCEPTED MISCONFIG @ api.tech26.de: gate is GET-scoped wildcard middleware — `GET /api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; HEAD → 40
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: the ALB substring blocklist is **query-string-scoped**, not request-scoped, and the field it inspects is not the field the produ
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: `doc/decoupled/dedicated-cbpii.md` and `doc/sandbox.md` reveal third dedicated role CBPII with own consent subtree live on p
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers — corpus documents it as POST, so GET-404 is not evidence o
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
+- LEARN: REJECTED OTHER @ xs2a.tech26.de: "redirect headers are parsed before the 401 gate" — rejected, 4 controls all byte-identical
+- LEARN: REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers explicitly not evidence of absence — corpus documents it as POST
+- LEARN: ACCEPTED OATH @ `app.n26.com/login`: the `redirect` query parameter is copied unvalidated into the GraphQL-Relay `__successRedirect` AND `__failureRedirect` hid
+- LEARN: REJECTED OTHER @ `app.n26.com/login` (DOM-XSS via `redirect`): closed with evidence rather than assumed. The page echoes the raw query slice unparsed — `?redire
+- LEARN: REJECTED OTHER @ my own KB: the line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` and does not hold on `/login`. Sixth instance
+- LEARN: ACCEPTED MISCONFIG @ `app.n26.com` edge: a query-string content filter that returns `403|520` (nginx body) on markup and `javascript:` in the query while passin
