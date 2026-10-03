@@ -836,3 +836,7 @@ https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
 ## 2026-10-03 20:18:00 UTC
 https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
 https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js` -> HTTP 404
+
+## 2026-10-03 23:26:48 UTC
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
+https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js` -> HTTP 404
