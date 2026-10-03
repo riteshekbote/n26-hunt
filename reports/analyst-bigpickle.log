@@ -63952,3 +63952,812 @@ Cycle complete. Summary:
 `[NEXT]` is 1 GET then local work: pull `client.ae5f81a2.js` and extract each of the 12 auth ops' exact input schema and preconditions, so AUTH_HELPED becomes a ready PoC the moment credentials exist.
 
 Changes are staged in the working tree but **not committed** (3 files, +34 lines) — say the word and I'll commit.
+===== ANALYST bigpickle 2026-10-03 08:23:46 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mmkdir -p /tmp/opencode/n26 && cd /tmp/opencode/n26 && curl -s -o client.js -w "http=%{http_code} size=%{size_download} time=%{time_total}\n" -H "User-Agent: Mozilla/5.0" --max-time 60 https://app.n26.com/build/js/client.ae5f81a2.js; ls -la client.js 2>/dev/null | head -3
+http=200 size=1466288 time=1.242111
+-rw-r--r-- 1 runner runner 1466288 Oct  3 08:15 client.js
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && for op in requestBiometricChallenge requestMfaFlow requestPushChallenge requestQRChallenge requestSMSChallenge sendKeylessError validateKeylessSignedToken verifyLoginWithPush verifyLoginWithSMS verifyLoginWithQR verifyUserKeylessData verifyUserKeylessStatus; do n=$(grep -o "$op" client.js | wc -l); echo "$op : $n"; done
+requestBiometricChallenge : 0
+requestMfaFlow : 0
+requestPushChallenge : 0
+requestQRChallenge : 0
+requestSMSChallenge : 0
+sendKeylessError : 0
+validateKeylessSignedToken : 0
+verifyLoginWithPush : 0
+verifyLoginWithSMS : 0
+verifyLoginWithQR : 0
+verifyUserKeylessData : 0
+verifyUserKeylessStatus : 0
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && echo "--- case-insensitive auth ops ---"; grep -oiE "(requestBiometricChallenge|requestMfaFlow|requestPushChallenge|verifyLoginWithPush|verifyLoginWithQR|validateKeylessSignedToken|verifyUserKeyless)" client.js | sort | uniq -c; echo "--- generic graphql markers ---"; for m in "mutation " "query " "__typename" "Mutation(" "graphql"; do printf "%-14s %s\n" "$m" "$(grep -o "$m" client.js | wc -l)"; done; echo "--- chunks referenced by /login ---"; curl -s -H "User-Agent: Mozilla/5.0" --max-time 40 https://app.n26.com/login | grep -o '/build/js/[A-Za-z0-9._-]*\.js' | sort -u
+--- case-insensitive auth ops ---
+--- generic graphql markers ---
+mutation       10
+query          16
+__typename     2
+Mutation(      0
+graphql        1
+--- chunks referenced by /login ---
+/build/js/1503.f68ea103.js
+/build/js/1535.5a20cb49.js
+/build/js/1992.1a249017.js
+/build/js/4264.f4140684.js
+/build/js/6759.dc0f50d5.js
+/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js
+/build/js/banking-features-auth-biometric-PreAppAuthPages.91311e3a.js
+/build/js/client.ae5f81a2.js
+/build/js/react_vendor.85fb11fa.js
+/build/js/util_vendor.00e2ab05.js
+/build/js/webpack-runtime.2b150ed6.js
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && curl -s -H "User-Agent: Mozilla/5.0" --max-time 40 https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js -o loginpage.js -w "loginpage http=%{http_code} size=%{size_download}\n" && sleep 2 && curl -s -H "User-Agent: Mozilla/5.0" --max-time 40 https://app.n26.com/build/js/banking-features-auth-biometric-PreAppAuthPages.91311e3a.js -o preapp.js -w "preapp   http=%{http_code} size=%{size_download}\n"; for f in loginpage.js preapp.js; do echo "== $f =="; grep -oE "mutation [a-zA-Z]+|query [a-zA-Z]+" $f | sort -u | head -30; done
+loginpage http=200 size=221646
+preapp   http=200 size=7800
+== loginpage.js ==
+mutation enrollUserMutation
+mutation requestBiometricChallengeMutation
+mutation requestMfaFlow
+mutation requestPushChallengeMutation
+mutation requestQRChallengeMutation
+mutation requestSMSChallengeMutation
+mutation sendKeylessErrorMutation
+mutation validateKeylessSignedTokenMutation
+mutation verifyLoginWithPushMutation
+mutation verifyLoginWithSMSMutation
+query verifyLoginWithQRQuery
+query verifyUserKeylessDataQuery
+query verifyUserKeylessStatusQuery
+== preapp.js ==
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && grep -oE 'mutation [a-zA-Z]+\([^`]{0,900}' loginpage.js | sed 's/\\n/ /g; s/  */ /g' | sort -u
+mutation requestBiometricChallengeMutation( $username: String! $password: String! $fp: String $fpc: String $requestId: String ) { requestBiometricChallenge( username: $username password: $password fp: $fp fpc: $fpc requestId: $requestId ) { status shouldDelay challengeId challengeType challengeStep # In case of an invalid_state error, the user would directly go to the SMS # flow. challengeData { obfuscatedPhoneNumber remainingResendCodeCount waitingTimeInSeconds } errors { translationKey message field userMessage { title detail } } redirectUrl } } ",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n
+mutation requestMfaFlow($source: MfaSource!) { requestMfaFlow(source: $source) { flow } } ",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.length;t++){var r=e.definitions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.requestMfaFlow=function(e,n){var t={kind:e.kind,definitions:[i(e,n)]};e.hasOwnProperty("loc")&&(t.loc=e.loc);var o=r[n]||new Set,a=new Set,l=new Set;for(o.forEach(fun
+mutation sendKeylessErrorMutation( $challengeId: String! $challengeStep: String! $payload: SendKeylessErrorPayload! ) { sendKeylessError( challengeId: $challengeId challengeStep: $challengeStep payload: $payload ) { status } } ",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.length;t++){var r=e.definitions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.sendKeyless
+mutation validateKeylessSignedTokenMutation( $challengeId: String $transactionJwt: String! ) { validateKeylessSignedToken( challengeId: $challengeId transactionJwt: $transactionJwt ) { status } } ",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.length;t++){var r=e.definitions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=n,e.exports.validateKeylessSignedTokenMutation=function(e,n){var t={kind
+mutation verifyLoginWithSMSMutation($verificationCode: String!) { verifyLoginWithSMS(verificationCode: $verificationCode) { status errors { translationKey message field } attemptLimitExceeded shouldAbortLoginAttempt challengeType } } ",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.length;t++){var r=e.definitions[t];if(r.name&&r.name.value==n)return r}}n.definitions.forEach(function(e){if(e.name){var n=new Set;t(e,n),r[e.name.value]=n}}),e.exports=
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && echo "=== enrollUser + remaining mutations ==="; grep -oE 'mutation enrollUserMutation\([^`]{0,700}' loginpage.js | head -1; echo; echo "=== queries ==="; grep -oE 'query (verifyLoginWithQR|verifyUserKeyless)[a-zA-Z]*\([^`]{0,600}' loginpage.js | head -4; echo; echo "=== MfaSource enum members (all chunks+client) ==="; grep -ohE 'MFA_SOURCE[A-Za-z_]*|MfaSource[A-Za-z_]*' client.js loginpage.js | sort -u | head -20
+=== enrollUser + remaining mutations ===
+
+=== queries ===
+query verifyLoginWithQRQuery($tokenId: String!) {\n  verifyLoginWithQR(tokenId: $tokenId) {\n    status\n    errors {\n      translationKey\n      message\n      field\n    }\n    tokenStatus\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={
+
+=== MfaSource enum members (all chunks+client) ===
+MfaSource
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && echo "=== enrollUser sig ==="; grep -oE 'mutation enrollUserMutation.{0,600}' loginpage.js | head -1; echo; echo "=== requestId usages in loginpage (non-graphql machinery) ==="; grep -oE '.{60}requestId.{80}' loginpage.js | grep -v 'VariableDefinition\|FragmentSpread\|kind:\|selectionSet' | head -12
+=== enrollUser sig ===
+mutation enrollUserMutation {\n  enrollUserKeyless {\n    keylessId\n    errors {\n      translationKey\n      message\n      field\n    }\n  }\n}\n",name:"GraphQL request",locationOffset:{line:1,column:1}};function t(e,n){if("FragmentSpread"===e.kind)n.add(e.name.value);else if("VariableDefinition"===e.kind){var r=e.type;"NamedType"===r.kind&&n.add(r.name.value)}e.selectionSet&&e.selectionSet.selections.forEach(function(e){t(e,n)}),e.variableDefinitions&&e.variableDefinitions.forEach(function(e){t(e,n)}),e.definitions&&e.definitions.forEach(function(e){t(e,n)})}var r={};function i(e,n){for(var t=0;t<e.definitions.lengt
+
+=== requestId usages in loginpage (non-graphql machinery) ===
+.auth_request_id,o=n["linking-request-id"],a=n.authType,l=n.requestId,c=n.provider,u=n.scope,s=null!=t?t:o,d=u?u.toLowerCase().trim():"",f=i.get(d);r
+ppEnabled,_=(0,gl.A)({shouldSkipQuery:!0}),j=_.authType,A=_.requestId,C=_.tppRole,I=j===Sl.Yj.XS2A,T=function(e){if(!e)return null;try{var n=new URL(
+_".concat(C))})}),I&&(0,r.jsx)("input",{type:"hidden",name:"requestId",value:A}),(0,r.jsx)("input",{type:"hidden",name:"fp",value:f||""}),(0,r.jsx)("
+g!\n  $password: String!\n  $fp: String\n  $fpc: String\n  $requestId: String\n) {\n  requestBiometricChallenge(\n    username: $username\n    passwo
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && for op in requestPushChallengeMutation requestQRChallengeMutation requestSMSChallengeMutation verifyUserKeylessDataQuery verifyUserKeylessStatusQuery; do echo "=== $op ==="; grep -oE "mutation ${op}\\\$\(.{0,420}|query ${op}\\\$\(.{0,420}" loginpage.js | head -1 | sed 's/\\n/ /g; s/  */ /g'; echo; sleep 1; done; echo "=== zero-arg mutations across login chunk ==="; grep -oE 'mutation [a-zA-Z]+ ?\{' loginpage.js | sort -u
+=== requestPushChallengeMutation ===
+
+=== requestQRChallengeMutation ===
+
+=== requestSMSChallengeMutation ===
+
+=== verifyUserKeylessDataQuery ===
+
+=== verifyUserKeylessStatusQuery ===
+
+=== zero-arg mutations across login chunk ===
+mutation enrollUserMutation {
+mutation requestPushChallengeMutation {
+mutation requestQRChallengeMutation {
+mutation requestSMSChallengeMutation {
+mutation verifyLoginWithPushMutation {
+[0m
+## Objective
+- Continue the N26 Bank AG bounty POC (`{"phase":"POC","target":"api"}`) using the required 8-step delta, prioritization, hypothesis, self-critique, next-action, learning, and risk workflow.
+- Resolve the current `app.n26.com` GraphQL/auth surface with passive, read-only evidence; bundle presence must not be treated as server reachability.
+
+## Important Details
+- Scope is limited to N26-owned infrastructure; use passive-first testing, `<=1 rps`, and only `GET`/`HEAD`/`OPTIONS` against live systems. Do not submit mutations, bypass authentication, or touch customer data.
+- The state target is `api`, but the latest actionable leads concern `app.n26.com`; reconcile this mismatch before probing.
+- `app.n26.com/graphql` correction: there is no WAF. `POST /graphql` is an application-layer Express deny (`server: envoy`, `x-powered-by: Express`, upstream handled in 13 ms), returning `403|43561B`, md5 `66b3c78fc6553b34cdcf2af8db884158`.
+- JSON, GraphQL-Relay multipart, `application/graphql`, urlencoded, text, and raw multipart requests all produce the same deny; the decision precedes GraphQL parsing. `GET /graphql` times out (`HTTP 000`); unknown paths return a distinct `404`.
+- The anonymous bundle contains 40 GraphQL operations, including 9 mutation and 3 query candidates, but server-side reachability is unconfirmed and the anonymous mutation hypothesis is discharged.
+- `/login?redirect=` was source-level discharged: module `12273` in `1535.5a20cb49.js:155006` enforces a same-origin redirect guard; do not reopen without new source evidence.
+- `flags.n26.com` is currently default-deny: `/v1/sdk_exception` → `403|19B "RBAC: access denied"`, `/v1/download_config_specs` → `401|12B`, GET config routes → `403|19B`; no anonymous flag dump.
+- `api.tech26.de`, `beta-api.tech26.de`, and `sapi.tech26.de` use a GET-scoped wildcard gate. Fabricated paths such as `/api/accounts/1/zzqnotreal` return the same `401|211` as live paths; this proves gate-pattern membership only, not resource existence. Prior “15 live endpoints” claims are unsound.
+- Remaining hypotheses are credential-blocked: `XSA_PROBE` class-B SCA state fixation (`/open-banking?requestId=&state=&authType=`) and `xs2a` TPP redirect/SSRF testing. Anonymous GraphQL bypass and flags disclosure are discharged.
+- Do not repeat stale claims that `app.n26.com/graphql` is a WAF, `spc.n26.com` is a payment API, or `api.tech26.de` 401 responses enumerate concrete resources.
+- The prober is stale; latest claimed data is `2026-09-19 21:15:28 UTC` (inventory also describes the probe stream as frozen since `2026-09-18 10:07`). Triage intake has returned empty/error results; no coordinator credentials or test sessions are available.
+
+## Work State
+### Completed
+- Discharged the GraphQL transport-bypass hypothesis with a same-batch six-transport comparison and route-specific negative control.
+- Corrected the GraphQL model from WAF/tarpit to application-layer route denial; no content-type, cookie, or body-shape bypass remains.
+- Enumerated 40 client-side GraphQL operations from the anonymous bundle; recorded the 12 auth-operation candidates without claiming server reachability.
+- Resolved the app redirect sink in vendor source and replayed 20 off-origin payloads through the actual guard; no open redirect.
+- Re-measured `flags.n26.com`; prior `sdk_exception`/config-disclosure premise is dead.
+- Re-proved the `api.tech26.de`/`beta-api.tech26.de`/`sapi.tech26.de` wildcard-gate correction individually with fabricated-path controls.
+- Mapped vendor-corpus XS2A/fallback routes and recorded optional mTLS behavior, but no anonymous high-confidence exploit.
+- Current recorded risk is `n26: 18`; no anonymous finding currently clears the 40-point gate.
+
+### Active
+- Perform a local schema/precondition analysis of the anonymous bundle after one controlled bundle GET.
+- Reconcile `state_bigpickle.json` target `api` with the latest `app.n26.com` investigation.
+- Preserve `XSA_PROBE` and credential-dependent XS2A/API hypotheses as `AUTH_HELPED`; do not manufacture anonymous evidence.
+
+### Blocked
+- No N26 test account/session, paired-device token, TPP/QWAC certificate, Stripe key, or other coordinator-supplied credentials.
+- No reliable current probe feed: prober output is stale and its second request fails with `<urlopen error [Errno -2] Name or service not known>` due to host interpolation.
+- Triage feeder is empty/errored (`Unexpected server error`); coordinator response and credential provisioning remain absent.
+- Anonymous GraphQL auth operations cannot be advanced because the route denies before GraphQL dispatch.
+
+## Next Move
+1. `SCAN`: issue one read-only `GET https://app.n26.com/build/js/client.ae5f81a2.js`, save it locally, and extract exact input schemas, token/device prerequisites, and ordering for the 12 auth operations; submit no mutations.
+2. Reconcile the `api` target state, then produce the mandated structured 8-step output; if returning to `api.tech26.de`, use only same-batch fabricated-path controls and do not infer resource existence from `401`.
+
+## Relevant Files
+- `state_bigpickle.json`: current `{"phase":"POC","target":"api"}` state.
+- `inventory/n26.md`: asset inventory and historical deltas.
+- `probe-results.md`: stale probe stream; latest claimed data `2026-09-19 21:15:28 UTC`.
+- `hypotheses.md`: active and parked hypotheses.
+- `leads/`: recent analyst leads and retractions.
+- `triage/`: feeder runs and error artifacts.
+- `knowledge/`, `ctx.txt`: accumulated knowledge base and corpus context.
+- `n26/psd2-tpp-docs/doc/redirect/dedicated-aisp.md`, `n26/psd2-tpp-docs/doc/sandbox.md`, `n26/psd2-tpp-docs/doc/decoupled/dedicated-cbpii.md`: production redirect and consent-flow documentation.
+- `n26/psd2-tpp-docs/doc/fallback-aisp.md`, `n26/psd2-tpp-docs/doc/fallback-pisp.md`: fallback API route definitions.
+- `n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh`, `n26/psd2-tpp-docs/doc/assets/quarterly-report/`: additional vendor corpus; the quarterly-report branch is closed as availability-only.
+- `client.ae5f81a2.js` (`https://app.n26.com/build/js/client.ae5f81a2.js`): GraphQL operations and Statsig key/config source.
+- `banking-features-auth-biometric-LoginPage.6fd49c7e.js` (`https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js`): login/auth source chunk.
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+s=open('loginpage.js',encoding='utf8',errors='replace').read()
+s=s.replace('\\n','\n').replace('\\"','"')
+ops=['requestPushChallengeMutation','requestQRChallengeMutation','requestSMSChallengeMutation','verifyLoginWithPushMutation','verifyUserKeylessDataQuery','verifyUserKeylessStatusQuery']
+for op in ops:
+    m=re.search(r'(mutation|query)\s+'+op+r'\b(.{0,700}?)\},\s*",name', s, re.S)
+    print('===',op,'===')
+    if m:
+        body=re.sub(r'\s+',' ',m.group(0))
+        body=body.replace('",name','\n[ENDDOC]')
+        print(body[:640])
+    else:
+        m2=re.search(r'(mutation|query)\s+'+op+r'\b(.{0,700}?)\}\),?name:',s,re.S)
+        print(re.sub(r'\s+',' ',m2.group(0))[:640] if m2 else 'NOT FOUND')
+    print()
+PY
+=== requestPushChallengeMutation ===
+NOT FOUND
+
+=== requestQRChallengeMutation ===
+NOT FOUND
+
+=== requestSMSChallengeMutation ===
+NOT FOUND
+
+=== verifyLoginWithPushMutation ===
+NOT FOUND
+
+=== verifyUserKeylessDataQuery ===
+NOT FOUND
+
+=== verifyUserKeylessStatusQuery ===
+NOT FOUND
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+s=open('loginpage.js',encoding='utf8',errors='replace').read()
+for op in ['requestPushChallengeMutation','requestQRChallengeMutation','requestSMSChallengeMutation','verifyLoginWithPushMutation','verifyUserKeylessDataQuery','verifyUserKeylessStatusQuery']:
+    m=re.search(re.escape(op)+r'\s*\(([^`]{0,900})`', s)
+    print('=== '+op+' ===')
+    if m:
+        print(re.sub(r'[ \t]+',' ',m.group(1).replace('\\n','\n').replace('\\"','"')).strip()[:700])
+    else:
+        print('NOT FOUND')
+    print()
+PY
+=== requestPushChallengeMutation ===
+NOT FOUND
+
+=== requestQRChallengeMutation ===
+NOT FOUND
+
+=== requestSMSChallengeMutation ===
+NOT FOUND
+
+=== verifyLoginWithPushMutation ===
+NOT FOUND
+
+=== verifyUserKeylessDataQuery ===
+NOT FOUND
+
+=== verifyUserKeylessStatusQuery ===
+NOT FOUND
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+s=open('loginpage.js',encoding='utf8',errors='replace').read()
+for op in ['requestPushChallengeMutation','requestSMSChallengeMutation','verifyLoginWithPushMutation','verifyUserKeylessDataQuery','verifyUserKeylessStatusQuery','requestQRChallengeMutation']:
+    i=s.find(op)
+    print('=== '+op+' @'+str(i)+' ===')
+    if i>=0:
+        seg=s[i:i+520].replace('\\n','\n')
+        print(seg[:520])
+    print()
+PY
+=== requestPushChallengeMutation @200872 ===
+requestPushChallengeMutation"},variableDefinitions:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"requestPushChallenge"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],direc
+
+=== requestSMSChallengeMutation @217022 ===
+requestSMSChallengeMutation"},variableDefinitions:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"requestSMSChallenge"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directi
+
+=== verifyLoginWithPushMutation @211445 ===
+verifyLoginWithPushMutation"},variableDefinitions:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"verifyLoginWithPush"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directi
+
+=== verifyUserKeylessDataQuery @219857 ===
+verifyUserKeylessDataQuery"},variableDefinitions:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"verifyUserKeylessData"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"keylessId"},arguments:[],directives:[]}]}}]}}],loc:{start:0,end:81}};n.loc.source={body:"query verifyUserKeylessDataQuery {
+  verifyUserKeylessData {
+    keylessId
+  }
+}
+",name:"GraphQL request",locationOffset:{line:1,column:1}}
+
+=== verifyUserKeylessStatusQuery @17750 ===
+verifyUserKeylessStatusQuery"},variableDefinitions:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"verifyUserKeylessStatus"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"shouldRequestBiometricConsent"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"shouldEnroll"},arguments:[],directives:[]}]}}]}}],loc:{start:0,end:122}};n.loc.source={body:"query verifyUserKeylessStatusQuery {\
+
+=== requestQRChallengeMutation @973 ===
+requestQRChallengeMutation"},variableDefinitions:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"requestQRChallenge"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"status"},arguments:[],directives:[]},{kind:"Field",name:{kind:"Name",value:"errors"},arguments:[],directives:[],selectionSet:{kind:"SelectionSet",selections:[{kind:"Field",name:{kind:"Name",value:"translationKey"},arguments:[],directive
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+s=open('loginpage.js',encoding='utf8',errors='replace').read().replace('\\n','\n').replace('\\"','"')
+bodies=re.findall(r'body:"((?:mutation|query) [^\n]{0,60}?)",name:"GraphQL request"', s, re.S)
+seen=[]
+for b in bodies:
+    b=b.strip()
+    if b not in seen: seen.append(b)
+print("total distinct GraphQL documents in loginpage.js:", len(seen))
+for b in seen: print('---'); print(b)
+PY
+total distinct GraphQL documents in loginpage.js: 0
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+raw=open('loginpage.js',encoding='utf8',errors='replace').read()
+s=raw.replace('\\n','\n').replace('\\"','"')
+bodies=re.findall(r'body:"((?:mutation|query).{0,800}?)",name:"GraphQL request"', s, re.S)
+seen=[]
+for b in bodies:
+    b=b.strip()
+    if b not in seen: seen.append(b)
+print("distinct GraphQL documents in loginpage.js:", len(seen))
+for b in sorted(seen): print('---'); print(b)
+PY
+distinct GraphQL documents in loginpage.js: 13
+---
+mutation enrollUserMutation {
+  enrollUserKeyless {
+    keylessId
+    errors {
+      translationKey
+      message
+      field
+    }
+  }
+}
+---
+mutation requestBiometricChallengeMutation(
+  $username: String!
+  $password: String!
+  $fp: String
+  $fpc: String
+  $requestId: String
+) {
+  requestBiometricChallenge(
+    username: $username
+    password: $password
+    fp: $fp
+    fpc: $fpc
+    requestId: $requestId
+  ) {
+    status
+    shouldDelay
+    challengeId
+    challengeType
+    challengeStep
+    # In case of an invalid_state error, the user would directly go to the SMS
+    # flow.
+    challengeData {
+      obfuscatedPhoneNumber
+      remainingResendCodeCount
+      waitingTimeInSeconds
+    }
+
+    errors {
+      translationKey
+      message
+      field
+      userMessage {
+        title
+        detail
+      }
+    }
+
+    redirectUrl
+  }
+}
+---
+mutation requestMfaFlow($source: MfaSource!) {
+  requestMfaFlow(source: $source) {
+    flow
+  }
+}
+---
+mutation requestPushChallengeMutation {
+  requestPushChallenge {
+    status
+    errors {
+      translationKey
+      message
+      field
+    }
+    shouldAbortLoginAttempt
+
+    challengeType
+    # In case of an invalid_state error, the user would directly go to the SMS
+    # flow.
+    challengeData {
+      obfuscatedPhoneNumber
+      remainingResendCodeCount
+      waitingTimeInSeconds
+    }
+  }
+}
+---
+mutation requestQRChallengeMutation {
+  requestQRChallenge {
+    status
+    errors {
+      translationKey
+      message
+      field
+    }
+    tokenId
+    deepLink
+    expiresInSeconds
+  }
+}
+---
+mutation requestSMSChallengeMutation {
+  requestSMSChallenge {
+    status
+    errors {
+      translationKey
+      message
+      field
+    }
+    shouldAbortLoginAttempt
+
+    challengeType
+    challengeData {
+      obfuscatedPhoneNumber
+      remainingResendCodeCount
+      waitingTimeInSeconds
+    }
+  }
+}
+---
+mutation sendKeylessErrorMutation(
+  $challengeId: String!
+  $challengeStep: String!
+  $payload: SendKeylessErrorPayload!
+) {
+  sendKeylessError(
+    challengeId: $challengeId
+    challengeStep: $challengeStep
+    payload: $payload
+  ) {
+    status
+  }
+}
+---
+mutation validateKeylessSignedTokenMutation(
+  $challengeId: String
+  $transactionJwt: String!
+) {
+  validateKeylessSignedToken(
+    challengeId: $challengeId
+    transactionJwt: $transactionJwt
+  ) {
+    status
+  }
+}
+---
+mutation verifyLoginWithPushMutation {
+  verifyLoginWithPush {
+    status
+    errors {
+      translationKey
+      message
+      field
+    }
+    isAuthorizationPending
+    shouldAbortLoginAttempt
+    challengeType
+    rateLimit {
+      limit
+      current
+    }
+  }
+}
+---
+mutation verifyLoginWithSMSMutation($verificationCode: String!) {
+  verifyLoginWithSMS(verificationCode: $verificationCode) {
+    status
+    errors {
+      translationKey
+      message
+      field
+    }
+    attemptLimitExceeded
+    shouldAbortLoginAttempt
+    challengeType
+  }
+}
+---
+query verifyLoginWithQRQuery($tokenId: String!) {
+  verifyLoginWithQR(tokenId: $tokenId) {
+    status
+    errors {
+      translationKey
+      message
+      field
+    }
+    tokenStatus
+  }
+}
+---
+query verifyUserKeylessDataQuery {
+  verifyUserKeylessData {
+    keylessId
+  }
+}
+---
+query verifyUserKeylessStatusQuery {
+  verifyUserKeylessStatus {
+    shouldRequestBiometricConsent
+    shouldEnroll
+  }
+}
+[0m
+Complete schema table recovered. Let me persist it and check the workspace layout.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt 2>/dev/null && ls -a && echo "--- git ---" && git status --porcelain | head -20 && echo "--- last commits ---" && git log --oneline -5 2>/dev/null
+.
+..
+.git
+.github
+README.md
+analyst-out.txt
+analyst-prompt.txt
+ctx.txt
+inventory
+knowledge
+leads
+probe-results.md
+recon-notes
+reports
+reposcan-raw
+scope.yml
+scripts
+state_bigpickle.json
+state_laguna.json
+state_ling3.json
+state_longcat.json
+state_mimo.json
+state_nemotron3.json
+triage
+--- git ---
+?? analyst-out.txt
+?? analyst-prompt.txt
+?? ctx.txt
+--- last commits ---
+1520398 triage 2026-10-03-04-23
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "=== leads ==="; ls -la leads | tail -8; echo "=== knowledge ==="; ls -la knowledge | tail -8; echo "=== inventory ==="; ls -la inventory; echo "=== state ==="; cat state_bigpickle.json
+=== leads ===
+-rw-r--r--  1 runner runner 1289240 Oct  3 08:15 lead-bigpickle.md
+-rw-r--r--  1 runner runner    9537 Oct  3 08:15 lead-laguna.md
+-rw-r--r--  1 runner runner    9350 Oct  3 08:15 lead-ling3.md
+-rw-r--r--  1 runner runner    9724 Oct  3 08:15 lead-longcat.md
+-rw-r--r--  1 runner runner      18 Oct  3 08:15 lead-mimo.md
+-rw-r--r--  1 runner runner 1899351 Oct  3 08:15 lead-nemotron3.md
+-rw-r--r--  1 runner runner    6911 Oct  3 08:15 reposcan-n26-manual.md
+-rw-r--r--  1 runner runner   55753 Oct  3 08:15 reposcan-n26.md
+=== knowledge ===
+total 256
+drwxr-xr-x  2 runner runner   4096 Oct  3 08:15 .
+drwxr-xr-x 12 runner runner   4096 Oct  3 08:15 ..
+-rw-r--r--  1 runner runner 250478 Oct  3 08:15 index.md
+=== inventory ===
+total 184
+drwxr-xr-x  2 runner runner   4096 Oct  3 08:15 .
+drwxr-xr-x 12 runner runner   4096 Oct  3 08:15 ..
+-rw-r--r--  1 runner runner 177497 Oct  3 08:15 n26.md
+=== state ===
+{"phase": "POC", "target": "api"}
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && tail -60 leads/lead-bigpickle.md
+[LEARN] CORPUS @ `app.n26.com` unauthenticated bundle: 40 GraphQL operations extract cleanly. Pre-auth-reachable auth surface is exactly 9 mutations (`requestBiometricChallenge`, `requestMfaFlow`, `requestPushChallenge`, `requestQRChallenge`, `requestSMSChallenge`, `sendKeylessError`, `validateKeylessSignedToken`, `verifyLoginWithPush`, `verifyLoginWithSMS`) plus 3 queries (`verifyLoginWithQR`, `verifyUserKeylessData`, `verifyUserKeylessStatus`). `refreshSession`, `enrollUser`, `setAccountType`, `setSiret`, `setVatNumber` and the preference mutations ship in the anonymous shell but sit post-auth. The XS2A page-set is a hardcoded 5-entry allowlist in module `12668` (`client.ae5f81a2.js:97366`) — enumerated from source, which no prior cycle on this target did.
+[LEARN] DISCHARGED FLAGSDUMP @ `flags.n26.com`: premise dead on re-measurement. `/v1/sdk_exception`, carried as `202` since 09-05 and the anchor of the hypothesis, is now `403 | 19B "RBAC: access denied"` (edge Envoy, CloudFront `x-cache: Error`) — byte-identical across `statsig-api-key`, `Statsig-API-KEY`, and `x-statsig-api-key`, each with the live key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0` pulled from `client.ae5f81a2.js:606375` this cycle rather than remembered. `download_config_specs` → `401|12B`; `initialize`(GET), `flags`, `user_flags`, `config` → all `403|19B`. The RBAC boundary tightened toward default-deny, the opposite of the hypothesis direction. Neither half is reachable anonymously; nothing here is credential-blocked, it is simply gone.
+[LEARN] ACCEPTED INFO @ `app.n26.com`: Statsig initialises with `globalAttributes.custom.domain:"shark"` (`client.ae5f81a2.js:606375`) — an internal codename shipped to every anonymous visitor. Real disclosure, descriptive-only, in the program's out-of-scope banner-grabbing family. Recorded so a later cycle does not rediscover it as novel.
+[RISK] n26: 22 — down from 41, and that drop is the honest signal: this cycle found nothing, but what it removed is worth more than a thin new lead would have been. Two hypotheses that had been carried as live for 27 days are now measured dead — the app login open redirect at the source level, and the flags RBAC-exempt family at the wire. Both had been maintained on spec-inference and a remembered status code respectively; both died the moment the actual artifact was read. The standing lesson is that the vendor bundle is free, in-scope, and decisive, and I spent cycles inferring from rendered HTML instead. Nothing above the 40 gate remains anywhere on this target anonymously; the survivors (class-B state binding, xs2a SSRF, every write-plane item) are AUTH_HELPED by construction. Program risk elsewhere unchanged: ~29 GETs this cycle, no mutation submitted, no credentials used, no customer data touched, app budget remaining observed at 59/60.
+[PRIO] app.n26.com pre-auth mutation surface (9 ops, now enumerated from source), 7.8, a:8 b:9 t:9 g:3 c:8 f:9
+[PRIO] class-B SCA state binding (AUTH_HELPED), 6.2, a:6 b:8 t:8 g:3 c:7 f:8
+[PRIO] xs2a TPP-Redirect-URI SSRF (AUTH_HELPED), 5.4, a:6 b:8 t:8 g:3 c:7 f:8
+[HYP] (1/3 — PREAUTH_MUT) unauth-reachable GraphQL mutation abuse in the 9-op auth cluster
+class: AUTH_HELPED | asset: app.n26.com/graphql {requestMfaFlow, sendKeylessError, validateKeylessSignedToken} | confidence: 44
+[HYP] (2/3 — XSA_PROBE) class-B SCA-session state fixation
+class: XSA_PROBE | asset: /open-banking?requestId=&state=&authType= | confidence: 42
+[HYP] (3/3 — APPDISH) GraphQL WAF gate bypass via non-JSON content types
+class: WAF_BYPASS | asset: app.n26.com/graphql multipart/form-data + application/graphql | confidence: 38
+[PARKED] OATH /login?redirect (discharged at source) · FLAGSDUMP flags /v1/* (discharged, premise dead) · xs2a SSRF (AUTH_HELPED, uniform 401|0) ·
+[FINAL] 1) PREAUTH_MUT pre-auth mutation cluster (44)  2) XSA_PROBE class-B state fixation (42)
+[NEXT] SCAN+PROBE (read-only, <=1rps): resolve the app.n26.com/graphql WAF gate shape — compare `{"query":…}` JSON against `multipart/form-data` and `application/graphql` with the same `query { __typename }` body, recording status/length/md5 only. Every hypothesis on this target now bottoms out at that gate, so it is the single highest-leverage unknown left, and a bypass would unblock 9 enumerated pre-auth mutations at once.
+## 2026-10-02 23:41:44 UTC [target] (model bigpickle)
+## 2026-10-03 02:25:37 UTC [target] (model bigpickle)
+[HYP] (1/3 — XSA_PROBE) class-B SCA-session state fixation
+class: XSA_PROBE | asset: /open-banking?requestId=&state=&authType= | confidence: 45
+[HYP] (2/3 — FLAGSDUMP) flags.n26.com RBAC-exempt route family
+class: IDOR | asset: /v1/sdk_exception + /v1/download_config_specs | confidence: 42
+[HYP] (3/3 — xs2a SSRF, blocked) TPP-Redirect-URI fetch
+class: SSRF | asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds | confidence: 15 → parked (fails 40 gate anonymously; uniform pre-auth 401|0)
+confidence: 15 → parked; significance only reachable with TPP credentials and a safe callback
+[PARKED] TRAGIC_BURNS class-A hop-2 (discharged, size+content) · XSA_PROBE anonymous half (discharged) ·
+[FINAL] 1) XSA_PROBE class-B state fixation (45)  2) FLAGSDUMP flags.n26.com RBAC-exempt family (42)
+[NEXT] SCAN+PROBE (read-only, <=1rps): flags.n26.com RBAC-exempt /v1/* class — enumerate alongside the two known 200s (sdk_exception, download_config_specs) for further exempt routes, then test download_config_specs against a non-production SDK key and arbitrary user/agent targeting for flag config that internal URLs or staging hosts leak.
+[LEARN] DISCHARGED OATH @ `app.n26.com/login`: the `/login?redirect=` open-redirect hypothesis is closed by N26's own source, not by a status code. Chain resolved end to end across 11 vendor chunks: reducer seed `LoginPage:129818` builds `pathname + qs({redirect: o.redirect, verifyLogin})` — the attacker's value is re-encoded *inside* a same-origin `redirect` query key and is never the continuation target; `LoginPage:198920` passes `redirectUrl` down as `redirectURL`; `LoginPage:163945` binds it to `successURL`/`failureURL`; `client.ae5f81a2.js:~304310` renders it via `getSuccessURL() = getUrl(props.successURL || history.location.pathname)`, which can only prefix `/webviews` and re-append `flags`. Every observed field is `/login?redirect=<pct-encoded>&verifyLogin=1`, on all four shapes probed including `https://`, `//`, and `/\`.
+[LEARN] RETRACTION @ my own 08:41 acceptance: I read the *nested* `redirect` query parameter as if it were the Relay continuation target. It is a value nested inside a same-origin path. Third instance of one failure mode (09-28, 10-01, 10-02): one observed field, one inferred sink. Rule adopted — never accept a redirect claim from rendered HTML; resolve the sink to a source line in the vendor bundle. That artifact is free and it is decisive.
+[LEARN] ACCEPTED NEGATIVE-CONTROL @ `app.n26.com`: the real redirect sink is module `12273` (`1535.5a20cb49.js:155006`), the `PreAppAuthPages` `redirectPath` resolver. Guard is `/^\/[\w-=/]*(#[\w-]*)?$/` *plus* an explicit `t.includes("//")` rejection over `decodeURIComponent(value)` with the query stripped, defaulting to `https://app.n26.com`. Faithful local replay of that exact function over 20 payloads collapses every off-origin shape to `https://app.n26.com` — `https://`, `//`, `/\`, `////`, `http://evil`, `javascript:`, `%2f%2f`, and `https://evil.com/?a=1`. Notably the open-banking component `fW` (`LoginPage:12011`) does `window.location.href` behind only `/^(https?):$/` — a genuine off-origin sink — but it is fed solely by `12273`, so it is unreachable with a foreign URL. N26 gets this right on both hops.
+[LEARN] CORPUS @ `app.n26.com` unauthenticated bundle: 40 GraphQL operations extract cleanly. Pre-auth-reachable auth surface is exactly 9 mutations (`requestBiometricChallenge`, `requestMfaFlow`, `requestPushChallenge`, `requestQRChallenge`, `requestSMSChallenge`, `sendKeylessError`, `validateKeylessSignedToken`, `verifyLoginWithPush`, `verifyLoginWithSMS`) plus 3 queries (`verifyLoginWithQR`, `verifyUserKeylessData`, `verifyUserKeylessStatus`). `refreshSession`, `enrollUser`, `setAccountType`, `setSiret`, `setVatNumber` and the preference mutations ship in the anonymous shell but sit post-auth. The XS2A page-set is a hardcoded 5-entry allowlist in module `12668` (`client.ae5f81a2.js:97366`) — enumerated from source, which no prior cycle on this target did.
+[LEARN] DISCHARGED FLAGSDUMP @ `flags.n26.com`: premise dead on re-measurement. `/v1/sdk_exception`, carried as `202` since 09-05 and the anchor of the hypothesis, is now `403 | 19B "RBAC: access denied"` (edge Envoy, CloudFront `x-cache: Error`) — byte-identical across `statsig-api-key`, `Statsig-API-KEY`, and `x-statsig-api-key`, each with the live key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0` pulled from `client.ae5f81a2.js:606375` this cycle rather than remembered. `download_config_specs` → `401|12B`; `initialize`(GET), `flags`, `user_flags`, `config` → all `403|19B`. The RBAC boundary tightened toward default-deny, the opposite of the hypothesis direction. Neither half is reachable anonymously; nothing here is credential-blocked, it is simply gone.
+[LEARN] ACCEPTED INFO @ `app.n26.com`: Statsig initialises with `globalAttributes.custom.domain:"shark"` (`client.ae5f81a2.js:606375`) — an internal codename shipped to every anonymous visitor. Real disclosure, descriptive-only, in the program's out-of-scope banner-grabbing family. Recorded so a later cycle does not rediscover it as novel.
+[RISK] n26: 22 — down from 41, and that drop is the honest signal: this cycle found nothing, but what it removed is worth more than a thin new lead would have been. Two hypotheses that had been carried as live for 27 days are now measured dead — the app login open redirect at the source level, and the flags RBAC-exempt family at the wire. Both had been maintained on spec-inference and a remembered status code respectively; both died the moment the actual artifact was read. The standing lesson is that the vendor bundle is free, in-scope, and decisive, and I spent cycles inferring from rendered HTML instead. Nothing above the 40 gate remains anywhere on this target anonymously; the survivors (class-B state binding, xs2a SSRF, every write-plane item) are AUTH_HELPED by construction. Program risk elsewhere unchanged: ~29 GETs this cycle, no mutation submitted, no credentials used, no customer data touched, app budget remaining observed at 59/60.
+[PRIO] app.n26.com pre-auth mutation surface (9 ops, now enumerated from source), 7.8, a:8 b:9 t:9 g:3 c:8 f:9
+[PRIO] class-B SCA state binding (AUTH_HELPED), 6.2, a:6 b:8 t:8 g:3 c:7 f:8
+[PRIO] xs2a TPP-Redirect-URI SSRF (AUTH_HELPED), 5.4, a:6 b:8 t:8 g:3 c:7 f:8
+[HYP] (1/3 — PREAUTH_MUT) unauth-reachable GraphQL mutation abuse in the 9-op auth cluster
+class: AUTH_HELPED | asset: app.n26.com/graphql {requestMfaFlow, sendKeylessError, validateKeylessSignedToken} | confidence: 44
+[HYP] (2/3 — XSA_PROBE) class-B SCA-session state fixation
+class: XSA_PROBE | asset: /open-banking?requestId=&state=&authType= | confidence: 42
+[HYP] (3/3 — APPDISH) GraphQL WAF gate bypass via non-JSON content types
+class: WAF_BYPASS | asset: app.n26.com/graphql multipart/form-data + application/graphql | confidence: 38
+[PARKED] OATH /login?redirect (discharged at source) · FLAGSDUMP flags /v1/* (discharged, premise dead) · xs2a SSRF (AUTH_HELPED, uniform 401|0) ·
+[FINAL] 1) PREAUTH_MUT pre-auth mutation cluster (44)  2) XSA_PROBE class-B state fixation (42)
+[NEXT] SCAN+PROBE (read-only, <=1rps): resolve the app.n26.com/graphql WAF gate shape — compare `{"query":…}` JSON against `multipart/form-data` and `application/graphql` with the same `query { __typename }` body, recording status/length/md5 only. Every hypothesis on this target now bottoms out at that gate, so it is the single highest-leverage unknown left, and a bypass would unblock 9 enumerated pre-auth mutations at once.
+[LEARN] ACCEPTED CORRECTION @ `app.n26.com/graphql`: **there is no WAF** — the 403 is an application-layer deny from N26's own Express app, and my "WAF gate" framing was wrong for ~30 cycles. Deny headers: `server: envoy`, `x-powered-by: Express`, `x-envoy-upstream-service-time: 13`. The upstream *handled* the request in 13ms, so this is not an edge/CDN block ahead of origin. It also issues a live `n26.csrf` cookie (`Path=/; HttpOnly; Secure; SameSite=Strict`). Body `text/html` 43561B md5 `66b3c78fc6553b34cdcf2af8db884158`.
+[LEARN] REJECTED AUTH @ `app.n26.com/graphql` (body/transport bypass): **discharged at the mechanism level**, not merely null. Same batch, 6s spacing, identical non-mutating `query { __typename }`: `application/json` -> 403|43561 md5 `66b3c78f` (control, reproduces the 10-02 baseline, no drift); `multipart/form-data` in **GraphQL-Relay `formData` shape** (`operations`/`variables` — the exact shape N26's own login form submits, never previously tested) -> **byte-identical**; `application/graphql` raw body (last untested standard GraphQL-over-HTTP transport) -> **byte-identical**. With urlencoded/text/plain/multipart-raw from 09-05, all **six** transports now collapse to ONE constant body and ONE md5. So the deny **precedes GraphQL parsing**: there is no body or transport left to parse differently, and no content-type bypass can exist on this route. The 09-13 refinement "WAF inspects body structure" is superseded — the gate is not body-shape-conditioned at all.
+[LEARN] ACCEPTED NEGATIVE-CONTROL @ `app.n26.com`: the deny is route-specific, not a catch-all. Same host: `GET /zzqnotreal-abc` -> **404**|43717 md5 `d70be822` (a *different*, ~156B-larger HTML page) while `POST /graphql` -> **403**|43561 md5 `66b3c78f`. And `GET /graphql` -> **`http=000`, 20s timeout, 0 bytes** (reproduces the day-one "GET resets/hangs" note). Three distinct behaviours on one host: unknown path 404s, `/graphql` POST is deliberately 403'd, `/graphql` GET is not answered at all. N26 is refusing to **route** anonymous `POST /graphql`, not filtering it — which also means there is no GraphQL error-oracle channel to an anonymous caller, ending a recurring "error-oracle technique" speculation in the KB.
+[LEARN] RETRACTION @ my own 2026-10-02 CORPUS entry: "pre-auth-reachable auth surface is exactly 9 mutations + 3 queries" **overstated reachability**. Those 12 ops were identified by *presence in the anonymous bundle*, which proves pre-auth **client-side** availability, not server-side routability — and the server does not route anonymous `POST /graphql` at all. Corrected claim: 12 auth ops ship to anonymous clients and are plausibly meant to work pre-session, but **none is confirmed reachable**, and the transport-invariant 403 is the first hard evidence the endpoint is session-gated ahead of GraphQL dispatch. This is the **fourth** instance of my recurring failure mode (09-28, 10-01, 10-02 x2): one observed field generalised into a claim about a different layer. Rule extended — **bundle presence is not reachability, exactly as a status code is not a rule.**
+[LEARN] ACCEPTED INFO @ `mcp-tools.fra.tech26.de`: **fresh CT leaf**, absent from the entire corpus (verified across ctx.txt/KB, knowledge/, inventory/, probe-results.md and every lead file). First new certificate name since 2026-09-20's `mag.*`/`phishing-report`. NXDOMAIN (0 A, 0 CNAME) -> cert-without-DNS, same class as `ideal-request-signing.tech26.de` (09-18). No anonymously reachable surface. Notable only as naming: it exposes an internal **Model-Context-Protocol / AI-agent tooling plane** in N26's namespace, and a regional `fra.` convention (`*.fra.tech26.de`) no other corpus name uses.
+[LEARN] CORPUS + METHOD FIX @ CT: daily certspotter refresh returned **84** n26.com / **39** tech26.de names, reachable set unchanged. I audited my own extraction and found a real defect: it normalised names with `lstrip('*.')`, silently collapsing wildcard SANs. Corrected leg shows exactly 5 wildcard SANs corpus-wide (`*.n26.com`, `*.tech26.de`, `*.sto.tech26.de`, `*.atlantis.sto.tech26.de`, `*.controlplane.sto.tech26.de`) and — decisively — **no `*.fra.tech26.de`**, so `mcp-tools.fra.tech26.de` is a specific-name island with no expandable family. Lesson: prefix-stripping dedup is fine for counting but must never be used to assert a corpus is complete.
+[LEARN] SELF-CRITIQUE @ my own marker search: my first pass for a bot/WAF signature in the 43561B body reported "marker 'bot': 38" and nearly became a false positive in the KB. All 38 were `bot` inside `**bot**tom-left-radius` / `--background-*` CSS declarations. Substring counters over HTML/CSS are worthless without inspecting matched context. Same family as my 09-28/10-01/10-02 status-code errors: a count, read as a finding.
+[LEARN] PROBE-INFRA DEFECT @ triage/prober: the automated prober is stuck and has produced **no new data since 2026-09-19 21:15 UTC** (13 days). Its template now issues exactly one URL per run — `https://app.n26.com/login?redirect=https://evil.example.com/callback` -> 200|316307 — a target my own 10-02 source-level work **discharged as not vulnerable**. Its second request is malformed and fails every cycle with `ERR <urlopen error [Errno -2] Name or service not known>` (a host-interpolation bug yielding a bare/unresolvable name). Fixing this template is worth more than further probing of the same two URLs. Coordinator action, flagged not fixed.
+[LEARN] BUNDLE INTACT @ `app.n26.com`: `GET /` -> 302 `/login`; `GET /login` -> 200|316197 with all 11 `/build/js/*` chunks referenced, including `client.ae5f81a2.js` and `banking-features-auth-biometric-LoginPage.6fd49c7e.js` — the latter being the exact chunk earlier cycles logged as `HTTP 404` when fetched directly, confirming the 10-02 note that those 404s were a URL artifact. Chunk hashes are unchanged, so prior source-line citations remain valid. Bundle is not retained locally, so re-extraction costs one GET.
+[RISK] n26: 22 -> **18**. This cycle produced no new attack surface and killed my own highest-confidence anonymous hypothesis. The drop is the honest signal: PREAUTH_MUT sat at 44 for a full cycle on a premise I had never measured — whether the endpoint routes anonymously at all — and it is false. That exposes a process gap in my own 40-gate discipline: I was gating **impact** while leaving **premise** unvalidated, which is how a 44 could sit on an untested assumption. Nothing above the 40 gate now remains anywhere on this target anonymously; every survivor is AUTH_HELPED by construction. ~9 requests this cycle (6 to app.n26.com, 2 CT, 1 bundle), all read-only, no mutation submitted, no credentials used, no customer data touched.
+[PARKED] APPDISH content-type WAF bypass (**discharged** — six transports, one constant body, deny precedes parsing) · PREAUTH_MUT anonymous axis (**discharged** — server does not route anonymous POST /graphql; premise retracted) · OATH /login?redirect (discharged at source) · FLAGSDUMP flags /v1/* (discharged, premise dead) · xs2a SSRF (AUTH_HELPED, uniform 401|0) ·
+[FINAL] Nothing clears the 40 gate anonymously on this target. Ranking: 1) XSA_PROBE class-B SCA state fixation, 40, AUTH_HELPED. 2) PREAUTH_MUT, 44 -> **18**, premise refuted, now AUTH_HELPED. 3) xs2a TPP-Redirect SSRF, 15, AUTH_HELPED.
+[NEXT] SCAN (local, 0 requests after one bundle GET): pull `https://app.n26.com/build/js/client.ae5f81a2.js` once, then enumerate for each of the 12 auth ops its **exact input schema and client-side preconditions** (variable names/types, the token or device state each requires, and the ordering the login state machine imposes). This is the only remaining work that is free, in-scope, and unblocked, and it converts AUTH_HELPED from a placeholder into a ready PoC: the moment a test account exists the 12-op surface is testable instead of hypothetical. It also tests my retracted premise directly — if several ops provably require no prior token, they are the ones worth a session first.
+[0m
+[0m$ [0mdate -u +"%Y-%m-%d %H:%M:%S UTC"; cd /tmp/opencode/n26 && md5sum client.js loginpage.js preapp.js; echo "--- sizes ---"; wc -c client.js loginpage.js preapp.js
+2026-10-03 08:21:12 UTC
+0886c4d3eeb57d56a3939be6a7037e80  client.js
+f2077cc831c8e4f9f82eb9ae87605c04  loginpage.js
+959781698dd76af6962bd8f54834073d  preapp.js
+--- sizes ---
+1466288 client.js
+ 221646 loginpage.js
+   7800 preapp.js
+1695734 total
+[0m
+[0m← [0mWrite /tmp/opencode/n26/entry.md
+Wrote file successfully.
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && cat /tmp/opencode/n26/entry.md >> leads/lead-bigpickle.md && printf '%s' '{"phase": "POC", "target": "app"}' > state_bigpickle.json && echo "appended:" && tail -3 leads/lead-bigpickle.md | cut -c1-160 && echo && echo "state: $(cat state_bigpickle.json)" && wc -l leads/lead-bigpickle.md
+appended:
+[PARKED] PREAUTH_MUT anonymous axis (discharged — 6 transports, deny precedes parsing) · MfaSource enum oracle (discharged — no members shipped + no pre-pa
+[FINAL] Nothing clears the 40 gate anonymously. Ranking: 1) XSA_PROBE requestId/SCA injection into `requestBiometricChallenge` -> server `redirectUrl`, 44, AUTH
+[NEXT] SCAN (local, 0 requests): enumerate the login state machine's ordering and per-op client-side preconditions from `loginpage.js` — specifically (a) the 
+
+state: {"phase": "POC", "target": "app"}
+7954 leads/lead-bigpickle.md
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+s=open('loginpage.js',encoding='utf8',errors='replace').read()
+for kw in ['__successRedirect','__failureRedirect','tppRole','linking-request-id','auth_request_id']:
+    idx=[m.start() for m in re.finditer(re.escape(kw),s)]
+    print('=== %s  (%d hits) ==='%(kw,len(idx)))
+    for i in idx[:4]:
+        print('   ...'+re.sub(r'\s+',' ',s[max(0,i-190):i+190])+'...')
+    print()
+PY
+=== __successRedirect  (0 hits) ===
+
+=== __failureRedirect  (0 hits) ===
+
+=== tppRole  (2 hits) ===
+   ..._id,o=n["linking-request-id"],a=n.authType,l=n.requestId,c=n.provider,u=n.scope,s=null!=t?t:o,d=u?u.toLowerCase().trim():"",f=i.get(d);return{referenceId:s,authType:a,requestId:l,provider:c,tppRole:null!=f?f:"pisp",certification:{}}}},28450(e){var n={kind:"Document",definitions:[{kind:"OperationDefinition",operation:"mutation",name:{kind:"Name",value:"enrollUserMutation"},varia...
+   ...p.handleDelayOnFailure,b=(0,jl.B)().handleLoginFailureError,g=(0,Tn.Zv)(),S=g.isLoginWithQrCodeEnabled,E=g.isObApp2AppEnabled,_=(0,gl.A)({shouldSkipQuery:!0}),j=_.authType,A=_.requestId,C=_.tppRole,I=j===Sl.Yj.XS2A,T=function(e){if(!e)return null;try{var n=new URL(e,"https://n26.com"),t=n.pathname,r=n.searchParams.get("redirect");return r?new URL(r,"https://n26.com").pathname:t...
+
+=== linking-request-id  (1 hits) ===
+   ..."dedicated_aisp","aisp"],["aisp","aisp"],["cbpii","aisp"],["dedicated_cbpii","aisp"],["dedicated_pisp","pisp"],["pisp","pisp"]]);const o=function(e){var n=(0,r.A)(),t=n.auth_request_id,o=n["linking-request-id"],a=n.authType,l=n.requestId,c=n.provider,u=n.scope,s=null!=t?t:o,d=u?u.toLowerCase().trim():"",f=i.get(d);return{referenceId:s,authType:a,requestId:l,provider:c,tppRole:n...
+
+=== auth_request_id  (1 hits) ===
+   ...t(84818),i=new Map([["dedicated_aisp","aisp"],["aisp","aisp"],["cbpii","aisp"],["dedicated_cbpii","aisp"],["dedicated_pisp","pisp"],["pisp","pisp"]]);const o=function(e){var n=(0,r.A)(),t=n.auth_request_id,o=n["linking-request-id"],a=n.authType,l=n.requestId,c=n.provider,u=n.scope,s=null!=t?t:o,d=u?u.toLowerCase().trim():"",f=i.get(d);return{referenceId:s,authType:a,requestId:l...
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+for f in ['client.js','loginpage.js']:
+    s=open(f,encoding='utf8',errors='replace').read()
+    for kw in ['__successRedirect','__failureRedirect','name:"redirect"','name:"state"','name:"authType"']:
+        n=s.count(kw)
+        if n: print('%s :: %s = %d hits'%(f,kw,n))
+print()
+s=open('loginpage.js',encoding='utf8',errors='replace').read()
+i=s.find('name:"redirect"')
+if i<0:
+    # find the hidden input render block
+    for m in re.finditer(r'"input",\{type:"hidden",name:"([a-zA-Z_]+)"',s):
+        print('hidden input:',m.group(1))
+else:
+    print(re.sub(r'\s+',' ',s[i-420:i+220]))
+PY
+client.js :: __successRedirect = 1 hits
+client.js :: __failureRedirect = 1 hits
+
+hidden input: requestId
+hidden input: fp
+hidden input: fpc
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+s=open('client.js',encoding='utf8',errors='replace').read()
+i=s.find('__successRedirect')
+print(re.sub(r'\s+',' ',s[i-400:i+300]))
+PY
+nt",value:function(){this.isSubscribed=!1}},{key:"render",value:function(){return(0,n.jsxs)("form",_(I({},this.props.formProps),{className:this.props.className,action:s.QQ,method:"POST",ref:this.setFormRef,onSubmit:this.handleSubmit,children:[(0,n.jsx)(d.A,{}),(0,n.jsx)("input",{type:"hidden",name:"__mutation",value:g()(this.props.mutation.loc.source.body)}),(0,n.jsx)("input",{type:"hidden",name:"__successRedirect",value:this.getSuccessURL()}),(0,n.jsx)("input",{type:"hidden",name:"__failureRedirect",value:this.getFailureURL()}),this.props.children(_(I({},this.state),{formRef:this.formRef,resetForm:this.resetForm,submit:this.submit}))]}))}}])&&D(r.prototype,o),i&&D(r,i),t}(w.Component);C(F,"
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+s=open('client.js',encoding='utf8',errors='replace').read()
+i=s.find('__successRedirect')
+seg=s[max(0,i-9000):i]
+# find the nearest function/varname bindings used as g and s
+for m in re.finditer(r'(g|s)=(\([A-Za-z_$,\s]{0,60}\)|[A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)', seg[-2500:]):
+    print('bind:',m.group(0))
+print('---- brotli/zlib/gzip/base64 hints ----')
+for kw in ['brotliCompress','brotliDecompress','deflate','inflate','gzip','toString("base64")','fromBase64']:
+    print('%-22s %d'%(kw, s.count(kw)))
+PY
+bind: s=Object.values
+---- brotli/zlib/gzip/base64 hints ----
+brotliCompress         0
+brotliDecompress       0
+deflate                0
+inflate                0
+gzip                   0
+toString("base64")     0
+fromBase64             0
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+s=open('client.js',encoding='utf8',errors='replace').read()
+i=s.find('__successRedirect')
+seg=s[max(0,i-12000):i]
+cands=re.findall(r'(?:^|[,;{(\s])g\s*=\s*(?:function\s*\([^)]*\)\s*\{[^}]{0,200}\}|\([^)]*\)\s*=>[^,;]{0,200}|[A-Za-z_$][\w$.]*)', seg)
+print('candidates for g (last 12):')
+for c in cands[-12:]: print('  ',c[:170])
+print()
+j=seg.rfind('g(')
+print('context of last g( :', re.sub(r'\s+',' ',seg[max(0,j-260):j+120]))
+PY
+candidates for g (last 12):
+   ,g=r.n
+
+context of last g( : value:function(){return(0,n.jsxs)("form",_(I({},this.props.formProps),{className:this.props.className,action:s.QQ,method:"POST",ref:this.setFormRef,onSubmit:this.handleSubmit,children:[(0,n.jsx)(d.A,{}),(0,n.jsx)("input",{type:"hidden",name:"__mutation",value:g()(this.props.mutation.loc.source.body)}),(0,n.jsx)("input",{type:"hidden",name:"
+[0m
+[0m$ [0mcd /tmp/opencode/n26 && python3 - <<'PY'
+import re
+s=open('client.js',encoding='utf8',errors='replace').read()
+i=s.find('__successRedirect')
+seg=s[max(0,i-12000):i]
+m=re.search(r'([A-Za-z_$][\w$]*)\s*=\s*([A-Za-z_$][\w$]*)\(\s*(\d+)\s*\)', seg)
+# find webpack module require bindings like  t=r(12345)
+for mm in re.finditer(r'([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\((\d{3,6})\)', seg):
+    if mm.group(1)=='r':
+        print('r = require(module %s)'%mm.group(3))
+        mod=mm.group(3)
+        # locate module body
+        b=s.find('%s:(e,t,n)=>'%mod)
+        if b<0: b=s.find('%s:function(e,t,n)'%mod)
+        print('module body at',b)
+        print(re.sub(r'\s+',' ',s[b:b+700])[:700])
+PY
+(no output)
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && python3 - <<'PY'
+import io,re
+p='leads/lead-bigpickle.md'
+s=io.open(p,encoding='utf8').read()
+new = (
+"[LEARN] CORRECTION @ my own 10-03 transport test (material): I labelled the multipart leg \"the exact shape N26's own login form submits (`operations`/`variables`)\". **That is false.** N26 uses Relay's *legacy* form-post, not Relay-modern: `<form action={graphqlEndpoint} method=\"POST\">` carrying hidden `__mutation` (= `g()(mutation.loc.source.body)`), `__successRedirect` (= `getSuccessURL()`) and `__failureRedirect` (= `getFailureURL()`) — the `MutationForm` pattern, a different wire format from `operations`/`variables`. My test never sent the app's genuine shape. The **conclusion survives and is strengthened**: the deny was byte-identical across all six transports I did send, so pre-parse denial never depended on the shape being right; the app's real shape is simply a seventh and unneeded. The claim \"the exact shape\" was wrong and is withdrawn.\n"
+"[LEARN] ACCEPTED ANALYSIS @ what actually crosses into the credential mutation: the non-JS login form renders **exactly three** hidden inputs — `requestId`, `fp`, `fpc`. It does **not** submit `redirect`, `state` or `authType`; those are consumed by JS only (`(0,r.A)()` context, and `_.authType` from a `shouldSkipQuery` Relay read). So of the open-banking-derived attacker values, **only `requestId`** reaches `requestBiometricChallenge`, alongside the two device-fingerprint fields. This *narrows* the ranked hypothesis to one well-defined attacker-controlled variable rather than weakening it.\n"
+"[LEARN] NEGATIVE EVIDENCE @ SCA binding key is not attacker-picked: `referenceId = auth_request_id ?? \"linking-request-id\"`, both read from the server context `(0,r.A)()`, never the query string — N26 does not let the client choose the identifier it binds an SCA transaction to server-side. `requestId` (attacker-suppliable) and `referenceId` (server-held) are separate concepts by design, which is the correct shape. Whether the server cross-checks them remains untestable anonymously, but the naive \"trust the query string as my binding key\" bug is absent from the client contract.\n"
+"[LEARN] NEGATIVE EVIDENCE @ `tppRole` is a closed allowlist: `new Map([[\"dedicated_aisp\",\"aisp\"],[\"aisp\",\"aisp\"],[\"cbpii\",\"aisp\"],[\"dedicated_cbpii\",\"aisp\"],[\"dedicated_pisp\",\"pisp\"],[\"pisp\",\"pisp\"]])` with `scope.toLowerCase().trim()` lookup and default `\"pisp\"` — 6 scope keys collapsing to 2 role values, no injection path. Same hygiene family as the module `12668` 5-entry XS2A page allowlist.\n"
+"[LEARN] ACCEPTED NEGATIVE-CONTROL @ the XS2A branch's own redirect helper `T()` resolves to a **pathname only**: `new URL(r,\"https://n26.com\").pathname`, dropping scheme and host before the value is used. Independent source-level confirmation of the 10-02 same-origin conclusion, now in the XS2A branch specifically rather than only in module `12273`.\n"
+"[LEARN] UNRESOLVED @ `__mutation` encoding: `g = r.n`, so `g()(mutation.loc.source.body)` is a curried transform from another module. `client.js` contains no brotli/deflate/gzip/base64 primitives (0 hits each), so it is most likely a plain string or JSON wrapper — but I could not resolve the webpack module binding and am **not** asserting it. Does not affect any hypothesis; recorded so a later cycle does not mistake it for a compressed-payload avenue.\n"
+)
+anchor = "[RISK] n26: 18 -> **16**."
+assert s.count(anchor)==1
+s = s.replace(anchor, new + anchor)
+
+s = s.replace(
+"[FINAL] Nothing clears the 40 gate anonymously. Ranking: 1) XSA_PROBE requestId/SCA injection into `requestBiometricChallenge` -> server `redirectUrl`, 44, AUTH_HELPED. 2) KEYLESS_JWT claim-trust in `validateKeylessSignedToken`, 38, AUTH_HELPED. 3) QR `tokenId` / `keylessId` bearer-artifact exposure, 34, AUTH_HELPED.",
+"[FINAL] Nothing clears the 40 gate anonymously. Ranking: 1) XSA_PROBE — attacker-controlled `requestId` (sole open-banking value crossing into the form) into `requestBiometricChallenge` alongside plaintext credentials, with a server-chosen `redirectUrl` returned and `referenceId` server-held, 44, AUTH_HELPED. 2) KEYLESS_JWT claim-trust in `validateKeylessSignedToken` (optional `challengeId`, required attacker-mintable `transactionJwt`), 38, AUTH_HELPED. 3) QR `tokenId` / `keylessId` session-bound bearer artifacts, 34, AUTH_HELPED.")
+
+s = re.sub(r"\[NEXT\] SCAN \(local, 0 requests\): enumerate the login state machine's ordering.*$",
+"[NEXT] SCAN (local, 0 requests): finish the login state machine in `loginpage.js` — (a) which of the 7 zero-arg ops the machine invokes pre-credential vs. only after `requestBiometricChallenge` returns a `challengeId`, (b) how `challengeId`/`challengeStep`/`challengeType` gate the SMS fallback the inline comments describe, and (c) resolve `r.n` (the `__mutation` encoder) to settle whether the form-post payload is compressed. Then emit the exact ready-to-run request spec for the 3 ranked hypotheses — including the true `__mutation`/`__successRedirect`/`__failureRedirect` form-post shape, corrected from the `operations`/`variables` mislabel — so a test session is the only missing input.",
+s, flags=re.S)
+io.open(p,'w',encoding='utf8').write(s)
+print('ok; lines now', s.count('\n'))
+PY
+tail -4 leads/lead-bigpickle.md | cut -c1-150
+ok; lines now 7959
+[RISK] n26: 18 -> **16**. No new attack surface, and for a cycle whose whole budget was 3 GETs plus a local parse that is the correct outcome. The val
+[PARKED] PREAUTH_MUT anonymous axis (discharged — 6 transports, deny precedes parsing) · MfaSource enum oracle (discharged — no members shipped +
+[FINAL] Nothing clears the 40 gate anonymously. Ranking: 1) XSA_PROBE — attacker-controlled `requestId` (sole open-banking value crossing into the f
+[NEXT] SCAN (local, 0 requests): finish the login state machine in `loginpage.js` — (a) which of the 7 zero-arg ops the machine invokes pre-credenti
+[0m
+[DELTA] 3 GETs (`client.ae5f81a2.js`, `banking-features-auth-biometric-LoginPage.6fd49c7e.js`, `banking-features-auth-biometric-PreAppAuthPages.91311e3a.js`), all read-only, then pure local parse. Recovered all 13 login-cluster GraphQL documents verbatim from Relay `loc.source.body` strings. Two corrections to my own prior claims and one negative-evidence set. No new anonymous surface; `n26` 18 → **16**.
+
+[PRIO] XSA_PROBE `requestId` injection into `requestBiometricChallenge`, 7.9, a:8 b:9 t:9 g:4 c:8 f:9
+[PRIO] KEYLESS_JWT `validateKeylessSignedToken` claim-trust, 6.6, a:7 b:8 t:8 g:3 c:7 f:8
+[PRIO] QR `tokenId` / `keylessId` bearer-artifact exposure, 5.9, a:6 b:8 t:8 g:3 c:7 f:8
+
+[HYP] (1/3 — XSA_PROBE) attacker-controlled `requestId` bound to an SCA transaction without server-side validation
+class: AUTH_HELPED | asset: `app.n26.com/login` → `requestBiometricChallengeMutation($requestId:String)` → `redirectUrl` | confidence: 44
+chain (all source-confirmed this cycle): `/open-banking?authType=XS2A&requestId=X&state=Y` → JS context `_.requestId` → `<input type="hidden" name="requestId">` (rendered only when `authType === XS2A`) → Relay variable → the **only** operation in the bundle carrying plaintext `username`+`password` → server-chosen `redirectUrl` returned in the response. The non-JS form renders exactly three hidden inputs (`requestId`, `fp`, `fpc`), so `requestId` is the *sole* open-banking-derived attacker value that crosses into the credential mutation. Server-held `referenceId = auth_request_id ?? "linking-request-id"` is read from server context, never the query string — so the naive "trust the query string as my binding key" bug is absent client-side; whether the server cross-checks `requestId` against `referenceId` is the untestable core.
+
+[HYP] (2/3 — KEYLESS_JWT) claim-trust in pre-session JWT validation
+class: AUTH_HELPED | asset: `validateKeylessSignedTokenMutation($challengeId:String, $transactionJwt:String!)` | confidence: 38
+`challengeId` is **optional** while `transactionJwt` is **required** — the server accepts a JWT without being told which challenge it owns, so it must resolve the challenge from JWT claims itself. That is exactly where unverified-`kid` key selection, `alg:none`, or trusting a `sub`/`challengeId` claim from the unverified payload would live. A JWT is attacker-mintable with zero credential material, making this the one operation in the cluster whose input is fully attacker-controlled end to end. Only the route gate blocks it.
+
+[HYP] (3/3 — BEARER_ART) session-bound bearer artifacts in the MFA machine
+class: AUTH_HELPED | asset: `requestQRChallenge{tokenId,deepLink}` → `verifyLoginWithQRQuery($tokenId:String!)`; `verifyUserKeylessDataQuery{keylessId}` | confidence: 34
+The whole state machine is cookie/session-carried, not body-carried: `verifyLoginWithSMS` takes a `verificationCode` and nothing else, and push/SMS-challenge/verify-push take **zero** arguments. So `tokenId` is consumed as a standalone bearer credential, and `keylessId` is returned by a zero-argument, zero-credential query. The exposure surface is the session-bound artifacts, not the password op.
+
+[PARKED] PREAUTH_MUT anonymous axis (discharged — six transports, one constant body/md5, deny precedes parsing) · **my 10-03 "exact shape N26's own login form submits (`operations`/`variables`)" — WITHDRAWN, false** · MfaSource enum oracle (discharged — type name is the only corpus-wide occurrence, members not shipped, and no pre-parse error channel exists) · OTP throttling weakness (now rejected on *source* evidence, not a black-box null: `remainingResendCodeCount`, `waitingTimeInSeconds`, `attemptLimitExceeded`, `shouldAbortLoginAttempt`, `rateLimit{limit,current}` are all implemented and surfaced) · OATH `/login?redirect` (discharged at source, re-confirmed in the XS2A branch's own `T()` helper, which resolves to `pathname` only) · FLAGSDUMP · APPDISH ·
+
+[FINAL] Nothing clears the 40 gate anonymously. Ranking: 1) XSA_PROBE `requestId` → credential mutation → server `redirectUrl`, 44, AUTH_HELPED. 2) KEYLESS_JWT `validateKeylessSignedToken` claim-trust, 38, AUTH_HELPED. 3) BEARER_ART QR `tokenId` / `keylessId`, 34, AUTH_HELPED.
+
+[NEXT] SCAN (local, 0 requests): finish the login state machine in `loginpage.js` — (a) which of the 7 zero-arg ops are invoked pre-credential vs. only after `requestBiometricChallenge` returns a `challengeId`; (b) how `challengeId`/`challengeStep`/`challengeType` gate the SMS fallback the inline comments describe ("in case of an invalid_state error, the user would directly go to the SMS flow"); (c) resolve `r.n`, the `__mutation` encoder, to settle whether the form-post payload is compressed. Then emit the exact ready-to-run request spec for the 3 ranked hypotheses using the **true** `__mutation`/`__successRedirect`/`__failureRedirect` form-post shape, so a test session is the only missing input.
+
+[LEARN] CORRECTION @ my own 10-02 CORPUS entry: chunk attribution was wrong. All 13 auth ops live in `banking-features-auth-biometric-LoginPage.6fd49c7e.js` (221646B, md5 `f2077cc8`), **not** `client.ae5f81a2.js` (1466288B, md5 `0886c4d3`) — case-insensitive search for all 13 op names in client.js returns **zero** hits. client.js holds 10 `mutation` / 16 `query` strings, but from Relay/AST machinery. `PreAppAuthPages.91311e3a.js` (7800B) holds none.
+
+[LEARN] CORPUS @ login chunk: **7 ops take zero variables** — `enrollUserMutation`{enrollUserKeyless{keylessId,errors}}, `requestPushChallengeMutation`, `requestQRChallengeMutation`{tokenId,deepLink,expiresInSeconds}, `requestSMSChallengeMutation`, `verifyLoginWithPushMutation`{isAuthorizationPending,rateLimit{limit,current}}, `verifyUserKeylessDataQuery`{keylessId}, `verifyUserKeylessStatusQuery`{shouldRequestBiometricConsent,shouldEnroll}. **6 take variables** — `requestBiometricChallengeMutation($username:String!,$password:String!,$fp:String,$fpc:String,$requestId:String)`{challengeId,challengeType,challengeStep,challengeData{obfuscatedPhoneNumber,remainingResendCodeCount,waitingTimeInSeconds},**redirectUrl**}, `requestMfaFlow($source:MfaSource!){flow}`, `sendKeylessErrorMutation($challengeId:String!,$challengeStep:String!,$payload:SendKeylessErrorPayload!)`, `validateKeylessSignedTokenMutation($challengeId:String,$transactionJwt:String!)`, `verifyLoginWithSMSMutation($verificationCode:String!){attemptLimitExceeded,shouldAbortLoginAttempt}`, `verifyLoginWithQRQuery($tokenId:String!){tokenStatus}`.
+
+[LEARN] CORRECTION @ my own KB: `enrollUser` was filed post-auth. Wrong — it is one of the **zero-argument** ops in the pre-auth login chunk with an empty input space. It is the cleanest one-shot test on the entire surface: `{"operationName":"enrollUserMutation","variables":{},"query":"mutation enrollUserMutation{enrollUserKeyless{keylessId}}"}` — no parameters to guess, no credential, no customer data, and the response *shape* alone separates route gate (403 HTML) from authz (JSON body). Not executed: live probes are GET/HEAD/OPTIONS only.
+
+[LEARN] ACCEPTED NEGATIVE-CONTROL @ `tppRole` is a closed allowlist: `new Map([["dedicated_aisp","aisp"],["aisp","aisp"],["cbpii","aisp"],["dedicated_cbpii","aisp"],["dedicated_pisp","pisp"],["pisp","pisp"]])` keyed on `scope.toLowerCase().trim()` with default `"pisp"` — 6 keys collapsing to 2 values, no injection. Same hygiene family as the module `12668` 5-entry XS2A page allowlist.
+
+[LEARN] METHOD FIX @ my own 10-03 test: I attached "the exact shape N26's own login form submits" to the wrong transport. N26 uses Relay's **legacy** form-post (`MutationForm`), not Relay-modern: `<form action={graphqlEndpoint} method="POST">` with hidden `__mutation`, `__successRedirect`, `__failureRedirect` — a different wire format from `operations`/`variables`. Conclusion survives and is strengthened (denial was byte-identical across everything I did send, so it never depended on shape correctness); the "exact shape" claim is withdrawn. Related: `__successRedirect`/`__failureRedirect` are in client.js only, 1 hit each.
+
+[LEARN] UNRESOLVED: `__mutation` encoding is `g()(body)` where `g = r.n`, a curried transform from an unresolvable webpack module binding. client.js has zero brotli/deflate/gzip/base64 primitives, so it is most likely a plain string/JSON wrapper — **not asserting it**. Recorded so a later cycle does not mistake it for a compressed-payload avenue.
+
+[RISK] n26: 18 → **16**. No new attack surface, correct for a cycle budgeted at 3 GETs plus a local parse. The gain is that AUTH_HELPED stopped being a placeholder: 13 verbatim schemas, a proven session-carried MFA machine, and two precisely specified sinks. Discipline note — PREAUTH_MUT fell 44 → 18 last cycle on an *unmeasured premise*; the premise is now measured and false, so what remains is gated on credentials rather than on my ignorance, which is a materially different and more honest place to be stuck. This cycle also produced two self-corrections, which is the fourth and fifth instance of the same failure mode (09-28, 10-01, 10-02 ×2): one observed field generalised into a claim about a different layer. Rule now covers both directions — bundle presence is not reachability, and my own prior description of a test is not a description of the app.

@@ -820,3 +820,8 @@ https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
 https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
 https://app.n26.com/login?redirect=https://evil.example.com/callback` -> 200 len=316313
 https://app.n26.com/build/js/client.ae5f81a2.js` -> HTTP 404
+
+## 2026-10-03 08:23:51 UTC
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
+https://app.n26.com/login?redirect=https://evil.example.com/callback` -> 200 len=316313
+https://app.n26.com/build/js/client.ae5f81a2.js` -> HTTP 404
