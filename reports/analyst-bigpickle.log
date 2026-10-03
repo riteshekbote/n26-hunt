@@ -64761,3 +64761,85 @@ The whole state machine is cookie/session-carried, not body-carried: `verifyLogi
 [LEARN] UNRESOLVED: `__mutation` encoding is `g()(body)` where `g = r.n`, a curried transform from an unresolvable webpack module binding. client.js has zero brotli/deflate/gzip/base64 primitives, so it is most likely a plain string/JSON wrapper — **not asserting it**. Recorded so a later cycle does not mistake it for a compressed-payload avenue.
 
 [RISK] n26: 18 → **16**. No new attack surface, correct for a cycle budgeted at 3 GETs plus a local parse. The gain is that AUTH_HELPED stopped being a placeholder: 13 verbatim schemas, a proven session-carried MFA machine, and two precisely specified sinks. Discipline note — PREAUTH_MUT fell 44 → 18 last cycle on an *unmeasured premise*; the premise is now measured and false, so what remains is gated on credentials rather than on my ignorance, which is a materially different and more honest place to be stuck. This cycle also produced two self-corrections, which is the fourth and fifth instance of the same failure mode (09-28, 10-01, 10-02 ×2): one observed field generalised into a claim about a different layer. Rule now covers both directions — bundle presence is not reachability, and my own prior description of a test is not a description of the app.
+===== ANALYST bigpickle 2026-10-03 13:32:43 UTC =====
+[0m
+> build · big-pickle
+[0m
+**STEP 1 — DELTA**
+
+NO_DELTA. Attack surface identical to 2026-10-03 baseline. `probe-results.md` shows no new probe data since 2026-09-18 10:07 (12+ days frozen). Triad of passive corpora remains closed: certspotter 0 fresh leaves (7th consecutive zero-delta), grep.app 429, github 401, crt.sh 502. `flags.n26.com` RBAC boundary tightened (sdk_exception 403, was 202), `app.n26.com/graphql` deny is app-layer (not WAF), deny precedes parsing, and all 6 transports collapse to constant body/md5. `api.tech26.de` family gate is GET-scoped wildcard middleware (fabricated sub-resources return identical 401|211 to live), invalidating prior route-existence inferences from 404.
+
+**STEP 2 — PRIORITIZE**
+
+| Asset | score | a | b | t | g | c | f | axis |
+|---|---|---|---|---|---|---|---|---|
+| `app.n26.com/login` → `requestBiometricChallengeMutation` (`requestId`) → `redirectUrl` (Relay form, `__successRedirect`/`__failureRedirect`) | 7.9 | 8 | 9 | 9 | 4 | 8 | 9 | GraphQL/OAuth/SCA handoff |
+| `xs2a.tech26.de` OAuth2 `/oauth2/authorize` + PSD2 Berlin-Group `/v1/berlin-group/v1`, sandbox co-tenant, ALB blocklist query-string-scoped, scheme-relative bypass reaches app layer | 6.6 | 7 | 8 | 8 | 3 | 7 | 8 | OAuth/PSD2 (AUTH_HELPED) |
+| `xs2a.tech26.de` CBPII Confirmation of Funds subtree (7 classes) live on production host | 5.9 | 6 | 8 | 8 | 3 | 7 | 8 | PSD2/consent surface (AUTH_HELPED) |
+| `api.tech26.de`/`beta-api`/`sapi` legacy `/api/*` family (15 endpoints, 5 base+10 nested) — GET-scoped wildcard gate (pattern-membership oracle only, not resource-existence) | 5.4 | 5 | 7 | 7 | 3 | 6 | 7 | pattern-gated API (AUTH_HELPED) |
+| `pay.n26.com` Stripe-passthrough `/v1/*` (401 boundary stable 11+ cycles) | 5.0 | 5 | 7 | 7 | 2 | 6 | 7 | payments (AUTH_HELPED) |
+
+priority formula: 0.25a+0.25b+0.15t+0.15g+0.10c+0.10f
+
+**STEP 3 — HYPOTHESES**
+
+[HYP] XSA_PROBE — requestId bound to SCA transaction in pre-auth login
+- class: AUTH
+- asset: `app.n26.com/login` → `requestBiometricChallengeMutation($username:String!,$password:String!,$fp:String,$fpc:String,$requestId:String)` returns `redirectUrl`
+- confidence: 44
+- reasoning: Relay MutationForm posts to `/graphql` with `__mutation` and `__successRedirect`/`__failureRedirect` copied from query `redirect`; login chunk ships `redirectUrl` in challenge response; `requestId` is passed through unvalidated and reflected into the handoff URL structure.
+- evidence_needed: authenticated session or test credentials to submit the mutation and observe whether attacker-controlled `requestId` influences the SCA `redirectUrl` target/domain/params and whether it survives verification (read-only observation of response structure; no live credential submission).
+- verify_steps: (PASSIVE-first) (1) fetch `https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js` (local parse only, no live mutations), (2) extract exact `__mutation` encoding function binding (`g()(body)`) and Relay form field order, (3) with test credentials, issue **read-only** observation: `POST /graphql` as MutationForm with valid `username/password` and arbitrary `requestId=attacker-controlled` and record `redirectUrl` values (no tampering of customer flows). All tests read-only/observation only.
+- impact: If `requestId` is bound to SCA transaction without server-side validation, attacker may influence SCA handoff state in a pre-auth context; severity MEDIUM (AUTH_HELPED).
+- testability: AUTH_HELPED
+
+[HYP] KEYLESS_JWT — claim-trust in pre-session token validation
+- class: AUTH
+- asset: `app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js` → `validateKeylessSignedTokenMutation($challengeId:String,$transactionJwt:String!)`
+- confidence: 38
+- reasoning: Zero-arg ops present in pre-auth login chunk alongside ops requiring `challengeId`; token passed as `transactionJwt` with `challengeId` context. No pre-auth reachability to `/graphql` confirmed (server denies anonymous POST `/graphql` with invariant 403 HTML, transport-invariant). Claim trust depends on whether this path is ever invoked pre-session.
+- evidence_needed: Whether the mutation executes pre-auth with attacker-controlled JWT and whether verification bypasses issuer/audience/exp; must observe response shape distinct from invariant gate (JSON vs HTML). No customer data touched.
+- verify_steps: (PASSIVE-first) (1) local static analysis of login chunk state machine to determine invocation order (pre-credential vs post-challenge), (2) if reachable only post-session/challenge, close hypothesis; (3) only if pre-auth reachable, attempt **single read-only** observation with fabricated unsigned/alg-tampered JWT against test account (AUTH_HELPED). Do not brute force.
+- impact: Potential pre-session token validation bypass; severity MEDIUM (AUTH_HELPED). Premise untested; anonymous axis discharged.
+- testability: AUTH_HELPED
+
+[HYP] BEARER_ART — session-bound bearer artifacts in MFA machine
+- class: AUTH
+- asset: `requestQRChallengeMutation` returns `{tokenId,deepLink,expiresInSeconds}` and `verifyLoginWithQRQuery($tokenId:String!)` queries status
+- confidence: 34
+- reasoning: QR MFA produces short-lived `tokenId` consumed by verification query; artifacts may be guessable or have weak binding. Pre-auth reachability to `/graphql` is not confirmed (invariant 403 on anonymous POST); artifacts only meaningful post-challenge initiation.
+- evidence_needed: Whether `tokenId` is non-guessable (entropy), single-use, bound to session/IP/challengeId, and not reusable across sessions; no enumeration of other users’ tokens.
+- verify_steps: (PASSIVE-first) (1) static analysis of login chunk to map QR flow ordering, (2) test with valid session (AUTH_HELPED): initiate QR once, observe `tokenId` format/entropy, attempt single reuse/guess against same session only (read-only status check). No cross-account tests.
+- impact: Potential MFA bypass/path confusion; severity MEDIUM (AUTH_HELPED). Premise contingent on session establishment.
+- testability: AUTH_HELPED
+
+**STEP 4 — SELF-CRITIQUE**
+
+[PARKED] PREAUTH_MUT anonymous axis: Discharged. Anonymous POST `/graphql` returns invariant 403 HTML (md5 66b3c78f) across all 6 transports; deny precedes parsing, route not routable anonymously. Bundle presence ≠ reachability.
+[PARKED] MfaSource enum oracle: Discharged. No enum members shipped in pre-auth chunk; no pre-parse error channel exists to enumerate values.
+[PARKED] OATH /login?redirect: Discharged at source (09-10-03). Redirect sink is `PreAppAuthPages.redirectPath` (module 12273) with strict guard (`/^\/[\w-=/]*(#[\w-]*)?$/` plus `t.includes("//")` rejection, default `https://app.n26.com`); attacker value re-encoded inside same-origin nested `redirect` key, never becomes off-site continuation target. DOM-XSS path also closed (edge 403|520 on markup/javascript).
+[PARKED] FLAGSDUMP flags.n26.com: Discharged. `/v1/sdk_exception` now 403|19B (RBAC tightened toward default-deny), `initialize`(GET)/config routes 403|19B, `download_config_specs` 401|12B; no RBAC-exempt reachable anonymously.
+[PARKED] APPDISH GraphQL content-type bypass: Discharged. Six transports (json/form-urlencoded/text/plain/multipart-raw/multipart-Relay/`application/graphql`) all return identical 403|43561 md5 66b3c78f; deny precedes GraphQL parsing. No WAF — app-layer deny.
+[PARKED] xs2a.tech26.de SSRF via redirect headers: AUTH_HELPED by construction (PSD2/OAuth). Passive controls show ALB blocklist is query-string-scoped, not request-scoped; `TPP-Redirect-URI` header bypasses ALB to app layer (istio-envoy 401). But token minting/authorization code exchange requires credentials/flows; no pre-auth SSRF oracle demonstrated to reach internal metadata unauthenticated.
+
+[FINAL] Survivors ranked by confidence then priority: 1) XSA_PROBE (44), 2) KEYLESS_JWT (38), 3) BEARER_ART (34). All < 50 but testable with AUTH_HELPED; no anonymous hypothesis clears 40 gate. The highest-confidence items require session/credentials, so productive path is AUTH_HELPED verification against test accounts, not further anonymous probing.
+
+**STEP 5 — NEXT ACTION**
+
+[NEXT] SCAN: Parse `https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js` (0 live requests to app endpoints beyond one GET to fetch the single chunk; store locally). Enumerate: (a) exact `g()(body)` binding for `__mutation` encoding (curried transform) and whether it is plain string/JSON wrapper (no brotli/deflate/gzip/base64 primitives present), (b) invocation order of the 7 zero-arg ops vs 6 ops with variables and which require `challengeId`/`challengeStep`/`challengeType`, (c) mapping from `requestBiometricChallengeMutation` response (`challengeId`, `challengeStep`, `challengeType`, `redirectUrl`) to next mutations, (d) whether `redirectUrl` is consumed server-side vs client-side and any domain allowlist constraints. Emit precise request spec (method, URL, headers, exact form fields including `__mutation`, `__successRedirect`, `__failureRedirect`) for the three hypotheses using the **true** Relay MutationForm wire format (not Relay-modern operations/variables JSON). Do not send any mutations live; output spec only.
+
+**STEP 6 — LEARNING**
+
+[LEARN] REJECTED XSS @ `app.n26.com/login` (DOM-XSS via redirect): Closed with evidence. Page echoes query slice unparsed but edge drops `<`/`javascript:` with byte-identical 403|520 nginx; hidden input never terminates. Source-level guard in `PreAppAuthPages.redirectPath` (module 12273) collapses off-origin shapes to `https://app.n26.com`.
+
+[LEARN] ACCEPTED CORRECTION @ `app.n26.com/graphql`: No WAF — app-layer deny (Express) returning invariant 403 HTML across 6 transports; deny precedes GraphQL parsing. Anonymous POST not routable; bundle presence ≠ reachability.
+
+[LEARN] ACCEPTED NEGATIVE-CONTROL @ `api.tech26.de` family: Gate is **GET-scoped wildcard middleware**, not prefix-firewall. `GET /api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; `HEAD` → 404|0. `401` signals pattern membership only, never resource existence — invalidates prior route-existence inferences from 404 on wildcard-gated prefixes.
+
+[LEARN] ACCEPTED CORRECTION @ `xs2a.tech26.de/oauth2/authorize`: 404→401 discriminator is **parameter presence** (missing `client_id` and/or `scope` → 404 len=0; both present with any values → 401 len=0), not value validation. Prior ACCEPTED OATH entry misread presence as value; retracting that value-validation claim. Blocklist is ALB-level substring filter **query-string-scoped** requiring `scheme://`; scheme-relative URIs bypass to app layer (istio-envoy 401).
+
+[LEARN] ACCEPTED OTHER @ program: Control is property of **request path/channel** it was measured on, not shared edge/cert by default. Corpus-driven enumeration (vendor OpenAPI/Postman/prose) produced signal after ~9 days of NO_DELTA; prose (not route lists) contained decisive channel semantics. **Bundle presence ≠ reachability; status code ≠ rule; count ≠ finding.**
+
+**STEP 7 — RISK**
+
+[RISK] n26: 16 (down from 18). Two hypotheses discharged at premise level (anonymous GraphQL reachability false, open redirect discharged at source). Remaining items are all **AUTH_HELPED** by construction; no anonymous vector clears 40 gate. Attack surface effectively frozen since 2026-09-18 (probe-results frozen 12+ days). Correct posture: pause anonymous probing (zero-signal), complete the local bundle parse (0 requests), then test the 3 AUTH_HELPED hypotheses against provisioned test accounts only. No customer data access, no mutations beyond necessary read-only observations.
