@@ -1,16 +1,7 @@
-## 2026-10-04 09:15:00 UTC [target] (model nemotron3)
-[NEW] xs2a.tech26.de CBPII consent flow confirmed live at `/v1/berlin-group/v1/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}` — returns 401|0 with 8-11ms app-layer timing vs 1ms bogus 404
-[NEW] xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
-[NEW] xs2a.tech26.de AS performs zero pre-auth discrimination of `TPP-Redirect-*` — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9
-[NEW] api.tech26.de / beta-api.tech26.de / sapi.tech26.de legacy Bearer-gated gate resolved as GET-scoped wildcard middleware — fabricated `/api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; HEAD → 404|0
-[NEW] xs2a.tech26.de Production XS2A API CertificateRequest with EMPTY certificate_authorities list confirmed (optional mTLS, not absent) — openssl s_client shows signature_algorithms only
-[CHANGED] flags.n26.com RBAC boundary tightened toward default-deny: `/v1/sdk_exception` now 403|19B (was 202), all GET config routes 403|19B — premise dead
-[CHANGED] NO_DELTA on probe surface since 2026-09-18 10:07 UTC (12+ days frozen); probe-results.md only shows repeated `app.n26.com/login?redirect=https://evil.example.com/callback` → 200
-[CHANGED] Triage feeder degraded 18+ consecutive runs; coordinator credential/scope supply sole unblock for PARKED items
-[PRIO] xs2a.tech26.de,7.85,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=3,cloud_surface=9,freshness=6
-[PRIO] api.tech26.de,7.20,attack_surface=8,business_value=9,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=4
-[PRIO] pay.n26.com,6.65,attack_surface=7,business_value=10,tech_exposure=6,gate_ease=2,cloud_surface=7,freshness=5
-[PRIO] authentication-service.eks.core-production.keyless.technology,5.80,attack_surface=6,business_value=9,tech_exposure=7,gate_ease=2,cloud_surface=6,freshness=4
+## 2026-10-04 14:50:25 UTC [target] (model nemotron3)
+[PRIO] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds,9.15,attack_surface=9,business_value=10,tech_exposure=9,gate_ease=8,cloud_surface=10,freshness=8
+[PRIO] api.tech26.de/api/accounts/**,8.55,attack_surface=8,business_value=10,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=7
+[PRIO] pay.n26.com/v1/payments,8.25,attack_surface=7,business_value=10,tech_exposure=6,gate_ease=2,cloud_surface=9,freshness=5
 [HYP] xs2a.tech26.de CBPII consent flow SSRF via TPP-Redirect-URI header to cloud metadata
 class: SSRF
 asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
@@ -44,7 +35,7 @@ testability: AUTH_HELPED
 [FINAL] xs2a.tech26.de production XS2A API mTLS enforcement optional with empty CA list — PASSIVE testable, VERIFIED (95)
 [FINAL] xs2a.tech26.de OAuth2 authorization redirect_uri blocklist ALB substring filter query-string-scoped — PASSIVE testable, VERIFIED (90)
 [FINAL] app.n26.com/login redirect parameter reflection into GraphQL-Relay hidden inputs — DISCHARGED (same-origin only, source-level guard collapses off-origin)
-[NEXT] PROBE: curl -ks -H "TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/" -H "TPP-State: test" -H "Authorization: Bearer INVALID" "https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds" — confirm header reaches app layer (expect 401 pre-auth) and establishes CBPII redirect path
+[NEXT] HUMAN: put one consolidated decision to the coordinator covering three bounded asks, not a general credential request — (1) provision one N26 test account plus paired-device grant for api.tech26.de BOLA verification; (2) provision one N26-issued Stripe sk_live for pay.n26.com payment API testing; (3) provision one CBPII consent + Bearer token for xs2a.tech26.de SSRF verification. All three hypotheses are fully characterized passively and blocked only on credentials.
 [LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: production XS2A API sends TLS CertificateRequest with EMPTY certificate_authorities list — optional mTLS, not absent
 [LEARN] ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share identical CertificateRequest behavior (empty CA list) on shared ELB obnium-mtls-live-fra-328671153
 [LEARN] ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) while `https://` URIs with blocked hosts cut at ALB (awselb/2.0 403)
