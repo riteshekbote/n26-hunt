@@ -1,4 +1,4 @@
-## 2026-10-04 22:01:16 UTC [target] (model bigpickle)
+## 2026-10-05 00:29:12 UTC [target] (model bigpickle)
 [NEW] probe surface since 2026-09-18 10:07 UTC remains frozen (12+ days); triage feeder degraded 18+ consecutive runs with no new leads
 [CHANGED] xs2a.tech26.de: ALB substring blocklist confirmed query-string-scoped (TPP-Redirect-URI header bypasses ALB entirely); AS performs zero pre-auth discrimination of TPP-Redirect-* headers (four legs all byte-identical 401|0)
 [CHANGED] api.tech26.de / beta-api.tech26.de / sapi.tech26.de: legacy Bearer-gated gate resolved as GET-scoped wildcard middleware (fabricated /api/accounts/1/zzqnotreal → 401|211 byte-identical to live routes); not prefix-firewall
@@ -51,3 +51,20 @@ testability: AUTH_HELPED
 [LEARN] REJECTED PROCESS @ self: control is property of request path/channel it was measured on, not shared edge/cert by default; corpus-driven enumeration (vendor OpenAPI/Postman/prose) produced signal after ~9 days of NO_DELTA; prose (not route lists) contained decisive channel semantics. Bundle presence ≠ reachability; status code ≠ rule; count ≠ finding.
 [LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: Production XS2A API sends TLS CertificateRequest with EMPTY certificate_authorities list — optional mTLS, not absent. mTLS not enforced at edge despite ELB naming; sandbox tier co-tenant on production host.
 [RISK] n26: 17
+[NEW] AWB internal-address SSRF filter BYPASS via RFC 3986 userinfo — reproducible on xs2a/api/app, supersedes the mischaracterised "blocklist" that three prior hypotheses rested on
+[NEW] filter is request-scoped (path-embedded internal literals ARE blocked), retracting "query-string-scoped"
+[HYP] ALB_USERINFO_SSRF_FILTER_BYPASS
+class: MISCONFIG
+asset: xs2a.tech26.de + api.tech26.de + app.n26.com (AWB shared edge)
+confidence: 78
+reasoning: The AWS edge enforces an internal-address SSRF filter (RFC1918, loopback, 169.254/16, 100.64/10, IPv6 ::1, plus decimal/hex/short-form/case variants, on both query and path). It is anchored to 'scheme://' immediately followed by an internal literal. RFC 3986 userinfo inserts a non-matching prefix between that anchor and the internal host, so http://user@169.254.169.254/, http://@169.254.169.254/, http://x:y@127.0.0.1/, http://foo@10.0.0.1/ and http://user@169.254.169.254:80/ all reach the application layer while the same host without userinfo is blocked 403 awselb/2.0. Control http://169.254.169.254/x@evil.com/ stays blocked, proving adjacency-anchoring rather than a userinfo allowance. The resolved host remains internal per RFC 3986, so the filter's purpose is defeated while the URL still parses as an internal target. Also passes: metadata.google.internal (hostname not enumerated), bare literals, //host/, bare IP+port, null-byte split.
+evidence_needed: A downstream N26 sink that dereferences an attacker-supplied URL (redirect_uri / TPP-Redirect-URI / webhook) to establish SSRF impact beyond filter coverage. Filter bypass itself is already proven and needs no further evidence.
+verify_steps: PASSIVE confirmed, GET only, ~1 rps, 8+ bypass legs + controls across 3 hosts. STOP at ALB-vs-app response class; do NOT dereference any internal address. For impact, requires AUTH_HELPED or a passive sink inventory on redirect/webhook fields.
+impact: Security-control coverage defect on shared AWB edge. Severity MEDIUM as a filter bypass; HIGH if a backend dereferences the value. Reportable standalone as incomplete SSRF filtering since the control is demonstrably bypassable with a single URL component.
+testability: PASSIVE (filter bypass proven); AUTH_HELPED for downstream SSRF impact
+[PRIO] AWB shared edge, 9.1, axis=security-control coverage + SSRF filter bypass across the estate
+[FINAL] Survivors re-ranked: 1) ALB_USERINFO_SSRF_FILTER_BYPASS (78, MISCONFIG, AWB-wide) — PASSIVE-PROVEN control bypass, needs only sink inventory for HIGH. 2) ALB_BLOCKLIST_CHANNEL_GAP (66, OATH, xs2a) — reframed: the header channel bypass is one instance of the broader filter-coverage gap, and its "blocklist" premise was wrong. 3) API_WILDCARD_BOLA_SURFACE (42, IDOR) and XSA_PROBE (44, AUTH) — unchanged, both AUTH_HELPED and still credential-blocked.
+[NEXT] SELF: passive sink inventory — grep already-collected corpus/bundles for URL-dereferencing fields (redirect_uri, TPP-Redirect-URI, returnUrl, webhook, callback) to find whether any N26 backend fetches an attacker-supplied URL. This is offline work against local artifacts and does not need credentials.
+[NEXT] HUMAN: unchanged credential ask for sandbox post-consent redirect + two-account BOLA tokens, but now lower priority — the userinfo bypass is provable without credentials and should lead the report.
+[LEARN] ACCEPTED MISCONFIG @ AWB-wide: userinfo bypasses the internal-address SSRF filter; filter is request-scoped (path rules exist), retracting "query-string-scoped".
+[LEARN] REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
