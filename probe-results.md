@@ -864,3 +864,6 @@ https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.
 
 ## 2026-10-05 14:50:47 UTC
 
+
+## 2026-10-05 21:49:19 UTC
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
