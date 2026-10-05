@@ -8464,3 +8464,4 @@ testability: PASSIVE (filter bypass proven); AUTH_HELPED for downstream SSRF imp
 [LEARN] ACCEPTED MISCONFIG @ AWB-wide: userinfo bypasses the internal-address SSRF filter; filter is request-scoped (path rules exist), retracting "query-string-scoped".
 [LEARN] REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
 ## 2026-10-05 06:16:09 UTC [target] (model bigpickle)
+## 2026-10-05 14:50:21 UTC [target] (model bigpickle)
