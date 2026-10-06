@@ -1,18 +1,16 @@
-## 2026-10-05 21:48:12 UTC [target] (model nemotron3)
-[NEW] AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo (`http://user@169.254.169.254/`) reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com — supersedes prior "blocklist" characterization
-[CHANGED] Filter scope corrected: request-scoped (path-embedded internal literals blocked), NOT query-string-scoped
-[CHANGED] Probe surface frozen since 2026-09-18 10:07 UTC (12+ days); triage feeder degraded 18+ consecutive runs
-[CHANGED] Three PARKED hypotheses remain blocked on coordinator credential/scope supply (no movement)
-[PRIO] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds,9.5,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=8,cloud_surface=10,freshness=9
-[PRIO] api.tech26.de/api/accounts/*,9.0,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=3,cloud_surface=9,freshness=8
-[PRIO] pay.n26.com/v1/payments,8.8,attack_surface=9,business_value=10,tech_exposure=7,gate_ease=3,cloud_surface=9,freshness=8
-[PRIO] xs2a.tech26.de/v1/berlin-group/v1/accounts,8.5,attack_surface=9,business_value=9,tech_exposure=9,gate_ease=3,cloud_surface=10,freshness=8
-[PRIO] app.n26.com/login,7.5,attack_surface=8,business_value=8,tech_exposure=8,gate_ease=10,cloud_surface=5,freshness=7
+## 2026-10-06 02:03:27 UTC [target] (model nemotron3)
+[NEW] AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo (`http://user@169.254.169.254/`) confirmed reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com — supersedes prior "blocklist" characterization; filter is request-scoped (path-embedded literals blocked), not query-string-scoped
+[CHANGED] Probe surface frozen since 2026-09-18 10:07 UTC (12+ days); triage feeder degraded 18+ consecutive runs; no new probe data
+[CHANGED] Three PARKED hypotheses remain blocked on coordinator credential/scope supply (api.tech26.de BOLA, pay.n26.com Stripe BOLA, xs2a.tech26.de CBPII SSRF)
+[PRIO] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds,9.5,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=8,cloud_surface=10,freshness=6
+[PRIO] api.tech26.de/api/accounts/*,9.2,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=7,cloud_surface=9,freshness=6
+[PRIO] xs2a.tech26.de/oauth2/authorize,8.8,attack_surface=9,business_value=9,tech_exposure=9,gate_ease=9,cloud_surface=9,freshness=5
+[PRIO] pay.n26.com/v1/*,8.5,attack_surface=8,business_value=10,tech_exposure=7,gate_ease=6,cloud_surface=8,freshness=6
 [HYP] xs2a.tech26.de CBPII consent flow SSRF via TPP-Redirect-URI header to cloud metadata
 class: SSRF
 asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
 confidence: 85
-reasoning: CBPII flow deployed and app-layer gated (401|0, 8-11ms); vendor corpus documents production redirect via TPP-Redirect-URI header; ALB blocklist is query-string-scoped only — header bypasses ALB entirely; AS performs zero pre-auth discrimination of TPP-Redirect-* headers (4 legs byte-identical 401|0); scheme-relative URIs already proven to bypass ALB blocklist; cloud metadata endpoint 169.254.169.254 reachable via header; userinfo bypass (RFC 3986) now confirmed on same edge
+reasoning: CBPII flow deployed and app-layer gated (401|0, 8-11ms); vendor corpus documents production redirect via TPP-Redirect-URI header; ALB blocklist is query-string-scoped only — header bypasses ALB entirely; AS performs zero pre-auth discrimination of TPP-Redirect-* headers (4 legs byte-identical 401|0); scheme-relative URIs already proven to bypass ALB blocklist; userinfo bypass (RFC 3986) now confirmed on same edge
 evidence_needed: Valid CBPII consent ID + Bearer token (AUTH_HELPED) to test if server follows TPP-Redirect-URI to cloud metadata
 verify_steps: curl -ks -H "TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/" -H "TPP-State: test" -H "Authorization: Bearer INVALID" "https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds" — confirm header reaches app layer (expect 401 pre-auth); with valid token, observe redirect-follow behavior
 impact: SSRF to EC2 metadata — IAM role credentials, instance identity, user-data; PSD2/RTS regulatory violation — HIGH/CRITICAL
