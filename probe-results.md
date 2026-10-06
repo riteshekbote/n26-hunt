@@ -873,3 +873,6 @@ https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
 
 ## 2026-10-06 09:17:52 UTC
 
+
+## 2026-10-06 16:12:18 UTC
+https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know

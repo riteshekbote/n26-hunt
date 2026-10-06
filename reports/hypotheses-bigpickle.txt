@@ -1,4 +1,20 @@
-## 2026-10-06 09:17:40 UTC [target] (model bigpickle)
+## 2026-10-06 16:12:04 UTC [target] (model bigpickle)
+[PARKED] api.tech26.de family BOLA (42): AUTH_HELPED, requires two account tokens; unchanged.
+[PARKED] app.n26.com login `redirect` → `__successRedirect`/`__failureRedirect` unvalidated external hosts: parked because module `12273` `PreAppAuthPages.redirectPath` collapses all20 off-origin payloads to `https://app.n26.com`, and component `fW` is fed solely by that resolver.
+[FINAL] xs2a.tech26.de production XS2A API mTLS offered and discarded (empty `certificate_authorities` CertificateRequest, shared ELB `obnium-mtls-live-fra-328671153` across xs2a/aisp/pisp) — VERIFIED, PASSIVE, and the strongest surviving finding on this programme.
+[FINAL] api.tech26.de GET-scoped wildcard auth middleware, identical across three hosts — VERIFIED.
+[FINAL] app.n26.com GraphQL transport closed anonymously: app-layer Express deny precedes parsing on all six transports — VERIFIED.
+[NEXT] SELF: rewrite the report draft around what actually survives — lead with the mTLS regulatory finding (PSD2/RTS, passive, fully verified) and demote the SSRF claim to a filter-coverage observation, explicitly stating that no N26 backend URL-dereferencing sink was found; then correct `[RISK]` so the retracted HIGH SSRF entry is removed rather than softened, since a hedged unsound claim still costs credibility with the triager.
+[LEARN]
+[RISK]
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: mTLS behaviour is TLS-VERSION-DEPENDENT, correcting the flat "always empty CA list" wording — under `-tls1_2` the server sends `CertificateRequest` with "No client certificate CA names sent"; under `-tls1_3` it sends NO CertificateRequest at all. Either way client auth is optional. Holds identically on aisp/pisp.
+[LEARN] REJECTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de shared cert: server presents `subject=CN = aisp.tech26.de` for all three SNI values, which LOOKS like a hostname-mismatch vuln but is BENIGN — `SAN=DNS:aisp.tech26.de,DNS:xs2a.tech26.de,DNS:pisp.tech26.de` covers every host and `Verify return code: 0 (ok)`. Checked specifically to avoid reporting a false positive.
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: certificate presence has NO app-layer effect — anonymous vs self-signed `CN=bogus-tpp` client cert vs `X-Forwarded-Client-Cert` header all return byte-identical `401` len=0. This BOUNDS the mTLS finding as "mandated control absent", NOT "authentication bypass". Stating the ceiling explicitly is what keeps it defensible.
+[LEARN] ACCEPTED OTHER @ n26/psd2-tpp-docs + Berlin Group NextGenPSD2 IG §3 Transport Layer: mTLS-with-qualified-eIDAS-TPP-cert is a NORMATIVE regulatory requirement ("has to be established always including client (i.e. TPP) authentication"), reinforced by EBA RTS 2018/389 Art. 29 and PSD2 Art. 94(5). This is what lifts the finding clear of `scope.yml`'s "SSL/TLS best practices" exclusion — best practice = cipher ordering/HSTS; this = an absent legally mandated authentication control.
+[LEARN] REJECTED OTHER @ self: before writing a report around a finding, re-verify it live and re-read the scope exclusions — `scope.yml:24` excludes "SSL/TLS best practices", which could have killed the headline finding had I not found the independent regulatory basis. A verified finding can still be an unreportable finding.
+[LEARN] ACCEPTED OTHER @ process: report draft now exists at `reports/report-draft-n26.md` (v2) — leads with optional mTLS, records the SSRF retraction in Appendix A rather than silently deleting it, and moves credential-blocked items to Appendix B as explicitly non-findings.
+[NEXT] HUMAN: send the consolidated three-item credential ask (two N26 account tokens for api/beta-api/sapi BOLA; one N26-issued Stripe sk_live for pay.n26.com; one sandbox CBPII consent session for post-consent redirect observation — never targeting 169.254.169.254), and hold `reports/report-draft-n26.md` unsubmitted until the coordinator clears submission, since `no_pre_disclosure: true` and `poc_required: true` both apply.
+[LEARN] REJECTED OTHER @ self: before writing a report around a finding, re-veri
 [HYP] <title>
 class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
 asset: <host/endpoint>
