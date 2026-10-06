@@ -8713,3 +8713,47 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED OTHER @ process: report draft now exists at `reports/report-draft-n26.md` (v2) — leads with optional mTLS, records the SSRF retraction in Appendix A rather than silently deleting it, and moves credential-blocked items to Appendix B as explicitly non-findings.
 [NEXT] HUMAN: send the consolidated three-item credential ask (two N26 account tokens for api/beta-api/sapi BOLA; one N26-issued Stripe sk_live for pay.n26.com; one sandbox CBPII consent session for post-consent redirect observation — never targeting 169.254.169.254), and hold `reports/report-draft-n26.md` unsubmitted until the coordinator clears submission, since `no_pre_disclosure: true` and `poc_required: true` both apply.
 [LEARN] REJECTED OTHER @ self: before writing a report around a finding, re-veri
+## 2026-10-06 09:17:40 UTC [target] (model bigpickle)
+[HYP] <title>
+class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
+asset: <host/endpoint>
+confidence: <0-100>
+reasoning: <facts only>
+evidence_needed: <what proves it>
+verify_steps: <passive-first concrete HTTP requests>
+impact: <what attacker gets + severity>
+testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
+[PRIO] xs2a.tech26.de,8.7,attack_surface=9/business=10/tech=8/gate=8/cloud=6/fresh=9
+[PRIO] app.n26.com,6.6,attack_surface=7/business=9/tech=9/gate=3/cloud=4/fresh=4
+[PRIO] api.tech26.de,6.6,attack_surface=7/business=9/tech=5/gate=4/cloud=5/fresh=7
+[HYP] xs2a.tech26.de post-consent redirect destination not validated, authorization code leaks to attacker origin via TPP-Redirect-URI header
+class: OATH
+asset: xs2a.tech26.de/oauth2/authorize + /v1/berlin-group/v1/* (consents, payments, funds-confirmations)
+confidence: 40
+reasoning: The ALB guard inspects only query strings with a `scheme://` literal; the production redirect channel per vendor corpus (`doc/redirect/dedicated-aisp.md`) is the `TPP-Redirect-URI` HEADER, which is never inspected by the edge (`401|0 istio-envoy`, re-proved 2026-10-06). The AS performs zero pre-auth discrimination of `TPP-Redirect-*` (4-leg differential). Whether a completed-consent 302 honors the header and carries the authorization code is unobservable without a sandbox session; PSD2 TPPs use registered PSU consents.
+evidence_needed: One sandbox PSU consent session; observe the post-consent 302 `Location`.
+verify_steps: AUTH_HELPED. authorize as registered client `PSDDE-BAFIN-000001` with a legitimate query `redirect_uri` and `TPP-Redirect-URI: https://{attacker-origin}/cb`, complete consent, record the `Location`. Never run the 169.254.169.254 leg against production.
+impact: Authorization-code theft → OAuth account takeover of the PSU's consent delegation (HIGH) — but this is a different class than SSRF and is unproven pending the leg.
+testability: AUTH_HELPED
+[HYP] api.tech26.de legacy Bearer-gated family BOLA across api/beta-api/sapi
+class: IDOR
+asset: api.tech26.de, beta-api.tech26.de, sapi.tech26.de — /api/accounts/{id}/{statements,addresses,cards,bookings,beneficiaries,devices,limits,transfers,approvals}
+confidence: 42
+reasoning: Gate is GET-scoped wildcard middleware — fabricated `GET /api/accounts/1/zzqnotreal` → `401|211` md5 `d58528c924dad2fde9c30f81972e0548` on all three hosts (re-proved 2026-10-06), HEAD → 404. The 401 proves wildcard pattern membership only. Surface live and mutating; hypothesis unchanged and entirely credential-blocked; no token provisioned so no BOLA claim advanced.
+evidence_needed: Two distinct N26 account tokens.
+verify_steps: With token A: `GET /api/accounts/{B_accountId}/statements` → 200 would be BOLA; same-batch negative control `GET /api/accounts/{A_accountId}/zzqnotreal` → 404 to establish route existence first.
+impact: Cross-account PII and transactional data — core banking, CRITICAL if confirmed.
+testability: AUTH_HELPED
+[PARKED] xs2a.tech26.de userinfo internal-address filter bypass (45→folded into Finding 2): primitive verified, no dereferencing sink exists; residual reported as a bounded control gap, not SSRF.
+[PARKED] api.tech26.de family BOLA (42): AUTH_HELPED, two account tokens needed; unchanged.
+[PARKED] pay.n26.com Stripe passthrough BOLA (85): AUTH_HELPED, N26-issued sk_live needed; key discovery closed 3/3 corpora; unchanged.
+[PARKED] app.n26.com login `redirect` → `__successRedirect`/`__failureRedirect`: closed by module 12273 origin collapse.
+[FINAL] xs2a/aisp/pisp.tech26.de optional mTLS (empty-CA CertificateRequest) — VERIFIED PASSIVE 2026-10-06 per-sibling; strongest surviving finding; ELB name `obnium-mtls-live-fra-328671153` evidences intended termination; bounded as "mandated control absent", NOT auth bypass.
+[FINAL] xs2a.tech26.de redirect-destination guard: verified non-parsing, query-string-scoped substring filter with header/body channels uncovered (403|118 awselb vs 401|0 istio-envoy discriminators); LOW-MED, impact pending consent session.
+[FINAL] api/beta-api/sapi GET-scoped wildcard auth gate — VERIFIED; observation that invalidates route-existence inference, not a vulnerability.
+[NEXT] HUMAN: send the one consolidated decision to the coordinator covering three bounded asks and reference the now-existing draft — (1) review `reports/report-draft-n26.md` (leads with the passive, fully-verified mTLS regulatory finding; SSRF demoted to filter coverage; App B = the exact credential list); (2) provision two N26 account tokens for the api-family BOLA leg, one N26-issued Stripe sk_live for pay.n26.com, and one sandbox CBPII/AISP consent session for the post-consent redirect leg (never targeting 169.254.169.254 against production); (3) clear submission gate for the draft — `no_pre_disclosure: true` and `poc_required: true` both apply, so nothing is submitted before sign-off.
+[LEARN] ACCEPTED OTHER @ process: the KB line "report draft now exists at reports/report-draft-n26.md" was FALSE — the file did not exist in the working tree and is only now written. A KB can record an intended action as completed; verify file artifacts against the tree before building on them.
+[LEARN] ACCEPTED MISCONFIG @ xs2a.tech26.de: live-edge ELB is literally named `obnium-mtls-live-fra-328671153` and sends an empty-CA CertificateRequest at TLS1.2 — name + handshake together evidence an intended mTLS termination point whose client-auth requirement is not enforced; this is intent evidence, not just behavior.
+[LEARN] ACCEPTED OTHER @ {xs2a,aisp,pisp}-staging.tech26.de: dig-confirmed CNAME `obnium-mtls-staging-fra-558276106` (pre-prod twin) but port 443 does not accept connections anonymously — staging mTLS enforcement is unmeasurable from an anonymous seat, so "no client-cert enforcement on the estate" cannot be asserted, only "none measurable on the reachable production listener".
+[LEARN] ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: mTLS and route-separation findings re-verified live per-sibling today (five weeks after first opening) with zero drift — no re-classification needed; per-sibling re-proof of shared-edge claims remains the standing control rule.
+[RISK] N26 Bank AG: 86 — corrected: removed the retracted HIGH SSRF (filter bypass with no dereferencing sink). Composition: xs2a/aisp/pisp production XS2A client-cert authentication not enforced on the reachable listener despite an mTLS-named ELB (PSD2 Art.94(5)/RTS 2018/389 Art.29 — regulatory HIGH); xs2a OAuth redirect-destination guard bypassable on header/body channels (LOW-MED, impact unproven); api/beta-api/sapi legacy Bearer family live & mutating (CRITICAL only if auth ever bypassed — gated); pay.n26.com Stripe passthrough boundary (CRITICAL if key leaked); keyless auth service live with custom routes (HIGH, AUTH_HELPED); GraphQL closed anonymously; spc.n26.com = tracking only.
