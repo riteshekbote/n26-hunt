@@ -888,3 +888,17 @@ https://app.n26.com` -> ERR <urlopen error [Errno -2] Name or service not know
 
 ## 2026-10-07 13:32:55 UTC
 
+
+## 2026-10-07 19:50:57 UTC
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://flags.n26.com/v1/get_configs -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+https://flags.n26.com/v1/log_event -> HTTP 403
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://spc.n26.com/v1/payments -> 200 len=43
+https://spc.n26.com/v1/tokens -> 200 len=43
+https://spc.n26.com/docs -> HTTP 404
+https://spc.n26.com/status -> HTTP 404
+https://app.n26.com/build/js/client.*.js -> HTTP 404
+https://app.n26.com/graphql?query={__schema{types{name -> ERR The read operation timed out
+https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403

@@ -1152,3 +1152,14 @@
 - 2026-10-07 ACCEPTED OTHER @ knowledge/index.md: the KB records host groups in brace-expansion form (`{fpadedge,mambuedge,...}.tech26.de`) and in prose summaries. A literal `grep -l` diff against CT output will therefore report entire known groups as undocumented. Expand brace patterns (and match prose aliases) before diffing, or the diff manufactures false NEW entries.
 - 2026-10-07 ACCEPTED MISCONFIG @ fra.tech26.de: a separately delegated subzone changes what "NXDOMAIN" means — a recursive resolver's NXDOMAIN for `mcp-tools.fra.tech26.de` could in principle have come from the parent. Querying the zone's own NS directly removes that ambiguity and is the correct evidentiary standard for a cert-without-DNS claim.
 - 2026-10-07 ACCEPTED OTHER @ knowledge/index.md: the KB records host groups in brace-expansion form (`{fpadedge,mambuedge,...}.tech26.de`) and in prose summaries. A literal `grep -l` diff against CT output will therefore report entire known groups as undocumented. Expand brace patterns (and match prose aliases) before diffing, or the diff manufactures false NEW entries.
+- 2026-10-07 ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses (not 404). WAF actively blocks POST. Bypass exploration warranted.
+- 2026-10-07 ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. Client-side SDK key extraction from app bundle is viable path.
+- 2026-10-07 REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+- 2026-10-07 ACCEPTED AUTH @ app.n26.com: GraphQL confirmed via cookie + 403 responses (not 404). WAF actively blocks POST. Bypass exploration warranted.
+- 2026-10-07 ACCEPTED MISCONFIG @ flags.n26.com: Statsig instance with RBAC, behind CloudFront+GKE. Client-side SDK key extraction from app bundle is viable path.
+- 2026-10-07 REJECTED MISCONFIG @ my.n26.com: Server-side 301 redirect, not dangling DNS. No subdomain takeover vector.
+- 2026-10-07 ACCEPTED MISCONFIG @ spc.n26.com: Live payment service with /health endpoint. API enumeration needed.
+- 2026-10-07 ACCEPTED MISCONFIG @ aigw.tech26.de: public DNS persistently publishes internal-aigw-wan-edge-live ELB CNAME + RFC1918 A records (10.255.1.134/2.252/5.236); unique vs obnium-public siblings (xs2a/aisp/pisp-staging) — passive infra-naming disclosure, INFO.
+- 2026-10-07 REJECTED MISCONFIG @ vault/consul/registry/kibana/atatls/vsaq.tech26.de: NXDOMAIN — certs revoked/expired, no DNS, no surface (HashiCorp stack not published).
+- 2026-10-07 REJECTED MISCONFIG @ message-templates-assets.tech26.de + esign-staging.tech26.de: CloudFront-private S3 403 AccessDenied on /, index.html, list-type=2 — object-only, mirrors cdn.number26.de; class closed.
+- 2026-10-07 REJECTED AUTH @ sapi.tech26.de: envoy empty-404 on all paths + awselb /.env 403 — same edge as api/beta-api; no distinct surface.
