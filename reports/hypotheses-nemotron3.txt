@@ -1,20 +1,17 @@
-## 2026-10-06 20:53:36 UTC [target] (model nemotron3)
-[CHANGED] AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo (`http://user@169.254.169.254/`) confirmed reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com — supersedes prior "blocklist" characterization
-[CHANGED] xs2a.tech26.de CBPII consent flow confirmed live at `/v1/berlin-group/v1/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}` — returns 401|0 with 8-11ms app-layer timing vs 1ms bogus 404
-[CHANGED] xs2a.tech26.de ALB substring blocklist confirmed query-string-scoped — `TPP-Redirect-URI` header bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0
-[CHANGED] xs2a.tech26.de AS performs zero pre-auth discrimination of `TPP-Redirect-*` headers — four legs all byte-identical 401|0 md5 d41d8cd9
-[CHANGED] api.tech26.de / beta-api.tech26.de / sapi.tech26.de legacy Bearer-gated gate resolved as GET-scoped wildcard middleware — fabricated `/api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes
-[CHANGED] xs2a.tech26.de Production XS2A API CertificateRequest with EMPTY certificate_authorities list confirmed (optional mTLS, not absent)
-[CHANGED] Probe surface frozen since 2026-09-18 10:07 UTC (12+ days); no new probe data across all in-scope assets
-[CHANGED] Triage feeder degraded 18+ consecutive runs; no new leads generated
-[CHANGED] Three PARKED hypotheses remain blocked on coordinator credential/scope supply (api.tech26.de BOLA, pay.n26.com Stripe BOLA, xs2a.tech26.de CBPII SSRF)
-[PRIO] xs2a.tech26.de,9.05,attack_surface=10 business_value=10 tech_exposure=9 gate_ease=8 cloud_surface=8 freshness=7
-[PRIO] api.tech26.de (incl. beta-api/sapi),7.30,attack_surface=9 business_value=9 tech_exposure=7 gate_ease=3 cloud_surface=5 freshness=8
-[PRIO] pay.n26.com,7.15,attack_surface=8 business_value=10 tech_exposure=6 gate_ease=3 cloud_surface=6 freshness=7
-[PRIO] authentication-service.eks.core-production.keyless.technology,5.80,attack_surface=6 business_value=8 tech_exposure=8 gate_ease=2 cloud_surface=7 freshness=5
-[PRIO] engagementplatform.n26.com,5.45,attack_surface=6 business_value=7 tech_exposure=5 gate_ease=3 cloud_surface=5 freshness=6
-[PRIO] app.n26.com,4.90,attack_surface=5 business_value=8 tech_exposure=6 gate_ease=4 cloud_surface=4 freshness=4
-[HYP] xs2a.tech26.de CBPII consent flow SSRF via TPP-Redirect-URI header to EC2 metadata
+## 2026-10-07 00:21:20 UTC [target] (model nemotron3)
+[NEW] Probe surface frozen since 2026-09-18 10:07 UTC (19 days); only repetitive prober runs on app.n26.com/login?redirect= since 2026-10-02
+[NEW] Triage feeder degraded 18+ consecutive runs (latest err_6e0a2b6d at 2026-10-06 23:06); hypothesis intake dead
+[NEW] No new CT leaves since 2026-09-20 (mag.n26.com/*.n26.com marketing aliases, phishing-report.tech26.de source-gated)
+[NEW] KB claim "report draft now exists at reports/report-draft-n26.md" was FALSE — file does not exist in working tree
+[CHANGED] Three PARKED hypotheses unchanged (xs2a CBPII SSRF, api.tech26.de BOLA, pay.n26.com Stripe BOLA) — all AUTH_HELPED, blocked on coordinator credential/scope supply
+[CHANGED] xs2a.tech26.de mTLS regulatory finding (PSD2/RTS Art.94(5), EBA RTS 2018/389) PASSIVE-VERIFIED across 4 axes; CertificateRequest with empty CA list confirmed
+[CHANGED] AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo confirmed reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com
+[CHANGED] flags.n26.com RBAC boundary tightened to default-deny (/v1/sdk_exception now 403|19B, all GET config 403|19B) — premise dead
+[CHANGED] api.tech26.de/beta-api/sapi legacy Bearer-gated gate resolved as GET-scoped wildcard middleware (fabricated /api/accounts/1/zzqnotreal → 401|211 byte-identical)
+[PRIO] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds,9.3,attack_surface=10,business_value=10,tech_exposure=9,gate_ease=8,cloud_surface=9,freshness=8
+[PRIO] api.tech26.de/api/accounts/*,9.0,attack_surface=10,business_value=10,tech_exposure=8,gate_ease=7,cloud_surface=9,freshness=8
+[PRIO] pay.n26.com/v1/*,8.8,attack_surface=9,business_value=10,tech_exposure=7,gate_ease=7,cloud_surface=9,freshness=8
+[HYP] xs2a.tech26.de CBPII consent flow SSRF via TPP-Redirect-URI header
 class: SSRF
 asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
 confidence: 85
