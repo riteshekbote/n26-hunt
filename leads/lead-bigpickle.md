@@ -9285,3 +9285,4 @@ evidence_needed: Non-NXDOMAIN answer for `mcp-tools.fra.tech26.de` at the zone a
 verify_steps: PASSIVE. `dig fra.tech26.de NS` → four delegated NS; `dig @ns-1284.awsdns-32.org mcp-tools.fra.tech26.de A` → NXDOMAIN today; re-run daily and diff `api.certspotter.com/v1/issuances?domain=tech26.de&include_subdomains=true&expand=dns_names` for a new `fra.` leaf. On cutover, one anonymous `GET https://mcp-tools.fra.tech26.de/` (≤1 rps) classifies reachability.
 impact: Unauthenticated exposure of an internal AI-agent/MCP tooling plane (a class frequently unauthenticated by default) — HIGH if it comes up public, currently speculative and time-dependent.
 testability: PASSIVE
+## 2026-10-07 13:32:44 UTC [target] (model bigpickle)
