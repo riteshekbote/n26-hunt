@@ -9701,3 +9701,68 @@ testability: HUMAN_ONLY
 [LEARN] REJECTED MISCONFIG @ vault/consul/registry/kibana/atatls/vsaq.tech26.de: NXDOMAIN — certs revoked/expired, no DNS, no surface (HashiCorp stack not published).
 [LEARN] REJECTED MISCONFIG @ message-templates-assets.tech26.de + esign-staging.tech26.de: CloudFront-private S3 403 AccessDenied on /, index.html, list-type=2 — object-only, mirrors cdn.number26.de; class closed.
 [LEARN] REJECTED AUTH @ sapi.tech26.de: envoy empty-404 on all paths + awselb /.env 403 — same edge as api/beta-api; no distinct surface.
+## 2026-10-07 23:57:49 UTC [target] (model bigpickle)
+verify_steps: (1) dig +short aigw.tech26.de A (2) dig +short aigw.tech26.de CNAME (3) compare vs xs2a-staging.tech26.de A — pure passive
+impact: internal network topology/naming disclosure — INFO-LOW, non-exploitable without reachability
+testability: PASSIVE
+[PRIO] pay.n26.com/v1/*,4.7,attack_surface=4,business_value=5,tech_exposure=3,gate_ease=6,cloud_surface=4,freshness=7
+[PRIO] *.tech26.de infra tier (fpad/mambu/sonarqube/backstage),4.15,attack_surface=4,business_value=5,tech_exposure=3,gate_ease=1,cloud_surface=5,freshness=8
+[PRIO] aigw.tech26.de,4.35,attack_surface=3,business_value=2,tech_exposure=2,gate_ease=10,cloud_surface=6,freshness=7
+[HYP] Stripe key recoverable from N26 client assets unlocks pay.n26.com forwarded API
+class: AUTH
+asset: pay.n26.com/v1/*
+confidence: 45
+reasoning: 23/23 probed /v1/* routes return Stripe 401 len=342 (uniform key-gate); /v1 403 CF vs root 204 CF catch-all; CORS allowlists app.n26.com with Stripe expose-headers; 11 web bundles contain no pk_/sk_/rk_live_ and no pay.n26.com refs → key is server/mobile-only (engagementplatform pattern).
+evidence_needed: Stripe secret/restricted/publishable key embedded in an N26 client (Android APK/iOS/docs/support) that authenticates a /v1 route.
+verify_steps: (1) GET https://api.github.com/search/code?q=repo:n26 pay.n26.com (passive) (2) rerun bundle-grep on next rotation for `(sk|pk|rk)_live_` and `pay\.n26\.com` (3) with key: POST https://pay.n26.com/v1/payments Authorization:Bearer <key>
+impact: restricted/secret key → read+write Stripe account (charges/refunds/payouts); publishable-overbroad → tokenize. HIGH if key; boundary-only today.
+testability: AUTH_HELPED
+[HYP] tech26.de infra tier (SonarQube/Backstage/edge ALBs) reachable via allowlisted egress only
+class: MISCONFIG
+asset: sonarqube-default-fra.tech26.de
+confidence: 30
+reasoning: 10 hosts resolve to public ELBs (fpadedge-live-fra, mambuedge-oldlive, oneglobaledge, taktileedge, epiedge) but all 10–15s connect-stall from this vantage; sonarqube CNAME→sonarqube-alb-ci-live ALB same stall → source-restricted security groups, ingress unconfirmed.
+evidence_needed: HTTP 200/302 from / or /api/system/status from non-sandbox vantage; SonarQube version banner.
+verify_steps: (1) GET https://sonarqube-default-fra.tech26.de/api/system/status (2) GET https://fpadedge.tech26.de/health from allowed network
+impact: SonarQube default exposure (admin/admin, /api/system/status) → source/CI creds; CRITICAL if verified — currently unconfirmed.
+testability: HUMAN_ONLY
+[PARKED] tech26.de infra tier: confidence 30 <40; requires external vantage, cannot close anonymously.
+[FINAL] pay.n26.com Stripe key (45, AUTH_HELPED) — only surviving actionable lead; boundary rock-solid, exploit gated entirely on key disclosure.
+[FINAL] aigw.tech26.de internal-ELB+RFC1918 disclosure — confirmed stable across sessions; accepts as INFO passive finding.
+[NEXT] PROBE: GET https://app.n26.com/login → parse JS bundles → grep each for `(sk|pk|rk)_live_[A-Za-z0-9]{10,}` and `pay\.n26\.com`; if bundles rotated this cycle, also recheck `paypoints`/stripe connect-src targets. Passive, 1 GET + bundle greps.
+[LEARN] ACCEPTED MISCONFIG @ aigw.tech26.de: public DNS persistently publishes internal-aigw-wan-edge-live ELB CNAME + RFC1918 A records (10.255.1.134/2.252/5.236); unique vs obnium-public siblings (xs2a/aisp/pisp-staging) — passive infra-naming disclosure, INFO.
+[LEARN] REJECTED MISCONFIG @ vault/consul/registry/kibana/atatls/vsaq.tech26.de: NXDOMAIN — certs revoked/expired, no DNS, no surface (HashiCorp stack not published).
+[LEARN] REJECTED MISCONFIG @ message-templates-assets.tech26.de + esign-staging.tech26.de: CloudFront-private S3 403 AccessDenied on /, index.html, list-type=2 — object-only, mirrors cdn.number26.de; class closed.
+[LEARN] REJECTED AUTH @ sapi.tech26.de: envoy empty-404 on all paths + awselb /.env 403 — same edge as api/beta-api; no distinct surface.
+[HYP] <title>
+class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
+asset: <host/endpoint>
+confidence: <0-100>
+reasoning: <facts only>
+evidence_needed: <what proves it>
+verify_steps: <passive-first concrete HTTP requests>
+impact: <what attacker gets + severity>
+testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
+[HYP] Legacy API BOLA: one Bearer token unlocks the entire unbounded legacy subtree
+class: IDOR
+asset: api.tech26.de/api/{accounts,statements}/** + /api/me,/api/addresses
+confidence: 60
+reasoning: gate measured this cycle as prefix-wildcard at unbounded depth (401|211 md5 d58528c9 at depth 4-5, byte-identical to depth-2 control) plus exact mounts for /api/me,/api/addresses; identical per-sibling on beta-api/sapi. Route structure yields zero anonymous residual enumeration anywhere under the prefixes, so a single leaked token trades the full surface (statements by year, accounts, TAN lists, addresses) with no per-route isolation.
+evidence_needed: any valid Bearer token for the legacy realm, then differential depth-2 reads on resource ids.
+verify_steps: (1) with token: GET /api/accounts/{id}/tans (2) GET /api/statements/{year} (3) compare cross-account resource ids → BOLA.
+impact: cross-tenant read of statements/TAN/address data from the whole legacy surface at any depth. HIGH.
+testability: AUTH_HELPED
+[HYP] Stripe key recoverable from N26 client assets unlocks pay.n26.com forwarded API
+class: AUTH
+asset: pay.n26.com/v1/*
+confidence: 45
+reasoning: fresh bundle rotation contains zero (sk|pk|rk)_*_live/test and zero pay.n26.com refs in 11/11 chunks (control grep valid) → re-closes web-source; key must be server/mobile-only.
+evidence_needed: Stripe key in Android/iOS bundle or non-web doc that authenticates a /v1 route.
+verify_steps: (1) with key: POST https://pay.n26.com/v1/payments Authorization:Bearer <key>
+impact: restricted/secret key → read+write Stripe account (charges/refunds/payouts). HIGH if key; boundary-only today.
+testability: AUTH_HELPED
+[NEXT] HUMAN: hand off to coordinator the three AUTH_HELPED hypotheses (api.tech26.de legacy BOLA, xs2a CBPII SSRF, pay.n26.com Stripe BOLA) with exact credential requirements (a valid legacy Bearer token / sandbox PSU account with 2FA + redirect test value / a Stripe restricted key), and request re-creation of `reports/report-draft-n26.md` (absent 4th cycle). Probe surface on every live host is exhausted for read-only traffic; no further PROBE is executable anonymously.
+[LEARN] ACCEPTED IDOR @ api.tech26.de/{beta-api,sapi}: the gated pattern space (09-30 question) is TWO unbounded-depth prefix-wildcards (`/api/accounts/**`, `/api/statements/**`) plus two exact mounts (`/api/me`, `/api/addresses`), byte-identical across all three siblings — so anonymous enumeration is zero everywhere under the prefixes; one token = whole surface. Measured with fabricated-sibling depth controls at depth 4-5 vs depth-2 control, per-sibling.
+[LEARN] ACCEPTED AUTH @ pay.n26.com: login-bundle rotation (`client.585427aa.js`) re-grepped clean 11/11 for stripe material with a valid control grep — null-on-rotation confirms Stripe key is server/mobile-only, not a web-residue artifact.
+[LEARN] REJECTED OTHER @ process: `reports/report-draft-n26.md` recorded as "exists v2, `ls`-verified" is false for the 4th cycle; tree `ls` shows it absent. A KB sentence asserting a verification is not a verification.
+[RISK] N26: 30. No new reachable exploit surface on any in-scope host this cycle; all exploitable hypotheses remain AUTH_HELPED on coordinator credentials. The sole confirmable issue (optional mTLS on xs2a/aisp/pisp with regulatory basis) is defendable against `scope.yml:24` but adds no new reachability, keeping program-level risk low and unchanged.
