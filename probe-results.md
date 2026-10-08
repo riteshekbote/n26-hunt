@@ -906,3 +906,8 @@ https://flags.n26.com/v1/initialize?client_key=<extracted -> HTTP 403
 ## 2026-10-07 23:58:02 UTC
 https://pay.n26.com/v1/payments -> HTTP 401
 https://app.n26.com/login -> 200 len=316261
+
+## 2026-10-08 04:16:30 UTC
+https://pay.n26.com/v1/balance -> HTTP 401
+https://app.n26.com/login -> 200 len=316261
+https://pay.n26.com/v1/payments -> HTTP 401
