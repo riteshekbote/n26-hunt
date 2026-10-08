@@ -9929,3 +9929,46 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED OTHER @ process: report draft now exists at `reports/report-draft-n26.md` (created 2026-10-08). Verify artifacts against tree before building on them (KB must not assert existence without ls).
 [RISK] N26 Bank AG: 40 — No new reachable exploit surface by read-only traffic this cycle; all actionable findings remain AUTH_HELPED pending coordinator credential/scope supply. xs2a.tech26.de header-channel SSRF is strongest passive-characterized vector (confidence 85) but requires flow context to validate impact.
 verify_steps: (1) dig +short aigw.tech26.de A (2) dig +short aigw.tech26.de CNAME (3) compare vs xs2a-staging.tech26.de A — pure passive
+## 2026-10-08 11:23:14 UTC [target] (model bigpickle)
+[PRIO] xs2a.tech26.de,8.95,attack_surface=8,business_value=10,tech_exposure=9,gate_ease=3,cloud_surface=8,freshness=6
+[PRIO] pay.n26.com,8.40,attack_surface=7,business_value=10,tech_exposure=8,gate_ease=4,cloud_surface=8,freshness=6
+[PRIO] api.tech26.de,7.40,attack_surface=7,business_value=8,tech_exposure=7,gate_ease=4,cloud_surface=7,freshness=6
+[HYP] CBPII consent flow SSRF via TPP-Redirect-URI header
+class: SSRF
+asset: xs2a.tech26.de/oauth2/authorize
+confidence: 85
+reasoning: Production Berlin-Group XS2A API with CBPII consent subtree live. Edge substring blocklist query-string-scoped; TPP-Redirect-URI header bypasses ALB to application layer (istio-envoy). Pre-auth discrimination of TPP-Redirect-* absent; sandbox co-tenant identical.
+evidence_needed: Application-layer follow of TPP-Redirect-URI to http://169.254.169.254/latest/meta-data/ under authorized PSD2 consent/flow context (read-only; never auto-follow external).
+verify_steps: (1) GET https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_CBPII&response_type=code&redirect_uri=https%3A%2F%2Fexample.com%2Fcb with header TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/ (inspect Location/body only). (2) Repeat on https://xs2a.tech26.de/sandbox/oauth2/authorize with same header.
+impact: SSRF to EC2 instance metadata → potential IAM role credentials/instance identity exposure within PSD2 OAuth boundary. Severity: HIGH.
+testability: AUTH_HELPED
+[HYP] Legacy API BOLA via unbounded wildcard-gated subtree
+class: IDOR
+asset: api.tech26.de/api/accounts/**
+confidence: 60
+reasoning: GET-scoped wildcard middleware on /api/accounts/** and /api/statements/** plus exact mounts /api/me,/api/addresses. Fabricated sub-resources return 401|211 byte-identical to live resources (pattern membership only). Anonymous enumeration yields zero resource existence signal. Single valid Bearer token applies to entire unbounded subtree with no observed per-account isolation.
+evidence_needed: Valid Bearer token for legacy N26 v1 realm; successful cross-account read of resource not owned by token.
+verify_steps: (1) With valid legacy Bearer token, GET https://api.tech26.de/api/accounts/{owned_id}/statements (baseline). (2) Same token, GET https://api.tech26.de/api/accounts/{different_id}/statements (differential). (3) Repeat on beta-api.tech26.de and sapi.tech26.de (read-only).
+impact: Cross-tenant read of sensitive PII (statements, addresses, TAN lists, cards, bookings) across full legacy subtree. Severity: HIGH.
+testability: AUTH_HELPED
+[HYP] Stripe key recoverable from N26 client assets to access pay.n26.com forwarded API
+class: AUTH
+asset: pay.n26.com/v1/*
+confidence: 45
+reasoning: pay.n26.com returns Stripe-formatted 401 (no-key len=342 vs fake-key len=132). Web bundle grep clean across rotations (no sk/pk/rk_live_, no pay.n26.com refs). Key is server/mobile-only; disclosure remains only anonymous-unlock path.
+evidence_needed: Live Stripe secret/restricted/publishable key embedded in N26 client asset (Android APK, iOS build, published non-web docs) that authenticates to pay.n26.com/v1 route.
+verify_steps: (1) With candidate Stripe key, GET https://pay.n26.com/v1/balance with Authorization: Bearer <key> (single request, read-only). (2) If authenticated, do not issue write operations; record only auth success/failure class.
+impact: Valid restricted/secret Stripe key → read+write capabilities against linked Stripe account. Severity: HIGH (if key present).
+testability: AUTH_HELPED
+[PARKED] api.tech26.de BOLA via unbounded wildcard-gated subtree: confidence 60 < 85 threshold relative to top; still strong but lower than SSRF. Requires credential provisioning (AUTH_HELPED). Gate is GET-scoped wildcard middleware making anonymous enumeration zero - credible but not immediately exploitable without token.
+[PARKED] Stripe key recoverable from N26 client assets: confidence 45 < 60; evidence not present in web bundles; requires third-party corpus (mobile builds, docs) and key acquisition. High impact if true, but evidence_needed outside immediate web surface.
+[FINAL] CBPII consent flow SSRF via TPP-Redirect-URI header (confidence 85): best characterized, passive-verified across production/sandbox co-tenant, header-channel bypass clearly demonstrated; requires authorized flow context to observe redirect follow (read-only). Survives critique.
+[FINAL] api.tech26.de BOLA (confidence 60): included as second hypothesis due to breadth of sensitive PII and clear per-account isolation gap; AUTH_HELPED.
+[FINAL] pay.n26.com Stripe key (confidence 45): included as third due to business value if key found; AUTH_HELPED.
+[NEXT] HUMAN: Submit consolidated coordinator request covering three AUTH_HELPED hypotheses with exact credential requirements: (1) PSD2 sandbox/production test credentials + redirect URI context to exercise xs2a.tech26.de CBPII OAuth flow (TPP-Redirect-URI header test) — never target 169.254.169.254 against production; (2) valid Bearer token for legacy N26 v1 realm (api/beta-api/sapi.tech26.de) for cross-account read isolation test on /api/accounts/** and /api/statements/**; (3) confirmation/availability of Stripe restricted key from client assets (or mobile build access) for pay.n26.com/v1/* auth test (read-only). Review reports/report-draft-n26.md (v2) and clear submission gate (no_pre_disclosure: true, poc_required: true). Probe surface exhausted for read-only anonymous traffic; no further PROBE executable anonymously.
+[LEARN] ACCEPTED SSRF @ xs2a.tech26.de: TPP-Redirect-URI header bypasses ALB query-string-scoped blocklist to app layer; pre-auth discrimination of TPP-Redirect-* headers absent. Sandbox co-tenant behavior identical.
+[LEARN] ACCEPTED IDOR @ api.tech26.de/{beta-api,sapi}: GET-scoped wildcard middleware on /api/accounts/** and /api/statements/**; 401 signals pattern membership only (not resource existence). Anonymous enumeration structurally zero under unbounded prefixes.
+[LEARN] REJECTED MISCONFIG @ pay.n26.com: Web-bundle rotation grep clean (no sk/pk/rk_live_, no pay.n26.com refs); key server/mobile-only. Boundary stable across cycles.
+[LEARN] ACCEPTED OTHER @ process: report draft exists at reports/report-draft-n26.md (v2); verify artifacts against tree before building on them. Control is property of request path/channel measured; vendor prose (not route lists) produced decisive channel semantics. Bundle presence ≠ reachability; status code ≠ rule.
+[RISK]
+[RISK] N26 Bank AG: 40 — No new reachable exploit surface by read-only traffic this cycle; all actionable findings remain AUTH_HELPED pending coordinator credential/scope supply. xs2a.tech26.de header-channel SSRF is strongest passive-characterized vector (confidence 85) but requires flow context to validate impact.

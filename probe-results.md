@@ -911,3 +911,6 @@ https://app.n26.com/login -> 200 len=316261
 https://pay.n26.com/v1/balance -> HTTP 401
 https://app.n26.com/login -> 200 len=316261
 https://pay.n26.com/v1/payments -> HTTP 401
+
+## 2026-10-08 11:23:26 UTC
+https://pay.n26.com/v1/balance -> HTTP 401
