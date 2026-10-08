@@ -85320,3 +85320,141 @@ PASSIVE: github.com/n26 repo list (6) + clone sweep — zero secrets
 **Outputs written:** `reports/hypotheses-bigpickle.txt` (3 HYP 85/60/45, all AUTH_HELPED; +2 PARKED), block appended to `leads/lead-bigpickle.md`, new `inventory/n26.md` section, 8 `knowledge/index.md` entries, `probe-results.md` section.
 
 **[NEXT] HUMAN** — coordinator ask (silent 27+ cycles): (1) PSD2 test creds for CBPII flow, (2) legacy Bearer token for `/api/accounts/**`, (3) mobile/CI-artifact access for Stripe key, (4) scope+vantage check on artifactory + staging estate, (5) report-draft location (file doesn't exist; `poc_required` gate unmet). **RISK: 42.**
+===== ANALYST bigpickle 2026-10-08 22:46:53 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la reports/ 2>&1; echo "---TRIAGE LATEST---"; ls -t triage/ 2>&1 | head -5; echo "---GIT---"; git -C /home/runner/work/n26-hunt/n26-hunt status --short 2>&1 | head -20
+total 11392
+drwxr-xr-x  2 runner runner    4096 Oct  8 22:44 .
+drwxr-xr-x 12 runner runner    4096 Oct  8 22:44 ..
+-rw-r--r--  1 runner runner 7687883 Oct  8 22:44 analyst-bigpickle.log
+-rw-r--r--  1 runner runner   46221 Oct  8 22:44 analyst-laguna.log
+-rw-r--r--  1 runner runner   46008 Oct  8 22:44 analyst-ling3.log
+-rw-r--r--  1 runner runner   46434 Oct  8 22:44 analyst-longcat.log
+-rw-r--r--  1 runner runner 3105495 Oct  8 22:44 analyst-nemotron3.log
+-rw-r--r--  1 runner runner   43227 Oct  8 22:44 hypotheses-bigpickle.txt
+-rw-r--r--  1 runner runner      51 Oct  8 22:44 hypotheses-laguna.txt
+-rw-r--r--  1 runner runner      50 Oct  8 22:44 hypotheses-ling3.txt
+-rw-r--r--  1 runner runner      52 Oct  8 22:44 hypotheses-longcat.txt
+-rw-r--r--  1 runner runner   13706 Oct  8 22:44 hypotheses-nemotron3.txt
+-rw-r--r--  1 runner runner  853510 Oct  8 22:44 hypotheses.md
+-rw-r--r--  1 runner runner    4596 Oct  8 22:44 reposcan-findings.md
+-rw-r--r--  1 runner runner    1529 Oct  8 22:44 valid-bugs.md
+---TRIAGE LATEST---
+run-2026-10-08-01-17.md
+run-2026-10-08-07-33.md
+run-2026-10-08-14-55.md
+run-2026-10-08-20-33.md
+run-2026-09-29-23-11.md
+---GIT---
+?? analyst-out.txt
+?? analyst-prompt.txt
+?? ctx.txt
+[0m
+I'll ground the report/triage artifact claims against the actual tree first, since the KB shows a recurring error there.
+[0m✱ [0mGlob "**/report-draft-n26.md"[90m 0 matches[0m
+[0m✱ [0mGlob "reports/**"[90m 13 matches[0m
+## Objective
+- Act as senior bug bounty ANALYST for the N26 Bank AG program (report channel: bugs.olivermaicher.eu), running the mandated 8-step analysis (DELTA/PRIO/HYP/SELF-CRITIQUE/NEXT/LEARN/RISK) and emitting ONLY structured blocks.
+- Deep-hunt HIGH-VALUE classes (BOLA/IDOR, SSRF-to-metadata, broken auth/session, OAuth redirect_uri/state, mass assignment, JWT, business logic on money/auth flows, GraphQL, subdomain takeover) and chain them, breadth over full inventory then depth on top-3 anomalies.
+
+## Important Details
+- Scope = N26 Bank AG company-owned infra, online banking, mobile apps, APIs, customer portals, auth systems, internal banking services, websites, domains.
+- REJECTED classes: network/account-lockout DoS, descriptive errors/headers, robots.txt, outdated libs, OPTIONS/TRACE, CSRF on logout/anon forms, cookie flags on non-sensitive data, self-XSS, scanner-only reports, physical, social eng, username enumeration, brute-force/rate-limit policy, SSL/TLS best practice, SSL attacks, clickjacking w/o exploit, mail config, known-vuln lib w/o program exploit, password/account-recovery policy, autocomplete, public login panels, missing email verification, session control during email/password change, exposure of customer/employee/financial/auth data during testing.
+- Probe rules: passive-first, ≤1 rps, GET/HEAD/OPTIONS only for live probes; no auth-bypass or mutating tests against live customer data; sha256 any secret; facts vs hypotheses strictly separated.
+- Program report gates referenced in last [NEXT]: `no_pre_disclosure: true`, `poc_required: true`.
+- Crawl/analysis state (state_bigpickle.json): `{"phase":"POC","target":"api"}` — unchanged; coordinator silent.
+- Standing "report draft exists" KB claim is unreliable — asserted verified but MISSING from tree for multiple cycles (verify with `ls reports/`).
+- certspotter API endpoint DISCONTINUED (`certspotter.com/api/v1/certs` → 410 Gone); CT baseline stable at tech26.de=40 names / n26.com=85 names. Working passive-DNS fallback: `api.hackertarget.com/hostsearch` (200).
+- request pacing constraint: tech26.de edge soft-throttles (~30 req/3min → connections fail closed rc=6/000; recovers after ~45s idle); app.n26.com exposes `x-ratelimit-limit: 60`.
+- Recurring process canon: control is a property of the REQUEST PATH/CHANNEL it was measured on, not the shared edge/cert/ELB; re-prove on each sibling. 401 on pattern-gated hosts signals pattern membership only, never resource existence. Bundle presence ≠ reachability; status code ≠ rule; count ≠ finding. Vendor corpus (OpenAPI/Postman/PROSE) is the primary enumeration source.
+
+## Work State
+### Completed
+- Four FINAL hypotheses PASSIVE-VERIFIED: xs2a.tech26.de mTLS optional (conf 95); xs2a redirect_uri ALB blocklist query-scoped (conf 90, later corrected); api.tech26.de GET-scoped wildcard middleware (conf 95); AWB-wide RFC3986-userinfo SSRF filter bypass (conf 85).
+- api.tech26.de/beta-api/sapi.tech26.de legacy Bearer-gated `/api/*` family characterized: GET-scoped wildcard middleware on `/api/accounts/**`, `/api/statements/**` + exact mounts `/api/me`, `/api/addresses`; fabricated sub-resources return `401|211` md5 `d58528c924dad2fde9c30f81972e0548` byte-identical to live routes; HEAD/OPTIONS/POST → `404|0`; query-param credential bypass closed.
+- xs2a.tech26.de: production Berlin-Group XS2A API at `/v1/berlin-group/v1` (21 Bearer-gated route classes incl. `payments/instant-sepa-credit-transfers`); sandbox tier co-tenant at `/sandbox/v1/berlin-group/v1/*` (7 classes); OAuth2 authorize plane anonymously reachable (`/oauth2/authorize`, `/sandbox/oauth2/authorize`) → 401 with params, 404 without; mTLS optional (empty CA list); shared ELB `obnium-mtls-live-fra-328671153` across {xs2a,aisp,pisp}.
+- aisp.tech26.de / pisp.tech26.de route tables mapped from vendor corpus (PSD2 Fallback): aisp 4 classes, pisp 5 classes (incl. POST `sepa-ct`, `sepa-instant`), all 401; audience-separation enforced at routing layer.
+- pay.n26.com: pure Stripe passthrough on `/v1/*` (23+ endpoints); no-key 401 len=342 vs fake-key 401 len=132; web-bundle grep clean across rotations; key-discovery closed 3/3 corpora.
+- flags.n26.com: RBAC tightened to default-deny — `/v1/sdk_exception` now `403|19B` (was 202); all GET config 403|19B; premise dead.
+- engagementplatform.n26.com identified as Braze REST (`dashboard-02.braze.eu`), 401 key-gated, no web-bundle token; root 400.
+- Reconciliations: `n26/psd2-tpp-docs` publishes `client_id`s `PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12` + PKCE challenge (public since 2021-12-16); `android:secret` Basic cred rejected 4x as demo value; assassinated hypotheses recorded (spc.n26.com = 1x1 GIF tracking pixels not payment API; my.n26.com 301 not takeover; cdn.number26.de private S3; app.n26.com/graphql = app-layer deny not WAF, deny precedes GraphQL parsing).
+- Reports: `reports/report-draft-n26.md` (v2) written to lead with mTLS regulatory finding; SSRF retraction in Appendix A; credential-blocked items in Appendix B as non-findings.
+
+### Active
+- Phase POC, target `api`. Anonymous read-only surface exhausted; awaiting coordinator credential/scope supply.
+- Probe surface FROZEN since 2026-09-18 10:07 UTC (19+ days); probe-results.md only repeats `app.n26.com/login?redirect=https://evil.example.com/callback`.
+- CT corpus refreshed (hackertarget fallback): zero new leaves since 2026-09-20 (`mag.n26.com`/`mag-*.n26.com` marketing aliases, `phishing-report.tech26.de` source-gated).
+- KB contains contradictory redirect_uri filter characterizations: (a) 2026-10-01 "ALB substring filter query-string-scoped, TPP-Redirect-URI header bypasses"; (b) 2026-10-05 "filter is request-scoped (path rules exist), userinfo bypasses, retracting query-string-scoped"; (c) 2026-10-07 "{xs2a,api} edge redirect-target filter = IP-literal(+localhost) matcher, NOT scheme:// substring matcher". Last [FINAL] lead still carries the CBPII SSRF via TPP-Redirect-URI header at conf 85 — reconciliation pending.
+
+### Blocked
+- All actionable findings AUTH_HELPED — blocked on coordinator credential/scope supply (no sandbox account, Stripe key, paired-device token, or WebAuthn credential).
+- `triage/` feeder degraded 18+ consecutive runs with server-side `UnknownError` refs (latest `err_6e0a2b6d` at 2026-10-06 23:06); last healthy-but-empty run `run-2026-09-22-14-04` ("LEADS empty"). `triage/prober` does not exist in repo (note recorded) — phantom 404s and `ERR <urlopen error [Errno -2] Name or service not known>` host-interpolation bug seen historically.
+- {xs2a,aisp,pisp}-staging.tech26.de: CNAME `obnium-mtls-staging-fra-558276106`, connect-timeout 25s / 0B — source-gated, HUMAN_ONLY.
+- Source-gated SG class (HUMAN_ONLY): `fpadedge/mambuedge/oneglobaledge/taktileedge/epiedge/sredocs/telemetry/idealedge/livepersonedge/phishing-report` etc.; `mcp-tools.fra.tech26.de` cert-without-DNS proven vs authoritative NS (separately delegated `fra.tech26.de` subzone).
+- Passive corpora closed: crt.sh 502, github code-search 401, grep.app 429 (Vercel checkpoint), sourcegraph 0-match.
+
+## Next Move
+1. Resolve the redirect_uri/TPP-Redirect-URI filter contradiction and finalize the [FINAL] SSRF vs [PARKED]-non-finding status, then verify `reports/report-draft-n26.md` exists on disk (`ls reports/`) before pointing the coordinator at it.
+2. Emit the single [NEXT] HUMAN consolidated coordinator request covering the three AUTH_HELPED hypotheses with exact credential requirements: (a) PSD2 sandbox/prod test creds + redirect URI context to exercise `xs2a.tech26.de` CBPII OAuth flow (TPP-Redirect-URI header test — never target 169.254.169.254 against prod); (b) valid Bearer token for legacy N26 v1 realm (`api/beta-api/sapi.tech26.de`) for cross-account read isolation on `/api/accounts/**`, `/api/statements/**`; (c) Stripe restricted key availability (read-only `GET https://pay.n26.com/v1/balance`).
+
+## Relevant Files
+- `reports/report-draft-n26.md`: v2 report draft (mTLS lead, SSRF retraction Appendix A, AUTH_HELPED Appendix B) — verify presence each cycle.
+- `state_bigpickle.json`: coordinator state `{"phase":"POC","target":"api"}`.
+- `probe-results.md`: probe log; frozen since 2026-09-18 10:07 UTC.
+- `triage/`: 208+ `run-*.md` feeder logs; latest `run-2026-10-06-23-06.md`; recurring `UnknownError`/empty-lead failures.
+- `knowledge/index.md`: KB — hosts stored in brace-expansion form (`{fpadedge,...}.tech26.de`); expand before diffing CT output.
+- `inventory/n26.md`: discovery inventory/host list + PASSIVE RECON timeline.
+- `scope.yml`: program scope; `scope.yml:24` excludes "SSL/TLS best practices" (mTLS finding lifted clear via PSD2 Art.94(5) / EBA RTS 2018/389).
+- `n26/psd2-tpp-docs`: public vendor corpus — `doc/{fallback-aisp,fallback-pisp,redirect/dedicated-aisp,decoupled/dedicated-{aisp,cbpii},sandbox}.md`, Postman collection + env, `doc/assets/bash/pin_encryption_and_initiating_transaction.sh` (`android:secret` provenance), `doc/assets/quarterly-report/` (27 PDFs, availability telemetry only).
+- `leads/`, `hypotheses.md`, `ctx.txt`: lead/hypothesis corpora used for cross-checks.
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+[0m→ [0mRead reports/valid-bugs.md
+[0m→ [0mRead reports/reposcan-findings.md
+[0m→ [0mRead triage/run-2026-10-08-20-33.md
+[0m→ [0mRead reports/hypotheses-laguna.txt
+[0m→ [0mRead reports/hypotheses-ling3.txt
+Report draft is indeed absent (KB bug confirmed). Reading the small artifacts that may carry genuine delta.
+[0m→ [0mRead reports/hypotheses-longcat.txt
+Grounding complete. The KB's "report draft written/verified" claim is **false** — `report-draft-n26.md` does not exist anywhere in the tree. Proceeding with the mandated structured analysis (target=api, phase=POC).
+
+---
+
+**STEP 1 — DELTA**
+- `[CHANGED]` `reports/report-draft-n26.md` CONFIRMED ABSENT (`**/report-draft-n26.md` → none). Prior KB entries claiming it was written/verified are false; the primary deliverable does not exist on disk.
+- `[CHANGED]` `reports/valid-bugs.md`: running count **0** validated findings; every entry HOLD (`sdk_exception` RBAC ceiling LOW; Statsig/`engagementplatform` key-blocked). Zero accepted-impact findings program-wide.
+- `[CHANGED]` `triage/run-2026-10-08-20-33.md` = `UnknownError` `err_bc5ee0d6`; feeder degraded ~20 consecutive runs.
+- `[CHANGED]` Cross-model analysts laguna/ling3/longcat emitted EMPTY files at 2026-10-08 17:53 → no independent signal.
+- `[CORRECTED]` Redirect-target filter final model = IP-literal(+localhost) matcher, bypassable via RFC3986 userinfo (`http://user@169.254.169.254/`); "query-string-scoped ALB substring" model retracted.
+- `[NO_DELTA]` Anonymous read surface unchanged since 2026-09-18 10:07 UTC; no new CT leaves; passive corpora closed.
+
+**STEP 2 — PRIORITIZE**
+| asset | surface | value | exposure | gate_ease | freshness | score |
+|---|---|---|---|---|---|---|
+| xs2a.tech26.de | high | high | med | low | low | 8.95 |
+| pay.n26.com | med | high | low | low | low | 8.40 |
+| api.tech26.de *(phase target)* | high | high | med | low | low | 7.40 |
+
+**STEP 3 — HYPOTHESES**
+1. `[HYP]` api.tech26.de — GET-only wildcard auth middleware leaves write/adjacent legacy routes outside its pattern space | class AUTH/IDOR | conf 60 | gate is GET-scoped and pattern-space boundary unproven; versioned `/api/v1/*` drops gate; non-GET not routed on observed paths | verify: with authorized token, map routed-but-ungated legacy paths | AUTH_HELPED
+2. `[HYP]` xs2a.tech26.de — CBPII consent-flow SSRF via `TPP-Redirect-URI` / userinfo filter bypass | class SSRF | conf 70 (lowered from 85) | internal-address filter bypassable via userinfo, but AS shows no pre-auth discrimination of the `TPP-Redirect-*` leg → sink is post-auth only | verify: authorized consent flow, observe server-side fetch | AUTH_HELPED
+3. `[HYP]` pay.n26.com — Stripe key recoverable / passthrough abuse | class AUTH | conf 45 | pure Stripe passthrough on `/v1/*`; web-bundle key search clean 3/3 | verify: restricted key → `GET /v1/balance` | AUTH_HELPED
+
+**STEP 4 — SELF-CRITIQUE**
+- All three ≥40 and AUTH_HELPED with concrete verify steps → retained; no endpoint-map-only entries.
+- CBPII SSRF downgraded: do NOT claim pre-auth SSRF (2026-10-01 evidence: 4 TPP-Redirect legs byte-identical pre-auth).
+- Patched: removed the false "report draft exists" premise; deliverable now marked MISSING.
+
+**STEP 5 — NEXT**
+`[NEXT] HUMAN` — single consolidated coordinator request, itemized: (a) PSD2 sandbox/test TPP creds + redirect context for `xs2a.tech26.de` CBPII OAuth flow (never target 169.254.169.254 on prod); (b) valid legacy Bearer token (`api/beta-api/sapi.tech26.de`) for cross-account isolation on `/api/accounts/**`, `/api/statements/**`; (c) read-only Stripe restricted key for `GET https://pay.n26.com/v1/balance`. Also: regenerate/delete the missing `reports/report-draft-n26.md` claim.
+
+**STEP 6 — LEARNING**
+- `[LEARN] ACCEPTED OTHER @ reports/report-draft-n26.md`: KB "written/verified" was false; artifact never existed. Harden: glob the deliverable before referencing it.
+- `[LEARN] ACCEPTED OTHER @ process`: 20+ zero-delta anonymous cycles, 0 validated bugs, empty cross-model output ⇒ convergence; re-probing identical `401|211` is stopped.
+- `[LEARN] REJECTED AUTH @ xs2a.tech26.de/oauth2/authorize`: pre-auth SSRF via `TPP-Redirect-URI` rejected (header not processed pre-auth); post-auth only.
+
+**STEP 7 — RISK**
+N26 Bank AG: **40** (unchanged) — all candidates AUTH_HELPED, zero accepted-impact; blocker is credential supply, not test coverage.
+
+The engagement has converged: anonymous surface is exhausted and every viable lead is credential-gated. The only productive move is the STEP 5 coordinator request. Want me to draft that request message, or reconstruct the missing `reports/report-draft-n26.md` from the KB?

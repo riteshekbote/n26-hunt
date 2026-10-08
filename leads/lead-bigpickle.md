@@ -10220,3 +10220,4 @@ reasoning: GET-scoped wildcard middleware on /api/accounts/** and /api/statement
 evidence_needed: Valid Bearer token for legacy N26 v1 realm; successful cross-account read of resource not owned by token.
 verify_steps: (1) With valid legacy Bearer token, GET https://api.tech26.de/api/accounts/{owned_id}/statements (baseline). (2) Same token, GET https://api.tech26.de/api/accounts/{different_id}/statements (differential). (3) Repeat on beta-api.tech26.de and sapi.tech26.de (read-only).
 [LEARN] ACCEPTED OTHER @ tooling: api.hackertarget.com/hostsearch returns 200 and is now the working passive-DNS fallback (certspotter 410 Gone, crt.sh 502, otx 429, grep.app 429, github code-search 401): 30 tech26.de + 25 n26.com names, zero new vs KB baseline (names cross-checked against brace-exp
+## 2026-10-08 22:46:16 UTC [target] (model bigpickle)
