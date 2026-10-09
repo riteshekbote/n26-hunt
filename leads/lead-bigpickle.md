@@ -10481,3 +10481,13 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED OATH @ xs2a.tech26.de: re-proved TPP-Redirect-URI header reaches app layer (`401|0`, identical md5) while a query-string internal literal on the same path is cut at ALB (`403|520`) — the control is field-scoped, not request-scoped
 [LEARN] ACCEPTED MISCONFIG @ api.tech26.de: GET-scoped wildcard middleware re-confirmed live/fabricated byte-identical `401|211` md5 `d58528c9` — gate cannot be used as an existence oracle
 [RISK] n26: 92 — four PASSIVE-VERIFIED HIGH findings open (xs2a mTLS optional / redirect_uri filter / AWB SSRF bypass; api GET-scoped wildcard gate), plus three AUTH_HELPED CRITICAL hypotheses (api BOLA, pay Stripe BOLA, xs2a CBPII SSRF) blocked solely on coordinator credential supply; anonymous surface otherwise frozen 19+ days with no new CT or probe delta.
+## 2026-10-09 21:26:23 UTC [target] (model bigpickle)
+[HYP] <title>
+class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
+asset: <host/endpoint>
+confidence: <0-100>
+reasoning: <facts only>
+evidence_needed: <what proves it>
+verify_steps: <passive-first concrete HTTP requests>
+impact: <what attacker gets + severity>
+testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
