@@ -10466,3 +10466,18 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED OATH @ xs2a.tech26.de: re-proved TPP-Redirect-URI header reaches app layer (`401|0`, identical md5) while a query-string internal literal on the same path is cut at ALB (`403|520`) — the control is field-scoped, not request-scoped
 [LEARN] ACCEPTED MISCONFIG @ api.tech26.de: GET-scoped wildcard middleware re-confirmed live/fabricated byte-identical `401|211` md5 `d58528c9` — gate cannot be used as an existence oracle
 [RISK] n26: 92 — four PASSIVE-VERIFIED HIGH findings open (xs2a mTLS optional / redirect_uri filter / AWB SSRF bypass; api GET-scoped wildcard gate), plus three AUTH_HELPED CRITICAL hypotheses (api BOLA, pay Stripe BOLA, xs2a CBPII SSRF) blocked solely on coordinator credential supply; anonymous surface otherwise frozen 19+ days with no new CT or probe delta.
+## 2026-10-09 16:49:33 UTC [target] (model bigpickle)
+testability: AUTH_HELPED
+[PARKED] xs2a.tech26.de CBPII SSRF: confidence 85 but AUTH_HELPED — header reachability confirmed, exploitation needs valid CBPII consent+Bearer (coordinator)
+[PARKED] api.tech26.de family BOLA: confidence 92 but AUTH_HELPED — gate fully characterized; needs paired-device grant
+[PARKED] pay.n26.com Stripe BOLA: confidence 85 but AUTH_HELPED — needs N26-issued Stripe secret key
+[FINAL] xs2a.tech26.de production XS2A API mTLS enforcement optional with empty CA list — PASSIVE VERIFIED (95)
+[FINAL] api.tech26.de legacy Bearer-gated gate is GET-scoped wildcard middleware — PASSIVE VERIFIED (95)
+[FINAL] xs2a.tech26.de OAuth2 redirect_uri ALB filter query-string-scoped (header bypasses to app layer) — PASSIVE VERIFIED (90)
+[FINAL] AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo — PASSIVE VERIFIED (85)
+[NEXT] HUMAN: put one consolidated decision to the coordinator for three bounded asks — (1) one N26 test account + paired-device grant (api.tech26.de BOLA), (2) one N26-issued Stripe `sk_live` (pay.n26.com BOLA), (3) one CBPII consent + Bearer token (xs2a.tech26.de SSRF). All three are fully characterized and blocked only on credentials.
+[LEARN] REJECTED MISCONFIG @ flags.n26.com: app bundle rotated `client.ae5f81a2.js`→`client.585427aa.js` but Statsig key unchanged (`client-OulnFN…`); `/v1/evaluate`+`/v1/get_configs` default-deny `403|19` md5 `9800212…` — key path exhausted, premise dead
+[LEARN] ACCEPTED OTHER @ app.n26.com: bundle manifest is 11 chunks; hash rotation does not alter the embedded public client key — client-side key extraction is a one-time INFO primitive, not a live vector
+[LEARN] ACCEPTED OATH @ xs2a.tech26.de: re-proved TPP-Redirect-URI header reaches app layer (`401|0`, identical md5) while a query-string internal literal on the same path is cut at ALB (`403|520`) — the control is field-scoped, not request-scoped
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: GET-scoped wildcard middleware re-confirmed live/fabricated byte-identical `401|211` md5 `d58528c9` — gate cannot be used as an existence oracle
+[RISK] n26: 92 — four PASSIVE-VERIFIED HIGH findings open (xs2a mTLS optional / redirect_uri filter / AWB SSRF bypass; api GET-scoped wildcard gate), plus three AUTH_HELPED CRITICAL hypotheses (api BOLA, pay Stripe BOLA, xs2a CBPII SSRF) blocked solely on coordinator credential supply; anonymous surface otherwise frozen 19+ days with no new CT or probe delta.
