@@ -10717,3 +10717,40 @@ testability: PASSIVE
 [NEXT] HUMAN: stop passive cycles. All three FINAL hypotheses are AUTH_HELPED/PASSIVE but require coordinator-supplied artifacts; no anonymous avenue remains.
 [LEARN] REJECTED OTHER @ self: 27+ consecutive NO_DELTA cycles on an unchanged surface is the signal — the loop is out of information, not the target out of surface.
 [RISK] N26 Bank AG: 96/100 — xs2a production PSD2 mTLS optional + CBPII SSRF + ALB redirect blocklist bypass; api.tech26.de token BOLA breadth; all gated on credentials.
+## 2026-10-10 18:16:49 UTC [target] (model bigpickle)
+[HYP] <title>
+class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
+asset: <host/endpoint>
+confidence: <0-100>
+reasoning: <facts only>
+evidence_needed: <what proves it>
+verify_steps: <passive-first concrete HTTP requests>
+impact: <what attacker gets + severity>
+testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
+[HYP] api.tech26.de Bearer-gated BOLA across /api/accounts/**
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{statements,addresses,cards,bookings}
+confidence: 92
+reasoning: gate is GET-scoped wildcard middleware — fabricated `/api/accounts/1/zzqnotreal` returns byte-identical `401|211 md5=d58528c924dad2fde9c30f81972e0548` to live routes across `{api,beta-api,sapi}` (re-verified this cycle); no route-existence oracle; identical error body to `/statements`.
+evidence_needed: a second test-account Bearer returning another account's objects (cross-tenant).
+verify_steps: (1) `GET /api/addresses` with owner token → capture shape; (2) `GET /api/accounts/{other-id}/statements` with owner token; (3) diff; (4) repeat on `beta-api`/`sapi`.
+impact: cross-tenant PII/financial data read — CRITICAL.
+testability: AUTH_HELPED
+[HYP] xs2a.tech26.de CBPII SSRF via TPP-Redirect-URI header
+class: SSRF
+asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
+confidence: 85
+reasoning: ALB redirect-target blocklist is field-scoped to the query string (non-parsing substring matcher: `https://127.0.0.1@evil.example/`→`403 awselb`, `https://evil.example@127.0.0.1/`→`401`), while the `TPP-Redirect-URI` header reaches the app layer (`401|0 istio-envoy`); AS performs zero pre-auth `TPP-Redirect-*` discrimination (4 legs byte-identical md5 `d41d8cd9`).
+evidence_needed: a `302`/outbound fetch to `169.254.169.254` after obtaining a CBPII consent + Bearer token.
+verify_steps: `POST /v1/berlin-group/v1/consents/confirmation-of-funds` with `Authorization: Bearer`, `TPP-Redirect-Preferred: true`, `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/iam/security-credentials/`; observe `scaRedirect`/status link.
+impact: cloud metadata / IAM credential access — HIGH.
+testability: AUTH_HELPED
+[HYP] xs2a.tech26.de optional mTLS (empty CA list) — PSD2 RTS violation
+class: MISCONFIG
+asset: xs2a.tech26.de:443
+confidence: 78
+reasoning: TLS `CertificateRequest` carries empty `certificate_authorities`; no `fail_if_no_peer_cert` observed; handshake completes without a client cert yet app layer still returns `401` for all replay legs (control absent, no auth bypass).
+evidence_needed: handshake completing with no client cert followed by any non-`401` at the application layer.
+verify_steps: `openssl s_client -connect xs2a.tech26.de:443` (no cert) and replay a live Berlin-Group path; compare with a valid-QWAC handshake.
+impact: regulatory (PSD2 Art.94(5), EBA RTS 2018/389, Berlin Group IG §3) weakening of the TPP auth boundary — HIGH (reportable, not an auth bypass).
+testability: PASSIVE
