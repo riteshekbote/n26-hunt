@@ -10754,3 +10754,103 @@ evidence_needed: handshake completing with no client cert followed by any non-`4
 verify_steps: `openssl s_client -connect xs2a.tech26.de:443` (no cert) and replay a live Berlin-Group path; compare with a valid-QWAC handshake.
 impact: regulatory (PSD2 Art.94(5), EBA RTS 2018/389, Berlin Group IG §3) weakening of the TPP auth boundary — HIGH (reportable, not an auth bypass).
 testability: PASSIVE
+## 2026-10-10 21:56:16 UTC [target] (model bigpickle)
+[HYP] <title>
+class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
+asset: <host/endpoint>
+confidence: <0-100>
+reasoning: <facts only>
+evidence_needed: <what proves it>
+verify_steps: <passive-first concrete HTTP requests>
+impact: <what attacker gets + severity>
+testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
+[HYP] <title>
+class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
+asset: <host/endpoint>
+confidence: <0-100>
+reasoning: <facts only>
+evidence_needed: <what proves it>
+verify_steps: <passive-first concrete HTTP requests>
+impact: <what attacker gets + severity>
+testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
+[HYP] <title>
+class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
+asset: <host/endpoint>
+confidence: <0-100>
+reasoning: <facts only>
+evidence_needed: <what proves it>
+verify_steps: <passive-first concrete HTTP requests>
+impact: <what attacker gets + severity>
+testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
+[HYP] api.tech26.de Bearer-gated BOLA across /api/accounts/**
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{statements,addresses,cards,bookings}
+confidence: 92
+reasoning: gate is GET-scoped wildcard middleware — fabricated `/api/accounts/1/zzqnotreal` returns byte-identical `401|211 md5=d58528c924dad2fde9c30f81972e0548` to live routes across `{api,beta-api,sapi}` (re-verified this cycle); no route-existence oracle; identical error body to `/statements`.
+evidence_needed: a second test-account Bearer returning another account's objects (cross-tenant).
+verify_steps: (1) `GET /api/addresses` with owner token → capture shape; (2) `GET /api/accounts/{other-id}/statements` with owner token; (3) diff; (4) repeat on `beta-api`/`sapi`.
+impact: cross-tenant PII/financial data read — CRITICAL.
+testability: AUTH_HELPED
+[HYP] xs2a.tech26.de CBPII SSRF via TPP-Redirect-URI header
+class: SSRF
+asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
+confidence: 85
+reasoning: ALB redirect-target blocklist is field-scoped to the query string (non-parsing substring matcher: `https://127.0.0.1@evil.example/`→`403 awselb`, `https://evil.example@127.0.0.1/`→`401`), while the `TPP-Redirect-URI` header reaches the app layer (`401|0 istio-envoy`); AS performs zero pre-auth `TPP-Redirect-*` discrimination (4 legs byte-identical md5 `d41d8cd9`).
+evidence_needed: a `302`/outbound fetch to `169.254.169.254` after obtaining a CBPII consent + Bearer token.
+verify_steps: `POST /v1/berlin-group/v1/consents/confirmation-of-funds` with `Authorization: Bearer`, `TPP-Redirect-Preferred: true`, `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/iam/security-credentials/`; observe `scaRedirect`/status link.
+impact: cloud metadata / IAM credential access — HIGH.
+testability: AUTH_HELPED
+[HYP] xs2a.tech26.de optional mTLS (empty CA list) — PSD2 RTS violation
+class: MISCONFIG
+asset: xs2a.tech26.de:443
+confidence: 78
+reasoning: TLS `CertificateRequest` carries empty `certificate_authorities`; no `fail_if_no_peer_cert` observed; handshake completes without a client cert yet app layer still returns `401` for all replay legs (control absent, no auth bypass).
+evidence_needed: handshake completing with no client cert followed by any non-`401` at the application layer.
+verify_steps: `openssl s_client -connect xs2a.tech26.de:443` (no cert) and replay a live Berlin-Group path; compare with a valid-QWAC handshake.
+impact: regulatory (PSD2 Art.94(5), EBA RTS 2018/389, Berlin Group IG §3) weakening of the TPP auth boundary — HIGH (reportable, not an auth bypass).
+testability: PASSIVE
+[NEW] api.tech26.de — 3 previously-unrecorded gated exact GET routes: `/api/login`, `/api/transfers`, `/api/referrals` → `401|211 md5 d58528c924dad2fde9c30f81972e0548`, byte-identical to `/api/me`/`/api/addresses`/`/api/spaces`, replicated on `{api,beta-api,sapi}`; fabricated `/api/zzqnotreal` and `/api/login/zzqnotreal` → `404|0` (exact-match, not wildcard gate). Top-level `/api/transfers` is distinct from the known nested `/api/accounts/{id}/transfers`.
+[NEW] api.tech26.de origin = Tomcat/Spring Boot: overlong UTF-8 `%c0%ae` → Tomcat `HTTP Status 400 – Bad Request` page; matrix `;` → app RFC7807 `{"status":400,"type":"invalid_request","detail":"bad_request"}`; gated routes are Envoy-fronted `application/problem+json`.
+[NEW] api.tech26.de edge WAF (ALB path-traversal block): literal `..`, `%2e%2e`, `%252e%252e`, `.%2e`, `%2e.`, `..%5c` → `403|118 Server: awselb/2.0`; `%00` and `%u002e` → `400|122`; `/management/health` → `200|0` Envoy health-check filter (`x-envoy-upstream-healthchecked-cluster`), not actuator.
+[CHANGED] "probe surface frozen since 2026-09-18" is now FALSE — first new api.tech26.de observables in 22 days.
+[CHANGED] triage feeder still dead — `UnknownError ref err_6024e44f`, run `2026-10-10-19-30`; no verdicts/leads.
+[PRIO] api.tech26.de,7.45,attack_surface=8,business_value=10,tech_exposure=8,gate_ease=3,cloud_surface=6,freshness=7
+[PRIO] xs2a.tech26.de,6.85,attack_surface=7,business_value=9,tech_exposure=7,gate_ease=4,cloud_surface=7,freshness=5
+[PRIO] pay.n26.com,5.30,attack_surface=4,business_value=8,tech_exposure=6,gate_ease=2,cloud_surface=7,freshness=4
+[HYP] api.tech26.de Bearer-gated BOLA across extended legacy namespace
+class: IDOR
+asset: api.tech26.de /api/{login,transfers,referrals,spaces,me,addresses} + /api/accounts/**, /api/statements/**
+confidence: 92
+reasoning: exact-match gated set now = /api/{me,addresses,spaces,login,transfers,referrals} + /api/{accounts,statements}, all `401|211 md5 d58528c924…` uniform across missing/fake Bearer; fabricated sibling `404|0`; identical on {api,beta-api,sapi}. Gate is coarse namespace, not per-object.
+evidence_needed: one second-account Bearer returning another account's object (cross-tenant) — e.g. `GET /api/accounts/{other}/statements`.
+verify_steps: (1) `GET /api/addresses` with owner token; (2) `GET /api/transfers` and `/api/accounts/{other}/transfers` with owner token; (3) diff ownership; (4) repeat on beta-api/sapi.
+impact: cross-tenant PII / account / transfer data read — CRITICAL.
+testability: AUTH_HELPED
+[HYP] xs2a.tech26.de CBPII SSRF via TPP-Redirect-URI header
+class: SSRF
+asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
+confidence: 85
+reasoning: ALB redirect-target blocklist is query-string-scoped; `TPP-Redirect-URI` header reaches the AS (`401|0 istio-envoy`); AS does zero pre-auth `TPP-Redirect-*` discrimination (4 legs byte-identical md5 `d41d8cd9`).
+evidence_needed: `302`/outbound fetch to `169.254.169.254` after a CBPII consent + Bearer token.
+verify_steps: `POST` CBPII consent with `Authorization: Bearer`, `TPP-Redirect-Preferred: true`, `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/iam/security-credentials/`; observe `scaRedirect`.
+impact: cloud metadata / IAM credential access — HIGH.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe passthrough BOLA
+class: IDOR
+asset: pay.n26.com
+confidence: 60
+reasoning: Stripe passthrough key-gated; no-key `401` len=342 vs fake-key len=132 — distinct boundaries, no anonymous object route.
+evidence_needed: a Stripe `sk_live` or test key to query objects cross-tenant.
+verify_steps: replay `/v1/*` object routes with a scoped key; test key prefix `pk_live` vs `sk_live` discrimination.
+impact: cross-tenant payment/charge object read — HIGH.
+testability: AUTH_HELPED
+[PARKED] api.tech26.de BOLA: AUTH_HELPED — no cross-tenant Bearer available; now 6 exact + 2 wildcard gated entries on record.
+[PARKED] xs2a.tech26.de CBPII SSRF: AUTH_HELPED — needs CBPII consent + token.
+[PARKED] pay.n26.com Stripe BOLA: AUTH_HELPED — needs `sk_live`.
+[FINAL] 1) xs2a.tech26.de optional mTLS (empty `certificate_authorities`, handshake completes without client cert) — PASSIVE, conf 78, PSD2 Art.94(5) / EBA RTS 2018/389 / Berlin Group IG §3 reportable MISCONFIG (HIGH).
+[FINAL] 2) api.tech26.de GET-scoped wildcard gate (conf 95) and AWB-wide userinfo SSRF-filter bypass (conf 85) — PASSIVE-verified, informational-to-medium.
+[NEXT] PROBE: `GET https://api.tech26.de/api/{transfer,recipients,pockets,referral,card,cards,beneficiary,beneficiaries,document,documents,consent,consents,customer,profile,settings,limits,tan,device,key}` recording `401|211 md5 d58528c924…` vs `404|0`, to finish the gated exact-route map started this cycle.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de/{actuator,management,swagger}: all `404|0`; `/management/health` is an Envoy health-check reply (`200|0`, `x-envoy-upstream-healthchecked-cluster`), not Spring actuator — close that branch.
+[LEARN] ACCEPTED OTHER @ api.tech26.de: the GET-scoped gate normalizes `//`, `/./`, `%61`, `%6d`, `%2f` before matching and the ALB blocks dot-segment traversal (`403|118 awselb`); path-normalization is NOT a gate bypass — close the axis.
+[LEARN] ACCEPTED OTHER @ process: "surface frozen 19+ days" was an artifact of re-probing one boundary; a new dictionary with a valid 401-vs-404 oracle yielded 3 new endpoints in a single cycle.
+[RISK] n26: 55 — highest-value paths (api.tech26.de BOLA, xs2a SSRF/mTLS) are AUTH_HELPED/PASSIVE and credential-gated, so no anonymous exploitable avenue; feeder dead >18 runs blocks automated validation; bank-grade edge normalization/WAF is robust.
