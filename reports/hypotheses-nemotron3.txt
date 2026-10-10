@@ -1,8 +1,10 @@
-## 2026-10-10 01:13:43 UTC [target] (model nemotron3)
-[PRIO] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds,9.0,attack_surface=10,business_value=10,tech_exposure=8,gate_ease=2,cloud_surface=9,freshness=5
-[PRIO] api.tech26.de/api/accounts/**,8.5,attack_surface=9,business_value=10,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=5
-[PRIO] pay.n26.com/v1/payments,8.0,attack_surface=8,business_value=10,tech_exposure=6,gate_ease=2,cloud_surface=7,freshness=5
-[HYP] xs2a.tech26.de CBPII SSRF via TPP-Redirect-URI header
+## 2026-10-10 07:14:42 UTC [target] (model nemotron3)
+[PRIO] xs2a.tech26.de,8.5,attack_surface=9,business_value=10,tech_exposure=8,gate_ease=7,cloud_surface=9,freshness=3
+[PRIO] api.tech26.de,8.3,attack_surface=9,business_value=9,tech_exposure=7,gate_ease=6,cloud_surface=8,freshness=3
+[PRIO] pay.n26.com,8.1,attack_surface=8,business_value=10,tech_exposure=6,gate_ease=5,cloud_surface=7,freshness=3
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.2,attack_surface=7,business_value=8,tech_exposure=9,gate_ease=4,cloud_surface=8,freshness=2
+[PRIO] engagementplatform.n26.com,6.8,attack_surface=6,business_value=7,tech_exposure=5,gate_ease=4,cloud_surface=6,freshness=2
+[HYP] xs2a.tech26.de CBPII consent flow SSRF via TPP-Redirect-URI header to cloud metadata
 class: SSRF
 asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
 confidence: 85
@@ -29,7 +31,7 @@ evidence_needed: Valid N26-issued Stripe sk_live secret key (AUTH_HELPED) to tes
 verify_steps: With valid sk_live: GET /v1/payments?limit=10 → 200? (list payments); GET /v1/charges/{id} → 200? (charge details); GET /v1/customers/{id} → 200? (customer PII); test cross-account access via payment_intent/customer IDs
 impact: Full payment history, charge details, customer PII, refund capability — core banking, CRITICAL
 testability: AUTH_HELPED
-[PARKED] xs2a.tech26.de CBPII SSRF via TPP-Redirect-URI header: Blocked on coordinator supplying valid CBPII consent + Bearer token; no anonymous path to consent creation exists; passive characterization complete
+[PARKED] xs2a.tech26.de CBPII consent flow SSRF via TPP-Redirect-URI header: Blocked on coordinator supplying valid CBPII consent + Bearer token; no anonymous path to consent creation exists; passive characterization complete
 [PARKED] api.tech26.de family BOLA across 15 legacy Bearer-gated endpoints: Blocked on coordinator supplying paired-device grant token; gate fully characterized as GET-scoped wildcard middleware; no anonymous bypass
 [PARKED] pay.n26.com Stripe-forwarded payment API BOLA with valid sk_live: Blocked on coordinator supplying N26-issued Stripe sk_live; key discovery exhausted across 3 corpora; pure Stripe passthrough confirmed
 [FINAL] 1. api.tech26.de BOLA (92) — highest confidence, broadest PII blast radius
