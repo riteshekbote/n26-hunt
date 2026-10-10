@@ -1333,3 +1333,4 @@
 - 2026-10-10 ACCEPTED OTHER @ app.n26.com: bundle manifest is 11 chunks; hash rotation does not alter the embedded public client key — client-side key extraction is a one-time INFO primitive, not a live vector
 - 2026-10-10 ACCEPTED OATH @ xs2a.tech26.de: re-proved TPP-Redirect-URI header reaches app layer (`401|0`, identical md5) while a query-string internal literal on the same path is cut at ALB (`403|520`) — the control is field-scoped, not request-scoped
 - 2026-10-10 ACCEPTED MISCONFIG @ api.tech26.de: GET-scoped wildcard middleware re-confirmed live/fabricated byte-identical `401|211` md5 `d58528c9` — gate cannot be used as an existence oracle
+- 2026-10-10 REJECTED OTHER @ self: 27+ consecutive NO_DELTA cycles on an unchanged surface is the signal — the loop is out of information, not the target out of surface.

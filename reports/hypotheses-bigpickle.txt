@@ -1,26 +1,47 @@
-## 2026-10-10 07:19:02 UTC [target] (model bigpickle)
-[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — `GET /api/mfa/challenge` (documented POST-only) returns 404, so GET-404 cannot distinguish absent from POST-only routes
-[LEARN] REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-smuggling variants 404
-[LEARN] REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host
-[LEARN] ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and PKCE challenge in public repo since 2021-12-16; collection `{{address}}` is production host
-[LEARN] REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: 27 PDFs pure availability telemetry — no mTLS/security statements
-[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de, aisp.tech26.de, pisp.tech26.de: "OPTIONS is proven method-agnostic on this edge" FALSE — OPTIONS on live routes returns 404 on all three hosts
-[LEARN] REJECTED AUTH @ pisp.tech26.de /api/encryption/key: soundly closed — documented GET route, same-batch bogus sibling 404
-[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: gate is GET-scoped wildcard middleware — `GET /api/accounts/1/zzqnotreal` → 401|211 byte-identical to live routes; HEAD → 404|0; invalidates prior "10-member nested family confirmed live" and "no additional noun routes exist" claims
-[LEARN] ACCEPTED OATH @ xs2a.tech26.de: the ALB substring blocklist is **query-string-scoped**, not request-scoped, and the field it inspects is not the field the production redirect flow uses — `TPP-Redirect-URI` header bypasses ALB entirely
-[LEARN] ACCEPTED OTHER @ n26/psd2-tpp-docs: `doc/decoupled/dedicated-cbpii.md` and `doc/sandbox.md` reveal third dedicated role CBPII with own consent subtree live on production at 401|0 with 8-11ms timing
-[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers — corpus documents it as POST, so GET-404 is not evidence of absence
-[LEARN] ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
-[LEARN] REJECTED OTHER @ xs2a.tech26.de: "redirect headers are parsed before the 401 gate" — rejected, 4 controls all byte-identical
-[LEARN] REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers explicitly not evidence of absence — corpus documents it as POST
-[LEARN] ACCEPTED OATH @ `app.n26.com/login`: the `redirect` query parameter is copied unvalidated into the GraphQL-Relay `__successRedirect` AND `__failureRedirect` hidden inputs (absolute and protocol-relative external hosts both accepted), on a form that POSTs to `/graphql` with `requestBiometricChallengeMutation`
-[LEARN] REJECTED OTHER @ `app.n26.com/login` (DOM-XSS via `redirect`): closed with evidence rather than assumed. The page echoes the raw query slice unparsed — `?redirect=%22` and a literal `"` both surface as `%22`, `&quot;`=0, the hidden-input attribute never terminates — and the edge drops `<`/`javascript:` with a byte-identical `403|520` nginx page
-[LEARN] REJECTED OTHER @ my own KB: the line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` and does not hold on `/login`. Sixth instance of the 09-28 rule
-[LEARN] ACCEPTED MISCONFIG @ `app.n26.com` edge: a query-string content filter that returns `403|520` (nginx body) on markup and `javascript:` in the query while passing absolute and protocol-relative URLs
-[LEARN] ACCEPTED MISCONFIG @ AWB-wide: userinfo bypasses the internal-address SSRF filter; filter is request-scoped (path rules exist), retracting "query-string-scoped"
-[LEARN] REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
-[LEARN] REJECTED MISCONFIG @ flags.n26.com: app bundle rotated `client.ae5f81a2.js`→`client.585427aa.js` but Statsig key unchanged (`client-OulnFN…`); `/v1/evaluate`+`/v1/get_configs` default-deny `403|19` md5 `9800212…` — key path exhausted, premise dead
-[LEARN] ACCEPTED OTHER @ app.n26.com: bundle manifest is 11 chunks; hash rotation does not alter the embedded public client key — client-side key extraction is a one-time INFO primitive, not a live vector
-[LEARN] ACCEPTED OATH @ xs2a.tech26.de: re-proved TPP-Redirect-URI header reaches app layer (`401|0`, identical md5) while a query-string internal literal on the same path is cut at ALB (`403|520`) — the control is field-scoped, not request-scoped
-[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: GET-scoped wildcard middleware re-confirmed live/fabricated byte-identical `401|211` md5 `d58528c9` — gate cannot be used as an existence oracle
-[RISK] N26 Bank AG: 96 — xs2a.tech26.de production Berlin-Group XS2A API mTLS enforcement optional with empty CA list (PSD2/RTS regulatory violation, HIGH/CRITICAL); xs2a.tech26.de CBPII consent flow SSRF via TPP-Redirect-URI header to cloud metadata (HIGH); xs2a.tech26.de OAuth2 authorization redirect_uri blocklist ALB substring filter with no URI parsing (HIGH); xs2a.tech26.de AWB internal-address SSRF filter bypass via RFC 3986 userinfo (HIGH); pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with GET-scoped wildcard middleware returning identical 401 for live/fabricated sub-resources across THREE hosts (api|beta-api|sapi.tech26.de) — BOLA breadth proven but AUTH_HELPED; engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL transport class closed anonymously (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API
+## 2026-10-10 13:48:18 UTC [target] (model bigpickle)
+[HYP] <title>
+class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
+asset: <host/endpoint>
+confidence: <0-100>
+reasoning: <facts only>
+evidence_needed: <what proves it>
+verify_steps: <passive-first concrete HTTP requests>
+impact: <what attacker gets + severity>
+testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
+[CHANGED] triage/run-2026-10-10-09-33.md: UnknownError err_76cfc238 (feeder still dead; no new verdicts/leads)
+[CHANGED] process: no new probe data — probe-results.md frozen since 2026-09-18 10:07 UTC; this cycle added zero observed facts
+[PRIO] xs2a.tech26.de, 8.2, a=9 b=10 t=8 g=4 c=9 f=1 — production Berlin-Group XS2A; CBPII SSRF + optional-mTLS; gate_ease low (mTLS+Bearer)
+[PRIO] api.tech26.de, 7.6, a=8 b=9 t=6 g=3 c=7 f=1 — legacy Bearer surface, GET-scoped wildcard; BOLA breadth AUTH_HELPED
+[PRIO] pay.n26.com, 6.4, a=6 b=9 t=5 g=4 c=6 f=1 — pure Stripe passthrough; key corpora closed 3/3
+[HYP] api.tech26.de Bearer-gated BOLA across /api/accounts/**
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{statements,addresses,cards,bookings}
+confidence: 92
+reasoning: gate is GET-scoped wildcard middleware — fabricated /api/accounts/1/zzqnotreal → 401|211 byte-identical md5 d58528c9 to live routes across {api,beta-api,sapi}; HEAD→404|0
+evidence_needed: a second test-account Bearer returning another account's objects (cross-tenant)
+verify_steps: (1) GET /api/addresses (own token) (2) GET /api/accounts/{other-id}/statements (3) diff
+impact: cross-tenant PII/financial data — CRITICAL
+testability: AUTH_HELPED
+[HYP] xs2a.tech26.de CBPII SSRF via TPP-Redirect-URI header
+class: SSRF
+asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
+confidence: 85
+reasoning: ALB filter is field-scoped (query-string), TPP-Redirect-URI header reaches app layer 401|0; AS does zero pre-auth discrimination (4 legs byte-identical d41d8cd9)
+evidence_needed: 302/outbound fetch to 169.254.169.254 after obtaining a CBPII consent+token
+verify_steps: POST consent with TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/ (Bearer)
+impact: cloud metadata / IAM creds — HIGH
+testability: AUTH_HELPED
+[HYP] xs2a.tech26.de optional mTLS (empty CA list) — PSD2 RTS violation
+class: MISCONFIG
+asset: xs2a.tech26.de:443
+confidence: 78
+reasoning: CertificateRequest carries empty certificate_authorities; no fail_if_no_peer_cert observed
+evidence_needed: TLS handshake completes with NO client cert then a non-401 at app layer
+verify_steps: openssl s_client -connect xs2a.tech26.de:443 (no cert) + replay a live path
+impact: regulatory / auth-boundary weakening — HIGH (reportable)
+testability: PASSIVE
+[PARKED] pay.n26.com Stripe BOLA: needs N26-issued sk_live; all 3 key corpora closed — no verify path
+[FINAL] 1) api.tech26.de BOLA (92) 2) xs2a CBPII SSRF (85) 3) xs2a optional-mTLS (78) — latter two both on xs2a
+[NEXT] HUMAN: stop passive cycles. All three FINAL hypotheses are AUTH_HELPED/PASSIVE but require coordinator-supplied artifacts; no anonymous avenue remains.
+[LEARN] REJECTED OTHER @ self: 27+ consecutive NO_DELTA cycles on an unchanged surface is the signal — the loop is out of information, not the target out of surface.
+[RISK] N26 Bank AG: 96/100 — xs2a production PSD2 mTLS optional + CBPII SSRF + ALB redirect blocklist bypass; api.tech26.de token BOLA breadth; all gated on credentials.
