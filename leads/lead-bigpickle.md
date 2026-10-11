@@ -11035,3 +11035,44 @@ evidence_needed: none — PASSIVE-verified this cycle.
 verify_steps: replay root ± fabricated suffix/child on any sibling host; observe the 404-vs-401 dichotomy.
 impact: correct route map (mis-reporting prevention); no anonymous leak found inside roots — gate is protective.
 testability: PASSIVE
+## 2026-10-11 13:35:36 UTC [target] (model bigpickle)
+class: IDOR
+asset: api.tech26.de/api/accounts/*, api.tech26.de/api/transfers, api.tech26.de/api/referrals, beta-api.tech26.de, sapi.tech26.de
+confidence: 92
+reasoning: 18-endpoint flat GET-only family (8 base: /api/me, /api/statements, /api/accounts, /api/addresses, /api/login, /api/transfers, /api/referrals, /api/accounts/1 + 10 nested under /api/accounts/{id}/) all return 401 len=211 byte-identical invalid_token; gate is GET-scoped wildcard middleware — fabricated /api/accounts/1/zzqnotreal returns 401|211 identical to live routes; ID-independent prefix firewall stable across api/beta-api/sapi.tech26.de; nested routes include statements, addresses, cards, bookings, beneficiaries, devices, limits, cosmetics, transfers, approvals, TANs; method-gating confirmed: HEAD/OPTIONS/POST → 404 on same paths; versioned /api/v1/* family returns 404 (versioning drops gate); 3 new endpoints (/api/login, /api/transfers, /api/referrals) expand PII blast radius
+evidence_needed: Valid paired-device grant token (AUTH_HELPED) to test cross-account access
+verify_steps: With valid Bearer: GET /api/accounts/1/statements → 200?; GET /api/accounts/2/statements → 200? (BOLA); GET /api/accounts/1/addresses → 200?; GET /api/accounts/1/cards → 200?; GET /api/transfers → 200?; GET /api/referrals → 200?; enumerate all 10 nested routes per account ID
+impact: Cross-account PII dump (statements, addresses, cards, bookings, beneficiaries, devices, limits, cosmetics, transfers, approvals, TANs, login history, referral data); core banking data — CRITICAL
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe-forwarded payment API BOLA with valid sk_live
+class: IDOR
+asset: pay.n26.com/v1/payments, /v1/balance, /v1/charges, /v1/refunds, /v1/customers
+confidence: 85
+reasoning: 23+ Stripe-shaped endpoints uniformly return 401 len=342 (no-key) vs 401 len=132 "Invalid API Key provided: sk_live_****0000" (fake-key); host is pure Stripe API passthrough on N26 domain, no N26-side key injection; CORS-open (ACAO: *); boundary stable 11+ cycles with zero drift; key discovery closed 3/3 corpora (GitHub 401, grep.app 429, sourcegraph 0); login-bundle rotation re-grepped clean 11/11 for stripe material — key is server/mobile-only
+evidence_needed: Valid N26-issued Stripe sk_live secret key (AUTH_HELPED) to test cross-account payment data access
+verify_steps: With valid sk_live: GET /v1/payments?limit=10 → 200? (list payments); GET /v1/charges/{id} → 200? (charge details); GET /v1/customers/{id} → 200? (customer PII); test cross-account access via payment_intent/customer IDs
+impact: Full payment history, charge details, customer PII, refund capability — core banking, CRITICAL
+testability: AUTH_HELPED
+[PARKED] xs2a.tech26.de CBPII consent flow SSRF via TPP-Redirect-URI header: Blocked on coordinator supplying valid CBPII consent + Bearer token; no anonymous path to consent creation exists; passive characterization complete
+[PARKED] api.tech26.de family BOLA across 18 legacy Bearer-gated endpoints: Blocked on coordinator supplying paired-device grant token; gate fully characterized as GET-scoped wildcard middleware; no anonymous bypass
+[PARKED] pay.n26.com Stripe-forwarded payment API BOLA with valid sk_live: Blocked on coordinator supplying N26-issued Stripe sk_live; key discovery exhausted across 3 corpora; pure Stripe passthrough confirmed
+[FINAL] 1. api.tech26.de BOLA (92) — highest confidence, broadest PII blast radius (18 endpoints across 3 hosts)
+[FINAL] 2. xs2a.tech26.de CBPII SSRF (85) — cloud metadata impact, regulatory violation
+[HYP] api.tech26.de `/api/insights` is a distinct spending-insights data plane gated only by the coarse startsWith Bearer gate → cross-tenant BOLA
+class: IDOR
+asset: api.tech26.de/api/{insights,insights/*}
+confidence: 88
+reasoning: `insights`, `insights-1`, `insights-x`, `insights/me`, `insights/x/y` all `401|211 md5 d58528c9`, byte-identical across api/beta-api/sapi; singular `insight` → `404|0` proves a plural root with real backend; gate is coarse startsWith (no existence oracle inside root, identical 401 for depth-3 fabrication).
+evidence_needed: one valid paired-device grant Bearer; read `/api/insights/*` with a second account's linkage.
+verify_steps: (1) GET /api/insights with owner token → response shape (categories/targets/spending); (2) GET /api/insights/[objects] and compare cross-tenant; (3) repeat on beta-api/sapi; (4) diff against /api/accounts/{id} families.
+impact: cross-tenant spending-insights PII (categories, merchants, recurring, budgets) — HIGH, additive to the BOLA blast radius.
+testability: AUTH_HELPED
+[HYP] api.tech26.de gate = 3 EXACT + 6 PREFIX startsWith roots; `spaces/transfers/referrals` are NOT exact mounts
+class: MISCONFIG
+asset: api.tech26.de/api/*
+confidence: 95
+reasoning: `me-1/addresses-x/login-x` → 404|0 (exact); `accounts-1/accountsz/spaces-x/spaces/1/statementsx/transfers-1/referrals-x/insights-1` → 401|211 identical (prefix); singular `account/transfer/referral/insight` → 404|0; controls `zzqnotreal(-1)` → 404|0; replicated across {api,beta-api,sapi}.
+evidence_needed: none — PASSIVE-verified this cycle.
+verify_steps: replay root ± fabricated suffix/child on any sibling host; observe the 404-vs-401 dichotomy.
+impact: correct route map (mis-reporting prevention); no anonymous leak found inside roots — gate is protective.
+testability: PASSIVE
