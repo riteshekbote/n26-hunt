@@ -10854,3 +10854,4 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED OTHER @ api.tech26.de: the GET-scoped gate normalizes `//`, `/./`, `%61`, `%6d`, `%2f` before matching and the ALB blocks dot-segment traversal (`403|118 awselb`); path-normalization is NOT a gate bypass — close the axis.
 [LEARN] ACCEPTED OTHER @ process: "surface frozen 19+ days" was an artifact of re-probing one boundary; a new dictionary with a valid 401-vs-404 oracle yielded 3 new endpoints in a single cycle.
 [RISK] n26: 55 — highest-value paths (api.tech26.de BOLA, xs2a SSRF/mTLS) are AUTH_HELPED/PASSIVE and credential-gated, so no anonymous exploitable avenue; feeder dead >18 runs blocks automated validation; bank-grade edge normalization/WAF is robust.
+## 2026-10-11 00:39:31 UTC [target] (model bigpickle)
