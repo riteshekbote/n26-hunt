@@ -11368,3 +11368,55 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED MISCONFIG @ api.tech26.de: with the feeder dead, a direct 10-leg probe re-proved the KB gate map and confirmed `spaces` as the 6th prefix root (`spaces`,`spaces/1`,`spaces-x` → `401|211 md5 d58528c9`; singular `space` → `404|0`) — the gate is a protective prefix firewall, complete and not an existence oracle
 [LEARN] REJECTED OTHER @ self: a probe that reproduces the prior hypothesis byte-for-byte is not NO_DELTA noise to discard but the verification step that closes the gate-map branch — an unverified map is a claim, not a fact
 [RISK] n26:55 — no anonymous exploit found; all top hypotheses are credential-gated core-banking BOLA/SSRF with CRITICAL potential, so residual breach risk rests entirely on the AUTH_HELPED controls being tested by the coordinator, not on further anonymous probing
+## 2026-10-12 01:49:55 UTC [target] (model bigpickle)
+[HYP] <title>
+class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
+asset: <host/endpoint>
+confidence: <0-100>
+reasoning: <facts only>
+evidence_needed: <what proves it>
+verify_steps: <passive-first concrete HTTP requests>
+impact: <what attacker gets + severity>
+testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
+[NEW] api.tech26.de: dictionary-sweep of 15 candidate plural roots (`payments transactions cards documents taxes savings investments agreements postbox notifications messages support tos payments-v2`) + 9 singulars (`payment transaction card document tax agreement postbox notification message`) → all `404|0 md5 d41d8cd9`; NO new gated data plane. Gate map stands at 3 EXACT ∪ 6 PREFIX.
+[CHANGED] api.tech26.de gate matcher now fully characterized: left-anchored `startswith` for the 6 PREFIX roots (`/api/{statements,accounts,insights,transfers,referrals,spaces}XYZ` → `401|211 md5 d58528c9`; left-mismatch `/api/xyzstatements` → `404|0`) and strict equality for the 3 EXACT roots (`/api/{me,addresses,login}X` → `404|0`). `statements2`/`accounts2` are the existing planes, NOT new roots.
+[CHANGED] triage feeder still dead — `UnknownError err_a53ae1f1`, run `2026-10-11-23-08`; no verdicts/leads (19th consecutive).
+[CHANGED] three PARKED hypotheses (api BOLA, xs2a CBPII SSRF, pay.n26.com Stripe BOLA) unchanged; still credential/scope-blocked.
+[PRIO] api.tech26.de,7.1,attack_surface=9 business_value=10 tech_exposure=5 gate_ease=0 cloud=7 freshness=8
+[PRIO] xs2a.tech26.de,6.75,attack_surface=8 business_value=9 tech_exposure=7 gate_ease=2 cloud=8 freshness=6
+[PRIO] pay.n26.com,5.3,attack_surface=6 business_value=8 tech_exposure=4 gate_ease=2 cloud=7 freshness=5
+[HYP] api.tech26.de gated account-data family — BOLA/IDOR
+class: IDOR
+asset: https://api.tech26.de/api/{accounts,statements,spaces,insights,transfers,referrals}
+confidence: 88
+reasoning: 6 prefix roots + 3 exact roots all gated by a byte-identical `401|211 md5 d58528c924dad2fde9c30f81972e0548` envelope; prefix absorption and absence of an existence oracle imply an object store keyed by id behind the wildcard middleware.
+evidence_needed: authenticated Bearer for account A (paired-device grant) plus a second account's object ids; observe 200 vs 403/404 on cross-account read.
+verify_steps: `GET /api/accounts/me` then `GET /api/accounts/<other-id>` with `Authorization: Bearer <A>`; repeat for `/api/statements/<other-id>` and `/api/transfers/<other-id>`.
+impact: authentication-bypass cross-tenant read of account/transaction PII — Critical.
+testability: AUTH_HELPED
+[HYP] xs2a.tech26.de CBPII — SSRF via TPP-Redirect-URI
+class: SSRF
+asset: https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
+confidence: 85
+reasoning: ALB redirect-target filter is query-string-scoped; `TPP-Redirect-URI` header reaches the app layer (`401|0`); RFC3986 userinfo bypass `http://user@169.254.169.254/` reproduces on xs2a/api/app.
+evidence_needed: valid CBPII consent + Bearer to reach the post-auth redirect-fetch sink and observe an outbound request.
+verify_steps: create CBPII consent, call the confirmation-of-funds endpoint with `TPP-Redirect-URI: http://user@169.254.169.254/latest/meta-data/iam/security-credentials/`; watch for reflected metadata.
+impact: SSRF to cloud metadata → IAM credential theft — Critical.
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe — BOLA with live key
+class: IDOR
+asset: https://pay.n26.com
+confidence: 85
+reasoning: pure Stripe passthrough; 401 boundary stable (no-key len=342 vs fake-key len=132 `Invalid API Key provided: sk_live_****0000`); key discovery closed 3/3 corpora.
+evidence_needed: N26-issued `sk_live` key to enumerate/read foreign objects.
+verify_steps: `GET https://pay.n26.com/v1/<stripe-object>/<id>` with `Authorization: Bearer sk_live_...` and compare owner/account scope.
+impact: cross-tenant payment-object read — High/Critical.
+testability: AUTH_HELPED
+[PARKED] api.tech26.de BOLA: requires paired-device Bearer + second account (coordinator supply).
+[PARKED] xs2a.tech26.de CBPII SSRF: requires valid CBPII consent + Bearer.
+[PARKED] pay.n26.com Stripe BOLA: requires N26-issued `sk_live`.
+[FINAL] none anonymously testable this cycle; all three survivors remain credential-gated.
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) paired-device grant Bearer + second account for api.tech26.de, (b) valid CBPII consent + Bearer for xs2a.tech26.de, (c) N26-issued `sk_live` for pay.n26.com; anonymous api.tech26.de surface is now exhausted (24-root sweep NO_DELTA, gate matcher fully characterized).
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: the anonymous gate is a left-anchored `startswith` matcher — suffix is absorbed after a PREFIX root and strict equality holds for EXACT roots, so `statements2`/`accounts2` are existing planes, not new surface.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: dictionary-sweep of 24 candidate roots is NO_DELTA; the documented-noun gate map is exhaustive and endpoint-map-only output is not a finding.
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all residual value sits behind coordinator-supplied credentials, while the triage feeder remains dead (19 consecutive no-lead runs).
