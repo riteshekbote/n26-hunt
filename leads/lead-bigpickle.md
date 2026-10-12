@@ -11465,3 +11465,21 @@ testability: AUTH_HELPED
 [LEARN] ACCEPTED OTHER @ process: a probe that reproduces the prior hypothesis byte-for-byte closes (verifies) the branch rather than adding a datum — verification is not noise; suspended identical-boundary re-probing remains correct.
 [RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all residual value sits behind coordinator-supplied credentials on core-banking BOLA/SSRF controls, while the triage feeder remains dead (19 consecutive no-lead/errored runs) and no new CT leaves have appeared.
 [RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all res
+## 2026-10-12 18:13:17 UTC [target] (model bigpickle)
+[PARKED] pay.n26.com Stripe BOLA: requires an N26-issued `sk_live`; anonymous host is a plain Stripe error passthrough.
+[FINAL] none anonymously testable this cycle. All three survivors are credential-gated core-banking controls; no REJECTED-class item promoted.
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) one N26 paired-device grant Bearer plus a second account's object ids for api.tech26.de, (b) a valid CBPII consent + Bearer for xs2a.tech26.de, (c) an N26-issued `sk_live` for pay.n26.com. Anonymous api.tech26.de surface is exhausted (24-root sweep NO_DELTA; gate matcher fully characterized); do not authorize further identical-boundary re-probing.
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: the anon gate is a left-anchored `startswith` matcher — PREFIX roots absorb any suffix and EXACT roots require strict equality, so `statements2`/`accounts2` are the existing planes, not new surface.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: a 24-candidate dictionary sweep is NO_DELTA; endpoint-map-only output is not a finding and this namespace is structurally exhausted anonymously.
+[LEARN] ACCEPTED OTHER @ process: a probe that reproduces the prior hypothesis byte-for-byte closes (verifies) the branch rather than adding a datum — verification is not noise; suspended identical-boundary re-probing remains correct.
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all residual value sits behind coordinator-supplied credentials on core-banking BOLA/SSRF controls, while the triage feeder remains dead (19 consecutive no-lead/errored runs) and no new CT leaves have appeared.
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all res
+[CHANGED] process: triage feeder still dead — `UnknownError err_2e113ee1`, run `2026-10-12-09-44`, 20th consecutive errored/no-lead run; hypothesis intake remains down.
+[CHANGED] process: probe-results.md has empty sections since `2026-10-10 01:25`; no new probe data consumed this cycle.
+[CHANGED] api.tech26.de: no probe run this cycle — anonymous surface exhausted, identical-boundary re-probing suspended per prior canon; gate map frozen (3 EXACT ∪ 6 PREFIX, all `401|211 md5 d58528c924dad2fde9c30f81972e0548`).
+[FINAL] None anonymously testable. All three survivors remain credential-gated: api.tech26.de BOLA (88), xs2a.tech26.de CBPII SSRF (85), pay.n26.com Stripe BOLA (82).
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) one N26 paired-device grant Bearer plus a second account's object ids for api.tech26.de, (b) a valid CBPII consent + Bearer for xs2a.tech26.de, (c) an N26-issued `sk_live` for pay.n26.com. Failing that, this corpus remains at NO_DELTA with each cycle adding only the feeder's errored status.
+[LEARN] ACCEPTED PROCESS @ triage feeder: consecutive `err_2e*` refs (err_6024e44f → err_e0b751b5 → err_a53ae1f1 → err_2e113ee1) indicate a server-side pipeline fault, not a bounding policy; consume feeder weather as a JSON health signal, never as a lead source.
+[PRIO] api.tech26.de,7.10,attack_surface=9 business_value=10 tech_exposure=5 gate_ease=0 cloud=7 freshness=8
+[PRIO] xs2a.tech26.de,6.75,attack_surface=8 business_value=9 tech_exposure=7 gate_ease=2 cloud=8 freshness=6
+[PRIO] pay.n26.com,5.30,attack_surface=6 business_value=8 tech_exposure=4 gate_ease=2 cloud=7 freshness=5

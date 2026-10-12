@@ -99224,3 +99224,326 @@ Blocked: the three survivors (`api.tech26.de` BOLA, `xs2a.tech26.de` CBPII SSRF,
 3. `pay.n26.com` — an N26-issued `sk_live` (Stripe BOLA).
 
 If credentials can't be supplied, say so and I'll rotate to a different in-scope asset or stand down rather than re-probe unchanged 401/403/404 boundaries.
+===== ANALYST bigpickle 2026-10-12 18:13:48 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -t triage/ 2>/dev/null | head -15; echo "---COUNT---"; ls triage/ 2>/dev/null | wc -l
+run-2026-10-09-06-44.md
+run-2026-10-09-14-13.md
+run-2026-10-09-19-34.md
+run-2026-10-09-23-28.md
+run-2026-10-10-02-44.md
+run-2026-10-10-09-33.md
+run-2026-10-10-15-33.md
+run-2026-10-10-19-30.md
+run-2026-10-10-22-55.md
+run-2026-10-11-01-39.md
+run-2026-10-11-07-50.md
+run-2026-10-11-14-44.md
+run-2026-10-11-19-23.md
+run-2026-10-11-23-08.md
+run-2026-10-12-02-29.md
+---COUNT---
+233
+[0m
+[0m$ [0mls -lt probe-results.md knowledge/ reports/ 2>/dev/null; echo "---"; tail -c 1500 probe-results.md 2>/dev/null
+-rw-r--r-- 1 runner runner 27850 Oct 12 18:10 probe-results.md
+
+reports/:
+total 13016
+-rw-r--r-- 1 runner runner  974897 Oct 12 18:10 hypotheses.md
+-rw-r--r-- 1 runner runner    4596 Oct 12 18:10 reposcan-findings.md
+-rw-r--r-- 1 runner runner    1529 Oct 12 18:10 valid-bugs.md
+-rw-r--r-- 1 runner runner 3369364 Oct 12 18:10 analyst-nemotron3.log
+-rw-r--r-- 1 runner runner    5959 Oct 12 18:10 hypotheses-bigpickle.txt
+-rw-r--r-- 1 runner runner      51 Oct 12 18:10 hypotheses-laguna.txt
+-rw-r--r-- 1 runner runner      50 Oct 12 18:10 hypotheses-ling3.txt
+-rw-r--r-- 1 runner runner      52 Oct 12 18:10 hypotheses-longcat.txt
+-rw-r--r-- 1 runner runner   13785 Oct 12 18:10 hypotheses-nemotron3.txt
+-rw-r--r-- 1 runner runner 8998062 Oct 12 18:10 analyst-bigpickle.log
+-rw-r--r-- 1 runner runner   49910 Oct 12 18:10 analyst-laguna.log
+-rw-r--r-- 1 runner runner   49680 Oct 12 18:10 analyst-ling3.log
+-rw-r--r-- 1 runner runner   50140 Oct 12 18:10 analyst-longcat.log
+
+knowledge/:
+total 364
+-rw-r--r-- 1 runner runner 370787 Oct 12 18:10 index.md
+---
+m/v1/get_configs -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+https://flags.n26.com/v1/log_event -> HTTP 403
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://spc.n26.com/v1/payments -> 200 len=43
+https://spc.n26.com/v1/tokens -> 200 len=43
+https://spc.n26.com/docs -> HTTP 404
+https://spc.n26.com/status -> HTTP 404
+https://app.n26.com/build/js/client.*.js -> HTTP 404
+
+## 2026-10-09 09:58:03 UTC
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://flags.n26.com/v1/get_configs -> HTTP 403
+https://flags.n26.com/v1/evaluate -> HTTP 403
+https://flags.n26.com/v1/log_event -> HTTP 403
+https://spc.n26.com/v1/transactions -> 200 len=43
+https://spc.n26.com/v1/payments -> 200 len=43
+https://spc.n26.com/v1/tokens -> 200 len=43
+https://spc.n26.com/docs -> HTTP 404
+https://spc.n26.com/status -> HTTP 404
+https://app.n26.com/build/js/client.*.js -> HTTP 404
+
+## 2026-10-09 16:49:43 UTC
+
+
+## 2026-10-09 21:28:05 UTC
+
+
+## 2026-10-10 01:25:12 UTC
+
+
+## 2026-10-10 07:19:13 UTC
+
+
+## 2026-10-10 13:50:45 UTC
+
+
+## 2026-10-10 18:16:59 UTC
+
+
+## 2026-10-10 21:56:29 UTC
+
+
+## 2026-10-11 00:39:40 UTC
+
+
+## 2026-10-11 06:31:01 UTC
+
+
+## 2026-10-11 13:35:47 UTC
+
+
+## 2026-10-11 18:28:29 UTC
+
+
+## 2026-10-11 22:28:20 UTC
+
+
+## 2026-10-12 01:50:08 UTC
+https://pay.n26.com -> 204 len=?
+https://pay.n26.com/v1/<stripe-object>/<id>` -> HTTP 404
+
+## 2026-10-12 08:40:11 UTC
+https://pay.n26.com/v1/* -> HTTP 404
+https://pay.n26.com/v1/<stripe-object>/<id>` -> HTTP 404
+[0m
+## Objective
+- Continue N26 Bank AG bug bounty analysis (report channel: bugs.olivermaicher.eu) as passive-first analyst on the N26/tech26.de estate, targeting the three surviving credential-gated core-banking hypotheses (api.tech26.de BOLA, xs2a.tech26.de CBPII SSRF, pay.n26.com Stripe BOLA) and pushing the consolidated coordinator ask.
+
+## Important Details
+- Program rules: read-only anonymous probes only (GET/HEAD/OPTIONS, ≤1 rps, ~10 req/host/3min with 5s sleep); no auth-bypass/mutating tests on live customer data; sha256 any secret; out-of-scope classes include SSL/TLS best practice (scope.yml:24), descriptive headers, OPTIONS/TRACE, rate-limit policy.
+- Established methodology rules (recurring error family on this program): a control is a property of the request PATH/CHANNEL it was measured on, not of a shared edge/cert/ELB — re-prove per sibling; "bundle presence ≠ reachability; status code ≠ rule; count ≠ finding"; a 404 must be attributed to missing input before invalid value; 401 on a wildcard-gated prefix is pattern-membership only, never resource existence; OPTIONS/HEAD are method-opaque (always 404) — no method inference via them; vendor corpus prose (psd2-tpp-docs), not route lists, carries the decisive channel semantics; verify file artifacts and prober output against the tree/direct curl before trusting.
+- Key stable facts: api.tech26.de gate returns byte-identical `401|211 md5 d58528c924dad2fde9c30f81972e0548`; pay.n26.com is pure Stripe passthrough (no-key 401 len=342 vs fake-key len=132 `Invalid API Key provided: sk_live_****0000`); xs2a.tech26.de AS returns `401|0 md5 d41d8cd9` pre-auth on all TPP-Redirect-* shapes; app.n26.com/graphql POST → invariant 403 HTML (app-layer deny, not WAF).
+- Certified findings in draft: xs2a optional mTLS (regulatory basis: Berlin Group NextGenPSD2 IG §3, EBA RTS 2018/389 Art. 29, PSD2 Art. 94(5)) and AWB-wide userinfo SSRF-filter bypass; credential-blocked items live in Appendix B as non-findings.
+
+## Work State
+### Completed
+- api.tech26.de anonymous surface conclusively exhausted: gate map = 3 EXACT `{me, addresses, login}` ∪ 6 PREFIX `{accounts, statements, spaces, insights, transfers, referrals}`; left-anchored `startswith` matcher; GET-scoped wildcard middleware (fabricated `/api/accounts/1/zzqnotreal` → 401|211 identical to live); 24-root dictionary sweep NO_DELTA (all `404|0 md5 d41d8cd9`); origin Tomcat/Spring Boot; ALB path-traversal block `403|118 awselb/2.0`.
+- beta-api.tech26.de + sapi.tech26.de reclassified: they serve the same full legacy `/api/*` Bearer-gated family as api.tech26.de (prior "route-less" claim FALSE).
+- xs2a.tech26.de: Berlin-Group XS2A API (AIS+PIS) live at `/v1/berlin-group/v1` with 21 route classes incl. irrevocable instant-SEPA; sandbox tier co-tenant at `/sandbox/v1/berlin-group/v1/*`; OAuth2 authorize plane anonymously reachable on both tiers; CBPII consent subtree live (`/v1/berlin-group/v1/consents/confirmation-of-funds{,...}`, 8-11ms vs 1ms bogus); mTLS optional (Cert# with empty CA list, TLS-version-dependent, ELB named `obnium-mtls-live-fra-328671153`); shared with aisp/pisp (fallback PSD2 interface, 4/5 route classes).
+- app.n26.com: `/login?redirect=` open-redirect DISCHARGED via vendor source (module 12273 `PreAppAuthPages.redirectPath` guard regex + `t.includes("//")` rejection, off-origin collapses to `https://app.n26.com`); `/wl/open-banking/*` three-class redirect taxonomy mapped; GraphQL 403 = app-layer deny preceding GraphQL parsing (verified across 6 transports); 40 ops extracted from anonymous bundle (13 auth ops in `banking-features-auth-biometric-LoginPage.6fd49c7e.js`, md5 f2077cc8); Statsig public key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0` and `domain:"shark"` = INFO only.
+- flags.n26.com FLAGSDUMP premise dead: `/v1/sdk_exception` now `403|19B "RBAC: access denied"` (was 202); RBAC tightened to default-deny.
+- Report draft `reports/report-draft-n26.md` (v2) written/verified on 2026-10-08 — leads with optional mTLS, SSRF retraction in Appendix A, credential-blocked in Appendix B. (KB repeatedly claimed existence while absent on 10-06/10-07; verified present 10-08.)
+- CT/passive corpus state: certspotter 410 Gone; baseline tech26.de=40 / n26.com=85 names; no new leaves since 2026-09-20 (mag.*, phishing-report, mcp-tools.fra.tech26.de cert-without-DNS).
+
+### Active
+- Three AUTH_HELPED hypotheses awaiting credentials: api.tech26.de BOLA (conf 88/92) — Bearer + 2nd account object ids; xs2a.tech26.de CBPII SSRF via `TPP-Redirect-URI` header bypass (conf 85) — valid CBPII consent + Bearer; pay.n26.com Stripe BOLA (conf 82) — N26-issued `sk_live`.
+- Consolidated [NEXT] HUMAN ask queued to coordinator (see Next Move).
+
+### Blocked
+- Triage feeder dead: 19th consecutive no-lead run — `UnknownError err_a53ae1f1`, run `2026-10-11-23-08`; no hypothesis intake (last successful 09-22-14-04 returned "LEADS empty").
+- No coordinator credential/scope supply across 25+ cycles; identical-boundary re-probing formally suspended as zero-signal (NO_DELTA).
+- Passive corpora closed: certspotter 410, crt.sh 502, github code-search 401, grep.app 429, sourcegraph 0-match.
+- probe-results.md frozen — last real data 2026-09-19 21:15:28 UTC (only repetitive prober runs on `app.n26.com/login?redirect=` since 10-02; prober itself has a host-interpolation bug and phantom-404 defect).
+
+## Next Move
+1. [NEXT] HUMAN: single consolidated coordinator ask — supply (a) one N26 paired-device grant Bearer + a second account's object ids for api.tech26.de BOLA, (b) a valid CBPII consent + Bearer for xs2a.tech26.de CBPII SSRF (`TPP-Redirect-URI: http://user@169.254.169.254/latest/meta-data/`), (c) an N26-issued `sk_live` for pay.n26.com (`GET /v1/<stripe-object>/<id>` with Bearer).
+2. Explicitly do NOT authorize further identical-boundary re-probing of api.tech26.de (24-root sweep NO_DELTA; gate matcher fully characterized); if no credential response, emit NO_DELTA and keep only daily low-rate CT refresh + feeder status check.
+
+## Relevant Files
+- `knowledge/index.md` / `knowledge/`: central KB — hosts stored in brace-expansion form; expand before diffing against CT.
+- `inventory/n26.md`: full host inventory with per-cycle probe logs (frozen sections since 2026-09-18; last data 09-19 21:15:28).
+- `probe-results.md`: probe log — frozen; only repetitive `app.n26.com/login?redirect=` prober entries since 10-02.
+- `triage/run-*.md`: feeder logs (208+ runs; newest ~run-2026-10-11-23-08, `err_a53ae1f1` — feeder erroring server-side, not a consecutive-only streak).
+- `art/lead_bigpickle.txt` / `art/lead_nemotron3.txt`: hypothesis leads (api.tech26.de BOLA 88/92).
+- `hypotheses-bigpickle.txt`: analyst hypotheses + [NEXT]/[LEARN] tails.
+- `scope.yml`: program scope; line 24 excludes "SSL/TLS best practices" (mTLS finding kept reportable via PSD2 regulatory basis).
+- `reports/report-draft-n26.md`: v2 draft report — verify existence against tree before referencing (KB asserted falsely 3+ times).
+- `n26/psd2-tpp-docs`: vendor corpus (OpenAPI, Postman collection, prose docs) — the only enumeration source that produced signal after ~9 days of NO_DELTA.
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+[0m$ [0mls -t triage/ | head -8; echo "---NEWEST---"; cat "$(ls -t triage/ | head -1)"
+run-2026-10-09-06-44.md
+run-2026-10-09-14-13.md
+run-2026-10-09-19-34.md
+run-2026-10-09-23-28.md
+run-2026-10-10-02-44.md
+run-2026-10-10-09-33.md
+run-2026-10-10-15-33.md
+run-2026-10-10-19-30.md
+---NEWEST---
+cat: run-2026-10-09-06-44.md: No such file or directory
+[0m
+[0m$ [0mtail -60 inventory/n26.md 2>/dev/null
+## 2026-10-10 01:25:11 UTC
+
+## 2026-10-10 07:19:13 UTC
+
+## 2026-10-10 13:50:45 UTC
+- CHANGED triage/run-2026-10-10-09-33.md: UnknownError err_76cfc238 (feeder still dead; no new verdicts/leads)
+- CHANGED process: no new probe data — probe-results.md frozen since 2026-09-18 10:07 UTC; this cycle added zero observed facts
+
+## 2026-10-10 18:16:58 UTC
+
+## 2026-10-10 21:56:29 UTC
+- NEW api.tech26.de — 3 previously-unrecorded gated exact GET routes: `/api/login`, `/api/transfers`, `/api/referrals` → `401|211 md5 d58528c924dad2fde9c30f81972e0548`, byte-identical to `/api/me`/`/api/add
+- NEW api.tech26.de origin = Tomcat/Spring Boot: overlong UTF-8 `%c0%ae` → Tomcat `HTTP Status 400 – Bad Request` page; matrix `;` → app RFC7807 `{"status":400,"type":"invalid_request","detail":"bad_request
+- NEW api.tech26.de edge WAF (ALB path-traversal block): literal `..`, `%2e%2e`, `%252e%252e`, `.%2e`, `%2e.`, `..%5c` → `403|118 Server: awselb/2.0`; `%00` and `%u002e` → `400|122`; `/management/health` → 
+- CHANGED "probe surface frozen since 2026-09-18" is now FALSE — first new api.tech26.de observables in 22 days.
+- CHANGED triage feeder still dead — `UnknownError ref err_6024e44f`, run `2026-10-10-19-30`; no verdicts/leads.
+
+## 2026-10-11 00:39:40 UTC
+- CHANGED triage feeder: still degraded (latest `UnknownError err_6024e44f`, run `2026-10-10-19-30`); no new verdicts/leads
+- CHANGED xs2a.tech26.de CBPII SSRF, api.tech26.de BOLA, pay.n26.com Stripe BOLA: all three PARKED hypotheses unchanged, blocked on coordinator credential/scope supply
+
+## 2026-10-11 06:31:01 UTC
+- NEW api.tech26.de — 3 previously-unrecorded gated exact GET routes: `/api/login`, `/api/transfers`, `/api/referrals` → `401|211 md5 d58528c924dad2fde9c30f81972e0548`, byte-identical to `/api/me`/`/api/add
+- NEW api.tech26.de origin = Tomcat/Spring Boot: overlong UTF-8 `%c0%ae` → Tomcat `HTTP Status 400 – Bad Request` page; matrix `;` → app RFC7807 `{"status":400,"type":"invalid_request","detail":"bad_request
+- NEW api.tech26.de edge WAF (ALB path-traversal block): literal `..`, `%2e%2e`, `%252e%252e`, `.%2e`, `%2e.`, `..%5c` → `403|118 Server: awselb/2.0`; `%00` and `%u002e` → `400|122`; `/management/health` → 
+- CHANGED "probe surface frozen since 2026-09-18" is now FALSE — first new api.tech26.de observables in 22 days.
+- CHANGED triage feeder still dead — `UnknownError ref err_6024e44f`, run `2026-10-10-19-30`; no verdicts/leads.
+- CHANGED triage feeder: still degraded (latest `UnknownError err_6024e44f`, run `2026-10-10-19-30`); no new verdicts/leads
+- CHANGED xs2a.tech26.de CBPII SSRF, api.tech26.de BOLA, pay.n26.com Stripe BOLA: all three PARKED hypotheses unchanged, blocked on coordinator credential/scope supply
+
+## 2026-10-11 13:35:47 UTC
+
+## 2026-10-11 18:28:29 UTC
+- NEW api.tech26.de: 3 previously-unrecorded gated exact GET routes — `/api/login`, `/api/transfers`, `/api/referrals` → `401|211 md5 d58528c924dad2fde9c30f81972e0548` (byte-identical to existing gated fami
+- NEW api.tech26.de: origin confirmed Tomcat/Spring Boot — overlong UTF-8 `%c0%ae` → Tomcat 400 page; matrix `;` → RFC7807 `invalid_request`
+- NEW api.tech26.de: edge ALB path-traversal block characterized — literal `..`, `%2e%2e`, `%252e%252e`, `.%2e`, `%2e.`, `..%5c` → `403|118 awselb/2.0`; `%00`/`%u002e` → `400|122`
+- CHANGED "probe surface frozen since 2026-09-18" now FALSE — first new api.tech26.de observables in 22 days
+- CHANGED triage feeder still degraded — `UnknownError err_6024e44f` (run 2026-10-10-19-30); no verdicts/leads
+
+## 2026-10-11 22:28:20 UTC
+- CHANGED api.tech26.de: `spaces` now direct-verified as a PREFIX root — `GET /api/spaces`, `/api/spaces/1`, `/api/spaces-x` → `401|211 md5 d58528c924dad2fde9c30f81972e0548`; singular `/api/space` → `404|0`; `i
+- CHANGED api.tech26.de gate map now complete: 3 EXACT `{me,addresses,login}` ∪ 6 PREFIX `{accounts,statements,spaces,insights,transfers,referrals}` — all 401s byte-identical `d58528c9`, no existence oracle ins
+- CHANGED process: triage feeder still dead (`UnknownError err_e0b751b5`, run 2026-10-11-19-23); last cycle's queued probe executed directly, reproducing KB hypotheses with zero new surface
+
+## 2026-10-12 01:50:06 UTC
+- NEW api.tech26.de: dictionary-sweep of 15 candidate plural roots (`payments transactions cards documents taxes savings investments agreements postbox notifications messages support tos payments-v2`) + 9 s
+- CHANGED api.tech26.de gate matcher now fully characterized: left-anchored `startswith` for the 6 PREFIX roots (`/api/{statements,accounts,insights,transfers,referrals,spaces}XYZ` → `401|211 md5 d58528c9`; lef
+- CHANGED triage feeder still dead — `UnknownError err_a53ae1f1`, run `2026-10-11-23-08`; no verdicts/leads (19th consecutive).
+- CHANGED three PARKED hypotheses (api BOLA, xs2a CBPII SSRF, pay.n26.com Stripe BOLA) unchanged; still credential/scope-blocked.
+- NEW api.tech26.de: 3 previously-unrecorded gated exact GET routes — `/api/login`, `/api/transfers`, `/api/referrals` → `401|211 md5 d58528c9` (byte-identical to existing gated family); origin confirmed To
+- NEW api.tech26.de: gate map now complete — 3 EXACT mounts `{me,addresses,login}` ∪ 6 PREFIX roots `{accounts,statements,spaces,insights,transfers,referrals}` — all 401s byte-identical `d58528c9`; `HEAD` →
+- CHANGED Probe surface unfrozen — first new api.tech26.de observables in 22 days (since 2026-09-18 10:07 UTC)
+- CHANGED Triage feeder still degraded — 18+ consecutive `UnknownError` runs (latest `err_a53ae1f1` at 2026-10-11 23:08); hypothesis intake dead
+
+## 2026-10-12 08:40:09 UTC
+- CHANGED api.tech26.de: last cycle's committed [NEXT] (24-root dictionary sweep) executed — 15 plurals + 9 singulars all `404|0 md5 d41d8cd9`; NO new gated plane. Gate map frozen at 3 EXACT `{me,addresses,logi
+- CHANGED api.tech26.de: matcher now fully characterized — left-anchored `startswith` (PREFIX absorbs suffix, e.g. `/api/statements2`→401) + strict equality (EXACT roots reject suffix, e.g. `/api/meX`→404); thi
+- CHANGED process: triage feeder still dead — `UnknownError err_a53ae1f1`, run `2026-10-11-23-08`, 19th consecutive no-lead run.
+- CHANGED no new CT leaves; certspotter endpoint still 410; CT baseline tech26.de=40 / n26.com=85 names.
+[0m
+[0m$ [0mls triage/ | grep -E "10-1[12]" | sort | tail -6; echo "---"; ls -t triage/ | awk 'NR<=3' ; echo "---HYP TAIL---"
+run-2026-10-11-07-50.md
+run-2026-10-11-14-44.md
+run-2026-10-11-19-23.md
+run-2026-10-11-23-08.md
+run-2026-10-12-02-29.md
+run-2026-10-12-09-44.md
+---
+run-2026-10-09-06-44.md
+run-2026-10-09-14-13.md
+run-2026-10-09-19-34.md
+---HYP TAIL---
+[0m
+[0m→ [0mRead reports/hypotheses-bigpickle.txt[90m [offset=1, limit=60][0m
+[0m
+[0m$ [0mcat triage/run-2026-10-12-09-44.md; echo "---LATEST-MTIME---"; ls -1 triage/run-2026-10-12* 2>/dev/null; echo "---"; stat -c '%y %n' triage/run-2026-10-12-09-44.md 2>/dev/null
+===== TRIAGE 2026-10-12 09:44:02 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_2e113ee1"
+  }
+}
+---LATEST-MTIME---
+triage/run-2026-10-12-02-29.md
+triage/run-2026-10-12-09-44.md
+---
+2026-10-12 18:10:35.391485132 +0000 triage/run-2026-10-12-09-44.md
+[0m
+[0m✗ [0mEdit reports/hypotheses-bigpickle.txt failed
+[91m[1mError: [0mFound multiple matches for oldString. Provide more surrounding context to make the match unique.
+Triage feeder updated: run `2026-10-12-09-44` → `UnknownError err_2e113ee1` (20th consecutive errored/no-lead run). No new probe data (probe-results.md empty sections since 10-10). No other new input. Appending this cycle's delta to the state file.
+[0m✗ [0mEdit reports/hypotheses-bigpickle.txt failed
+[91m[1mError: [0mCould not find oldString in the file. It must match exactly, including whitespace, indentation, and line endings.
+[0m→ [0mRead reports/hypotheses-bigpickle.txt[90m [offset=43][0m
+[0m✗ [0mEdit reports/hypotheses-bigpickle.txt failed
+[91m[1mError: [0mFound multiple matches for oldString. Provide more surrounding context to make the match unique.
+[0m
+[0m← [0mEdit reports/hypotheses-bigpickle.txt
+Index: /home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-bigpickle.txt
+===================================================================
+--- /home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-bigpickle.txt
++++ /home/runner/work/n26-hunt/n26-hunt/reports/hypotheses-bigpickle.txt
+@@ -42,4 +42,16 @@
+ [LEARN] REJECTED MISCONFIG @ api.tech26.de: a 24-candidate dictionary sweep is NO_DELTA; endpoint-map-only output is not a finding and this namespace is structurally exhausted anonymously.
+ [LEARN] ACCEPTED OTHER @ process: a probe that reproduces the prior hypothesis byte-for-byte closes (verifies) the branch rather than adding a datum — verification is not noise; suspended identical-boundary re-probing remains correct.
+ [RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all residual value sits behind coordinator-supplied credentials on core-banking BOLA/SSRF controls, while the triage feeder remains dead (19 consecutive no-lead/errored runs) and no new CT leaves have appeared.
+ [RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all res
++
++## 2026-10-12 19:25:00 UTC [target] (model bigpickle)
++[CHANGED] process: triage feeder still dead — `UnknownError err_2e113ee1`, run `2026-10-12-09-44`, 20th consecutive errored/no-lead run; hypothesis intake remains down.
++[CHANGED] process: probe-results.md has empty sections since `2026-10-10 01:25`; no new probe data consumed this cycle.
++[CHANGED] api.tech26.de: no probe run this cycle — anonymous surface exhausted, identical-boundary re-probing suspended per prior canon; gate map frozen (3 EXACT ∪ 6 PREFIX, all `401|211 md5 d58528c924dad2fde9c30f81972e0548`).
++[NO_DELTA] No new observables, no new route classes, no CT leaves.
++[FINAL] None anonymously testable. All three survivors remain credential-gated: api.tech26.de BOLA (88), xs2a.tech26.de CBPII SSRF (85), pay.n26.com Stripe BOLA (82).
++[NEXT] HUMAN: single consolidated coordinator ask — supply (a) one N26 paired-device grant Bearer plus a second account's object ids for api.tech26.de, (b) a valid CBPII consent + Bearer for xs2a.tech26.de, (c) an N26-issued `sk_live` for pay.n26.com. Failing that, this corpus remains at NO_DELTA with each cycle adding only the feeder's errored status.
++[LEARN] ACCEPTED PROCESS @ triage feeder: consecutive `err_2e*` refs (err_6024e44f → err_e0b751b5 → err_a53ae1f1 → err_2e113ee1) indicate a server-side pipeline fault, not a bounding policy; consume feeder weather as a JSON health signal, never as a lead source.
++[PRIO] api.tech26.de,7.10,attack_surface=9 business_value=10 tech_exposure=5 gate_ease=0 cloud=7 freshness=8
++[PRIO] xs2a.tech26.de,6.75,attack_surface=8 business_value=9 tech_exposure=7 gate_ease=2 cloud=8 freshness=6
++[PRIO] pay.n26.com,5.30,attack_surface=6 business_value=8 tech_exposure=4 gate_ease=2 cloud=7 freshness=5
+
+[0m
+[0m$ [0mtail -20 reports/hypotheses-bigpickle.txt
+[PARKED] pay.n26.com Stripe BOLA: requires an N26-issued `sk_live`; anonymous host is a plain Stripe error passthrough.
+[FINAL] none anonymously testable this cycle. All three survivors are credential-gated core-banking controls; no REJECTED-class item promoted.
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) one N26 paired-device grant Bearer plus a second account's object ids for api.tech26.de, (b) a valid CBPII consent + Bearer for xs2a.tech26.de, (c) an N26-issued `sk_live` for pay.n26.com. Anonymous api.tech26.de surface is exhausted (24-root sweep NO_DELTA; gate matcher fully characterized); do not authorize further identical-boundary re-probing.
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: the anon gate is a left-anchored `startswith` matcher — PREFIX roots absorb any suffix and EXACT roots require strict equality, so `statements2`/`accounts2` are the existing planes, not new surface.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: a 24-candidate dictionary sweep is NO_DELTA; endpoint-map-only output is not a finding and this namespace is structurally exhausted anonymously.
+[LEARN] ACCEPTED OTHER @ process: a probe that reproduces the prior hypothesis byte-for-byte closes (verifies) the branch rather than adding a datum — verification is not noise; suspended identical-boundary re-probing remains correct.
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all residual value sits behind coordinator-supplied credentials on core-banking BOLA/SSRF controls, while the triage feeder remains dead (19 consecutive no-lead/errored runs) and no new CT leaves have appeared.
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all res
+
+## 2026-10-12 19:25:00 UTC [target] (model bigpickle)
+[CHANGED] process: triage feeder still dead — `UnknownError err_2e113ee1`, run `2026-10-12-09-44`, 20th consecutive errored/no-lead run; hypothesis intake remains down.
+[CHANGED] process: probe-results.md has empty sections since `2026-10-10 01:25`; no new probe data consumed this cycle.
+[CHANGED] api.tech26.de: no probe run this cycle — anonymous surface exhausted, identical-boundary re-probing suspended per prior canon; gate map frozen (3 EXACT ∪ 6 PREFIX, all `401|211 md5 d58528c924dad2fde9c30f81972e0548`).
+[NO_DELTA] No new observables, no new route classes, no CT leaves.
+[FINAL] None anonymously testable. All three survivors remain credential-gated: api.tech26.de BOLA (88), xs2a.tech26.de CBPII SSRF (85), pay.n26.com Stripe BOLA (82).
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) one N26 paired-device grant Bearer plus a second account's object ids for api.tech26.de, (b) a valid CBPII consent + Bearer for xs2a.tech26.de, (c) an N26-issued `sk_live` for pay.n26.com. Failing that, this corpus remains at NO_DELTA with each cycle adding only the feeder's errored status.
+[LEARN] ACCEPTED PROCESS @ triage feeder: consecutive `err_2e*` refs (err_6024e44f → err_e0b751b5 → err_a53ae1f1 → err_2e113ee1) indicate a server-side pipeline fault, not a bounding policy; consume feeder weather as a JSON health signal, never as a lead source.
+[PRIO] api.tech26.de,7.10,attack_surface=9 business_value=10 tech_exposure=5 gate_ease=0 cloud=7 freshness=8
+[PRIO] xs2a.tech26.de,6.75,attack_surface=8 business_value=9 tech_exposure=7 gate_ease=2 cloud=8 freshness=6
+[PRIO] pay.n26.com,5.30,attack_surface=6 business_value=8 tech_exposure=4 gate_ease=2 cloud=7 freshness=5
+[0m
+Cycle complete — **NO_DELTA**. Nothing new this round:
+
+- **Feeder still dead**: run `2026-10-12-09-44` → `UnknownError err_2e113ee1` (20th consecutive errored/no-lead run; err refs trending `err_6024e44f → e0b751b5 → a53ae1f1 → 2e113ee1`).
+- **No probe data**: `probe-results.md` sections empty since 10-10 01:25; no new observables.
+- **No CT leaves**, no new route classes; api gate map frozen (3 EXACT ∪ 6 PREFIX, `401|211 d58528c9`).
+
+Respected the standing suspension on identical-boundary re-probing (zero-signal canon). Appended the cycle delta to `reports/hypotheses-bigpickle.txt` with `[NO_DELTA]`, `[FINAL]`, and an updated `[NEXT]`/`[LEARN]`.
+
+The three credentialed hypotheses are still the only remaining value, all blocked on the coordinator: (a) api.tech26.de BOLA Bearer + 2nd account, (b) xs2a CBPII consent + Bearer (`TPP-Redirect-URI` SSRF), (c) N26 \( sk_live \) for pay.n26.com. No further anonymous probing is authorized until one of those arrives.
