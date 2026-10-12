@@ -984,3 +984,7 @@ https://app.n26.com/build/js/client.*.js -> HTTP 404
 ## 2026-10-12 01:50:08 UTC
 https://pay.n26.com -> 204 len=?
 https://pay.n26.com/v1/<stripe-object>/<id>` -> HTTP 404
+
+## 2026-10-12 08:40:11 UTC
+https://pay.n26.com/v1/* -> HTTP 404
+https://pay.n26.com/v1/<stripe-object>/<id>` -> HTTP 404

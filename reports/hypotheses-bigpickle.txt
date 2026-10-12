@@ -1,52 +1,45 @@
-## 2026-10-12 01:49:55 UTC [target] (model bigpickle)
-[HYP] <title>
-class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
-asset: <host/endpoint>
-confidence: <0-100>
-reasoning: <facts only>
-evidence_needed: <what proves it>
-verify_steps: <passive-first concrete HTTP requests>
-impact: <what attacker gets + severity>
-testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
-[NEW] api.tech26.de: dictionary-sweep of 15 candidate plural roots (`payments transactions cards documents taxes savings investments agreements postbox notifications messages support tos payments-v2`) + 9 singulars (`payment transaction card document tax agreement postbox notification message`) → all `404|0 md5 d41d8cd9`; NO new gated data plane. Gate map stands at 3 EXACT ∪ 6 PREFIX.
-[CHANGED] api.tech26.de gate matcher now fully characterized: left-anchored `startswith` for the 6 PREFIX roots (`/api/{statements,accounts,insights,transfers,referrals,spaces}XYZ` → `401|211 md5 d58528c9`; left-mismatch `/api/xyzstatements` → `404|0`) and strict equality for the 3 EXACT roots (`/api/{me,addresses,login}X` → `404|0`). `statements2`/`accounts2` are the existing planes, NOT new roots.
-[CHANGED] triage feeder still dead — `UnknownError err_a53ae1f1`, run `2026-10-11-23-08`; no verdicts/leads (19th consecutive).
-[CHANGED] three PARKED hypotheses (api BOLA, xs2a CBPII SSRF, pay.n26.com Stripe BOLA) unchanged; still credential/scope-blocked.
-[PRIO] api.tech26.de,7.1,attack_surface=9 business_value=10 tech_exposure=5 gate_ease=0 cloud=7 freshness=8
+## 2026-10-12 08:27:10 UTC [target] (model bigpickle)
+[CHANGED] api.tech26.de: last cycle's committed [NEXT] (24-root dictionary sweep) executed — 15 plurals + 9 singulars all `404|0 md5 d41d8cd9`; NO new gated plane. Gate map frozen at 3 EXACT `{me,addresses,login}` ∪ 6 PREFIX `{accounts,statements,spaces,insights,transfers,referrals}`; all members `401|211 md5 d58528c924dad2fde9c30f81972e0548`.
+[CHANGED] api.tech26.de: matcher now fully characterized — left-anchored `startswith` (PREFIX absorbs suffix, e.g. `/api/statements2`→401) + strict equality (EXACT roots reject suffix, e.g. `/api/meX`→404); this is pattern-membership only, never a resource-existence oracle.
+[CHANGED] process: triage feeder still dead — `UnknownError err_a53ae1f1`, run `2026-10-11-23-08`, 19th consecutive no-lead run.
+[CHANGED] no new CT leaves; certspotter endpoint still 410; CT baseline tech26.de=40 / n26.com=85 names.
+[PRIO] api.tech26.de,7.10,attack_surface=9 business_value=10 tech_exposure=5 gate_ease=0 cloud=7 freshness=8
 [PRIO] xs2a.tech26.de,6.75,attack_surface=8 business_value=9 tech_exposure=7 gate_ease=2 cloud=8 freshness=6
-[PRIO] pay.n26.com,5.3,attack_surface=6 business_value=8 tech_exposure=4 gate_ease=2 cloud=7 freshness=5
+[PRIO] pay.n26.com,5.30,attack_surface=6 business_value=8 tech_exposure=4 gate_ease=2 cloud=7 freshness=5
 [HYP] api.tech26.de gated account-data family — BOLA/IDOR
 class: IDOR
-asset: https://api.tech26.de/api/{accounts,statements,spaces,insights,transfers,referrals}
+asset: https://api.tech26.de/api/{accounts,statements,spaces,insights,transfers,referrals,me,addresses,login}
 confidence: 88
-reasoning: 6 prefix roots + 3 exact roots all gated by a byte-identical `401|211 md5 d58528c924dad2fde9c30f81972e0548` envelope; prefix absorption and absence of an existence oracle imply an object store keyed by id behind the wildcard middleware.
+reasoning: All 9 pattern roots return a byte-identical `401|211 md5 d58528c924dad2fde9c30f81972e0548` pre-auth envelope; gate is pattern-scoped (fabricated sub-paths return the same bytes), so a token-bearing request is the only way to distinguish resources; origin is Tomcat/Spring Boot (RFC7807 body on bad matrix param).
 evidence_needed: authenticated Bearer for account A (paired-device grant) plus a second account's object ids; observe 200 vs 403/404 on cross-account read.
-verify_steps: `GET /api/accounts/me` then `GET /api/accounts/<other-id>` with `Authorization: Bearer <A>`; repeat for `/api/statements/<other-id>` and `/api/transfers/<other-id>`.
-impact: authentication-bypass cross-tenant read of account/transaction PII — Critical.
+verify_steps: `GET /api/me` with `Authorization: Bearer <A>` → resolve own id; then `GET /api/accounts/<other-id>` and `GET /api/statements/<other-id>` with the same Bearer; diff status/body.
+impact: cross-tenant read of account/transaction PII and card metadata — Critical.
 testability: AUTH_HELPED
 [HYP] xs2a.tech26.de CBPII — SSRF via TPP-Redirect-URI
 class: SSRF
 asset: https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
 confidence: 85
-reasoning: ALB redirect-target filter is query-string-scoped; `TPP-Redirect-URI` header reaches the app layer (`401|0`); RFC3986 userinfo bypass `http://user@169.254.169.254/` reproduces on xs2a/api/app.
-evidence_needed: valid CBPII consent + Bearer to reach the post-auth redirect-fetch sink and observe an outbound request.
-verify_steps: create CBPII consent, call the confirmation-of-funds endpoint with `TPP-Redirect-URI: http://user@169.254.169.254/latest/meta-data/iam/security-credentials/`; watch for reflected metadata.
+reasoning: ALB redirect-target filter is query-string-scoped (IP-literal + localhost matcher); `TPP-Redirect-URI` header reaches the app layer (`401|0` istio-envoy) while query-string internal literals are cut at ALB (`403|118 awselb/2.0`); RFC3986 userinfo bypass reproduces on xs2a/api/app; sandbox tier co-tenant shows identical behavior.
+evidence_needed: valid CBPII consent + Bearer to reach the post-auth redirect-fetch sink and observe an outbound request to a listener.
+verify_steps: complete CBPII consent; call confirmation-of-funds with `TPP-Redirect-URI: http://user@169.254.169.254/latest/meta-data/iam/security-credentials/`; check for reflected metadata or OOB callback.
 impact: SSRF to cloud metadata → IAM credential theft — Critical.
 testability: AUTH_HELPED
 [HYP] pay.n26.com Stripe — BOLA with live key
 class: IDOR
-asset: https://pay.n26.com
-confidence: 85
-reasoning: pure Stripe passthrough; 401 boundary stable (no-key len=342 vs fake-key len=132 `Invalid API Key provided: sk_live_****0000`); key discovery closed 3/3 corpora.
+asset: https://pay.n26.com/v1/*
+confidence: 82
+reasoning: Pure Stripe passthrough on N26 domain; 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132 `Invalid API Key provided: sk_live_****0000`); no N26-side key injection; key discovery closed 3/3 corpora.
 evidence_needed: N26-issued `sk_live` key to enumerate/read foreign objects.
-verify_steps: `GET https://pay.n26.com/v1/<stripe-object>/<id>` with `Authorization: Bearer sk_live_...` and compare owner/account scope.
+verify_steps: `GET https://pay.n26.com/v1/<stripe-object>/<id>` with `Authorization: Bearer sk_live_...` and compare object ownership scope.
 impact: cross-tenant payment-object read — High/Critical.
 testability: AUTH_HELPED
-[PARKED] api.tech26.de BOLA: requires paired-device Bearer + second account (coordinator supply).
-[PARKED] xs2a.tech26.de CBPII SSRF: requires valid CBPII consent + Bearer.
-[PARKED] pay.n26.com Stripe BOLA: requires N26-issued `sk_live`.
-[FINAL] none anonymously testable this cycle; all three survivors remain credential-gated.
-[NEXT] HUMAN: single consolidated coordinator ask — supply (a) paired-device grant Bearer + second account for api.tech26.de, (b) valid CBPII consent + Bearer for xs2a.tech26.de, (c) N26-issued `sk_live` for pay.n26.com; anonymous api.tech26.de surface is now exhausted (24-root sweep NO_DELTA, gate matcher fully characterized).
-[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: the anonymous gate is a left-anchored `startswith` matcher — suffix is absorbed after a PREFIX root and strict equality holds for EXACT roots, so `statements2`/`accounts2` are existing planes, not new surface.
-[LEARN] REJECTED MISCONFIG @ api.tech26.de: dictionary-sweep of 24 candidate roots is NO_DELTA; the documented-noun gate map is exhaustive and endpoint-map-only output is not a finding.
-[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all residual value sits behind coordinator-supplied credentials, while the triage feeder remains dead (19 consecutive no-lead runs).
+[PARKED] api.tech26.de BOLA: requires paired-device Bearer + a second account object (coordinator supply); no anonymous differential exists — gate is pattern-scoped and returns identical bytes for fabricated and live sub-paths.
+[PARKED] xs2a.tech26.de CBPII SSRF: requires a valid CBPII consent + Bearer; pre-auth AS returns byte-identical `401|0 md5 d41d8cd9` across all `TPP-Redirect-*` shapes, so the sink is unreachable anonymously.
+[PARKED] pay.n26.com Stripe BOLA: requires an N26-issued `sk_live`; anonymous host is a plain Stripe error passthrough.
+[FINAL] none anonymously testable this cycle. All three survivors are credential-gated core-banking controls; no REJECTED-class item promoted.
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) one N26 paired-device grant Bearer plus a second account's object ids for api.tech26.de, (b) a valid CBPII consent + Bearer for xs2a.tech26.de, (c) an N26-issued `sk_live` for pay.n26.com. Anonymous api.tech26.de surface is exhausted (24-root sweep NO_DELTA; gate matcher fully characterized); do not authorize further identical-boundary re-probing.
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: the anon gate is a left-anchored `startswith` matcher — PREFIX roots absorb any suffix and EXACT roots require strict equality, so `statements2`/`accounts2` are the existing planes, not new surface.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: a 24-candidate dictionary sweep is NO_DELTA; endpoint-map-only output is not a finding and this namespace is structurally exhausted anonymously.
+[LEARN] ACCEPTED OTHER @ process: a probe that reproduces the prior hypothesis byte-for-byte closes (verifies) the branch rather than adding a datum — verification is not noise; suspended identical-boundary re-probing remains correct.
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all residual value sits behind coordinator-supplied credentials on core-banking BOLA/SSRF controls, while the triage feeder remains dead (19 consecutive no-lead/errored runs) and no new CT leaves have appeared.
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all res

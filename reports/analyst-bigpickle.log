@@ -98986,3 +98986,241 @@ testability: AUTH_HELPED
 [LEARN] REJECTED MISCONFIG @ api.tech26.de: dictionary-sweep of 24 candidate roots is NO_DELTA; the documented-noun gate map is exhaustive and endpoint-map-only output is not a finding.
 
 [RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all residual value sits behind coordinator-supplied credentials, while the triage feeder remains dead (19 consecutive no-lead runs).
+===== ANALYST bigpickle 2026-10-12 08:40:09 UTC =====
+[0m
+> build · big-pickle
+[0m
+## STEP 1 — DELTA
+[CHANGED] api.tech26.de: last cycle's committed [NEXT] (24-root dictionary sweep) executed — 15 plurals + 9 singulars all `404|0 md5 d41d8cd9`; NO new gated plane. Gate map frozen at 3 EXACT `{me,addresses,login}` ∪ 6 PREFIX `{accounts,statements,spaces,insights,transfers,referrals}`; all members `401|211 md5 d58528c924dad2fde9c30f81972e0548`.
+[CHANGED] api.tech26.de: matcher now fully characterized — left-anchored `startswith` (PREFIX absorbs suffix, e.g. `/api/statements2`→401) + strict equality (EXACT roots reject suffix, e.g. `/api/meX`→404); this is pattern-membership only, never a resource-existence oracle.
+[CHANGED] process: triage feeder still dead — `UnknownError err_a53ae1f1`, run `2026-10-11-23-08`, 19th consecutive no-lead run.
+[CHANGED] no new CT leaves; certspotter endpoint still 410; CT baseline tech26.de=40 / n26.com=85 names.
+NO_DELTA across every in-scope asset beyond the above.
+
+## STEP 2 — PRIORITIZE
+[PRIO] api.tech26.de,7.10,attack_surface=9 business_value=10 tech_exposure=5 gate_ease=0 cloud=7 freshness=8
+[PRIO] xs2a.tech26.de,6.75,attack_surface=8 business_value=9 tech_exposure=7 gate_ease=2 cloud=8 freshness=6
+[PRIO] pay.n26.com,5.30,attack_surface=6 business_value=8 tech_exposure=4 gate_ease=2 cloud=7 freshness=5
+
+## STEP 3 — HYPOTHESES
+[HYP] api.tech26.de gated account-data family — BOLA/IDOR
+class: IDOR
+asset: https://api.tech26.de/api/{accounts,statements,spaces,insights,transfers,referrals,me,addresses,login}
+confidence: 88
+reasoning: All 9 pattern roots return a byte-identical `401|211 md5 d58528c924dad2fde9c30f81972e0548` pre-auth envelope; gate is pattern-scoped (fabricated sub-paths return the same bytes), so a token-bearing request is the only way to distinguish resources; origin is Tomcat/Spring Boot (RFC7807 body on bad matrix param).
+evidence_needed: authenticated Bearer for account A (paired-device grant) plus a second account's object ids; observe 200 vs 403/404 on cross-account read.
+verify_steps: `GET /api/me` with `Authorization: Bearer <A>` → resolve own id; then `GET /api/accounts/<other-id>` and `GET /api/statements/<other-id>` with the same Bearer; diff status/body.
+impact: cross-tenant read of account/transaction PII and card metadata — Critical.
+testability: AUTH_HELPED
+
+[HYP] xs2a.tech26.de CBPII — SSRF via TPP-Redirect-URI
+class: SSRF
+asset: https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
+confidence: 85
+reasoning: ALB redirect-target filter is query-string-scoped (IP-literal + localhost matcher); `TPP-Redirect-URI` header reaches the app layer (`401|0` istio-envoy) while query-string internal literals are cut at ALB (`403|118 awselb/2.0`); RFC3986 userinfo bypass reproduces on xs2a/api/app; sandbox tier co-tenant shows identical behavior.
+evidence_needed: valid CBPII consent + Bearer to reach the post-auth redirect-fetch sink and observe an outbound request to a listener.
+verify_steps: complete CBPII consent; call confirmation-of-funds with `TPP-Redirect-URI: http://user@169.254.169.254/latest/meta-data/iam/security-credentials/`; check for reflected metadata or OOB callback.
+impact: SSRF to cloud metadata → IAM credential theft — Critical.
+testability: AUTH_HELPED
+
+[HYP] pay.n26.com Stripe — BOLA with live key
+class: IDOR
+asset: https://pay.n26.com/v1/*
+confidence: 82
+reasoning: Pure Stripe passthrough on N26 domain; 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132 `Invalid API Key provided: sk_live_****0000`); no N26-side key injection; key discovery closed 3/3 corpora.
+evidence_needed: N26-issued `sk_live` key to enumerate/read foreign objects.
+verify_steps: `GET https://pay.n26.com/v1/<stripe-object>/<id>` with `Authorization: Bearer sk_live_...` and compare object ownership scope.
+impact: cross-tenant payment-object read — High/Critical.
+testability: AUTH_HELPED
+
+## STEP 4 — SELF-CRITIQUE
+[PARKED] api.tech26.de BOLA: requires paired-device Bearer + a second account object (coordinator supply); no anonymous differential exists — gate is pattern-scoped and returns identical bytes for fabricated and live sub-paths.
+[PARKED] xs2a.tech26.de CBPII SSRF: requires a valid CBPII consent + Bearer; pre-auth AS returns byte-identical `401|0 md5 d41d8cd9` across all `TPP-Redirect-*` shapes, so the sink is unreachable anonymously.
+[PARKED] pay.n26.com Stripe BOLA: requires an N26-issued `sk_live`; anonymous host is a plain Stripe error passthrough.
+[FINAL] none anonymously testable this cycle. All three survivors are credential-gated core-banking controls; no REJECTED-class item promoted.
+
+## STEP 5 — NEXT ACTION
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) one N26 paired-device grant Bearer plus a second account's object ids for api.tech26.de, (b) a valid CBPII consent + Bearer for xs2a.tech26.de, (c) an N26-issued `sk_live` for pay.n26.com. Anonymous api.tech26.de surface is exhausted (24-root sweep NO_DELTA; gate matcher fully characterized); do not authorize further identical-boundary re-probing.
+
+## STEP 6 — LEARNING
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: the anon gate is a left-anchored `startswith` matcher — PREFIX roots absorb any suffix and EXACT roots require strict equality, so `statements2`/`accounts2` are the existing planes, not new surface.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: a 24-candidate dictionary sweep is NO_DELTA; endpoint-map-only output is not a finding and this namespace is structurally exhausted anonymously.
+[LEARN] ACCEPTED OTHER @ process: a probe that reproduces the prior hypothesis byte-for-byte closes (verifies) the branch rather than adding a datum — verification is not noise; suspended identical-boundary re-probing remains correct.
+
+## STEP 7 — RISK
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all residual value sits behind coordinator-supplied credentials on core-banking BOLA/SSRF controls, while the triage feeder remains dead (19 consecutive no-lead/errored runs) and no new CT leaves have appeared.
+## Objective
+- Act as senior bug-bounty ANALYST for the N26 Bank AG program (report channel: bugs.olivermaicher.eu); run the 8-step workflow (DELTA → PRIORITIZE → HYPOTHESES → SELF-CRITIQUE → NEXT → LEARN → RISK) and output ONLY structured blocks.
+- Current phase `POC`, target `api`; hunt HIGH-value classes (BOLA/IDOR, SSRF-to-cloud-metadata, OAuth, auth/session) across in-scope N26/tech26.de assets.
+
+## Important Details
+- Scope: N26 Bank AG + subsidiaries — company-owned infra, banking platforms, APIs, auth systems, domains (app.n26.com, api.tech26.de, xs2a.tech26.de, pay.n26.com, flags.n26.com, engagementplatform.n26.com, authentication-service.eks.core-production.keyless.technology, etc.).
+- REJECTED classes: DoS, account-lockout, descriptive errors/headers, robots.txt, outdated libs, OPTIONS/TRACE, CSRF-on-logout, self-XSS, scanner-only reports, username enumeration, brute-force/rate-limit policy, SSL/TLS best practice, clickjacking w/o exploit, mail config, public login panels, password-recovery policy.
+- Hard rules: passive-first; ≤1 rps; GET/HEAD/OPTIONS only for live probes; NO auth-bypass or mutating tests vs live customer data; sha256 any secret; no endpoint-map-only output; any scanner output needs manual validation; >10 req/3min/host triggers soft throttle (recovers ~45s idle).
+- Standing rules learned: a control is a property of the REQUEST PATH/channel it was measured on (re-prove per sibling); bundle presence ≠ reachability; status code ≠ rule; count ≠ finding; 404 on a param-less GET proves nothing; verify artifacts against the tree (KB has repeatedly falsely asserted file existence).
+- Key gate facts: api.tech26.de gate = GET-scoped wildcard middleware, left-anchored `startswith` for 6 PREFIX roots, strict equality for 3 EXACT mounts, all 401s byte-identical `len=211 md5 d58528c924dad2fde9c30f81972e0548`; HEAD → `404|0`; no existence oracle.
+- xs2a.tech26.de: production Berlin-Group XS2A API live at `/v1/berlin-group/v1` (21 classes), sandbox co-tenant at `/sandbox/v1/berlin-group/v1/*`; mTLS advertised but NOT enforced (empty CA list / no client cert required); ALB redirect-target filter is query-string-scoped (header `TPP-Redirect-URI` bypasses to app layer).
+- pay.n26.com: pure Stripe API passthrough; 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132 `Invalid API Key provided: sk_live_****0000`); key discovery closed 3/3 corpora.
+- flags.n26.com premise dead: `/v1/sdk_exception` now `403|19B "RBAC: access denied"` (was 202), all GET config → 403.
+
+## Work State
+### Completed
+- api.tech26.de gate fully characterized: 3 EXACT mounts `{me,addresses,login}` ∪ 6 PREFIX roots `{accounts,statements,spaces,insights,transfers,referrals}`; suffix absorbed after PREFIX (`statements2`/`accounts2` are existing planes, not new surface); left-mismatch → `404|0`.
+- 3 previously-unrecorded gated routes: `/api/login`, `/api/transfers`, `/api/referrals` → 401 len=211 (first new api observables in 22 days; surface unfrozen).
+- Dictionary sweep of 24 candidate roots (15 plural + 9 singular) → all `404|0 md5 d41d8cd9`; NO new gated data plane.
+- xs2a mTLS optional verified across 4 axes (empty CA list, no handshake requirement, garbage-cert no-op, cert-trust header injection no-op) on prod + sandbox.
+- xs2a SSRF/OATH: `TPP-Redirect-URI` header reaches app layer (`401|0`) while blocked token in query is cut at ALB (`403|520`); RFC3986 userinfo bypass (`http://user@169.254.169.254/`) reproduces on xs2a/api/app.
+- CBPII consent subtree enumerated live (`/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}`) at `401|0` (8-11ms app-layer vs 1ms bogus 404).
+- Closed: app.n26.com `/login?redirect=` open-redirect (sink resolved to module 12273 guard); GraphQL WAF-vs-app-layer (app-layer deny, no WAF, transport-invariant 403); flags.n26.com; spc.n26.com (tracking pixels); my.n26.com (301); cdn.number26.de + static.* (private S3); support.n26.com/graphql (shared tarpit).
+- Report draft status: `reports/report-draft-n26.md` repeatedly recorded as existing but MISSING from tree across multiple cycles — must verify via `ls` before relying on it.
+
+### Active
+- Three survivors, all credential-gated (AUTH_HELPED):
+  1. `[FINAL 1]` api.tech26.de BOLA/IDOR (conf 88-92) — 18 legacy Bearer-gated endpoints; one token = whole surface; cross-account PII read.
+  2. `[FINAL 2]` xs2a.tech26.de CBPII SSRF via `TPP-Redirect-URI` (conf 85) — cloud-metadata → IAM credential theft.
+  3. `[FINAL 3]` pay.n26.com Stripe BOLA (conf 85) — needs N26-issued `sk_live`.
+- Triage feeder dead: 19+ consecutive `UnknownError` runs (latest `err_a53ae1f1`, run 2026-10-11-23-08); no new verdicts/leads.
+
+### Blocked
+- api.tech26.de BOLA: needs paired-device grant Bearer + second account to test cross-tenant read.
+- xs2a.tech26.de CBPII SSRF: needs valid CBPII consent + Bearer to reach post-auth redirect-fetch sink.
+- pay.n26.com Stripe BOLA: needs N26-issued `sk_live` (key discovery exhausted 3/3 corpora).
+- Triage feeder repair (platform-side `UnknownError`) — beyond analyst control.
+
+## Next Move
+1. Emit single consolidated `[NEXT] HUMAN` coordinator ask: (a) paired-device grant Bearer + 2nd account for api.tech26.de, (b) valid CBPII consent + Bearer for xs2a.tech26.de, (c) N26-issued `sk_live` for pay.n26.com — anonymous api surface now exhausted (24-root sweep NO_DELTA).
+2. Continue structured-block output for current cycle (priority: api.tech26.de, then xs2a.tech26.de, then pay.n26.com); do not re-probe unchanged 401/403/404 boundaries (zero-signal).
+
+## Relevant Files
+- `state_bigpickle.json`: agent state `{"phase":"POC","target":"api"}` (coordinator-controlled).
+- `inventory/n26.md`: N26 host inventory + passive-recon timeline (all classification history).
+- `probe-results.md`: raw probe log — frozen since 2026-09-18 10:07 UTC then new api.tech26.de data 2026-10-10+.
+- `knowledge/` + `ctx.txt`: knowledge base of LEARN entries (huge; source of gate facts and rules).
+- `triage/run-*.md`: feeder run logs (208+ files); newest shows server errors, no leads.
+- `reports/report-draft-n26.md`: draft report — VERIFY existence (repeatedly falsely asserted).
+- `art/lead_nemotron3.txt`, `art/lead_bigpickle.txt`: per-model lead files.
+- `hypotheses-bigpickle.txt`, `hypotheses-nemotron3.txt`: aggregated ranked hypotheses with [NEXT] lines.
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+[0m$ [0mls -la && echo "---REPORTS---" && ls -la reports 2>/dev/null && echo "---ART---" && ls -la art 2>/dev/null && echo "---HYP---" && ls -la hypotheses-*.txt 2>/dev/null && echo "---STATE---" && cat state_bigpickle.json 2>/dev/null
+total 1328
+drwxr-xr-x 12 runner runner   4096 Oct 12 08:25 .
+drwxr-xr-x  3 runner runner   4096 Oct 12 08:25 ..
+drwxr-xr-x  7 runner runner   4096 Oct 12 08:25 .git
+drwxr-xr-x  3 runner runner   4096 Oct 12 08:25 .github
+-rw-r--r--  1 runner runner   1844 Oct 12 08:25 README.md
+-rw-r--r--  1 runner runner  12598 Oct 12 08:26 analyst-out.txt
+-rw-r--r--  1 runner runner 612002 Oct 12 08:25 analyst-prompt.txt
+-rw-r--r--  1 runner runner 608132 Oct 12 08:25 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Oct 12 08:25 inventory
+drwxr-xr-x  2 runner runner   4096 Oct 12 08:25 knowledge
+drwxr-xr-x  2 runner runner   4096 Oct 12 08:25 leads
+-rw-r--r--  1 runner runner  27728 Oct 12 08:25 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Oct 12 08:25 recon-notes
+drwxr-xr-x  2 runner runner   4096 Oct 12 08:25 reports
+drwxr-xr-x  2 runner runner   4096 Oct 12 08:25 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Oct 12 08:25 scope.yml
+drwxr-xr-x  2 runner runner   4096 Oct 12 08:25 scripts
+-rw-r--r--  1 runner runner     33 Oct 12 08:25 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Oct 12 08:25 state_laguna.json
+-rw-r--r--  1 runner runner     33 Oct 12 08:25 state_ling3.json
+-rw-r--r--  1 runner runner     33 Oct 12 08:25 state_longcat.json
+-rw-r--r--  1 runner runner     33 Oct 12 08:25 state_mimo.json
+-rw-r--r--  1 runner runner     33 Oct 12 08:25 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Oct 12 08:25 triage
+---REPORTS---
+total 12980
+drwxr-xr-x  2 runner runner    4096 Oct 12 08:25 .
+drwxr-xr-x 12 runner runner    4096 Oct 12 08:25 ..
+-rw-r--r--  1 runner runner 8978735 Oct 12 08:25 analyst-bigpickle.log
+-rw-r--r--  1 runner runner   49693 Oct 12 08:25 analyst-laguna.log
+-rw-r--r--  1 runner runner   49464 Oct 12 08:25 analyst-ling3.log
+-rw-r--r--  1 runner runner   49922 Oct 12 08:25 analyst-longcat.log
+-rw-r--r--  1 runner runner 3348358 Oct 12 08:25 analyst-nemotron3.log
+-rw-r--r--  1 runner runner    5297 Oct 12 08:25 hypotheses-bigpickle.txt
+-rw-r--r--  1 runner runner      51 Oct 12 08:25 hypotheses-laguna.txt
+-rw-r--r--  1 runner runner      50 Oct 12 08:25 hypotheses-ling3.txt
+-rw-r--r--  1 runner runner      52 Oct 12 08:25 hypotheses-longcat.txt
+-rw-r--r--  1 runner runner   14948 Oct 12 08:25 hypotheses-nemotron3.txt
+-rw-r--r--  1 runner runner  968388 Oct 12 08:25 hypotheses.md
+-rw-r--r--  1 runner runner    4596 Oct 12 08:25 reposcan-findings.md
+-rw-r--r--  1 runner runner    1529 Oct 12 08:25 valid-bugs.md
+---ART---
+[0m
+[0m$ [0mecho "===STATE FILES==="; for f in state_*.json; do echo "-- $f"; cat "$f"; echo; done; echo "===LEADS DIR==="; ls -la leads; echo "===TRIAGE COUNT==="; ls triage | wc -l; ls triage | tail -5; echo "===KNOWLEDGE==="; ls knowledge; echo "===INVENTORY==="; ls inventory; echo "===RECON-NOTES==="; ls recon-notes
+===STATE FILES===
+-- state_bigpickle.json
+{"phase": "POC", "target": "api"}
+-- state_laguna.json
+{"phase": "POC", "target": "api"}
+-- state_ling3.json
+{"phase": "POC", "target": "api"}
+-- state_longcat.json
+{"phase": "POC", "target": "api"}
+-- state_mimo.json
+{"phase": "POC", "target": "api"}
+-- state_nemotron3.json
+{"phase": "POC", "target": "api"}
+===LEADS DIR===
+total 4388
+drwxr-xr-x  2 runner runner    4096 Oct 12 08:25 .
+drwxr-xr-x 12 runner runner    4096 Oct 12 08:25 ..
+-rw-r--r--  1 runner runner 1898458 Oct 12 08:25 lead-bigpickle.md
+-rw-r--r--  1 runner runner   11679 Oct 12 08:25 lead-laguna.md
+-rw-r--r--  1 runner runner   11450 Oct 12 08:25 lead-ling3.md
+-rw-r--r--  1 runner runner   11908 Oct 12 08:25 lead-longcat.md
+-rw-r--r--  1 runner runner      18 Oct 12 08:25 lead-mimo.md
+-rw-r--r--  1 runner runner 2470503 Oct 12 08:25 lead-nemotron3.md
+-rw-r--r--  1 runner runner    6911 Oct 12 08:25 reposcan-n26-manual.md
+-rw-r--r--  1 runner runner   60037 Oct 12 08:25 reposcan-n26.md
+===TRIAGE COUNT===
+232
+run-2026-10-11-07-50.md
+run-2026-10-11-14-44.md
+run-2026-10-11-19-23.md
+run-2026-10-11-23-08.md
+run-2026-10-12-02-29.md
+===KNOWLEDGE===
+index.md
+===INVENTORY===
+n26.md
+===RECON-NOTES===
+DEDICATED-DEEP.md
+[0m
+[0m→ [0mRead README.md
+[0m→ [0mRead reports/valid-bugs.md
+[0m→ [0mRead analyst-out.txt
+[0m→ [0mRead triage/run-2026-10-12-02-29.md
+[0m→ [0mRead triage/run-2026-10-11-23-08.md
+[0m→ [0mRead reports/hypotheses-bigpickle.txt
+[0m→ [0mRead recon-notes/DEDICATED-DEEP.md
+Verified the tree rather than trusting the KB — two prior references are false and one run is newer than recorded:
+[0m
+[0m$ [0mecho "report-draft exists?"; ls reports/report-draft-n26.md 2>&1; echo; echo "art/ exists?"; ls -d art 2>&1; echo; echo "newest triage:"; ls triage | tail -1; echo; echo "newest hypothesis entry:"; tail -1 reports/hypotheses-bigpickle.txt | cut -c1-80
+report-draft exists?
+ls: cannot access 'reports/report-draft-n26.md': No such file or directory
+
+art/ exists?
+ls: cannot access 'art': No such file or directory
+
+newest triage:
+run-2026-10-12-02-29.md
+
+newest hypothesis entry:
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all res
+[0m
+I have no further productive anonymous step, so I'm stopping to ask. Verified facts against the tree:
+
+- `reports/report-draft-n26.md` **does not exist** (KB falsely asserted it; `valid-bugs.md` count is still 0).
+- `art/` **does not exist** — per-model leads live in `leads/lead-*.md`, not `art/`.
+- Triage feeder is still dead: newest run `triage/run-2026-10-12-02-29.md` = `UnknownError err_ce7ffa84` (**20th** consecutive no-lead run, not 19th).
+- `reports/hypotheses-bigpickle.txt` newest entry is my own 2026-10-12 01:49:55 cycle; no external progress since.
+- All six `state_*.json` still `{"phase":"POC","target":"api"}`.
+
+Blocked: the three survivors (`api.tech26.de` BOLA, `xs2a.tech26.de` CBPII SSRF, `pay.n26.com` Stripe BOLA) are all AUTH_HELPED, and the anonymous `api.tech26.de` surface is exhausted (24-root sweep NO_DELTA). Auth-bypass probing is prohibited, so I cannot advance them myself.
+
+**Ask (one consolidated coordinator request):**
+1. `api.tech26.de` — one paired-device grant Bearer + a second account's object ids (id cross-tenant read).
+2. `xs2a.tech26.de` — a valid CBPII consent + Bearer (reach the post-auth `TPP-Redirect-URI` fetch sink).
+3. `pay.n26.com` — an N26-issued `sk_live` (Stripe BOLA).
+
+If credentials can't be supplied, say so and I'll rotate to a different in-scope asset or stand down rather than re-probe unchanged 401/403/404 boundaries.
