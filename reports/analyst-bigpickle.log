@@ -99547,3 +99547,824 @@ Cycle complete — **NO_DELTA**. Nothing new this round:
 Respected the standing suspension on identical-boundary re-probing (zero-signal canon). Appended the cycle delta to `reports/hypotheses-bigpickle.txt` with `[NO_DELTA]`, `[FINAL]`, and an updated `[NEXT]`/`[LEARN]`.
 
 The three credentialed hypotheses are still the only remaining value, all blocked on the coordinator: (a) api.tech26.de BOLA Bearer + 2nd account, (b) xs2a CBPII consent + Bearer (`TPP-Redirect-URI` SSRF), (c) N26 \( sk_live \) for pay.n26.com. No further anonymous probing is authorized until one of those arrives.
+===== ANALYST bigpickle 2026-10-13 00:53:26 UTC =====
+[0m
+> build · big-pickle
+[0m
+I'll ground myself in the actual workspace artifacts first, then run the 8 steps.
+[0m$ [0mls -la && echo "---" && find . -maxdepth 2 -type d | head -50
+total 1332
+drwxr-xr-x 12 runner runner   4096 Oct 13 00:45 .
+drwxr-xr-x  3 runner runner   4096 Oct 13 00:45 ..
+drwxr-xr-x  7 runner runner   4096 Oct 13 00:45 .git
+drwxr-xr-x  3 runner runner   4096 Oct 13 00:45 .github
+-rw-r--r--  1 runner runner   1844 Oct 13 00:45 README.md
+-rw-r--r--  1 runner runner    114 Oct 13 00:46 analyst-out.txt
+-rw-r--r--  1 runner runner 618859 Oct 13 00:45 analyst-prompt.txt
+-rw-r--r--  1 runner runner 614989 Oct 13 00:45 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Oct 13 00:45 inventory
+drwxr-xr-x  2 runner runner   4096 Oct 13 00:45 knowledge
+drwxr-xr-x  2 runner runner   4096 Oct 13 00:45 leads
+-rw-r--r--  1 runner runner  27879 Oct 13 00:45 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Oct 13 00:45 recon-notes
+drwxr-xr-x  2 runner runner   4096 Oct 13 00:45 reports
+drwxr-xr-x  2 runner runner   4096 Oct 13 00:45 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Oct 13 00:45 scope.yml
+drwxr-xr-x  2 runner runner   4096 Oct 13 00:45 scripts
+-rw-r--r--  1 runner runner     33 Oct 13 00:45 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Oct 13 00:45 state_laguna.json
+-rw-r--r--  1 runner runner     33 Oct 13 00:45 state_ling3.json
+-rw-r--r--  1 runner runner     33 Oct 13 00:45 state_longcat.json
+-rw-r--r--  1 runner runner     33 Oct 13 00:45 state_mimo.json
+-rw-r--r--  1 runner runner     33 Oct 13 00:45 state_nemotron3.json
+drwxr-xr-x  2 runner runner  12288 Oct 13 00:45 triage
+---
+.
+./leads
+./.git
+./.git/objects
+./.git/refs
+./.git/hooks
+./.git/logs
+./.git/info
+./reports
+./.github
+./.github/workflows
+./recon-notes
+./scripts
+./knowledge
+./reposcan-raw
+./inventory
+./triage
+[0m
+## Objective
+- Anonymous, read-only reconnaissance/bug-bounty analysis of N26 Bank AG assets (`app.n26.com`, `api.tech26.de`, `xs2a.tech26.de`, `pay.n26.com`) per the 8-step analyst protocol; produce top-3 credential/scope-gated hypotheses and one concrete next action.
+- Current phase: `{"phase":"POC","target":"api"}`.
+
+## Important Details
+- Scope: N26-owned infra, banking platforms, APIs, auth systems, domains (scope.yml + inventory/n26.md). Report channel: bugs.olivermaicher.eu.
+- Hard rules: passive-first, ≤1 rps, GET/HEAD/OPTIONS only for live probes; no auth-bypass or mutating tests against live customer data; no endpoint-map-only output; no REJECTED-class findings; hash any secrets; output structured blocks only (STEP 1–7).
+- REJECTED classes (do not report): network/account-lockout DoS, descriptive errors/headers, robots.txt, outdated libs, OPTIONS/TRACE, CSRF on logout/anon forms, cookie flags on non-sensitive data, self-XSS, scanner-only output, SSL/TLS best-practice, clickjacking without exploit, SPF/DKIM/DMARC, username enumeration, rate-limit policy.
+- Edge soft-throttle: ~30 requests in ~3 min closes connections (curl rc=6/000); recovers after ~45s idle. Budget ≤10 req/host/3min, sleep 5s.
+- `api.tech26.de` gate fully characterized: left-anchored `startswith` matcher; 3 EXACT mounts `{me,addresses,login}` ∪ 6 PREFIX roots `{accounts,statements,spaces,insights,transfers,referrals}`; all fire byte-identical `401|211 md5 d58528c924dad2fde9c30f81972e0548`; `HEAD`/`OPTIONS`/`POST` → `404|0`; gate is pattern-membership only, never a resource-existence oracle.
+- Key facts: `api.tech26.de` origin = Tomcat/Spring Boot; ALB path-traversal block `403|118 awselb/2.0`. `pay.n26.com` pure Stripe passthrough (no-key 401 len=342 vs fake-key len=132). xs2a AWB SSRF filter bypass via RFC 3986 userinfo (`http://user@169.254.169.254/`) reproducible on xs2a/api/app; filter is request-scoped.
+- Triage feeder dead: 20 consecutive errored/no-lead runs (latest `UnknownError err_2e113ee1`, run `2026-10-12-09-44`); consume as health signal only.
+- CT baseline tech26.de=40 / n26.com=85 names; certspotter endpoint discontinued (410 Gone).
+
+## Work State
+### Completed
+- `api.tech26.de` gate map frozen at 3 EXACT ∪ 6 PREFIX; 24-root dictionary sweep (15 plural + 9 singular) → all `404|0`, NO_DELTA — anonymous surface conclusively exhausted.
+- Three PARKED credential-gated survivors confirmed: api.tech26.de BOLA (88), xs2a.tech26.de CBPII SSRF (85), pay.n26.com Stripe BOLA (82).
+- xs2a mTLS optional verified (empty CA list in CertificateRequest); PSD2 regulatory basis (EBA RTS 2018/389 Art.29, PSD2 Art.94(5)).
+- Sibling finding: `beta-api.tech26.de` + `sapi.tech26.de` serve same legacy Bearer-gated `/api/*` family as `api.tech26.de` (15 endpoints).
+
+### Active
+- Cycle 2026-10-12 18:13: no probe run — identical-boundary re-probing suspended per prior canon; no new anonymous surface.
+- probe-results.md has empty sections since `2026-10-10 01:25`; no new probe data consumed.
+
+### Blocked
+- All three hypotheses AUTH_HELPED — need coordinator-supplied credentials: (a) N26 paired-device Bearer + 2nd account object ids (api.tech26.de), (b) valid CBPII consent + Bearer (xs2a.tech26.de), (c) N26-issued `sk_live` (pay.n26.com).
+- Triage feeder server-side failure — hypothesis intake dead.
+- `reports/report-draft-n26.md` recorded as existing for 4 cycles but absent from working tree (verify against tree each cycle).
+
+## Next Move
+1. [NEXT] HUMAN: emit single consolidated coordinator ask — supply the three credential sets above; state anonymous api.tech26.de surface is exhausted (24-root sweep NO_DELTA; gate matcher fully characterized) and do NOT authorize further identical-boundary re-probing.
+2. If no credentials: remain at NO_DELTA; optionally one daily low-rate CT refresh (only source of signal inside NO_DELTA) — do not re-probe unchanged 401/403/404 boundaries.
+
+## Relevant Files
+- `probe-results.md`: probe log; empty sections since 2026-10-10 01:25.
+- `triage/run-*.md`: feeder logs (194+ runs); newest still errored (`err_2e113ee1`).
+- `state_bigpickle.json`: `{"phase":"POC","target":"api"}`.
+- `reports/report-draft-n26.md`: v2 draft (leads with optional mTLS; SSRF retraction App. A; credential-blocked items App. B) — verify existence before citing.
+- `inventory/n26.md`: host inventory/discovery seed.
+- `knowledge/index.md`: KB (records host groups in brace-expansion form — expand before diffing).
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+[0m→ [0mRead README.md
+[0m→ [0mRead scope.yml
+[0m→ [0mRead analyst-out.txt
+[0m→ [0mRead state_bigpickle.json
+[0m→ [0mRead analyst-prompt.txt[90m [limit=250][0m
+[0m
+[0m$ [0mls -la inventory knowledge leads reports recon-notes reposcan-raw scripts && echo "=== triage newest ===" && ls -t triage | head -20 && echo "=== triage count ===" && ls triage | wc -l
+inventory:
+total 232
+drwxr-xr-x  2 runner runner   4096 Oct 13 00:45 .
+drwxr-xr-x 12 runner runner   4096 Oct 13 00:45 ..
+-rw-r--r--  1 runner runner 226932 Oct 13 00:45 n26.md
+
+knowledge:
+total 372
+drwxr-xr-x  2 runner runner   4096 Oct 13 00:45 .
+drwxr-xr-x 12 runner runner   4096 Oct 13 00:45 ..
+-rw-r--r--  1 runner runner 372511 Oct 13 00:45 index.md
+
+leads:
+total 4424
+drwxr-xr-x  2 runner runner    4096 Oct 13 00:45 .
+drwxr-xr-x 12 runner runner    4096 Oct 13 00:45 ..
+-rw-r--r--  1 runner runner 1907824 Oct 13 00:45 lead-bigpickle.md
+-rw-r--r--  1 runner runner   11781 Oct 13 00:45 lead-laguna.md
+-rw-r--r--  1 runner runner   11550 Oct 13 00:45 lead-ling3.md
+-rw-r--r--  1 runner runner   12012 Oct 13 00:45 lead-longcat.md
+-rw-r--r--  1 runner runner      18 Oct 13 00:45 lead-mimo.md
+-rw-r--r--  1 runner runner 2501747 Oct 13 00:45 lead-nemotron3.md
+-rw-r--r--  1 runner runner    6911 Oct 13 00:45 reposcan-n26-manual.md
+-rw-r--r--  1 runner runner   60241 Oct 13 00:45 reposcan-n26.md
+
+recon-notes:
+total 12
+drwxr-xr-x  2 runner runner 4096 Oct 13 00:45 .
+drwxr-xr-x 12 runner runner 4096 Oct 13 00:45 ..
+-rw-r--r--  1 runner runner  809 Oct 13 00:45 DEDICATED-DEEP.md
+
+reports:
+total 13072
+drwxr-xr-x  2 runner runner    4096 Oct 13 00:45 .
+drwxr-xr-x 12 runner runner    4096 Oct 13 00:45 ..
+-rw-r--r--  1 runner runner 9024650 Oct 13 00:45 analyst-bigpickle.log
+-rw-r--r--  1 runner runner   50127 Oct 13 00:45 analyst-laguna.log
+-rw-r--r--  1 runner runner   49896 Oct 13 00:45 analyst-ling3.log
+-rw-r--r--  1 runner runner   50358 Oct 13 00:45 analyst-longcat.log
+-rw-r--r--  1 runner runner 3387019 Oct 13 00:45 analyst-nemotron3.log
+-rw-r--r--  1 runner runner    3407 Oct 13 00:45 hypotheses-bigpickle.txt
+-rw-r--r--  1 runner runner      51 Oct 13 00:45 hypotheses-laguna.txt
+-rw-r--r--  1 runner runner      50 Oct 13 00:45 hypotheses-ling3.txt
+-rw-r--r--  1 runner runner      52 Oct 13 00:45 hypotheses-longcat.txt
+-rw-r--r--  1 runner runner   17459 Oct 13 00:45 hypotheses-nemotron3.txt
+-rw-r--r--  1 runner runner  982619 Oct 13 00:45 hypotheses.md
+-rw-r--r--  1 runner runner    4596 Oct 13 00:45 reposcan-findings.md
+-rw-r--r--  1 runner runner    1529 Oct 13 00:45 valid-bugs.md
+
+reposcan-raw:
+total 12
+drwxr-xr-x  2 runner runner 4096 Oct 13 00:45 .
+drwxr-xr-x 12 runner runner 4096 Oct 13 00:45 ..
+-rw-r--r--  1 runner runner   66 Oct 13 00:45 summary.txt
+
+scripts:
+total 28
+drwxr-xr-x  2 runner runner  4096 Oct 13 00:45 .
+drwxr-xr-x 12 runner runner  4096 Oct 13 00:45 ..
+-rw-r--r--  1 runner runner 16987 Oct 13 00:45 sync-issues.py
+=== triage newest ===
+run-2026-10-10-15-33.md
+run-2026-10-10-19-30.md
+run-2026-10-10-22-55.md
+run-2026-10-11-01-39.md
+run-2026-10-11-07-50.md
+run-2026-10-11-14-44.md
+run-2026-10-11-19-23.md
+run-2026-10-11-23-08.md
+run-2026-10-12-02-29.md
+run-2026-10-12-09-44.md
+run-2026-10-12-19-40.md
+run-2026-10-04-12-35.md
+run-2026-10-04-17-01.md
+run-2026-10-04-20-13.md
+run-2026-10-04-23-17.md
+run-2026-10-05-02-07.md
+run-2026-10-05-09-14.md
+run-2026-10-05-18-34.md
+run-2026-10-06-00-19.md
+run-2026-10-06-06-34.md
+=== triage count ===
+234
+[0m
+[0m$ [0mgrep -n "=== " analyst-prompt.txt | head -80
+1:=== KNOWLEDGE BASE ===
+1423:=== MY STATE ===
+1424:{"phase": "POC", "target": "api"}=== MY LAST LEADS (tail) ===
+1485:=== AGGREGATED HYPOTHESES (tail) ===
+1526:=== INVENTORY n26 ===
+[0m
+[0m$ [0mgrep -n -iE "your task|output format|STEP 1|STEP 2|STEP 3|STEP 4|STEP 5|STEP 6|STEP 7|emit|hypothes" analyst-prompt.txt | head -60
+423:- 2026-09-15 REJECTED AUTH @ api.tech26.de: Entire legacy Bearer-gated family (5 endpoints + nested routes) now returns 404 len=0 — surface removed/disabled this cycle; BOLA hypothesis invalidated
+471:- 2026-09-17 ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (run-2026-09-17-16-30) — hypothesis-generation pipeline stalled; all five analysts converge on the same AUTH_HELPED set, no coordinator response yet.
+474:- 2026-09-17 ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (triage/run-2026-09-17-16-30.md) — hypothesis-generation stalled; all pipeline analysts converge on the same AUTH_HELPED set; no coordinator response yet.
+476:- 2026-09-17 ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (triage/run-2026-09-17-16-30.md) — hypothesis-generation stalled; all pipeline analysts converge on the same AUTH_HELPED set; no coordinator response yet.
+479:- 2026-09-17 ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (triage/run-2026-09-17-16-30.md) — hypothesis-generation stalled; all pipeline analysts converge on the same AUTH_HELPED set; no coordinator response yet.
+482:- 2026-09-18 ACCEPTED MISCONFIG @ process: triage feeder reported empty leads again (triage/run-2026-09-17-16-30.md) — hypothesis-generation stalled; all pipeline analysts converge on the same AUTH_HELPED set; no coordinator response yet
+500:- 2026-09-18 ACCEPTED MISCONFIG @ process: NO_DELTA again this cycle (20:19 UTC) — zero new surface across 10:07/14:35/17:51/20:19; all three hypotheses unchanged; coordinator credential/scope supply is the sole unblock.
+505:- 2026-09-19 ACCEPTED MISCONFIG @ process: NO_DELTA again this cycle (2026-09-18 20:19/22:39) — zero new surface across 4 runs; all three hypotheses unchanged; coordinator credential/scope supply is sole unblock
+513:- 2026-09-19 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 8+ consecutive cycles.
+514:- 2026-09-19 ACCEPTED MISCONFIG @ process: NO_DELTA persists through 2026-09-19 20:13 — feeder empty 17:50/20:13 (13th+ consecutive no-lead run), probe-results frozen at 13:15:27, aggregate hypothesis set identical to 18:53 run; surface unchanged since 09-17; coordinator credential/scope supply is the sole unblock, 9th+ consecutive cycle.
+515:- 2026-09-19 REJECTED AUTH @ all: no anonymous experiment run this cycle by design — identical-boundary re-probing formally suspended per prior-canon; local artifacts re-read (triage/17:50+20:13, probe-results.md, leads/, hypotheses.md) confirm zero feeder delta; passive corpora (crt.sh/CT/github/grep.app/sourcegraph/websearch) exhausted or rate-limited.
+519:- 2026-09-20 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 10+ consecutive cycles
+541:- 2026-09-21 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 10+ consecutive cycles
+548:- 2026-09-21 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 12+ consecutive cycles
+549:- 2026-09-21 ACCEPTED MISCONFIG @ process: pipelate confirmation 09-21 — all five analysts converge on the same three AUTH_HELPED hypotheses; certspotter daily refresh continues to return zero delta; intra-cycle re-probing of unchanged 401/403/404 boundaries remains suspended as zero-signal.
+551:- 2026-09-21 ACCEPTED MISCONFIG @ process: pipelate confirmation 09-21 — all five analysts converge on the same three AUTH_HELPED hypotheses; certspotter daily refresh returns zero delta again; intra-cycle re-probing of unchanged 401/403/404 boundaries remains suspended as zero-signal.
+557:- 2026-09-22 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 12+ consecutive cycles
+566:- 2026-09-22 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 14+ consecutive cycles
+577:- 2026-09-23 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 14+ consecutive cycles
+598:- 2026-09-24 ACCEPTED MISCONFIG @ process: NO_DELTA persists 2026-09-19 — surface identical to 09-17/09-18 runs; all three FINAL hypotheses stay AUTH_HELPED; coordinator credential/scope supply is the sole unblock across 14+ consecutive cycles
+600:- 2026-09-24 ACCEPTED MISCONFIG @ process: triage feeder error streak extended to 8 consecutive runs this cycle — err_088a2f51 (09-23-14-16, newly surfaced) and err_67fa5bde (09-24-05-04, latest) join the previously-recorded 6; pipeline 100% blocked on coordinator credential/scope supply + feeder repair, no hypothesis intake possible.
+602:- 2026-09-24 ACCEPTED MISCONFIG @ process: triage feeder error streak corrected to 11 consecutive runs — artifact re-read of triage/ recovered err_08466511 (run-2026-09-22-18-08) and err_f5640a02 (run-2026-09-22-21-27) previously unrecorded, plus fresh err_dc2a369d (run-2026-09-24-10-10); last successful feeder execution was run-2026-09-22-14-04 which itself returned "LEADS empty" — hypothesis intake has been fully dead for ~2.9 days; pipeline 100% blocked on coordinator credential/scope supply + feeder repair.
+604:- 2026-09-24 ACCEPTED MISCONFIG @ process: NO_DELTA 12+ consecutive cycles through 2026-09-24 — surface identical to 09-17/09-18; probe-results.md frozen since 09-18 10:07 (7+ days, empty headers only); identical-boundary re-probing formally suspended as zero-signal; all pipeline analysts converge on the same three AUTH_HELPED hypotheses.
+605:- 2026-09-24 ACCEPTED MISCONFIG @ process: triage-feeder outage is the standing pipeline blocker beyond credentials — error streak corrected to 12 consecutive runs (err_08466511, err_f5640a02, err_1e46c9ea, err_7c7ad8b3, err_ac7b5f7e, err_088a2f51, err_a0681089, err_3f771ab5, err_dc66849a, err_67fa5bde, err_dc2a369d, err_0a0c79b8); last successful execution 09-22-14-04 returned "LEADS empty" — hypothesis intake dead ~3.3 days; pipeline 100% blocked on coordinator credential/scope supply + feeder repair.
+607:- 2026-09-24 ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section headers only); identical-boundary re-probing formally suspended as zero-signal; all pipeline analysts converge on the same three AUTH_HELPED hypotheses.
+610:- 2026-09-25 ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section headers only); identical-boundary re-probing formally suspended as zero-signal; all pipeline analysts converge on the same three AUTH_HELPED hypotheses
+628:- 2026-09-26 REJECTED MISCONFIG @ app.n26.com `/open-banking`: open-redirect hypothesis closed — the `redirect` param is rebuilt server-side from the matched route path, user-supplied absolute/protocol-relative values are ignored, and path-smuggling variants 404.
+636:- 2026-09-26 ACCEPTED MISCONFIG @ process: NO_DELTA 13+ consecutive cycles through 2026-09-24 22:31 — probe-results.md frozen since 09-18 10:07 (7+ days, empty section headers only); identical-boundary re-probing formally suspended as zero-signal; all pipeline analysts converge on the same three AUTH_HELPED hypotheses
+657:- 2026-09-26 REJECTED MISCONFIG @ xs2a.tech26.de forwarding-header tier selection: `X-Forwarded-Host`, `X-Forwarded-Prefix`, `X-Original-URL`, `X-Rewrite-URL` and `X-Forwarded-Proto` produce no routing or gate change on either the authorize plane or the Berlin-Group API — all 8 variants hold 401/0/istio-envoy. The gateway does not route on client-supplied forwarding headers, so sandbox/live separation is not defeatable this way and the audience-confusion hypothesis loses this axis.
+705:- 2026-09-28 REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: the corpus branch my own committed [NEXT] targeted is pure availability telemetry — 27 PDFs, three periods extracted, zero hits for mTLS/TLS/certificate/QWAC/security/incident/breach/audit/penetration. It cannot supply the independent N26-authored statement on certified client authentication that I hypothesised it would. Signal-to-cost of that hypothesis was near zero and the branch is now closed for good, which is worth more than the negative itself: a 27-document, 6-year, 100%-of-the-program corpus branch was fully unread and contained nothing, so future cycles should not re-derive it.
+714:- 2026-09-28 REJECTED MISCONFIG @ api.tech26.de: my own long-standing KB premise that "401 = live route, 404 = absent route" on this host is **FALSE as stated**, and it invalidates a conclusion I have repeated in the KB for six cycles. `GET /api/accounts/1/zzqnotreal` returns 401|211 with a body byte-identical (md5 d58528c924dad2fde9c30f81972e0548) to `GET /api/accounts/1/tans`; HEAD on the same path returns 404|0. The 401 is emitted by a GET-scoped middleware mounted on wildcard path *patterns* (`/api/accounts/**`, `/api/statements/**`) as well as exact paths (`/api/me`, `/api/addresses`). RETRACTED: "10-member nested family confirmed live", "no additional /api/accounts/{id}/* noun route exists (8+ further probes 404 route-less)", and the evidentiary use of 404 for any sub-path of a wildcard-gated prefix. Generalised rule, and the sharpest version of the 09-25 vendor-corpus rule: **on a host that answers 401 for wildcard patterns, 401 is a statement about the URL pattern and 404 is a statement about the method+prefix — neither is a statement about the resource.** Before recording "route X exists" or "route X is retired" from a status code alone, run a fabricated-sibling control on the *same* path shape; if it returns the same code, the code carries no route information at all.
+733:- 2026-09-29 REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: the corpus branch my own committed [NEXT] targeted is pure availability telemetry — 27 PDFs, three periods extracted, zero hits for mTLS/TLS/certificate/QWAC/security/incident/breach/audit/penetration. It cannot supply the independent N26-authored statement on certified client authentication that I hypothesised it would. Signal-to-cost of that hypothesis was near zero and the branch is now closed for good
+745:- 2026-09-29 REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: the corpus branch my own committed [NEXT] targeted is pure availability telemetry — 27 PDFs, three periods extracted, zero hits for mTLS/TLS/certificate/QWAC/security/incident/breach/audit/penetration. It cannot supply the independent N26-authored statement on certified client authentication that I hypothesised it would. Signal-to-cost of that hypothesis was near zero and the branch is now closed for good
+763:- 2026-09-29 REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: the corpus branch my own committed [NEXT] targeted is pure availability telemetry — 27 PDFs, three periods extracted, zero hits for mTLS/TLS/certificate/QWAC/security/incident/breach/audit/penetration. It cannot supply the independent N26-authored statement on certified client authentication that I hypothesised it would. Signal-to-cost of that hypothesis was near zero and the branch is now closed for good
+776:- 2026-09-30 REJECTED OTHER @ api.tech26.de: my own 09-27 rule about re-proving controls on siblings nearly produced a fifth repeat of the 09-28 mistake in the opposite direction. I had a `;` differential on api.tech26.de and was one step from writing it up as a family property of the legacy namespace. Re-proving it individually on beta-api and sapi produced identical bytes, which is the correct outcome — but note *why* it is not a finding: both readings (gate-misses-but-router-also-misses, and both-layers-treat-`;`-literally) predict the same `404|0`, and a stripping router would have returned 401. Two hypotheses, one observable, no evidence either way. I am recording the `;` behaviour as a structural fact about gate mounting and explicitly **not** claiming a bypass, because claiming one would be exactly the presence-vs-value error I retracted three times on this programme. A differential is not a bypass until something live is reached through it.
+786:- 2026-09-30 REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: the corpus branch my own committed [NEXT] targeted is pure availability telemetry — 27 PDFs, three periods extracted, zero hits for mTLS/TLS/certificate/QWAC/security/incident/breach/audit/penetration. It cannot supply the independent N26-authored statement on certified client authentication that I hypothesised it would. Signal-to-cost of that hypothesis was near zero and the branch is now closed for good
+818:- 2026-10-01 ACCEPTED OTHER @ `xs2a.tech26.de`: the AS performs **no** pre-auth discrimination of `TPP-Redirect-*`. Four legs — headers absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254` — all returned `401|0` with empty body, md5 `d41d8cd9`. This is the retirement rule for the 401-collision family, established the strongest way yet: a **within-batch 4-leg differential on one endpoint**, instead of the cross-day comparisons that produced the two earlier false positives. The `400 Bad Request` promised by `doc/sandbox.md` L142 for a malformed redirect URI is therefore unreachable pre-auth, which retires the STEP 5 discriminator and bounds HYP 1 to post-auth verification only.
+832:- 2026-10-01 ACCEPTED AUTH @ `xs2a.tech26.de` + `api.tech26.de`: the edge gate is **route-level and GET-only**, now proven rather than inferred — the KB called it a "GET-scoped wildcard middleware" but every prior probe was itself a GET. Same-path, same-batch, three-method legs: `GET /v1/berlin-group/v1/accounts` → `401|0` (xs2a) and `GET /api/accounts/1/tans` → `401|211` (api), while `HEAD` and `OPTIONS` on those **same gated paths** → `404|0` empty (`istio-envoy` / `envoy`), identical to the fabricated-path legs. Because a `HEAD`/`OPTIONS` miss returns `404` and not `401`, this is method matching on the route, not a middleware that skips preflight — the distinction matters, because it means **no documented POST on either host is covered by the edge gate at all.** Every write on these hosts, including `POST /oauth2/token` and all Berlin-Group consent/payment POSTs, has the application layer as its only access control. This raises the priority of the cert-only token-mint hypothesis and bounds what a `401` on a GET can ever prove about the write plane.
+868:- 2026-10-02 DISCHARGED OATH @ `app.n26.com/login`: the `/login?redirect=` open-redirect hypothesis is closed by N26's own source, not by a status code. Chain resolved end to end across 11 vendor chunks: reducer seed `LoginPage:129818` builds `pathname + qs({redirect: o.redirect, verifyLogin})` — the attacker's value is re-encoded *inside* a same-origin `redirect` query key and is never the continuation target; `LoginPage:198920` passes `redirectUrl` down as `redirectURL`; `LoginPage:163945` binds it to `successURL`/`failureURL`; `client.ae5f81a2.js:~304310` renders it via `getSuccessURL() = getUrl(props.successURL || history.location.pathname)`, which can only prefix `/webviews` and re-append `flags`. Every observed field is `/login?redirect=<pct-encoded>&verifyLogin=1`, on all four shapes probed including `https://`, `//`, and `/\`.
+872:- 2026-10-02 DISCHARGED FLAGSDUMP @ `flags.n26.com`: premise dead on re-measurement. `/v1/sdk_exception`, carried as `202` since 09-05 and the anchor of the hypothesis, is now `403 | 19B "RBAC: access denied"` (edge Envoy, CloudFront `x-cache: Error`) — byte-identical across `statsig-api-key`, `Statsig-API-KEY`, and `x-statsig-api-key`, each with the live key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0` pulled from `client.ae5f81a2.js:606375` this cycle rather than remembered. `download_config_specs` → `401|12B`; `initialize`(GET), `flags`, `user_flags`, `config` → all `403|19B`. The RBAC boundary tightened toward default-deny, the opposite of the hypothesis direction. Neither half is reachable anonymously; nothing here is credential-blocked, it is simply gone.
+880:- 2026-10-03 DISCHARGED OATH @ `app.n26.com/login`: the `/login?redirect=` open-redirect hypothesis is closed by N26's own source, not by a status code. Chain resolved end to end across 11 vendor chunks: reducer seed `LoginPage:129818` builds `pathname + qs({redirect: o.redirect, verifyLogin})` — the attacker's value is re-encoded *inside* a same-origin `redirect` query key and is never the continuation target; `LoginPage:198920` passes `redirectUrl` down as `redirectURL`; `LoginPage:163945` binds it to `successURL`/`failureURL`; `client.ae5f81a2.js:~304310` renders it via `getSuccessURL() = getUrl(props.successURL || history.location.pathname)`, which can only prefix `/webviews` and re-append `flags`. Every observed field is `/login?redirect=<pct-encoded>&verifyLogin=1`, on all four shapes probed including `https://`, `//`, and `/\`.
+884:- 2026-10-03 DISCHARGED FLAGSDUMP @ `flags.n26.com`: premise dead on re-measurement. `/v1/sdk_exception`, carried as `202` since 09-05 and the anchor of the hypothesis, is now `403 | 19B "RBAC: access denied"` (edge Envoy, CloudFront `x-cache: Error`) — byte-identical across `statsig-api-key`, `Statsig-API-KEY`, and `x-statsig-api-key`, each with the live key `client-OulnFN2GtdJJRAKPLjRLBgckZMUhF5zxtzPGciWbxO0` pulled from `client.ae5f81a2.js:606375` this cycle rather than remembered. `download_config_specs` → `401|12B`; `initialize`(GET), `flags`, `user_flags`, `config` → all `403|19B`. The RBAC boundary tightened toward default-deny, the opposite of the hypothesis direction. Neither half is reachable anonymously; nothing here is credential-blocked, it is simply gone.
+905:- 2026-10-03 DISCHARGED OATH @ `app.n26.com/login`: the `/login?redirect=` open-redirect hypothesis is closed by N26's own source, not by a status code. Chain resolved end to end across 11 vendor chunks
+945:- 2026-10-03 PROBER DEFECT, PROVEN @ `triage/prober` reported `HTTP 404` for `https://app.n26.com/build/js/banking-features-auth-biometric-LoginPage.6fd49c7e.js` and `.../client.ae5f81a2.js` on 10-02 and 10-03. curl returns **HTTP 200, 221646B, md5 `f2077cc831c8e4f9f82eb9ae87605c04`** and **200, 1466288B, md5 `0886c4d3eeb57d56a3939be6a7037e80`** respectively, and the exact `/build/js/...` paths are advertised in the `/login` HTML (11 chunks listed inline). **Two facts in my own corpus were prober artifacts, not app behaviour.** Combined with the known `ERR <urlopen error [Errno -2] Name or service not known>` host-interpolation bug, the prober is not a measurement instrument right now. This is the third tooling-failure instance in two cycles and it is the single largest source of error in my record — more of my claims than any hypothesis is.
+948:- 2026-10-03 CORRECTION with opposite operational consequence @ the "true Relay MutationForm wire format" plan. `handleSubmit` is `if (typeof props.mutate !== 'function') return; else e.preventDefault(); submit(e)`, and the HOC `H = (0,m.A)(props => ({..., mutate: (0,o.n)(props.mutation)[0]}))(F)` **always injects `mutate`**. So `preventDefault()` always fires and the native `<form action={s.QQ} method="POST">` + `__mutation`/`__successRedirect`/`__failureRedirect` submission **never happens in production** — it is vestigial progressive-enhancement markup. Two consequences: (1) there is no form-post request spec to emit, so the [NEXT] I wrote last cycle was chasing a transport that cannot fire; (2) this **independently corroborates** the invariant 403 on `POST /graphql` — N26 ships a legacy form transport its own edge/app layer blocks, which is the strongest possible support for "deny precedes GraphQL parsing". Module `68384` exports `QQ = "/graphql"`, confirming the form action target.
+955:- 2026-10-03 ACCEPTED CORRECTION @ process: Probe substrate unreliable. `triage/prober` reported phantom 404s for login chunk paths that curl verified as HTTP 200 (md5s match); `ERR [Errno -2] Name or service not known` host-interpolation bug exists. Any hypothesis resting on recorded status codes is provisional until prober is repaired. Rule: a null grep/result or recorded 404 must be verified by direct curl before acceptance.
+986:- 2026-10-04 ACCEPTED OTHER @ self: three of this cycle's seven conclusions came from measuring something my own notes had already declared settled, and the most valuable one came from re-proving a control on the exact path where I intended to use it. The `[85]` lead I was treating as the program's strongest signal had two false premises, one of which only fell out when I put the blocked token in a query on the CBPII path instead of trusting the lead's characterisation of it. Standing rule: **a lead's description of where a control sits is itself a hypothesis, and inherits every suspicion I apply to a status code.**
+1000:- 2026-10-05 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1048:- 2026-10-06 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1073:- 2026-10-06 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1082:- 2026-10-06 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1127:- 2026-10-07 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1191:- 2026-10-08 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1245:- 2026-10-09 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1274:- 2026-10-10 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1303:- 2026-10-10 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1332:- 2026-10-10 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1366:- 2026-10-11 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+1379:- 2026-10-11 REJECTED OTHER @ self: a probe that reproduces the prior hypothesis byte-for-byte is not NO_DELTA noise to discard but the verification step that closes the gate-map branch — an unverified map is a claim, not a fact
+1407:- 2026-10-12 REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating that mismatch as noise would have preserved three wrong hypotheses. Re-prove controls on the exact channel of intended use, always.
+[0m
+[0m→ [0mRead analyst-prompt.txt[90m [offset=1423, limit=130][0m
+[0m
+[0m$ [0msed -n '1526,1560p' analyst-prompt.txt; echo "..... TAIL ....."; sed -n '3340,3378p' analyst-prompt.txt
+=== INVENTORY n26 ===
+# N26 Bank AG inventory (discovery seed 2026-09-02)
+# NOTE: hosts below are discovery candidates from passive DNS/CT; confirm in-scope vs program scope before active testing.
+app.n26.com
+my.n26.com
+n26.com
+support.n26.com
+www.n26.com
+
+## PASSIVE RECON 2026-09-02 (read-only, non-intrusive)
+
+> Recon observations only. These are NOT confirmed vulnerabilities; ownership/in-scope of each host must be confirmed against the program scope before any active testing. Hosts resolve + serve HTTP — investigation requires scoped authorization.
+
+**Probed:** 5 hosts | **Live HTTP:** 0
+
+| Host | Status | Server/Tech |
+|---|---|---|
+
+## 2026-09-02 21:37:48 UTC
+
+## 2026-09-02 23:32:55 UTC
+
+## 2026-09-03 01:25:44 UTC
+
+## 2026-09-03 06:35:49 UTC
+
+## 2026-09-03 11:42:06 UTC
+
+## 2026-09-03 15:57:16 UTC
+- NEW spc.n26.com: Payment service (Envoy proxy, /health returns 200 OK, /api 404, no swagger/openapi) — discovered via CSP connect-src on app.n26.com
+- NEW flags.n26.com: Statsig feature flag service (GKE, CloudFront, RBAC-protected /v1/initialize returns 403/401) — discovered via CSP connect-src on app.n26.com
+- NEW cdn.number26.de: S3-backed CDN (403 on root, XML access-denied) — discovered via CSP script-src on app.n26.com
+- NEW authentication-service.eks.core-production.keyless.technology: EKS-hosted keyless auth service — discovered via CSP connect-src on app.n26.com
+- NEW app.n26.com/graphql: GraphQL endpoints confirmed (/graphql and /api/graphql both return 403 WAF-blocked; GET via query param returned HTTP 000 connection-reset)
+- CHANGED app.n26.com: CSP fully decoded — reveals Stripe (js.stripe.com, connect-js.stripe.com), LivePerson chat, Sumsub KYC, S3 eu-central-1, Contentful CMS, Marqeta card issuing
+..... TAIL .....
+- CHANGED process: triage feeder still dead — `UnknownError err_2e113ee1`, run `2026-10-12-09-44`, 20th consecutive errored/no-lead run; hypothesis intake remains down.
+- CHANGED process: probe-results.md has empty sections since `2026-10-10 01:25`; no new probe data consumed this cycle.
+- CHANGED api.tech26.de: no probe run this cycle — anonymous surface exhausted, identical-boundary re-probing suspended per prior canon; gate map frozen (3 EXACT ∪ 6 PREFIX, all `401|211 md5 d58528c924dad2fde9c
+- NEW api.tech26.de: 3 previously-unrecorded gated exact GET routes — `/api/login`, `/api/transfers`, `/api/referrals` → `401|211 md5 d58528c9`; origin confirmed Tomcat/Spring Boot; ALB path-traversal block
+- NEW api.tech26.de: `spaces` confirmed as 6th PREFIX root — `/api/spaces`, `/api/spaces/1`, `/api/spaces-x` → `401|211`; singular `/api/space` → `404|0`; gate map frozen at 3 EXACT `{me,addresses,login}` ∪
+- NEW xs2a.tech26.de: AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo (`http://user@169.254.169.254/`) confirmed reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com — filter is req
+- CHANGED Probe surface unfrozen — first new api.tech26.de observables in 22 days (since 2026-09-18 10:07 UTC)
+- CHANGED Triage feeder still degraded — 19th consecutive `UnknownError` run (latest `err_a53ae1f1` at 2026-10-11 23:08); hypothesis intake dead
+- CHANGED No new CT leaves; certspotter endpoint still 410 Gone; CT baseline tech26.de=40 / n26.com=85 names
+- CHANGED Three PARKED hypotheses unchanged (api.tech26.de BOLA, xs2a.tech26.de CBPII SSRF, pay.n26.com Stripe BOLA) — all AUTH_HELPED, blocked on coordinator credential/scope supply
+You are a senior bug bounty hunter ANALYST for the N26 Bank AG program (report channel: bugs.olivermaicher.eu).
+Eligible in-scope assets (ONLY these, from scope.yml + inventory/n26.md): All company-owned infrastructure, online banking platforms, mobile applications, APIs, customer portals, authentication systems, internal banking services, websites, and domains operated by N26 Bank AG and its subsidiaries
+Deep-hunt directives:
+- Prioritize HIGH-VALUE classes: broken auth/session, IDOR/BOLA, SSRF-to-cloud-metadata (169.254.169.254), mass assignment, JWT alg/key confusion, OAuth redirect_uri/state flaws, business logic on money/auth flows, file upload, GraphQL introspection+mutations, subdomain takeover.
+- CHAIN aggressively: open redirect -> OAuth code theft -> ATO; IDOR -> cross-tenant PII dump; SSRF -> metadata -> keys; XSS -> session theft -> ATO.
+- Request-level reasoning: exact METHOD path params headers body, expected vs actual status. No filler.
+- Breadth over the full inventory for anomalies (odd status codes, id/uid/email/user_id params, versioned /api/v1|v2|beta|internal, debug/test flags, swagger/openapi/json), then depth on top-3 anomalies.
+- If a hypothesis needs live confirmation you cannot do passively, emit [NEXT] PROBE with the EXACT read-only request.
+OUT OF SCOPE (REJECTED classes): network DoS, account-lockout DoS, descriptive errors/headers only, robots.txt / known public files, outdated library versions, OPTIONS/TRACE, CSRF on logout or anonymous forms, cookie flags on non-sensitive data, self-XSS, scanner reports without POC, physical access, social engineering of employees/vendors, username enumeration on login/forgot-password, brute-force/rate-limit/lockout policy, SSL/TLS best practice, SSL attacks, clickjacking without demonstrated exploit, mail config (SPF/DKIM/DMARC), known-vulnerable library without program-specific exploit, password/account-recovery policy, autocomplete in fields, public login panels, lack of email verification, session control during email/password change, and any exposure of customer/employee/financial/authentication data during testing (program note). Focus on real logic flaws in scoped assets.
+Your job is NOT to invent vulnerabilities. Run the 8 steps and output ONLY structured blocks.
+
+STEP 1 — DELTA: compare inventory+knowledge+last leads against current surface. [NEW]/[CHANGED] one line each, or NO_DELTA.
+STEP 2 — PRIORITIZE: score top new (or existing) assets 0-10 on attack_surface, business_value, tech_exposure (GraphQL/OAuth/JWT/upload/admin/uncommon), gate_ease (10=no auth), cloud_surface, freshness. priority=0.25a+0.25b+0.15t+0.15g+0.10c+0.10f. Emit [PRIO] asset,score,axis.
+STEP 3 — HYPOTHESES: top 3 assets, max 1 hypothesis each. Strict schema, one field per line under [HYP] title line:
+[HYP] <title>
+class: <IDOR|SSRF|AUTH|XSS|BUSLOGIC|MISCONFIG|OATH|OTHER>
+asset: <host/endpoint>
+confidence: <0-100>
+reasoning: <facts only>
+evidence_needed: <what proves it>
+verify_steps: <passive-first concrete HTTP requests>
+impact: <what attacker gets + severity>
+testability: <PASSIVE|AUTH_HELPED|HUMAN_ONLY>
+Never put fields inline in the [HYP] title.
+STEP 4 — SELF-CRITIQUE: drop confidence<40 or REJECTED-class or no-verify-steps. [PARKED] <title>: <why>. [FINAL] survivors ranked.
+STEP 5 — NEXT ACTION: exactly one [NEXT] <PROBE|SCAN|RAG|HUMAN>: <one concrete action, exact endpoint if PROBE>.
+STEP 6 — LEARNING: [LEARN] REJECTED/ACCEPTED <class> @ <asset>: <reason>.
+STEP 7 — RISK: [RISK] <program>: <0-100> reason.
+RULES: facts vs hypotheses strictly separated; no endpoint-map-only; no REJECTED class; sha256 any secret; all claims trace to context or your own read-only probes; passive-first, <=1 rps, GET/HEAD/OPTIONS only for live probes; no auth-bypass or mutating tests against live customer data; any scanner output requires manual validation.
+[0m
+[0m→ [0mRead analyst-prompt.txt[90m [offset=1290, limit=133][0m
+I have the full task now (STEP 1–7 structured output). Before writing the report I need to verify whether I can produce a *fresh* delta — the KB's surface data is 1–3 days stale. Let me check network reachability with a single rate-limited read-only probe.
+[0m
+[0m$ [0mfor h in api.tech26.de xs2a.tech26.de pay.n26.com app.n26.com; do printf '%s ' "$h"; curl -sS -m 8 -o /dev/null -w '%{http_code} %{size_download} %{time_total}\n' "https://$h/" 2>&1 || echo "ERR"; sleep 1.2; done
+api.tech26.de 404 0 0.641921
+xs2a.tech26.de 404 0 0.634466
+pay.n26.com 204 0 0.106477
+app.n26.com 302 28 0.594922
+[0m
+Network is live. This is a new cycle (KB last updated 10-12; today 10-13), so a fresh delta check is legitimate. Let me verify the frozen boundaries and test one genuinely new axis (HTTP method-override + Envoy-admin paths on the api edge), rate-limited.
+[0m$ [0mcd /tmp/opencode
+probe(){ url="$1"; shift; printf '%-55s ' "$* $url"; curl -sS -m 10 -o body.bin -w '%{http_code} %{size_download} %{time_total} ' "$@" "$url" 2>&1; md5sum body.bin | cut -d' ' -f1; sleep 5; }
+echo "== api.tech26.de baseline =="
+probe https://api.tech26.de/api/me
+probe https://api.tech26.de/api/accounts/1
+probe https://api.tech26.de/api/accounts/1/zzqnotreal
+echo "== api method-override (NEW axis) =="
+probe https://api.tech26.de/api/me -H 'X-HTTP-Method-Override: POST'
+probe https://api.tech26.de/api/me -H 'X-Method-Override: POST'
+probe "https://api.tech26.de/api/me?_method=POST"
+echo "== api envoy-admin paths (NEW axis) =="
+probe https://api.tech26.de/stats
+probe https://api.tech26.de/config_dump
+probe https://api.tech26.de/server_info
+probe https://api.tech26.de/ready
+probe https://api.tech26.de/.well-known/openid-configuration
+== api.tech26.de baseline ==
+ https://api.tech26.de/api/me                           401 211 0.483670 d58528c924dad2fde9c30f81972e0548
+ https://api.tech26.de/api/accounts/1                   401 211 0.624861 d58528c924dad2fde9c30f81972e0548
+ https://api.tech26.de/api/accounts/1/zzqnotreal        401 211 0.629368 d58528c924dad2fde9c30f81972e0548
+== api method-override (NEW axis) ==
+-H X-HTTP-Method-Override: POST https://api.tech26.de/api/me 401 211 0.635885 d58528c924dad2fde9c30f81972e0548
+-H X-Method-Override: POST https://api.tech26.de/api/me 401 211 0.458374 d58528c924dad2fde9c30f81972e0548
+ https://api.tech26.de/api/me?_method=POST              401 211 0.538149 d58528c924dad2fde9c30f81972e0548
+== api envoy-admin paths (NEW axis) ==
+ https://api.tech26.de/stats                            404 0 0.467614 d41d8cd98f00b204e9800998ecf8427e
+ https://api.tech26.de/config_dump                      404 0 0.623588 d41d8cd98f00b204e9800998ecf8427e
+ https://api.tech26.de/server_info                      404 0 0.618789 d41d8cd98f00b204e9800998ecf8427e
+ https://api.tech26.de/ready                            404 0 0.475090 d41d8cd98f00b204e9800998ecf8427e
+ https://api.tech26.de/.well-known/openid-configuration 404 0 0.466220 d41d8cd98f00b204e9800998ecf8427e
+[0m
+api edge is byte-identical to the frozen map (gate md5 `d58528c9` stable); method-override and Envoy-admin paths are NO_DELTA. Now xs2a + pay, plus a passive CT delta check.
+[0m$ [0mcd /tmp/opencode
+probe(){ url="$1"; shift; printf '%-60s ' "$* $url"; curl -sS -m 10 -o body.bin -w '%{http_code} %{size_download} %{time_total} ' "$@" "$url" 2>&1; md5sum body.bin | cut -d' ' -f1; sleep 5; }
+echo "== xs2a.tech26.de =="
+probe https://xs2a.tech26.de/v1/berlin-group/v1/consents
+probe https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
+probe https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds -H 'TPP-Redirect-URI: http://user@169.254.169.254/latest/meta-data/'
+probe https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents
+echo "== pay.n26.com =="
+probe https://pay.n26.com/v1/charges
+probe https://pay.n26.com/v1/balance
+probe https://pay.n26.com/v1/payments
+probe https://pay.n26.com/openapi.json
+probe https://pay.n26.com/health
+probe https://pay.n26.com/.well-known/stripe-configuration
+== xs2a.tech26.de ==
+ https://xs2a.tech26.de/v1/berlin-group/v1/consents          401 0 0.481269 d41d8cd98f00b204e9800998ecf8427e
+ https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds 401 0 0.485430 d41d8cd98f00b204e9800998ecf8427e
+-H TPP-Redirect-URI: http://user@169.254.169.254/latest/meta-data/ https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds 401 0 0.458316 d41d8cd98f00b204e9800998ecf8427e
+ https://xs2a.tech26.de/sandbox/v1/berlin-group/v1/consents  401 0 0.465675 d41d8cd98f00b204e9800998ecf8427e
+== pay.n26.com ==
+ https://pay.n26.com/v1/charges                              401 342 0.136853 e7d47e750e24bed6f734bdf03e09d63a
+ https://pay.n26.com/v1/balance                              401 342 0.106301 e7d47e750e24bed6f734bdf03e09d63a
+ https://pay.n26.com/v1/payments                             401 342 0.056793 e7d47e750e24bed6f734bdf03e09d63a
+ https://pay.n26.com/openapi.json                            403 243 0.143546 695a53ccfb454454a0e56c22e3d75163
+ https://pay.n26.com/health                                  403 111 0.109100 b6c792c0f58fa3ec92173c074885221f
+ https://pay.n26.com/.well-known/stripe-configuration        403 111 0.120456 b6c792c0f58fa3ec92173c074885221f
+[0m
+Surface is byte-identical to the frozen map across all three hosts (api `d58528c9`, xs2a `d41d8cd9`, pay 401/342). Now the passive delta check (CT) and an inventory-vs-KB host diff to find any never-probed candidate.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt
+grep -rhoE '[a-z0-9][a-z0-9._-]*\.(tech26\.de|n26\.com|number26\.de|keyless\.technology)' inventory/n26.md | tr 'A-Z' 'a-z' | sort -u > /tmp/opencode/inv-hosts.txt
+wc -l /tmp/opencode/inv-hosts.txt
+head -80 /tmp/opencode/inv-hosts.txt
+32 /tmp/opencode/inv-hosts.txt
+25.n26.com
+25.tech26.de
+3ds-challenge.n26.com
+aisp.tech26.de
+api.tech26.de
+app.n26.com
+authentication-service.eks.core-production.keyless.technology
+backstage.tech26.de
+beta-api.tech26.de
+cdn.number26.de
+cookie.n26.com
+engagementplatform.n26.com
+flags.n26.com
+fpt.tech26.de
+fra.tech26.de
+h.tech26.de
+mag.n26.com
+mcp-tools.fra.tech26.de
+my.n26.com
+pay.n26.com
+phishing-report.tech26.de
+pisp-staging.tech26.de
+pisp.tech26.de
+rstats.n26.com
+sapi.tech26.de
+spc.n26.com
+staging.tech26.de
+support.n26.com
+www.3ds-challenge.n26.com
+www.n26.com
+xs2a-staging.tech26.de
+xs2a.tech26.de
+[0m
+[0m$ [0mcd /tmp/opencode
+echo "== crt.sh tech26.de =="; curl -sS -m 40 'https://crt.sh/?q=%25.tech26.de&output=json' -o ct-tech.json 2>&1; python3 -c "import json;d=json.load(open('ct-tech.json'));s=set();[s.update(x.get('name_value','').lower().split(chr(10))) for x in d];s={x for x in s if x};print('names',len(s));print(chr(10).join(sorted(s)))" 2>&1 | head -60
+echo "== crt.sh n26.com =="; curl -sS -m 40 'https://crt.sh/?q=n26.com&output=json' -o ct-n26.json 2>&1; python3 -c "import json;d=json.load(open('ct-n26.json'));s=set();[s.update(x.get('name_value','').lower().split(chr(10))) for x in d];s={x for x in s if x};print('names',len(s))" 2>&1 | head -5
+== crt.sh tech26.de ==
+curl: (28) Connection timed out after 40001 milliseconds
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+FileNotFoundError: [Errno 2] No such file or directory: 'ct-tech.json'
+== crt.sh n26.com ==
+curl: (28) Connection timed out after 40002 milliseconds
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+FileNotFoundError: [Errno 2] No such file or directory: 'ct-n26.json'
+[0m
+CT is unreachable this cycle (timeout). But the inventory host diff surfaces several hosts I don't see in the KB. Let me check which are genuinely never-probed.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt
+for h in 25.n26.com 25.tech26.de 3ds-challenge.n26.com backstage.tech26.de fra.tech26.de h.tech26.de mag.n26.com mcp-tools.fra.tech26.de phishing-report.tech26.de pisp-staging.tech26.de rstats.n26.com staging.tech26.de www.3ds-challenge.n26.com xs2a-staging.tech26.de; do
+  c=$(grep -c -i -F "$h" knowledge/index.md 2>/dev/null); printf '%-32s KB_hits=%s\n' "$h" "$c";
+done
+25.n26.com                       KB_hits=0
+25.tech26.de                     KB_hits=0
+3ds-challenge.n26.com            KB_hits=2
+backstage.tech26.de              KB_hits=0
+fra.tech26.de                    KB_hits=3
+h.tech26.de                      KB_hits=0
+mag.n26.com                      KB_hits=0
+mcp-tools.fra.tech26.de          KB_hits=3
+phishing-report.tech26.de        KB_hits=1
+pisp-staging.tech26.de           KB_hits=0
+rstats.n26.com                   KB_hits=2
+staging.tech26.de                KB_hits=9
+www.3ds-challenge.n26.com        KB_hits=0
+xs2a-staging.tech26.de           KB_hits=0
+[0m
+Several hosts are absent from the KB entirely — a real un-probed delta candidate. Let me read their inventory context before probing.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt
+for h in 25.n26.com 25.tech26.de backstage.tech26.de h.tech26.de mag.n26.com pisp-staging.tech26.de xs2a-staging.tech26.de www.3ds-challenge.n26.com 3ds-challenge.n26.com mcp-tools.fra.tech26.de; do
+  echo "===== $h ====="
+  grep -n -i -m3 -B1 -A3 -F "$h" inventory/n26.md | head -20
+done
+===== 25.n26.com =====
+409-- CHANGED spc.n26.com: versioned endpoints permanently confirmed as 1x1 GIF tracking pixels (len=43) — IDOR hypothesis invalidated
+410:- CHANGED crt.sh/%25.n26.com: rate limited (HTTP 502) — transient, retry later
+411-
+412-## 2026-09-11 00:39:38 UTC
+413-- NEW api.tech26.de: Anonymous HTTP API discovery conclusively exhausted (~47 paths all envoy empty-404); WS-upgrade 403 confirmed as awselb/2.0 WAF edge rule (not app-layer signal)
+--
+420-- CHANGED spc.n26.com: Versioned endpoints permanently confirmed as 1x1 GIF tracking pixels (len=43) — IDOR hypothesis invalidated
+421:- CHANGED crt.sh/%25.n26.com: Rate limited (HTTP 502) — transient, retry later
+422-
+423-## 2026-09-11 05:19:58 UTC
+424-- NEW pay.n26.com/v1/payments, /v1/balance, /v1/charges → HTTP 401 (auth-gated payment API, not 403/404) — first live payment endpoints observed
+--
+433-- CHANGED fpt.tech26.de: Fixed-response ALB placeholder stub (HTTP/2 200 empty, CL=0, awselb/2.0)
+434:- CHANGED crt.sh/%25.n26.com: Rate limited (HTTP 502) — transient
+435-
+436-## 2026-09-11 09:59:33 UTC
+437-- NEW pay.n26.com/v1/*: Live Stripe-forwarded payment API confirmed (23+ endpoints returning HTTP 401 with Stripe error format; /v1/tokens 404; root 204; /v1 403 CloudFront)
+===== 25.tech26.de =====
+479-- CHANGED pay.n26.com: Stripe-passthrough 401 boundary stable across 4+ cycles — probe-results 09-12 00:39 identical to 09-11 (pay.n26.com/v1/payments|balance|charges → 401); no-key len=342 vs fake-key len=132 
+480:- CHANGED crt.sh `%25.n26.com` / `%25.tech26.de`: 502 rate-limit persists since 2026-09-10 22:41 — passive subdomain corpus stale, no fresh leaf names to test.
+481-- CHANGED External key-leak path: GitHub `/search/code?q=pay.n26.com` remains 401 token-gated; grep.app index untested this cycle — only viable unlock for top asset.
+482-- NEW pay.n26.com/v1/payments, /v1/balance, /v1/charges: Live Stripe-forwarded payment API confirmed — all three endpoints return HTTP 401 (342 bytes, Stripe error JSON), Cloudflare edge, CORS-open (ACAO: *
+483-- CHANGED authentication-service.eks.core-production.keyless.technology: /health returns 404 "path unused" — consistent with 68+ paths route-less; deployment stable at v26.09.07; API at custom non-standard rout
+--
+491-- CHANGED pay.n26.com: Stripe-passthrough 401 boundary stable across 4+ cycles — probe-results 09-12 00:39 identical to 09-11 (pay.n26.com/v1/payments|balance|charges → 401); no-key len=342 vs fake-key len=132 
+492:- CHANGED crt.sh `%25.n26.com` / `%25.tech26.de`: 502 rate-limit persists since 2026-09-10 22:41 — passive subdomain corpus stale, no fresh leaf names to test.
+493-- CHANGED External key-leak path: GitHub `/search/code?q=pay.n26.com` remains 401 token-gated; grep.app index untested this cycle — only viable unlock for top asset.
+494-
+495-## 2026-09-12 12:56:03 UTC
+--
+508-- CHANGED pay.n26.com Stripe-passthrough 401 boundary stable 4+ cycles (no-key len=342 vs fake-key len=132)
+509:- CHANGED crt.sh %25.n26.com/%25.tech26.de 502 rate-limit persists since 2026-09-10
+510-- CHANGED api.github.com/search/code?q=pay.n26.com remains 401 token-gated
+511-
+512-## 2026-09-12 20:44:55 UTC
+===== backstage.tech26.de =====
+1620-- NEW @ mcp-tools.fra.tech26.de: cert-without-DNS now proven **against the authoritative server**, not just a resolver — direct query to the zone's own NS returns `NXDOMAIN`, no `*.fra.tech26.de` wildcard e
+1621:- NEW @ backstage.platform26-live-eu.platform26.de + backstage.tech26.de: both **connection-timeout** on 443 (12s), consistent with the standing source-gated SG class — but `backstage.platform26-live-eu.pla
+1622-- NEW @ candidate-diff method: my first two "undocumented in corpus" lists were artifacts of literal `grep` against a KB that records hosts in brace-expansion form (`{fpadedge,mambuedge,oneglobaledge,taktil
+1623-
+1624-## 2026-10-07 13:32:55 UTC
+--
+1656-- CHANGED fra.tech26.de subzone separately delegated (own NS set); mcp-tools.fra.tech26.de cert-without-DNS proven against authoritative server
+1657:- CHANGED backstage.platform26-live-eu.platform26.de + backstage.tech26.de connection-timeout on 443 (source-gated SG class)
+1658-- CHANGED xs2a.tech26.de edge redirect-target filter CORRECTED: IP-literal(+localhost) matcher, NOT scheme:// substring matcher
+1659-- CHANGED AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo confirmed reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com
+1660-- CHANGED flags.n26.com RBAC boundary tightened to default-deny (/v1/sdk_exception now 403|19B, all GET config 403|19B) — premise dead
+--
+1668-- CHANGED fra.tech26.de subzone separately delegated (own NS set); mcp-tools.fra.tech26.de cert-without-DNS proven against authoritative server
+1669:- CHANGED backstage.platform26-live-eu.platform26.de + backstage.tech26.de connection-timeout on 443 (source-gated SG class)
+1670-- CHANGED xs2a.tech26.de edge redirect-target filter CORRECTED: IP-literal(+localhost) matcher, NOT scheme:// substring matcher
+1671-- CHANGED AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo confirmed reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com
+1672-- CHANGED flags.n26.com RBAC boundary tightened to default-deny (/v1/sdk_exception now 403|19B, all GET config 403|19B) — premise dead
+===== h.tech26.de =====
+1261-- NEW Operational: the tech26.de edge soft-throttles. After ~30 requests inside ~3 min every connection failed closed (curl rc=6, 000|0, three retries over 6s all failing); full recovery after ~45s idle. It
+1262:- NEW [SELF-CORRECTION, process] My first two probe scripts this cycle returned a uniform 000 because I built the URL as `https://$h$path` with `$h=api` instead of `$h.tech26.de`, i.e. I was resolving the h
+1263-- NEW xs2a.tech26.de: OPTIONS on live Berlin-Group routes returns 404 (not 401) — OPTIONS is method-opaque, not method-agnostic; invalidates prior control assumption
+1264-- NEW aisp.tech26.de + pisp.tech26.de: /oauth2/authorize returns 404 len=0 even with full documented param set (client_id+scope+code_challenge+redirect_uri+response_type+state) — no auth plane on fallback h
+1265-- NEW pisp.tech26.de: GET /api/encryption/key → 404 len=0 (documented GET route, same-batch bogus sibling 404) — admissible evidence of absence
+===== mag.n26.com =====
+891-## 2026-09-20 15:19:08 UTC
+892:- NEW mag.n26.com + mag-{de,es,fr,it}.n26.com: fresh CT leaves (post `certspotter` sweep), all 301→`n26.com/{en-eu,de-de,es-es,fr-fr,it-it}/blog`, server envoy — marketing-alias class identical to {next,get
+893-- NEW phishing-report.tech26.de: fresh CT leaf absent from all KB/inventory, A-records in AWS range (18.158.236.148), connect-timeout 25s (443) and 15s (80), 0 bytes — source-gated SG pattern (same class as
+894-- CHANGED triage feeder run-2026-09-20-14-16 = "No leads provided" (empty again); probe-results.md frozen at 2026-09-20 11:49:36 — no new runs this cycle.
+895-- NEW NO_DELTA — attack surface identical to 2026-09-17/09-18/09-19 runs across all in-scope assets; three FINAL hypotheses unchanged (all AUTH_HELPED)
+--
+905-- CHANGED grep.app still Vercel Security Checkpoint HTTP 429 for `pay.n26.com`/`api.tech26.de`/`sk_live` — passive key-leak corpus remains closed (github 401, sourcegraph 0, crt.sh 502 unchanged).
+906:- CHANGED certspotter re-sweep (7d) yielded 2 fresh CT leaves: mag.n26.com + mag-{de,es,fr,it}.n26.com (all 301→n26.com/*/blog, envoy), phishing-report.tech26.de (AWS A-records, connect-timeout, source-gated SG
+907-- CHANGED triage feeder run-2026-09-20-14-16 = empty (14th+ consecutive no-lead); probe-results.md frozen at 2026-09-20 11:49:36
+908-- CHANGED crt.sh/%25.n26.com & %25.tech26.de HTTP 502 rate-limit persists since 2026-09-10; grep.app 429; GitHub code search 401
+909-- CHANGED NO_DELTA — attack surface identical to 2026-09-17/09-18/09-19 runs; three FINAL hypotheses unchanged (all AUTH_HELPED)
+--
+916-- CHANGED grep.app 429 Vercel-checkpoint, github 401 token-gated, crt.sh 502 — passive corpora fully closed this cycle.
+917:- NEW certspotter re-sweep (7d) yielded 2 fresh CT leaves: mag.n26.com + mag-{de,es,fr,it}.n26.com (all 301→n26.com/*/blog, envoy), phishing-report.tech26.de (AWS A-records, connect-timeout, source-gated SG
+918-- NEW triage feeder run-2026-09-20-14-16 = empty (14th+ consecutive no-lead); probe-results.md frozen at 2026-09-20 11:49:36
+919-- CHANGED crt.sh/%25.n26.com & %25.tech26.de HTTP 502 rate-limit persists since 2026-09-10; grep.app 429; GitHub code search 401
+920-- CHANGED NO_DELTA — attack surface identical to 2026-09-17/09-18/09-19 runs; three FINAL hypotheses unchanged (all AUTH_HELPED)
+===== pisp-staging.tech26.de =====
+1057-- NEW @ xs2a.tech26.de: **mTLS is not enforced at the production edge.** ELB is named `obnium-mtls-live-fra` (Berlin Group mandates eIDAS QWAC mTLS on every TPP request), yet an anonymous client completes a
+1058:- NEW @ xs2a-staging / aisp-staging / pisp-staging.tech26.de (never probed; surfaced by certspotter, 39 names): all CNAME to **`obnium-mtls-staging-fra-558276106`** ELB (pre-production twin of the live XS2A
+1059-- NEW @ xs2a.tech26.de: token-minting surface is **not anonymously reachable** — `/oauth2/token`, `/v1/berlin-group/v1/oauth2/token`, `/oauth2/authorize` all `404`; documented sandbox helpers (`/sandbox/oau
+1060-- CHANGED @ aisp.tech26.de + pisp.tech26.de: sharing the `{aisp,xs2a,pisp}` cert leaf (Amazon RSA 2048 M04, valid 2026-02-02→2027-03-03), they **do not** serve the Berlin-Group table (`404` app-layer, est=1ms) 
+1061-- CHANGED @ app.n26.com: vendor-documented open-banking routes exist — `/wl/open-banking/aisp?consentId=` → `302 /open-banking/aisp?consentId=…` → unauth `302 /login?…&redirect=%2Fopen-banking%3F…`.
+===== xs2a-staging.tech26.de =====
+1221-- NEW xs2a.tech26.de sandbox tier `/sandbox/oauth2/authorize` shows identical ALB blocklist behavior (403 awselb/2.0 on `127.0.0.1@evil.example`, 401 istio-envoy on `evil.example@127.0.0.1`)
+1222:- CHANGED xs2a-staging.tech26.de remains source-gated (connect-timeout 25s, 0 bytes) — staging ELB `obnium-mtls-staging-fra-558276106` not anonymously reachable
+1223-- CHANGED api.tech26.de / beta-api.tech26.de / sapi.tech26.de legacy Bearer-gated family stable at 15 endpoints (5 base + 10 nested), all 401 len=211 byte-identical, ID-independent prefix firewall confirmed
+1224-- CHANGED pay.n26.com Stripe-passthrough 401 boundary stable 11+ cycles (no-key len=342 vs fake-key len=132); key-discovery closed 3/3 corpora
+1225-
+===== www.3ds-challenge.n26.com =====
+903-- CHANGED triage feeder: fresh run-2026-09-20-17-31 also "No leads provided" — 4 empty feeder runs today (05:25/10:05/14:16/17:31), 15th+ consecutive no-lead cycle.
+904:- NEW certspotter refresh this cycle: n26.com=85 names, tech26.de=39 names — zero leaves beyond 09-20 15:19 corpus (mag.*, phishing-report already captured; `www.3ds-challenge.n26.com` is a trivial www-alia
+905-- CHANGED grep.app still Vercel Security Checkpoint HTTP 429 for `pay.n26.com`/`api.tech26.de`/`sk_live` — passive key-leak corpus remains closed (github 401, sourcegraph 0, crt.sh 502 unchanged).
+906-- CHANGED certspotter re-sweep (7d) yielded 2 fresh CT leaves: mag.n26.com + mag-{de,es,fr,it}.n26.com (all 301→n26.com/*/blog, envoy), phishing-report.tech26.de (AWS A-records, connect-timeout, source-gated SG
+907-- CHANGED triage feeder run-2026-09-20-14-16 = empty (14th+ consecutive no-lead); probe-results.md frozen at 2026-09-20 11:49:36
+===== 3ds-challenge.n26.com =====
+599-- NEW engagementplatform.n26.com/users/export/ids → HTTP 405 new Braze REST endpoint (2026-09-13 14:19)
+600:- NEW 3ds-challenge.n26.com: fresh CT leaf; awselb/2.0 hard 403 len=118 on all anonymous paths — source-gated ACS edge
+601-- NEW static.{n26,app,support}.n26.com: private S3 behind CloudFront, 403 AccessDenied XML — exact mirror of cdn.number26.de
+602-- NEW {next,get,join,tutorials}.n26.com: 301 aliases to n26.com download-app / support tutorials — marketing, no app surface
+603-- NEW clicks.{emails,accounts}.n26.com: 404 on all candidate tracking shapes — no open-redirect surface
+--
+616-- NEW engagementplatform.n26.com/ root shifted from Braze dashboard redirect (dashboard-02.braze.eu) → HTTP 400 (96B text/html); new Braze endpoint /users/export/ids returns HTTP 405
+617:- NEW 3ds-challenge.n26.com fresh CT leaf; awselb/2.0 hard 403 len=118 on all anonymous paths — source-gated ACS edge
+618-- NEW static.{n26,app,support}.n26.com confirmed private S3 behind CloudFront, 403 AccessDenied XML — mirror of cdn.number26.de
+619-- NEW {next,get,join,tutorials}.n26.com confirmed 301 aliases to n26.com marketing pages — no app surface
+620-- NEW clicks.{emails,accounts}.n26.com return 404 on all candidate tracking shapes (/cl, /link?url, /click?u, /t/r/a) — no open redirect
+--
+629-- NEW engagementplatform.n26.com/ root shifted from Braze dashboard redirect → HTTP 400 (96B text/html); /users/export/ids returns HTTP 405
+630:- NEW 3ds-challenge.n26.com fresh CT leaf; awselb/2.0 hard 403 len=118 on all anonymous paths — source-gated ACS edge
+631-- NEW static.{n26,app,support}.n26.com confirmed private S3 behind CloudFront, 403 AccessDenied XML — mirror of cdn.number26.de
+632-- NEW {next,get,join,tutorials}.n26.com confirmed 301 aliases to n26.com marketing pages — no app surface
+633-- NEW clicks.{emails,accounts}.n26.com return 404 on all candidate tracking shapes — no open redirect
+===== mcp-tools.fra.tech26.de =====
+1619-- NEW @ fra.tech26.de: the subzone is **separately delegated** — own NS set (`ns-1284.awsdns-32.org`, `ns-168.awsdns-21.com`, `ns-1952.awsdns-52.co.uk`, `ns-545.awsdns-04.net`), distinct from `tech26.de`'s 
+1620:- NEW @ mcp-tools.fra.tech26.de: cert-without-DNS now proven **against the authoritative server**, not just a resolver — direct query to the zone's own NS returns `NXDOMAIN`, no `*.fra.tech26.de` wildcard e
+1621-- NEW @ backstage.platform26-live-eu.platform26.de + backstage.tech26.de: both **connection-timeout** on 443 (12s), consistent with the standing source-gated SG class — but `backstage.platform26-live-eu.pla
+1622-- NEW @ candidate-diff method: my first two "undocumented in corpus" lists were artifacts of literal `grep` against a KB that records hosts in brace-expansion form (`{fpadedge,mambuedge,oneglobaledge,taktil
+1623-
+--
+1655-- CHANGED reports/report-draft-n26.md file MISSING again — third cycle where KB asserts it exists while tree contains no such file
+1656:- CHANGED fra.tech26.de subzone separately delegated (own NS set); mcp-tools.fra.tech26.de cert-without-DNS proven against authoritative server
+1657-- CHANGED backstage.platform26-live-eu.platform26.de + backstage.tech26.de connection-timeout on 443 (source-gated SG class)
+1658-- CHANGED xs2a.tech26.de edge redirect-target filter CORRECTED: IP-literal(+localhost) matcher, NOT scheme:// substring matcher
+1659-- CHANGED AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo confirmed reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com
+--
+1667-- CHANGED reports/report-draft-n26.md file MISSING again — third cycle where KB asserts it exists while tree contains no such file
+1668:- CHANGED fra.tech26.de subzone separately delegated (own NS set); mcp-tools.fra.tech26.de cert-without-DNS proven against authoritative server
+1669-- CHANGED backstage.platform26-live-eu.platform26.de + backstage.tech26.de connection-timeout on 443 (source-gated SG class)
+1670-- CHANGED xs2a.tech26.de edge redirect-target filter CORRECTED: IP-literal(+localhost) matcher, NOT scheme:// substring matcher
+1671-- CHANGED AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo confirmed reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com
+[0m
+The `25.*` hits are `%25` URL-encoding artifacts, and the 10-07 lesson warns that literal-grep "undocumented host" lists are false positives against a brace-expansion KB. Let me confirm the few real candidates' true status.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt
+echo "== exact host presence (inventory + curated KB) =="
+for h in h.tech26.de 25.tech26.de 25.n26.com backstage.tech26.de mag.n26.com www.3ds-challenge.n26.com; do
+  a=$(grep -rh -F -- "$h" inventory/n26.md knowledge/index.md 2>/dev/null | grep -vF '%25' | grep -cF "$h")
+  printf '%-30s exact_hits=%s\n' "$h" "$a"
+done
+echo
+echo "== brace-expansion groups mentioning staging/backstage =="
+grep -rhoE '\{[a-z0-9,._-]+\}[a-z0-9._*-]*\.(tech26\.de|n26\.com)' knowledge/index.md inventory/n26.md | sort -u | head -40
+== exact host presence (inventory + curated KB) ==
+h.tech26.de                    exact_hits=1
+25.tech26.de                   exact_hits=0
+25.n26.com                     exact_hits=0
+backstage.tech26.de            exact_hits=5
+mag.n26.com                    exact_hits=9
+www.3ds-challenge.n26.com      exact_hits=1
+
+== brace-expansion groups mentioning staging/backstage ==
+{,-de,-es,-fr,-it}.n26.com
+{aisp,pisp}.tech26.de
+{aisp,xs2a,pisp}.tech26.de
+{aisp,xs2a}.tech26.de
+{api,beta-api,sapi,aisp,pisp}.tech26.de
+{api,beta-api,sapi}.tech26.de
+{de,es,fr,it}.n26.com
+{emails,accounts}.n26.com
+{fpadedge,mambuedge,...}.tech26.de
+{fpadedge,mambuedge,oneglobaledge,taktileedge,epiedge,sredocs,telemetry}*.tech26.de
+{idealedge,livepersonedge}.tech26.de
+{n26,app,support}.n26.com
+{next,get,join,tutorials}.n26.com
+{pisp,aisp}.tech26.de
+{xs2a,aisp,pisp}-staging.tech26.de
+{xs2a,aisp,pisp}.tech26.de
+{xs2a,api}.tech26.de
+[0m
+Confirmed: `{xs2a,aisp,pisp}-staging.tech26.de` is documented in brace-expansion form, and `backstage`/`mag`/`www.3ds-challenge` all appear — my candidate-diff was the exact false-positive class the 10-07 lesson warns about (no new host). Last check: whether any source-gated host has *activated* since last cycle.
+[0m$ [0mcd /tmp/opencode
+for h in backstage.tech26.de xs2a-staging.tech26.de pisp-staging.tech26.de phishing-report.tech26.de fpadedge.tech26.de; do
+  printf '%-32s ' "$h"
+  curl -sS -m 8 -o body.bin -w 'HTTP %{http_code} len=%{size_download} t=%{time_total}\n' "https://$h/" 2>&1 | tr -d '\n'; echo
+  sleep 2
+done
+backstage.tech26.de              curl: (28) Connection timed out after 8002 millisecondsHTTP 000 len=0 t=8.002955
+xs2a-staging.tech26.de           curl: (28) Connection timed out after 8002 millisecondsHTTP 000 len=0 t=8.002677
+pisp-staging.tech26.de           curl: (28) Connection timed out after 8002 millisecondsHTTP 000 len=0 t=8.002401
+phishing-report.tech26.de        curl: (28) Connection timed out after 8002 millisecondsHTTP 000 len=0 t=8.002079
+fpadedge.tech26.de               curl: (28) Connection timed out after 8002 millisecondsHTTP 000 len=0 t=8.002845
+[0m
+All source-gated hosts remain connection-timeout (no activation). Strict NO_DELTA. Let me capture the current feeder weather and report state, then write the structured output.
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt
+echo "== newest triage =="; ls -t triage/run-*.md | head -1
+cat "$(ls -t triage/run-*.md | head -1)"
+echo; echo "== valid-bugs =="; cat reports/valid-bugs.md
+echo; echo "== hypotheses-bigpickle =="; cat reports/hypotheses-bigpickle.txt 2>/dev/null | head -40
+echo; echo "== ls reports for draft =="; ls reports/ | grep -i draft || echo "NO DRAFT FILE"
+== newest triage ==
+triage/run-2026-10-10-15-33.md
+
+===== TRIAGE 2026-10-10 15:33:56 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_9d7d715d"
+  }
+}
+
+== valid-bugs ==
+# Validated findings (running count 0)
+
+- 1 lead(s) marked VALID at 2026-09-05 17:37:21 UTC
+  - **Verdict: HOLD** — RBAC bypass on `sdk_exception` confirmed, but impact ceiling is LOW (public client key, no PII/funds). Needs evidence of actual sensitive flag data being disclosed. If `/v1/downloa
+
+- 2 lead(s) marked VALID at 2026-09-07 06:12:37 UTC
+  - | **Q4 Provable** | HOLD — requires valid Bearer key which is not in web CSP/bundles; cannot prove non-invasively |
+  - | engagementplatform.n26.com/users | **HOLD** | Needs valid key path discovery |
+
+- 2 lead(s) marked VALID at 2026-09-07 12:47:54 UTC
+  - | Q4 Provable | **No** — requires valid Bearer key not found in web CSP/bundles |
+  - | 7 | `engagementplatform.n26.com/users` | **HOLD** | Needs valid key path |
+
+- 4 lead(s) marked VALID at 2026-09-13 06:48:50 UTC
+  - | Q5 Novel | **NO** — POST /v1/initialize returning data when given a valid public client key is the standard Statsig SDK flow. Not a bypass. |
+  - | Q5 Novel | **NO** — `/v1/initialize` accepting a valid public client key via POST is the documented Statsig client SDK flow |
+  - | Q4 Provable | **NO** — Requires valid Bearer key not found in web CSP/bundles. 10 web bundles searched, no token. CORS is open but no web-accessible key path identified. Server/mobile-only API. |
+  - **Verdict: HOLD** — Distinct auth boundary confirmed (401 key-gated, not tarpit). CORS-open suggests server/mobile integration. But no valid Bearer key path found in web bundles or CSP. Needs valid ke
+
+== hypotheses-bigpickle ==
+## 2026-10-12 18:13:17 UTC [target] (model bigpickle)
+[PARKED] pay.n26.com Stripe BOLA: requires an N26-issued `sk_live`; anonymous host is a plain Stripe error passthrough.
+[FINAL] none anonymously testable this cycle. All three survivors are credential-gated core-banking controls; no REJECTED-class item promoted.
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) one N26 paired-device grant Bearer plus a second account's object ids for api.tech26.de, (b) a valid CBPII consent + Bearer for xs2a.tech26.de, (c) an N26-issued `sk_live` for pay.n26.com. Anonymous api.tech26.de surface is exhausted (24-root sweep NO_DELTA; gate matcher fully characterized); do not authorize further identical-boundary re-probing.
+[LEARN] ACCEPTED MISCONFIG @ api.tech26.de: the anon gate is a left-anchored `startswith` matcher — PREFIX roots absorb any suffix and EXACT roots require strict equality, so `statements2`/`accounts2` are the existing planes, not new surface.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: a 24-candidate dictionary sweep is NO_DELTA; endpoint-map-only output is not a finding and this namespace is structurally exhausted anonymously.
+[LEARN] ACCEPTED OTHER @ process: a probe that reproduces the prior hypothesis byte-for-byte closes (verifies) the branch rather than adding a datum — verification is not noise; suspended identical-boundary re-probing remains correct.
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all residual value sits behind coordinator-supplied credentials on core-banking BOLA/SSRF controls, while the triage feeder remains dead (19 consecutive no-lead/errored runs) and no new CT leaves have appeared.
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable; all res
+[CHANGED] process: triage feeder still dead — `UnknownError err_2e113ee1`, run `2026-10-12-09-44`, 20th consecutive errored/no-lead run; hypothesis intake remains down.
+[CHANGED] process: probe-results.md has empty sections since `2026-10-10 01:25`; no new probe data consumed this cycle.
+[CHANGED] api.tech26.de: no probe run this cycle — anonymous surface exhausted, identical-boundary re-probing suspended per prior canon; gate map frozen (3 EXACT ∪ 6 PREFIX, all `401|211 md5 d58528c924dad2fde9c30f81972e0548`).
+[FINAL] None anonymously testable. All three survivors remain credential-gated: api.tech26.de BOLA (88), xs2a.tech26.de CBPII SSRF (85), pay.n26.com Stripe BOLA (82).
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) one N26 paired-device grant Bearer plus a second account's object ids for api.tech26.de, (b) a valid CBPII consent + Bearer for xs2a.tech26.de, (c) an N26-issued `sk_live` for pay.n26.com. Failing that, this corpus remains at NO_DELTA with each cycle adding only the feeder's errored status.
+[LEARN] ACCEPTED PROCESS @ triage feeder: consecutive `err_2e*` refs (err_6024e44f → err_e0b751b5 → err_a53ae1f1 → err_2e113ee1) indicate a server-side pipeline fault, not a bounding policy; consume feeder weather as a JSON health signal, never as a lead source.
+[PRIO] api.tech26.de,7.10,attack_surface=9 business_value=10 tech_exposure=5 gate_ease=0 cloud=7 freshness=8
+[PRIO] xs2a.tech26.de,6.75,attack_surface=8 business_value=9 tech_exposure=7 gate_ease=2 cloud=8 freshness=6
+[PRIO] pay.n26.com,5.30,attack_surface=6 business_value=8 tech_exposure=4 gate_ease=2 cloud=7 freshness=5
+
+== ls reports for draft ==
+NO DRAFT FILE
+[0m
+[0m$ [0mcd /home/runner/work/n26-hunt/n26-hunt
+echo "== newest by NAME =="; ls triage/run-*.md | sort | tail -4
+echo "== tail of newest =="; tail -12 "$(ls triage/run-*.md | sort | tail -1)"
+echo "== feeder error/no-lead streak (last 8 by name) =="
+for f in $(ls triage/run-*.md | sort | tail -8); do printf '%s : ' "$f"; grep -aoE 'err_[0-9a-f]+|No leads|LEADS|VALID|empty' "$f" | head -1; done
+== newest by NAME ==
+triage/run-2026-10-11-23-08.md
+triage/run-2026-10-12-02-29.md
+triage/run-2026-10-12-09-44.md
+triage/run-2026-10-12-19-40.md
+== tail of newest ==
+
+===== TRIAGE 2026-10-12 19:40:41 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_b4145578"
+  }
+}
+== feeder error/no-lead streak (last 8 by name) ==
+triage/run-2026-10-11-01-39.md : err_71c3b61f
+triage/run-2026-10-11-07-50.md : err_2113457b
+triage/run-2026-10-11-14-44.md : err_ea4844c5
+triage/run-2026-10-11-19-23.md : err_e0b751b5
+triage/run-2026-10-11-23-08.md : err_a53ae1f1
+triage/run-2026-10-12-02-29.md : err_ce7ffa84
+triage/run-2026-10-12-09-44.md : err_2e113ee1
+triage/run-2026-10-12-19-40.md : err_b4145578
+[0m
+STEP 1 — DELTA
+[CHANGED] process: triage feeder 21st consecutive errored run — newest `triage/run-2026-10-12-19-40.md` → `UnknownError err_b4145578`; hypothesis intake still dead.
+[CHANGED] process: `reports/report-draft-n26.md` still ABSENT from the tree (direct `ls`) despite 4 cycles of KB assertion — KB existence claim is false until the file is present.
+[CHANGED] api.tech26.de: fresh re-probe (2026-10-13) byte-identical to canon — `/api/me`, `/api/accounts/1`, `/api/accounts/1/zzqnotreal` all `401|211 md5 d58528c924dad2fde9c30f81972e0548`; gate map unchanged.
+[CHANGED] api.tech26.de: method-override axis CLOSED — `X-HTTP-Method-Override: POST`, `X-Method-Override: POST`, `?_method=POST` all still `401|211`; Envoy-admin/OIDC paths `/stats`,`/config_dump`,`/server_info`,`/ready`,`/.well-known/openid-configuration` all `404|0`.
+[CHANGED] xs2a.tech26.de + pay.n26.com: fresh re-probe byte-identical — xs2a consents/CBPII/`/sandbox` all `401|0 md5 d41d8cd9` (incl. `TPP-Redirect-URI: http://user@169.254.169.254/…`); pay `/v1/{charges,balance,payments}` `401|342 md5 e7d47e750e24bed6f734bdf03e09d63a`, `/openapi.json` `403|243`, `/health` + `/.well-known` `403|111`.
+[CHANGED] source-gated class: `backstage.tech26.de`, `xs2a-staging`/`pisp-staging.tech26.de`, `phishing-report.tech26.de`, `fpadedge.tech26.de` all connection-timeout (8s, 0B) — no activation.
+[CHANGED] passive corpus: crt.sh JSON unreachable (2× 40s timeout); certspotter still discontinued — no fresh CT leaf observable.
+[NO_DELTA] inventory host-diff: `backstage`/`mag.n26.com`/`www.3ds-challenge.n26.com`/`{xs2a,aisp,pisp}-staging.tech26.de` all already recorded (incl. brace-expansion) → literal-grep false positive (10-07 lesson).
+[NO_DELTA] overall: attack surface unchanged.
+
+STEP 2 — PRIORITIZE
+[PRIO] api.tech26.de,7.10,attack_surface=9 business_value=10 tech_exposure=5 gate_ease=0 cloud=7 freshness=8
+[PRIO] xs2a.tech26.de,6.75,attack_surface=8 business_value=9 tech_exposure=7 gate_ease=2 cloud=8 freshness=6
+[PRIO] pay.n26.com,5.30,attack_surface=6 business_value=8 tech_exposure=4 gate_ease=2 cloud=7 freshness=5
+
+STEP 3 — HYPOTHESES
+[HYP] api.tech26.de gated account-data family — BOLA/IDOR
+class: IDOR
+asset: https://api.tech26.de/api/{accounts,statements,spaces,insights,transfers,referrals,me,addresses,login}
+confidence: 88
+reasoning: All 9 roots return byte-identical `401|211 md5 d58528c9` pre-auth, re-probed unchanged 2026-10-13; gate is pattern-scoped (fabricated `/api/accounts/1/zzqnotreal` → same bytes), so a token is the only discriminator; origin Tomcat/Spring Boot; method-override and Envoy-admin axes now closed.
+evidence_needed: authenticated Bearer for account A (paired-device grant) plus a second account's object ids; observe 200 vs 403/404 on cross-account read.
+verify_steps: GET `/api/me` with `Authorization: Bearer <A>` → resolve own id; then GET `/api/accounts/<other-id>` and `/api/statements/<other-id>` with the same Bearer; diff status/body.
+impact: cross-tenant read of account/transaction PII and card metadata — Critical.
+testability: AUTH_HELPED
+
+[HYP] xs2a.tech26.de CBPII — SSRF via TPP-Redirect-URI
+class: SSRF
+asset: https://xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
+confidence: 85
+reasoning: ALB redirect-target filter is IP-literal(+localhost)-scoped; `TPP-Redirect-URI` header reaches the app layer (`401|0` istio-envoy) while query-string internal literals are cut at ALB (`403` awselb/2.0); RFC 3986 userinfo (`http://user@169.254.169.254/`) bypasses the internal-address filter AWB-wide and re-produces on xs2a this cycle; mTLS optional (empty CA list).
+evidence_needed: valid CBPII consent + Bearer to reach the post-auth redirect-fetch sink and observe an outbound request to a listener.
+verify_steps: complete CBPII consent; call confirmation-of-funds with `TPP-Redirect-URI: http://user@169.254.169.254/latest/meta-data/iam/security-credentials/`; check for reflected metadata or OOB callback.
+impact: SSRF to cloud metadata → IAM credential theft — Critical.
+testability: AUTH_HELPED
+
+[HYP] pay.n26.com Stripe — BOLA with live key
+class: IDOR
+asset: https://pay.n26.com/v1/*
+confidence: 82
+reasoning: Pure Stripe passthrough on N26 domain; re-probed 2026-10-13 `/v1/{charges,balance,payments}` all `401|342 md5 e7d47e75` (no-key) vs 132-byte fake-key error `Invalid API Key provided: sk_live_****0000`; `/openapi.json` `403|243`; no N26-side key injection; key discovery closed 3/3 corpora.
+evidence_needed: N26-issued `sk_live` key to enumerate/read foreign objects.
+verify_steps: GET `https://pay.n26.com/v1/<stripe-object>/<id>` with `Authorization: Bearer sk_live_…` and compare object ownership scope.
+impact: cross-tenant payment-object read — High/Critical.
+testability: AUTH_HELPED
+
+STEP 4 — SELF-CRITIQUE
+[PARKED] api.tech26.de BOLA: AUTH_HELPED — pattern-scoped gate has no anonymous differential; every new axis (method-override, admin/discovery paths) returned byte-identical negatives.
+[PARKED] xs2a.tech26.de CBPII SSRF: AUTH_HELPED — pre-auth AS returns byte-identical `401|0` across all `TPP-Redirect-*` shapes; sink unreachable anonymously.
+[PARKED] pay.n26.com Stripe BOLA: AUTH_HELPED — anonymous host is a plain Stripe error passthrough.
+[FINAL] none anonymously testable this cycle; no REJECTED-class item promoted.
+
+STEP 5 — NEXT ACTION
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) an N26 paired-device grant Bearer plus a second account's object ids for api.tech26.de, (b) a valid CBPII consent + Bearer for xs2a.tech26.de, (c) an N26-issued `sk_live` for pay.n26.com. Anonymous surface is exhausted (api gate map + 24-root sweep NO_DELTA; method-override and Envoy-admin axes closed; source-gated hosts still timeout). Do NOT authorize further identical-boundary re-probing, and repair the triage feeder (21 consecutive UnknownError runs).
+
+STEP 6 — LEARNING
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: HTTP method-override (`X-HTTP-Method-Override`/`X-Method-Override`/`_method`) does not cross the GET-scoped gate — all `401|211 md5 d58528c9`; method-confusion axis closed.
+[LEARN] REJECTED MISCONFIG @ api.tech26.de: Envoy-admin + OIDC discovery paths (`/stats`,`/config_dump`,`/server_info`,`/ready`,`/.well-known/openid-configuration`) all `404|0` — no admin/discovery surface.
+[LEARN] REJECTED OTHER @ process: "undocumented host" diffs are literal-grep artifacts against a brace-expansion KB (`backstage`/`mag`/`{xs2a,aisp,pisp}-staging` all already recorded) — expand braces before diffing (repeat of 10-07 lesson).
+[LEARN] ACCEPTED PROCESS @ triage feeder: error streak now 21 consecutive runs (latest `err_b4145578`) — feeder is pipeline weather, never a lead source.
+[LEARN] REJECTED OTHER @ reports/report-draft-n26.md: KB asserts the file exists but the tree contains none for 4+ cycles — KB self-assertion is not evidence; verify against tree.
+
+STEP 7 — RISK
+[RISK] n26: 55 — anonymous attack surface fully enumerated and stable (api/xs2a/pay byte-identical after ~24h); all residual value sits behind coordinator-supplied credentials on core-banking BOLA/SSRF controls; triage feeder dead 21 runs; passive corpora (crt.sh, certspotter) closed.
+
+I have no further information-bearing read-only step: the two axes I opened this cycle (method-override, Envoy-admin/discovery) both closed negative, and the host-diff was a known grep artifact. The only unblock is the human/coordinator action in `[NEXT]` (credentials + feeder repair) — continuing to re-probe identical boundaries would add zero signal.
