@@ -1020,3 +1020,10 @@ https://pay.n26.com/v1/<stripe-object>/<id>` -> HTTP 404
 ## 2026-10-14 15:01:37 UTC
 https://pay.n26.com/v1/<stripe-object>/<id>` -> HTTP 404
 https://pay.n26.com/v1/* -> HTTP 404
+
+## 2026-10-14 19:15:50 UTC
+https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_CBPII&redirect_uri=https://app.n26.com/callback&response_type=code&state=x -> HTTP 404
+https://pay.n26.com/v1/payments -> HTTP 401
+https://pay.n26.com/v1/customers/{other_customer_id -> HTTP 401
+https://pay.n26.com/v1/charges?customer={other_id -> HTTP 401
+https://pay.n26.com/v1/balance -> HTTP 401

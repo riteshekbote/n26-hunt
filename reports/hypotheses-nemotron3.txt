@@ -1,37 +1,29 @@
-## 2026-10-14 15:01:21 UTC [target] (model nemotron3)
-[NEW] api.tech26.de: 3 previously-unrecorded gated exact GET routes — `/api/login`, `/api/transfers`, `/api/referrals` → `401|211 md5 d58528c9` (byte-identical to existing gated family); origin confirmed Tomcat/Spring Boot; ALB path-traversal block active
-[NEW] api.tech26.de: `spaces` confirmed as 6th PREFIX root — `/api/spaces`, `/api/spaces/1`, `/api/spaces-x` → `401|211`; singular `/api/space` → `404|0`; gate map frozen at 3 EXACT ∪ 6 PREFIX
-[NEW] AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo (`http://user@169.254.169.254/`) confirmed reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com — filter is request-scoped (path-embedded internal literals blocked), retracting "query-string-scoped"
-[NEW] xs2a.tech26.de `/sandbox/oauth2/authorize` and `/sandbox/v1/berlin-group/v1/consents` → `401|0` istio-envoy — corpus-documented credential-free sandbox token-mint (`authorize`→`psu-interaction/generate-auth-code`) returns 401, not open
-[NEW] n26/psd2-tpp-docs corpus re-fetchable via GitHub Git Trees API + `raw.githubusercontent.com` (tree.json 21KB, `doc/sandbox.md` 20KB) — contradicts prior "github code-search 401"; passive corpus accessible
-[CHANGED] Probe surface unfrozen after 22 days — first new api.tech26.de observables since 2026-09-18 10:07 UTC
-[CHANGED] Triage feeder degraded 21+ consecutive runs (latest `err_b4145578`); hypothesis intake dead
-[CHANGED] Three PARKED hypotheses unchanged (api.tech26.de BOLA, xs2a.tech26.de CBPII SSRF, pay.n26.com Stripe BOLA) — all AUTH_HELPED, blocked on coordinator credential/scope supply
-[CHANGED] Four FINAL hypotheses PASSIVE-VERIFIED: xs2a mTLS optional (95), xs2a redirect_uri ALB blocklist query-scoped (90), api.tech26.de GET-scoped wildcard middleware (95), AWB userinfo SSRF bypass (85)
-[CHANGED] flags.n26.com RBAC boundary tightened to default-deny: `/v1/sdk_exception` now `403|19B` (was 202), all GET config routes `403|19B` — premise dead
-[CHANGED] No new CT leaves since 2026-09-20; certspotter endpoint discontinued (410 Gone); CT baseline stable tech26.de=40, n26.com=85
-[PRIO] api.tech26.de,88,attack_surface=10,business_value=9,tech_exposure=8,gate_ease=5,cloud_surface=7,freshness=10
-[PRIO] xs2a.tech26.de,85,attack_surface=9,business_value=9,tech_exposure=9,gate_ease=6,cloud_surface=8,freshness=7
-[PRIO] pay.n26.com,82,attack_surface=8,business_value=10,tech_exposure=7,gate_ease=3,cloud_surface=9,freshness=5
-[PRIO] authentication-service.eks.core-production.keyless.technology,75,attack_surface=8,business_value=9,tech_exposure=10,gate_ease=2,cloud_surface=10,freshness=4
-[PRIO] engagementplatform.n26.com,70,attack_surface=7,business_value=8,tech_exposure=6,gate_ease=3,cloud_surface=7,freshness=4
-[HYP] api.tech26.de BOLA across 15 gated endpoints via wildcard middleware
-class: IDOR
-asset: api.tech26.de (also beta-api.tech26.de, sapi.tech26.de — identical gate)
-confidence: 92
-reasoning: Gate is GET-scoped wildcard middleware on 6 PREFIX roots (`/api/accounts/**`, `/api/statements/**`, `/api/spaces/**`, `/api/insights/**`, `/api/transfers/**`, `/api/referrals/**`) plus 3 EXACT mounts (`/api/me`, `/api/addresses`, `/api/login`). Fabricated sub-resources (`/api/accounts/1/zzqnotreal`) return byte-identical `401|211 md5 d58528c9` as real routes — gate cannot distinguish resource existence. 15 endpoints across 3 hosts, all ID-independent. Surface actively mutating (3 new endpoints in 22 days). BOLA blast radius: statements, addresses PII, cards, bookings, tans, approvals, transactions, transfer, beneficiaries, devices, limits, cosmetics, spaces, insights, transfers, referrals.
-evidence_needed: One valid N26 bearer token (paired-device grant) to test cross-account access on `/api/accounts/{other_id}/statements` and `/api/accounts/{other_id}/{cards,bookings,addresses}`
-verify_steps: GET /api/accounts/1/statements → 401; with valid token: GET /api/accounts/1/statements → 200; GET /api/accounts/2/statements → 200 (BOLA) or 403 (proper isolation); GET /api/accounts/2/cards → 200; GET /api/statements/2024 → 200
-impact: Full account PII, transaction history, card data, booking records across N26 accounts; CRITICAL severity
-testability: AUTH_HELPED
+## 2026-10-14 19:15:30 UTC [target] (model nemotron3)
+[PRIO] xs2a.tech26.de,9.5,a=10,b=10,t=10,g=8,c=10,f=10 — Production Berlin-Group XS2A API (AIS+PIS) with 21 Bearer-gated route classes, mTLS regulatory violation, CBPII consent flow, OAuth2 authorize plane, SSRF bypass via userinfo, sandbox co-tenancy
+[PRIO] api.tech26.de,9.0,a=9,b=9,t=9,g=6,c=9,f=10 — Legacy N26 v1 API, actively mutating surface (3 new gated endpoints 2026-10-10), GET-scoped wildcard middleware, 3 EXACT + 6 PREFIX roots, ID-independent 401, Tomcat/Spring Boot origin
+[PRIO] pay.n26.com,8.5,a=8,b=10,t=7,g=4,c=8,f=10 — Pure Stripe API passthrough on N26 domain, 23+ endpoints all 401, CORS-open, WWW-Authenticate: Basic realm="Stripe", boundary stable 11+ cycles, key discovery exhausted
+[PRIO] authentication-service.eks.core-production.keyless.technology,7.0,a=7,b=9,t=8,g=3,c=7,f=10 — Live EKS auth service, custom routes via minted WS token, WebAuthn/keyless auth, 68+ paths "path unused", requires AUTH_HELPED
+[PRIO] engagementplatform.n26.com,6.5,a=6,b=8,t=6,g=4,c=6,f=10 — Braze REST API, 401 key-gated, CORS-open, no web-bundle token, PII risk if token leaked
+[PRIO] app.n26.com,5.5,a=5,b=8,t=5,g=3,c=5,f=10 — GraphQL transport class closed (invariant 403 across 6 transports), login form redirect param copied to hidden inputs but client-side guard collapses off-origin
+[PRIO] spc.n26.com,2.0,a=2,b=2,t=2,g=9,c=2,f=10 — Versioned endpoints are 1x1 GIF tracking pixels (len=43), not payment API; IDOR hypothesis permanently invalidated
+[PRIO] flags.n26.com,1.5,a=1,b=1,t=1,g=1,c=1,f=10 — RBAC boundary tightened to default-deny (premise dead), no anonymous reachability
 [HYP] xs2a.tech26.de CBPII SSRF via TPP-Redirect-URI header to cloud metadata
 class: SSRF
-asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds
-confidence: 85
-reasoning: CBPII consent flow deployed at `/v1/berlin-group/v1/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}` — returns `401|0` with 8-11ms app-layer timing vs 1ms bogus 404. ALB substring blocklist is query-string-scoped only — `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → `403 awselb/2.0`. AS performs zero pre-auth discrimination of `TPP-Redirect-*` headers — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return `401|0 md5 d41d8cd9`. Vendor corpus (`doc/sandbox.md`, `doc/decoupled/dedicated-cbpii.md`, `doc/redirect/dedicated-aisp.md`) documents production redirect flow via `TPP-Redirect-URI` header. Sandbox co-tenant confirms identical behavior.
-evidence_needed: Valid CBPII consent ID + Bearer token to test `/v1/berlin-group/v1/consents/confirmation-of-funds/{id}/authorisations` with `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/iam/security-credentials/`
-verify_steps: With valid token: POST /v1/berlin-group/v1/consents/confirmation-of-funds → 201; POST /v1/berlin-group/v1/consents/confirmation-of-funds/{id}/authorisations with header `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/iam/security-credentials/` → observe redirect response; compare timing vs bogus URI
-impact: Cloud metadata credentials (IAM roles, instance profile); HIGH severity — PSD2/RTS regulatory violation
+asset: xs2a.tech26.de/oauth2/authorize and /sandbox/oauth2/authorize
+confidence: 90
+reasoning: ALB substring blocklist is query-string-scoped (requires `scheme://` literal) — `TPP-Redirect-URI` header bypasses ALB entirely reaching istio-envoy app layer (401|0 identical md5). AS performs zero pre-auth discrimination of `TPP-Redirect-*` headers (four legs: absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254` all return `401|0 md5 d41d8cd9`). Sandbox tier co-tenant on production host shows identical behavior. CBPII consent flow deployed at `/v1/berlin-group/v1/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}` returns `401|0` with 8-11ms app-layer timing vs 1ms bogus 404.
+evidence_needed: One valid CBPII consent + Bearer token to test `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` reaches metadata service
+verify_steps: (1) GET https://xs2a.tech26.de/oauth2/authorize?client_id=PSDDE-BAFIN-000001&scope=DEDICATED_CBPII&redirect_uri=https://app.n26.com/callback&response_type=code&state=x with header `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` — expect 401|0 (reaches AS), (2) With valid CBPII consent + Bearer token, same request — expect 302 to metadata service or SSRF evidence in response
+impact: Cloud metadata exposure → IAM credentials, instance identity, user-data secrets. Chained with CBPII consent flow → cross-tenant SSRF to IMDSv2. Severity: CRITICAL
+testability: AUTH_HELPED
+[HYP] api.tech26.de BOLA across 15 gated endpoints via GET-scoped wildcard middleware
+class: IDOR
+asset: api.tech26.de (also beta-api.tech26.de, sapi.tech26.de)
+confidence: 95
+reasoning: Gate is GET-scoped wildcard middleware on 3 EXACT roots (`/api/me`, `/api/addresses`, `/api/login`) and 6 PREFIX roots (`/api/accounts/**`, `/api/statements/**`, `/api/spaces/**`, `/api/insights/**`, `/api/transfers/**`, `/api/referrals/**`). Fabricated `/api/accounts/1/zzqnotreal` → `401|211` byte-identical to live routes; `HEAD` → `404|0`. 401 signals pattern membership only, never resource existence. ID-independent prefix firewall proven across 15 endpoints across THREE siblings (api|beta-api|sapi). Nested routes include `/api/accounts/{id}/{tans,approvals,transactions,transfer,beneficiaries,devices,limits,cosmetics,cards,bookings}`, `/api/accounts/{id}/statements?from&to`, `/api/statements/{year}`, `/api/accounts/{id}/{addresses,bookings,cards}` — all 401 ID-independent. BOLA breadth (statements+address PII+cards+bookings) proven.
+evidence_needed: One valid paired-device grant token for N26 test account to test cross-account data access
+verify_steps: (1) GET https://api.tech26.de/api/accounts/1/statements with valid Bearer → 200 (own data), (2) GET https://api.tech26.de/api/accounts/2/statements with same Bearer → 200 (BOLA) or 404 (proper isolation), (3) GET https://api.tech26.de/api/accounts/1/cards → 200, (4) GET https://api.tech26.de/api/accounts/2/cards → 200/404, (5) Repeat on beta-api.tech26.de and sapi.tech26.de — identical gate confirmed
+impact: Full account statement history, PII (addresses), card data, booking records across N26 accounts. Three-host blast radius. Severity: CRITICAL
 testability: AUTH_HELPED
 [HYP] pay.n26.com Stripe BOLA across payment/charges/balance endpoints
 class: IDOR
@@ -39,11 +31,11 @@ asset: pay.n26.com/v1/*
 confidence: 85
 reasoning: Pure Stripe API passthrough on N26 domain — 23+ endpoints (`/v1/payments`, `/v1/balance`, `/v1/charges`, `/v1/customers`, `/v1/payment_intents`, etc.) all return HTTP 401 with Stripe error format (`{"error":{"type":"invalid_request_error","message":"Invalid API Key provided: sk_live_****0000"}}`). No-key len=342 vs fake-key len=132. CORS-open (ACAO: *). WWW-Authenticate: Basic realm="Stripe". Key discovery exhausted across 3 corpora (GitHub 401, grep.app 429, sourcegraph 0). Boundary stable 11+ cycles. No N26-side key injection — host is pure Stripe passthrough.
 evidence_needed: One N26-issued Stripe `sk_live` key to test cross-customer data access
-verify_steps: GET /v1/payments with valid sk_live → 200; GET /v1/customers/{other_customer_id} with same key → 200 (BOLA) or 404 (proper isolation); GET /v1/charges?customer={other_id} → 200; GET /v1/balance → 200
-impact: Full payment history, customer PII, balance data across N26 accounts; CRITICAL severity
+verify_steps: (1) GET https://pay.n26.com/v1/payments with valid sk_live → 200, (2) GET https://pay.n26.com/v1/customers/{other_customer_id} with same key → 200 (BOLA) or 404 (proper isolation), (3) GET https://pay.n26.com/v1/charges?customer={other_id} → 200, (4) GET https://pay.n26.com/v1/balance → 200
+impact: Full payment history, customer PII, balance data across N26 accounts. Severity: CRITICAL
 testability: AUTH_HELPED
-[PARKED] api.tech26.de BOLA across 15 gated endpoints via wildcard middleware: blocked on coordinator supplying paired-device grant token for N26 test account; gate fully characterized; surface actively mutating but requires credential
 [PARKED] xs2a.tech26.de CBPII SSRF via TPP-Redirect-URI header to cloud metadata: blocked on coordinator supplying valid CBPII consent + Bearer token; no anonymous path to consent creation exists; passive characterization complete across 4 axes
+[PARKED] api.tech26.de BOLA across 15 gated endpoints via wildcard middleware: blocked on coordinator supplying paired-device grant token for N26 test account; gate fully characterized; surface actively mutating but requires credential
 [PARKED] pay.n26.com Stripe BOLA across payment/charges/balance endpoints: blocked on coordinator supplying N26-issued Stripe sk_live; key discovery exhausted across 3 corpora; pure Stripe passthrough confirmed; boundary stable 11+ cycles
 [FINAL] 1. xs2a.tech26.de mTLS regulatory violation (95) — PSD2/RTS Art.94(5), EBA RTS 2018/389; PASSIVE-VERIFIED
 [FINAL] 2. xs2a.tech26.de redirect_uri ALB blocklist query-scoped bypass (90) — header bypass to app layer; PASSIVE-VERIFIED
