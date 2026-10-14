@@ -12082,3 +12082,4 @@ testability: HUMAN_ONLY
 [LEARN] ACCEPTED OTHER @ n26/psd2-tpp-docs: corpus (`openapi/`, `additional_api_spec.md`, 2026 quarterly reports, Postman collection) is re-fetchable via `raw.githubusercontent.com`/`main`; the OpenAPI surface adds no unmapped routes.
 [LEARN] REJECTED OTHER @ self: KB still asserts a `report-draft-n26.md` that `ls` proves absent — treat artifact-existence claims as false until observed.
 [RISK] n26: 20 — no validated/validated-reportable finding; all high-value paths (BOLA, CBPII, sandbox isolation, PISP money) are credential-gated, and the triage feeder has been degraded 21+ consecutive runs.
+## 2026-10-14 22:21:40 UTC [target] (model bigpickle)
