@@ -1,4 +1,16 @@
-## 2026-10-14 10:01:25 UTC [target] (model bigpickle)
+## 2026-10-14 14:59:11 UTC [target] (model bigpickle)
+verify_steps: GET `https://pay.n26.com/v1/<stripe-object>/<id>` with `Authorization: Bearer sk_live_…`; compare ownership scope.
+impact: cross-tenant payment-object read — High.
+testability: AUTH_HELPED
+[PARKED] xs2a.tech26.de CBPII SSRF: AUTH_HELPED — sandbox token-mint now proven QWAC-gated (`401|0`), so no anonymous route to the sink either.
+[PARKED] api.tech26.de BOLA: AUTH_HELPED — no anonymous differential; every fresh axis byte-identical negative.
+[PARKED] pay.n26.com Stripe BOLA: AUTH_HELPED — anonymous host is a plain Stripe error passthrough.
+[FINAL] none anonymously testable this cycle. Corpus sandbox path re-tested and closed.
+[NEXT] HUMAN: single consolidated coordinator ask — supply (a) N26 paired-device Bearer + a second account's ids for api.tech26.de, (b) valid CBPII consent + Bearer for xs2a.tech26.de, (c) N26-issued `sk_live` for pay.n26.com. Anonymous surface (incl. `/sandbox` QWAC-gated) is exhausted; repair the triage feeder.
+[LEARN] REJECTED MISCONFIG @ xs2a.tech26.de/sandbox: the corpus's "Fake Generate auth-code" flow is not a credential-free token mint — `/sandbox/oauth2/authorize` is `401|0`, gated by QWAC-derived client auth; sandbox ≠ anonymous.
+[LEARN] ACCEPTED OTHER @ n26/psd2-tpp-docs: corpus is re-acquirable via GitHub Git Trees API + raw.githubusercontent (tree.json/`doc/sandbox.md` fetched) — the "github code-search 401" negative applies only to the code-search API, not raw/repo endpoints.
+[LEARN] REJECTED OTHER @ self: KB has degenerated into duplicate-line repetition (same entries re-appended across 10-11..10-14) — loop-out-of-information confirmed; dedupe before treating KB "delta" as signal.
+[RISK] n26: 55 — anonymous surface fully enumerated and stable (api/xs2a/pay byte-identical after ~24h, sandbox re-confirmed gated); all residual value sits behind coordinator-supplied credentials on core-banking BOLA/SSRF; triage feeder dead 21 runs.
 [HYP] Hardcoded Basic Auth Credential `android:secret` in PSD2 MFA Challenge Script
 class: SECRET
 asset: n26/psd2-tpp-docs/doc/assets/bash/pin_encryption_and_initiating_transaction.sh:26

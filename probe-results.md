@@ -1016,3 +1016,7 @@ https://pay.n26.com/v1/<stripe-object>/<id>` -> HTTP 404
 ## 2026-10-14 10:03:32 UTC
 https://pay.n26.com/v1/* -> HTTP 404
 https://pay.n26.com/v1/<stripe-object>/<id>` -> HTTP 404
+
+## 2026-10-14 15:01:37 UTC
+https://pay.n26.com/v1/<stripe-object>/<id>` -> HTTP 404
+https://pay.n26.com/v1/* -> HTTP 404
