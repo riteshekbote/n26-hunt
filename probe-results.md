@@ -1045,3 +1045,7 @@ https://pay.n26.com/v1/balance -> HTTP 401
 
 ## 2026-10-15 14:55:09 UTC
 
+
+## 2026-10-15 19:02:31 UTC
+https://app.n26.com/graphql?query={__typename -> ERR The read operation timed out
+https://app.n26.com/graphql?query={__schema{types{name -> ERR The read operation timed out

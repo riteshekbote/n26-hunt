@@ -7074,3 +7074,91 @@
 - LEARN: ACCEPTED OTHER @ app.n26.com: bundle manifest is 11 chunks; hash rotation does not alter the embedded public client key — client-side key extraction is a one-ti
 - LEARN: ACCEPTED OATH @ xs2a.tech26.de: re-proved TPP-Redirect-URI header reaches app layer (`401|0`, identical md5) while a query-string internal literal on the same p
 - LEARN: ACCEPTED MISCONFIG @ api.tech26.de: GET-scoped wildcard middleware re-confirmed live/fabricated byte-identical `401|211` md5 `d58528c9` — gate cannot be used as
+
+## RANKED HYPOTHESES 2026-10-15 19:02:05 UTC
+- [92] api.tech26.de/api/{accounts,statements,spaces,insights,transfers,referrals}/**: api.tech26.de BOLA Across 21 Gated Endpoints via GET-Scoped Wildcard Middleware (from art/lead_nemotron3.txt)
+- [70] xs2a.tech26.de/v1/berlin-group/v1: Missing mTLS / strong-authentication enforcement on the public Berlin-Group XS2A production API (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Provision one TPP test credential for the Berlin-Group tier — a QWAC client certificate plus its `client_id`, or a bearer minted for `xs2a.tech26.de` — s
+- NEXT(hypotheses-nemotron3.txt): HUMAN: Put one consolidated decision to the coordinator covering three bounded asks — (1) provision one N26 test account plus paired-device grant for api.tech26
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: the live Berlin-Group XS2A API (AIS+PIS) is at `/v1/berlin-group/v1` with 11 Bearer-gated route classes, and mTLS is not en
+- LEARN: ACCEPTED MISCONFIG @ api.tech26.de: `spaces` confirmed as 6th PREFIX root — `/api/spaces`, `/api/spaces/1`, `/api/spaces-x` → `401|211`; singular `/api/space` →
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: production XS2A API sends TLS CertificateRequest with EMPTY certificate_authorities list — optional mTLS, not absent
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share identical CertificateRequest behavior (empty CA list) on shared ELB obnium-mtls-live-fra-328671
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level IP-literal(+localhost) matcher, NOT scheme:// substring matcher; blocked: dotted-hex `0x7f00
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: PSD2 sandbox tier co-tenant on production host at `/sandbox/v1/berlin-group/v1/*` (7 classes 401) with identical ALB filter
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less" classification FALSE — both serve full legacy `/api/*` Bearer-gated family (15 endp
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — `GET /api/mfa/challenge` (documented PO
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and PKCE challenge in publ
+- LEARN: REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: 27 PDFs pure availability telemetry — no mTLS/security statements
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de, aisp.tech26.de, pisp.tech26.de: "OPTIONS is proven method-agnostic on this edge" FALSE — OPTIONS on live routes returns 404
+- LEARN: REJECTED AUTH @ pisp.tech26.de /api/encryption/key: soundly closed — documented GET route, same-batch bogus sibling 404
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: the ALB substring blocklist is **query-string-scoped**, not request-scoped, and the field it inspects is not the field the produ
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: `doc/decoupled/dedicated-cbpii.md` and `doc/sandbox.md` reveal third dedicated role CBPII with own consent subtree live on p
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers — corpus documents it as POST, so GET-404 is not evidence o
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
+- LEARN: REJECTED OTHER @ xs2a.tech26.de: "redirect headers are parsed before the 401 gate" — rejected, 4 controls all byte-identical
+- LEARN: REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers explicitly not evidence of absence — corpus documents it as POST
+- LEARN: ACCEPTED OATH @ `app.n26.com/login`: the `redirect` query parameter is copied unvalidated into the GraphQL-Relay `__successRedirect` AND `__failureRedirect` hid
+- LEARN: REJECTED OTHER @ `app.n26.com/login` (DOM-XSS via `redirect`): closed with evidence rather than assumed. The page echoes the raw query slice unparsed — `?redire
+- LEARN: REJECTED OTHER @ my own KB: the line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` and does not hold on `/login`. Sixth instance
+- LEARN: ACCEPTED MISCONFIG @ `app.n26.com` edge: a query-string content filter that returns `403|520` (nginx body) on markup and `javascript:` in the query while passin
+- LEARN: ACCEPTED MISCONFIG @ AWB-wide: userinfo bypasses the internal-address SSRF filter; filter is request-scoped (path rules exist), retracting "query-string-scoped"
+- LEARN: REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating t
+- LEARN: REJECTED MISCONFIG @ flags.n26.com: app bundle rotated `client.ae5f81a2.js`→`client.585427aa.js` but Statsig key unchanged (`client-OulnFN…`); `/v1/evaluate`+`/
+- LEARN: ACCEPTED OTHER @ app.n26.com: bundle manifest is 11 chunks; hash rotation does not alter the embedded public client key — client-side key extraction is a one-ti
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: re-proved TPP-Redirect-URI header reaches app layer (`401|0`, identical md5) while a query-string internal literal on the same p
+- LEARN: ACCEPTED MISCONFIG @ api.tech26.de: GET-scoped wildcard middleware re-confirmed live/fabricated byte-identical `401|211` md5 `d58528c9` — gate cannot be used as
+- LEARN: REJECTED OATH @ xs2a.tech26.de/sandbox: token mint is not credential-free — documented headers with the published client_id still `401|0`; `client_id` is eIDAS-
+- LEARN: ACCEPTED OTHER @ self: the mTLS-optional handshake gap has no demonstrated impact — every app-layer leg 401s; downgrade from "control absent" to "no-impact comp
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: corpus (`openapi/`, `additional_api_spec.md`, 2026 quarterly reports, Postman collection) is re-fetchable via `raw.githubuse
+- LEARN: REJECTED OTHER @ self: KB still asserts a `report-draft-n26.md` that `ls` proves absent — treat artifact-existence claims as false until observed.
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less / no distinct surface" classification is **false** — both serve the full legacy `/ap
+- LEARN: REJECTED AUTH @ api.tech26.de: header-shape bypass closed — lowercase header name `authorization:`, tab separator, and double space after colon all return `401 
+- LEARN: ACCEPTED MISCONFIG @ {aisp,xs2a}.tech26.de: `server: istio-envoy` edge, `/api/me` and `/api/accounts/1/statements` → `404 len=0`; these hosts are on a different
+- LEARN: REJECTED MISCONFIG @ pisp.tech26.de `/api/mfa/challenge` (GET): `404 len=0` istio-envoy, consistent with a POST-only route as used in the public psd2-tpp-docs s
+- LEARN: ACCEPTED PROCESS @ CT: the certspotter `/api/v1/issuances` endpoint is serving again after the long 410-Gone window; the working passive delta pipeline this cyc
+- LEARN: REJECTED OTHER @ self: a "new hostname" is not a "new surface" — 6 of the 9 new names are SG-gated timeouts, NXDOMAIN, or S3 403 buckets with no route table; on
+- LEARN: REJECTED OATH @ xs2a.tech26.de/sandbox: token mint is not credential-free — documented headers with the published client_id still `401|0`; `client_id` is eIDAS-
+- LEARN: ACCEPTED OTHER @ self: the mTLS-optional handshake gap has no demonstrated impact — every app-layer leg 401s; downgrade from "control absent" to "no-impact comp
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: corpus (`openapi/`, `additional_api_spec.md`, 2026 quarterly reports, Postman collection) is re-fetchable via `raw.githubuse
+- LEARN: REJECTED OTHER @ self: KB still asserts a `report-draft-n26.md` that `ls` proves absent — treat artifact-existence claims as false until observed.
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less / no distinct surface" classification is **false** — both serve the full legacy `/ap
+- LEARN: REJECTED AUTH @ api.tech26.de: header-shape bypass closed — lowercase header name `authorization:`, tab separator, and double space after colon all return `401 
+- LEARN: ACCEPTED MISCONFIG @ {aisp,xs2a}.tech26.de: `server: istio-envoy` edge, `/api/me` and `/api/accounts/1/statements` → `404 len=0`; these hosts are on a different
+- LEARN: REJECTED MISCONFIG @ pisp.tech26.de `/api/mfa/challenge` (GET): `404 len=0` istio-envoy, consistent with a POST-only route as used in the public psd2-tpp-docs s
+- LEARN: ACCEPTED PROCESS @ CT: the certspotter `/api/v1/issuances` endpoint is serving again after the long 410-Gone window; the working passive delta pipeline this cyc
+- LEARN: REJECTED OTHER @ self: a "new hostname" is not a "new surface" — 6 of the 9 new names are SG-gated timeouts, NXDOMAIN, or S3 403 buckets with no route table; on
+- LEARN: passive CT + hackertarget is fully reconciled to baseline — the frozen-boundary canon holds; no new hostname, so no new surface to probe.
+- LEARN: ACCEPTED MISCONFIG @ api.tech26.de: 3 previously-unrecorded gated exact GET routes — `/api/login`, `/api/transfers`, `/api/referrals` → `401|211 md5 d58528c9`; 
+- LEARN: ACCEPTED MISCONFIG @ api.tech26.de: gate is GET-scoped wildcard middleware on `/api/accounts/**`, `/api/statements/**`, `/api/spaces/**`, `/api/insights/**`, `/
+- LEARN: ACCEPTED MISCONFIG @ api.tech26.de: `spaces` confirmed as 6th PREFIX root — `/api/spaces`, `/api/spaces/1`, `/api/spaces-x` → `401|211`; singular `/api/space` →
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: production XS2A API sends TLS CertificateRequest with EMPTY certificate_authorities list — optional mTLS, not absent
+- LEARN: ACCEPTED MISCONFIG @ {xs2a,aisp,pisp}.tech26.de: all three share identical CertificateRequest behavior (empty CA list) on shared ELB obnium-mtls-live-fra-328671
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: redirect_uri blocklist is ALB-level IP-literal(+localhost) matcher, NOT scheme:// substring matcher; blocked: dotted-hex `0x7f00
+- LEARN: ACCEPTED MISCONFIG @ xs2a.tech26.de: PSD2 sandbox tier co-tenant on production host at `/sandbox/v1/berlin-group/v1/*` (7 classes 401) with identical ALB filter
+- LEARN: ACCEPTED MISCONFIG @ beta-api.tech26.de + sapi.tech26.de: prior "route-less" classification FALSE — both serve full legacy `/api/*` Bearer-gated family (15 endp
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/oauth2/token`: prior "token-minting surface not anonymously reachable" retracted — `GET /api/mfa/challenge` (documented PO
+- LEARN: REJECTED MISCONFIG @ app.n26.com `/open-banking/{aisp,cbpii}`: `redirect` param rebuilt server-side from matched route path, user-supplied values ignored, path-
+- LEARN: REJECTED AUTH @ pisp.tech26.de + aisp.tech26.de: audience-separation controls enforced at routing layer — three route tables strictly disjoint per Host
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: N26 publishes two registered Berlin-Group `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`) and PKCE challenge in publ
+- LEARN: REJECTED OTHER @ n26/psd2-tpp-docs doc/assets/quarterly-report/: 27 PDFs pure availability telemetry — no mTLS/security statements
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de, aisp.tech26.de, pisp.tech26.de: "OPTIONS is proven method-agnostic on this edge" FALSE — OPTIONS on live routes returns 404
+- LEARN: REJECTED AUTH @ pisp.tech26.de /api/encryption/key: soundly closed — documented GET route, same-batch bogus sibling 404
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: the ALB substring blocklist is **query-string-scoped**, not request-scoped, and the field it inspects is not the field the produ
+- LEARN: ACCEPTED OTHER @ n26/psd2-tpp-docs: `doc/decoupled/dedicated-cbpii.md` and `doc/sandbox.md` reveal third dedicated role CBPII with own consent subtree live on p
+- LEARN: REJECTED MISCONFIG @ xs2a.tech26.de `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers — corpus documents it as POST, so GET-404 is not evidence o
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: AS performs **no** pre-auth discrimination of `TPP-Redirect-*` — four legs all byte-identical 401|0 md5 d41d8cd9
+- LEARN: REJECTED OTHER @ xs2a.tech26.de: "redirect headers are parsed before the 401 gate" — rejected, 4 controls all byte-identical
+- LEARN: REJECTED MISCONFIG @ `/v1/berlin-group/v1/funds-confirmations`: `404|0` on both tiers explicitly not evidence of absence — corpus documents it as POST
+- LEARN: ACCEPTED OATH @ `app.n26.com/login`: the `redirect` query parameter is copied unvalidated into the GraphQL-Relay `__successRedirect` AND `__failureRedirect` hid
+- LEARN: REJECTED OTHER @ `app.n26.com/login` (DOM-XSS via `redirect`): closed with evidence rather than assumed. The page echoes the raw query slice unparsed — `?redire
+- LEARN: REJECTED OTHER @ my own KB: the line "attacker-supplied `redirect=` is discarded" was measured on `/open-banking*` and does not hold on `/login`. Sixth instance
+- LEARN: ACCEPTED MISCONFIG @ `app.n26.com` edge: a query-string content filter that returns `403|520` (nginx body) on markup and `javascript:` in the query while passin
+- LEARN: ACCEPTED MISCONFIG @ AWB-wide: userinfo bypasses the internal-address SSRF filter; filter is request-scoped (path rules exist), retracting "query-string-scoped"
+- LEARN: REJECTED OTHER @ self: a control that FAILS TO REPRODUCE is the highest-value signal available. My first leg returned 404 where the KB predicted 403; treating t
+- LEARN: REJECTED MISCONFIG @ flags.n26.com: app bundle rotated `client.ae5f81a2.js`→`client.585427aa.js` but Statsig key unchanged (`client-OulnFN…`); `/v1/evaluate`+`/
+- LEARN: ACCEPTED OTHER @ app.n26.com: bundle manifest is 11 chunks; hash rotation does not alter the embedded public client key — client-side key extraction is a one-ti
+- LEARN: ACCEPTED OATH @ xs2a.tech26.de: re-proved TPP-Redirect-URI header reaches app layer (`401|0`, identical md5) while a query-string internal literal on the same p
+- LEARN: ACCEPTED MISCONFIG @ api.tech26.de: GET-scoped wildcard middleware re-confirmed live/fabricated byte-identical `401|211` md5 `d58528c9` — gate cannot be used as

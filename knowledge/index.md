@@ -1593,3 +1593,4 @@
 - 2026-10-15 REJECTED OTHER @ self: KB still asserts a `report-draft-n26.md` that `ls` proves absent — treat artifact-existence claims as false until observed.
 - 2026-10-15 ACCEPTED PROCESS @ CT: the certspotter `/api/v1/issuances` endpoint is serving again after the long 410-Gone window; the working passive delta pipeline this cycle was certspotter + `api.hackertarget.com/hostsearch`, and it produced the first new tech26.de names in ~12 days. Corpus-driven passive enumeration remains the only source that yields signal on this frozen boundary.
 - 2026-10-15 REJECTED OTHER @ self: a "new hostname" is not a "new surface" — 6 of the 9 new names are SG-gated timeouts, NXDOMAIN, or S3 403 buckets with no route table; only `aigw` changed what is known (an internal target), and only by DNS. Count ≠ finding, again.
+- 2026-10-15 passive CT + hackertarget is fully reconciled to baseline — the frozen-boundary canon holds; no new hostname, so no new surface to probe.
