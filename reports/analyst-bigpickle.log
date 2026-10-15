@@ -111179,3 +111179,62 @@ https://xs2a.tech26.de/sandbox/oauth2/authorize?client_id=PSDDE-BAFIN-000001&sco
 404 0404 0
 [0m
 Confirmed: with required params both return 401 (0 bytes), without params 404 (0 bytes). Parameter presence is the discriminator. Sandbox and prod authorize behave identically at the edge (401 with documented params). Next: test sandbox authorize with full documented header set to see if response differs; do not POST to token/generate-auth-code.
+===== ANALYST bigpickle 2026-10-15 05:11:08 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m✱ [0mGlob "**/*n26*"[90m 3 matches[0m
+## Objective
+- Continue a passive-first security assessment of N26 Bank AG in-scope assets, maintaining a strict facts-vs-hypotheses knowledge base while identifying only verifiable logic flaws and avoiding mutating tests against live customer data.
+
+## Important Details
+- **Scope (confirmed in-scope):** `app.n26.com`, `my.n26.com`, `n26.com`, `support.n26.com`, `www.n26.com`, `pay.n26.com`, `flags.n26.com`, `spc.n26.com`, `engagementplatform.n26.com`, `cdn.number26.de`, `authentication-service.eks.core-production.keyless.technology`, and `*.tech26.de` (including `xs2a`, `api`, `beta-api`, `sapi`, `aisp`, `pisp`, `fpt`, `3ds-challenge`, `phishing-report`, `mag.*`, `idealedge`, `livepersonedge`, etc.)
+- **Testing constraints:** Passive-first, read-only. For live probes use only GET/HEAD/OPTIONS. No mutating tests against live customer data. Pacing ≤1 rps; budget ~10 requests/host/3-min window (tighter on `app.n26.com` ~60/min). 
+- **Core methodological rules (enforced repeatedly):** Control is a property of the request path/channel measured on, not of edge/cert/ELB shared across siblings; re-prove controls on each sibling tier before treating as program-level. Bundle presence ≠ reachability. Status code ≠ rule. Count ≠ finding. A fabricated-sibling/path-shape control is required before inferring resource existence from 401/404. On pattern-gated hosts (`api.*` family) 401 signals pattern membership only, never resource existence. Parameter presence vs. value must be distinguished before attributing 404→401 discriminator to value validation. Corpus-driven enumeration (vendor OpenAPI/Postman/prose) is the correct source when gates return 401 for real routes and 404 for absent.
+- **Key verified boundaries (PASSIVE):** `api/beta-api/sapi.tech26.de` share a GET-scoped wildcard middleware (PREFIX roots `/api/accounts/**`,`/api/statements/**`,`/api/spaces/**`,`/api/insights/**`,`/api/transfers/**`,`/api/referrals/**`, EXACT `/api/me`,`/api/addresses`,`/api/login`) returning byte-identical `401|211 md5 d58528c924` on gated paths and `404|0` on ungated/methods (HEAD/OPTIONS). `xs2a.tech26.de` serves Berlin-Group XS2A (AIS+PIS) at `/v1/berlin-group/v1` and CBPII consent subtree (21 classes total) returning `401|0` app-layer behind ELB `obnium-mtls-live-fra-328671153`; TLS CertificateRequest has empty CA list (optional mTLS, not enforced). `aisp/pisp.tech26.de` serve PSD2 Fallback interfaces (separate route tables) on same ELB. `pay.n26.com/v1/*` is Stripe-passthrough (auth-gated) with stable 401 boundary (no-key `len=342` vs fake-key `len=132`). `flags.n26.com` RBAC boundary stable (initialize POST+canonical body → 200 by-design INFO, sdk_exception → 202, download_config_specs → 401, all GET config → 403); `/v1/sdk_exception` returned 403|19B on latest re-measurement. `app.n26.com/graphql` is app-layer 403 (not edge WAF) invariant across 6 transports; anonymous POST not routable. `authentication-service.eks.core-production.keyless.technology` route discovery exhausted (68+ paths “path unused”).
+- **Top hypotheses (unverified, require credentials):** 1) `api.tech26.de` BOLA on account-resource family (confidence 92, AUTH_HELPED). 2) `pay.n26.com` Stripe-forwarded BOLA (confidence 85, AUTH_HELPED). 3) Cross-deployment token audience confusion across `{api,beta-api,sapi}.tech26.de` (confidence 55, AUTH_HELPED). 4) `xs2a.tech26.de` missing mTLS/SCA enforcement on Berlin-Group API (confidence 70, AUTH_HELPED). 5) `xs2a.tech26.de` CBPII SSRF/header-channel redirect handling (confidence ~85, AUTH_HELPED). 
+- **State baseline:** Probe surface frozen since ~2026-09-18 10:07 UTC with only repetitive prober runs; `probe-results.md` shows minimal new probe data after that point. Triage feeder degraded (consecutive `UnknownError` runs) — hypothesis intake dead. Passive corpora exhausted/rate-limited (crt.sh 502, certspotter API 410 Gone, grep.app 429, github code-search 401, sourcegraph 0). No coordinator credential/scope supply provisioned (sandbox tokens, TPP QWAC/client cert, Stripe test key). `reports/report-draft-n26.md` absent from tree despite prior assertions.
+
+## Work State
+
+### Completed
+- **Inventory & surface mapping:** Comprehensive mapping of N26/tech26.de estate (hosts, ELBs, meshes `envoy` vs `istio-envoy`, cert SANs, CNAMEs). Established sibling co-tenancy (`xs2a/aisp/pisp` share ELB `obnium-mtls-live-fra-328671153`, `beta-api/sapi` share mesh with `api`).
+- **Gate topology characterized:** `api.*` family GET-scoped wildcard middleware with frozen map (3 EXACT ∪ 6 PREFIX). `xs2a` Berlin-Group route-aware gate (bogus → 404, real → 401). `pay.n26.com` Stripe passthrough boundary stable across 10+ cycles. `flags.n26.com` RBAC boundary fully enumerated and stable.
+- **Method/transport controls:** Proved OPTIONS/HEAD/POST behavior per path (not global edge property). GraphQL transports invariant (403). Path normalization and header-shape bypasses closed on `api.*`.
+- **Corpus mining:** Leveraged vendor OpenAPI/Postman/prose (`n26/psd2-tpp-docs`) to discover CBPII subtree, fallback interfaces, registered `client_id`s (`PSDDE-BAFIN-000001`, `PSDES-BDE-3DFD12`), and correct channel semantics (e.g. `TPP-Redirect-URI` header vs query). Corrected numerous prior presence-vs-value/channel errors.
+- **Retractions/corrections logged:** Systematically corrected false negatives/positives (route-less classifications, OPTIONS method-agnostic, scope vs value, query-string vs header/channel, bundle presence). Closed many hypotheses (open-redirect on `app.n26.com` login/open-banking, Statsig `sdk_exception` vector, spc.n26.com IDOR as tracking pixels, GraphQL WAF bypass).
+- **Boundary verification:** Per-sibling re-proof completed for shared-edge claims. Determinism controls applied (size/encoding, md5 of bodies). 
+- **CT/corpora reconciled:** Baseline `tech26.de=40`, `n26.com=85` names; CT API behavior noted (certspotter 410 Gone). No new CT leaves since 2026-09-20.
+
+### Active
+- **Hypothesis validation pending credentials:** Three FINAL/PARKED hypotheses require AUTH_HELPED testing (BOLA on `api.*` nested resources, Stripe-forwarded BOLA on `pay.n26.com`, cross-deployment token audience across `{api,beta-api,sapi}`) and two on `xs2a.tech26.com` (mTLS/SCA enforcement, CBPII/redirect flow). 
+- **XS2A redirect/channel details:** ALB blocklist characterized by IP-literal(+localhost) matcher (not scheme:// substring in the corrected form) and query-string/header channel separation; scheme-relative URIs bypass to app layer in documented cases but OAuth control bypass not demonstrated. AS performs no pre-auth discrimination of `TPP-Redirect-*` headers (four legs byte-identical `401|0`).
+- **Gate map maintenance:** `api.*` gate map frozen at 3 EXACT ∪ 6 PREFIX with byte-for-byte verification. Any new dictionary sweep returns NO_DELTA.
+- **KB hygiene:** Methodology rules codified (path/channel property, presence-vs-value, fabricated control). Artifact existence claims corrected (e.g. `reports/report-draft-n26.md` absent).
+
+### Blocked
+- **No credential/scope supply:** Missing sandbox Bearer tokens for `api/beta-api/sapi.tech26.de`, approved Stripe test key for `pay.n26.com`, and TPP test credential (QWAC client cert + `client_id` / bearer token) for `xs2a.tech26.de` — sole unblock for all AUTH_HELPED hypotheses (9+ consecutive cycles).
+- **Triage feeder degraded:** Consecutive `UnknownError` runs; hypothesis intake dead (last successful run returned “No leads provided”). Feeder health is pipeline weather, not a lead source.
+- **Probe substrate unreliable:** Historical prober artifacts (phantom 404s, host-interpolation `ERR [Errno -2] Name or service not known`) mean any recorded status code must be verified by direct `curl` before acceptance.
+- **Passive corpora exhausted:** crt.sh 502, certspotter 410 Gone, grep.app 429, github code-search 401, sourcegraph 0. No new CT leaves since 2026-09-20.
+- **Probe surface frozen:** No new probe data since ~2026-09-18 10:07 UTC; identical-boundary re-probing suspended as zero-signal per canon.
+
+## Next Move
+1. **Request credentials from coordinator (HUMAN):** Provision (a) one read-only sandbox Bearer token for the `api.tech26.de` family to run 3-host audience matrix (`Host: api|beta-api|sapi.tech26.de` × `GET /api/me`), (b) one approved Stripe test-mode key (or test credentials) for `pay.n26.com` to test `/v1/payments`, `/v1/balance`, `/v1/charges` with isolated synthetic fixtures, (c) one TPP test credential for Berlin-Group (`xs2a.tech26.de`) — QWAC client cert plus `client_id` and/or bearer token — to test consent/account/payment endpoints and mTLS/cert-binding behavior. Do not attempt token minting or mutating operations without explicit written approval.
+2. **Execute credentialed verification in strict read-only batches:** Upon receipt, run the smallest read-only matrix per hypothesis with 5–10s pacing, record exact request/response (status, len, md5, headers), compare byte-for-byte across controls, and stop immediately on any non-test data. Do not re-probe frozen anonymous boundaries.
+
+## Relevant Files
+- `inventory/n26.md`: Host inventory and discovery seed (passive DNS/CT). Why: canonical asset list and classification state.
+- `knowledge/knowledge-base.md`: Cumulative ACCEPTED/REJECTED/LEARN entries with dates/timestamps. Why: ground truth of decisions, retractions, and methodology rules.
+- `probe-results.md`: Per-cycle probe results. Why: last observed data (frozen since ~2026-09-18 10:07 UTC) — verify against current before re-probing.
+- `triage/`: Feeder run logs (`run-*.md`) with `UnknownError` refs. Why: pipeline weather/health, not lead source.
+- `reports/report-draft-n26.md`: Report draft (v2 noted) — may be absent from tree; verify existence before relying on it.
+- `n26/psd2-tpp-docs/` (vendor corpus): OpenAPI/Postman/prose (`doc/`, `additional_api_spec.md`, `doc/assets/quarterly-report/`, sandbox/redirect docs). Why: authoritative route tables, parameter/channel semantics (e.g. `TPP-Redirect-URI`, CBPII subtree, registered `client_id`s).
+- `knowledge/index.md`, `leads/`, `hypotheses.md`, `art/`: Supporting artifacts for leads/hypotheses and prioritization. Why: current top hypotheses and scoring.
+- `scope.yml`: Program scope/exclusions. Why: boundary of in-scope assets and REJECTED classes (e.g. SSL/TLS best practices exclusion; regulatory basis required for mTLS finding).
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+**Continue.** Next step: request coordinator credentials (AUTH_HELPED). 
+
+Need: (a) read-only Bearer token for `api|beta-api|sapi.tech26.de` (test `/api/me` audience matrix), (b) approved Stripe test key for `pay.n26.com`, (c) TPP test credentials (QWAC cert + client_id/token) for `xs2a.tech26.de`. 
+
+All 5 top hypotheses blocked on these; anonymous boundaries frozen (no productive passive probing). Do not attempt token minting/mutations.
