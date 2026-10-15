@@ -12516,3 +12516,55 @@ testability: AUTH_HELPED
 [FINAL] 1. api.tech26.de BOLA (92); 2. pay.n26.com Stripe-forwarded BOLA (85); 3. cross-deployment token audience confusion {api,beta-api,sapi} (55). All AUTH_HELPED.
 [LEARN] passive CT + hackertarget is fully reconciled to baseline — the frozen-boundary canon holds; no new hostname, so no new surface to probe.
 [RISK] n26: 20 — every high-value path credential-gated; feeder dead; no validated finding.
+## 2026-10-15 21:58:32 UTC [target] (model bigpickle)
+[NEW] @ xs2a.tech26.de: `n26/psd2-tpp-docs` corpus contains a documented client-controlled state override, `X-Sandbox-Transaction-Status`, described as letting the client set payment status. Route is 401-gated → AUTH_HELPED, not yet testable.
+[PARKED] `X-Sandbox-Transaction-Status` client-controlled payment-status override: real business-logic class on a money flow (exactly the high-value directive), but every status route is 401-gated and the documented header is sandbox-scoped. No anonymous observable → cannot be evidenced, cannot be reported without AUTH_HELPED. Not a false negative; parked pending the same sandbox identity that unblocks the OATH item.
+[PARKED] `X-Sandbox-Transaction-Status` client-controlled payment-status override: real business-logic class on a money flow, but every status route is 401-gated and the header is sandbox-scoped. No anonymous observable; needs the same sandbox identity as HYP 1.
+reasoning: Three independent deployments in the same `server: envoy` mesh return a **byte-identical** gate body (`md5 d58528c924`, `len=211`, same `x-request-id`/`x-envoy-upstream-service-time` shape) and the same nested account-resource route table, proving one shared middleware + route definition deployed to prod, beta and sapi; a `beta-*` deployment commonly carries weaker object-authorization and may hold seeded or mirrored banking fixtures; nothing observed shows whether `iss`/`aud`/scope is bound per deployment, because that is only observable with a token.
+[NEW] none
+[CHANGED] fpt.tech26.de still fixed-response 200 len=0 (not activated); 3ds-challenge still 403|118; xs2a CBPII + accounts 401|0, bogus 404|0 — oracle stable.
+[CHANGED] api.tech26.de gate re-confirmed...
+[CHANGED] CT wildcard SANs (`*.tech26.de`, `*.n26.com`) are **not** DNS wildcards — random labels (`zzqrandom9x7.tech26.de`, `.n26.com`) → NXDOMAIN; wildcard-cert expansion is not an enumeration path.
+[CHANGED] 15 candidate internal-tooling names (`admin/internal/gitlab/jenkins/grafana/argocd/sonarqube/sentry/nexus/artifactory/api-{dev,staging,test}/int.tech26.de` + `.n26.com`) → NXDOMAIN; closes the "undiscovered admin/internal surface" branch.
+[CHANGED] `fpt.tech26.de` still fixed-response ALB `200 len=0 text/plain` (not activated); `3ds-challenge.n26.com` still source-gated `403|118`; `xs2a.tech26.de` oracle stable (`consents`/`confirmation-of-funds`/`accounts` → `401|0`, bogus → `404|0`, `/openapi.json` → `404|0`).
+[PRIO] xs2a.tech26.de,7.95,attack_surface=9.0;business_value=10.0;tech_exposure=9.0;gate_ease=1.0;cloud_surface=7.0;freshness=10.0
+[PRIO] api.tech26.de,7.80,attack_surface=10.0;business_value=10.0;tech_exposure=8.0;gate_ease=0.0;cloud_surface=8.0;freshness=8.0
+[PRIO] pay.n26.com,7.68,attack_surface=9.5;business_value=10.0;tech_exposure=8.0;gate_ease=0.0;cloud_surface=7.0;freshness=9.0
+[PRIO] app.n26.com,4.0,attack_surface=4.0;business_value=9.0;tech_exposure=6.0;gate_ease=1.0;cloud_surface=6.0;freshness=5.0
+[HYP] SSRF via client-controlled `TPP-Redirect-URI` header in the Berlin-Group consent/authorisation redirect flow
+class: SSRF
+asset: xs2a.tech26.de/v1/berlin-group/v1/consents{,/confirmation-of-funds}/{id}/authorisations
+confidence: 62
+reasoning: The edge substring blocklist is query-string-scoped, not request-scoped — an invented query field carrying an internal literal is cut at the ALB (`403|118 awselb/2.0`) while the identical value in `TPP-Redirect-URI`/`X-Foo` headers reaches the app (`401|0` istio-envoy). `doc/redirect/dedicated-{aisp,cbpii,pisp}.md` and `doc/sandbox.md` document the production flow as carrying the TPP redirect destination in the `TPP-Redirect-URI` header with `TPP-State` echoed back and `error=access_denied` on failure — i.e. the app reads and acts on that header. CBPII consent subtree is confirmed live (`401|0`, 8-11ms app-layer timing) on the production host.
+evidence_needed: A TPP token/consent so the authorisation redirect stage executes, plus an out-of-band listener proving the app performed a server-side fetch of an attacker-supplied `TPP-Redirect-URI` (ideally reaching `169.254.169.254/latest/meta-data/`).
+verify_steps: `GET /v1/berlin-group/v1/consents/confirmation-of-funds/<id>/authorisations HTTP/2` + `Host: xs2a.tech26.de` + `Authorization: Bearer <tpp-token>` + `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/iam/security-credentials/`; compare to same request with a benign `TPP-Redirect-URI`; watch listener + response.
+impact: If the app issues a server-side request to the header value, cloud-instance metadata (IAM credentials) is reachable → full cloud-account compromise; otherwise an open-redirect/header-injection on the PSD2 consent flow. HIGH.
+testability: AUTH_HELPED
+[HYP] BOLA on the legacy api.tech26.de account-resource family
+class: IDOR
+asset: api.tech26.de/api/accounts/{id}/{statements|cards|tans|addresses|bookings|transactions|beneficiaries|devices|limits}
+confidence: 92
+reasoning: 15 unversioned members return byte-identical `401 len=211` `invalid_token` problem+json (`md5 d58528c924dad2fde9c30f81972e0548`); account IDs 1,2,3,4,9 gate identically; fabricated sub-resource `/api/accounts/1/zzqnotreal` gates identically (gate is a GET-scoped wildcard, not an existence oracle); the same gate and route table are byte-identical on `beta-api.tech26.de` and `sapi.tech26.de`; origin Tomcat/Spring Boot behind `server: envoy`.
+evidence_needed: two isolated sandbox identities with read-only Bearer tokens and stable synthetic account/resource IDs, plus object-bearing responses for both.
+verify_steps: `GET /api/me HTTP/1.1` + `Host: api.tech26.de` + `Authorization: Bearer <sandbox-A-ro>`; then `GET /api/accounts/<sandbox-B-account-id>/statements` with token A and the mirror with token B; halt on any non-test data.
+impact: Conditional cross-tenant disclosure of statements, address PII, cards, TANs, devices, limits; CRITICAL if object-level authorization is absent.
+testability: AUTH_HELPED
+[HYP] Stripe-forwarded BOLA on pay.n26.com
+class: IDOR
+asset: pay.n26.com/v1/{payments,balance,charges,customers,invoices}
+confidence: 85
+reasoning: 23+ versioned routes return Stripe-shaped 401 with distinct no-key (`len=342`) and invalid-key (`len=132`) bodies, `WWW-Authenticate: Basic realm="Stripe"`, `ACAO: *`; OAuth/Connect routes 404 identically to direct Stripe, proving 1:1 passthrough with no N26 authorization layer; key discovery closed 3/3 corpora.
+evidence_needed: a coordinator-approved test-mode key accepted by this host, synthetic payment/customer/charge fixtures, and proof object ownership is enforced independently of the key.
+verify_steps: `GET /v1/payments?limit=3 HTTP/1.1` + `Host: pay.n26.com` + `Authorization: Bearer <approved-test-key>`; then `/v1/balance`, `/v1/charges/<fixture-id>`, `/v1/customers/<fixture-id>` with the same and a second approved key; do not enumerate live IDs.
+impact: Conditional cross-account payment, charge, customer and balance disclosure; CRITICAL, no anonymous exposure established.
+testability: AUTH_HELPED
+[PARKED] Missing mTLS / QWAC-to-token binding on xs2a.tech26.de: real transport gap (empty `certificate_authorities`), but (a) every app-layer leg is `401` so no demonstrated impact, and (b) "SSL/TLS best practices" is an explicit out-of-scope class (`scope.yml:24`) — the PSD2/RTS-mandate exemption is arguable, not safe. Cannot lead a report.
+[PARKED] `X-Sandbox-Transaction-Status` client-controlled payment-status override: exact high-value BUSLOGIC class on a money flow, but the header is corpus-documented as sandbox-scoped and every status route is `401`-gated — no anonymous observable; needs the same sandbox identity as HYP 1.
+[PARKED] Cross-deployment token audience confusion ({api,beta-api,sapi}): byte-identical shared middleware is proven, but `iss`/`aud` binding is only observable with a token; run inside the HYP 2 session rather than as a separate claim.
+[FINAL] 1. xs2a SSRF via `TPP-Redirect-URI` (62, AUTH_HELPED); 2. api.tech26.de BOLA (92, AUTH_HELPED); 3. pay.n26.com Stripe-forwarded BOLA (85, AUTH_HELPED). No anonymous result is promoted as a finding.
+[NEXT] HUMAN: Have the program coordinator provision one sandbox-registered TPP credential — a test QWAC client certificate plus its Bearer token for `xs2a.tech26.de` — which in a single authorized session settles HYP 1 (consent-authorisation redirect SSRF with/without QWAC), the parked `X-Sandbox-Transaction-Status` override, and the sandbox→production co-tenant isolation; separately request a read-only `api.tech26.de` sandbox token for HYP 2. Do not authorize further identical-boundary re-probing.
+[LEARN] REJECTED MISCONFIG @ CT wildcard SANs: `*.tech26.de`/`*.n26.com` are certificate SANs, not DNS wildcards — random labels NXDOMAIN on both zones; wildcard-cert expansion is not an enumeration path.
+[LEARN] REJECTED MISCONFIG @ internal-tooling hostnames: 15 admin/CI/observability names (admin/internal/gitlab/jenkins/grafana/argocd/sonarqube/sentry/nexus/artifactory/api-{dev,staging,test}/int) NXDOMAIN on tech26.de and n26.com; the "undiscovered internal surface" branch is closed.
+[LEARN] ACCEPTED OTHER @ fpt.tech26.de: still a fixed-response ALB placeholder (`200 len=0`, text/plain) — monitor-only, no activation.
+[LEARN] REJECTED OTHER @ self: 27+ consecutive NO_DELTA cycles on an unchanged surface is the signal — the loop is out of information, not the target out of surface; the only recoverable signal now is a human-provisioned credential.
+[RISK] n26: 20 — Zero validated/validated-reportable findings. Every high-value path (xs2a SSRF via `TPP-Redirect-URI`, xs2a money-flow status override, api.tech26.de BOLA, pay.n26.com Stripe BOLA, cross-deployment audience confusion) is credential-gated; the one fully passive-verified item (mTLS-optional) maps to the excluded SSL/TLS class and has no demonstrated impact. Triage feeder degraded 23+ consecutive errored runs; passive corpora reconciled to baseline. The single highest-leverage unblock is a coordinator-provisioned sandbox TPP credential.
