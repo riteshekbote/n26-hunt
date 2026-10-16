@@ -1637,3 +1637,6 @@
 - 2026-10-16 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
 - 2026-10-16 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
 - 2026-10-16 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-16 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-16 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-16 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.

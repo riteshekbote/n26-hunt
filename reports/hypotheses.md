@@ -7252,3 +7252,16 @@
 - LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
 - LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
 - LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+
+## RANKED HYPOTHESES 2026-10-16 14:20:16 UTC
+- [85] pay.n26.com/v1/{payments,balance,charges,customers,invoices}: Stripe-forwarded BOLA on pay.n26.com (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Have the program coordinator provision one sandbox-registered TPP credential — a test QWAC client certificate plus its Bearer token for `xs2a.tech26.de` 
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surfa
+- LEARN: ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- LEARN: ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
