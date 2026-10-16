@@ -7240,3 +7240,15 @@
 - LEARN: ACCEPTED MISCONFIG @ api.tech26.de: GET-scoped wildcard middleware re-confirmed live/fabricated byte-identical `401|211` md5 `d58528c9` — gate cannot be used as
 
 ## RANKED HYPOTHESES 2026-10-16 04:57:18 UTC
+
+## RANKED HYPOTHESES 2026-10-16 09:36:24 UTC
+- [62] <host/endpoint>: <title> (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Have the program coordinator provision one sandbox-registered TPP credential — a test QWAC client certificate plus its Bearer token for `xs2a.tech26.de` 
+- LEARN: passive CT + hackertarget is fully reconciled to baseline — the frozen-boundary canon holds; no new hostname, so no new surface to probe.
+- LEARN: REJECTED MISCONFIG @ CT wildcard SANs: `*.tech26.de`/`*.n26.com` are certificate SANs, not DNS wildcards — random labels NXDOMAIN on both zones; wildcard-cert e
+- LEARN: REJECTED MISCONFIG @ internal-tooling hostnames: 15 admin/CI/observability names (admin/internal/gitlab/jenkins/grafana/argocd/sonarqube/sentry/nexus/artifactor
+- LEARN: ACCEPTED OTHER @ fpt.tech26.de: still a fixed-response ALB placeholder (`200 len=0`, text/plain) — monitor-only, no activation.
+- LEARN: REJECTED OTHER @ self: 27+ consecutive NO_DELTA cycles on an unchanged surface is the signal — the loop is out of information, not the target out of surface; th
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
