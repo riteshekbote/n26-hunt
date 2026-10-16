@@ -12569,3 +12569,4 @@ testability: AUTH_HELPED
 [LEARN] REJECTED OTHER @ self: 27+ consecutive NO_DELTA cycles on an unchanged surface is the signal — the loop is out of information, not the target out of surface; the only recoverable signal now is a human-provisioned credential.
 [RISK] n26: 20 — Zero validated/validated-reportable findings. Every high-value path (xs2a SSRF via `TPP-Redirect-URI`, xs2a money-flow status override, api.tech26.de BOLA, pay.n26.com Stripe BOLA, cross-deployment audience confusion) is credential-gated; the one fully passive-verified item (mTLS-optional) maps to the excluded SSL/TLS class and has no demonstrated impact. Triage feeder degraded 23+ consecutive errored runs; passive corpora reconciled to baseline. The single highest-leverage unblock is a coordinator-provisioned sandbox TPP credential.
 ## 2026-10-16 00:19:33 UTC [target] (model bigpickle)
+## 2026-10-16 04:40:03 UTC [target] (model bigpickle)

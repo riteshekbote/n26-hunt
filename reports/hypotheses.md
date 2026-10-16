@@ -7238,3 +7238,5 @@
 - LEARN: ACCEPTED OTHER @ app.n26.com: bundle manifest is 11 chunks; hash rotation does not alter the embedded public client key — client-side key extraction is a one-ti
 - LEARN: ACCEPTED OATH @ xs2a.tech26.de: re-proved TPP-Redirect-URI header reaches app layer (`401|0`, identical md5) while a query-string internal literal on the same p
 - LEARN: ACCEPTED MISCONFIG @ api.tech26.de: GET-scoped wildcard middleware re-confirmed live/fabricated byte-identical `401|211` md5 `d58528c9` — gate cannot be used as
+
+## RANKED HYPOTHESES 2026-10-16 04:57:18 UTC
