@@ -7295,3 +7295,5 @@
 - LEARN: ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
 - LEARN: REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.
 - LEARN: REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until obse
+
+## RANKED HYPOTHESES 2026-10-16 23:19:42 UTC

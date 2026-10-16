@@ -12816,3 +12816,4 @@ testability: AUTH_HELPED
 [LEARN] REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
 [LEARN] REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
 [RISK] n26: 20 — Zero validated/reportable findings; all three FINAL hypotheses credential-gated. Passive surface is information-exhausted (repo confirms feeder dead, draft report absent). Only recoverable signal is a human-provisioned credential.
+## 2026-10-16 23:19:30 UTC [target] (model bigpickle)
