@@ -1,29 +1,29 @@
-## 2026-10-15 21:56:46 UTC [target] (model nemotron3)
+## 2026-10-16 00:03:42 UTC [target] (model nemotron3)
 [NEW] api.tech26.de: 3 previously-unrecorded gated exact GET routes — `/api/login`, `/api/transfers`, `/api/referrals` → `401|211 md5 d58528c9`; origin confirmed Tomcat/Spring Boot; ALB path-traversal block active (first new observables in 22 days)
 [NEW] api.tech26.de: `spaces` confirmed as 6th PREFIX root — `/api/spaces`, `/api/spaces/1`, `/api/spaces-x` → `401|211`; singular `/api/space` → `404|0`; gate map frozen at 3 EXACT ∪ 6 PREFIX
 [NEW] xs2a.tech26.de: CBPII consent flow confirmed live at `/v1/berlin-group/v1/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}` — returns `401|0` with 8-11ms app-layer timing vs 1ms bogus 404
-[NEW] xs2a.tech26.de: `/sandbox/oauth2/authorize` and `/sandbox/v1/berlin-group/v1/consents` → `401|0` istio-envoy — corpus-documented credential-free sandbox token-mint gated at authorize
-[NEW] n26/psd2-tpp-docs corpus re-fetchable via GitHub Git Trees API + `raw.githubusercontent.com` (tree.json 21KB, `doc/sandbox.md` 20KB) — contradicts prior "github code-search 401"; passive corpus access restored
 [NEW] AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo (`http://user@169.254.169.254/`) confirmed reproducible on xs2a.tech26.de, api.tech26.de, app.n26.com — filter is request-scoped (path rules exist), retracting "query-string-scoped"
+[NEW] xs2a.tech26.de `/sandbox/oauth2/authorize` and `/sandbox/v1/berlin-group/v1/consents` → `401|0` istio-envoy — corpus-documented credential-free sandbox token-mint gated at authorize
+[NEW] n26/psd2-tpp-docs corpus re-fetchable via GitHub Git Trees API + `raw.githubusercontent.com` (tree.json 21KB, `doc/sandbox.md` 20KB) — contradicts prior "github code-search 401"; passive corpus access restored
 [CHANGED] Probe surface unfrozen after 22 days — first new api.tech26.de observables since 2026-09-18 10:07 UTC
 [CHANGED] Triage feeder degraded 21+ consecutive runs (latest `err_b4145578`); hypothesis intake dead
 [CHANGED] certspotter endpoint discontinued (410 Gone); CT baseline stable at tech26.de=40 names, n26.com=85 names; zero new leaves since 2026-09-20
 [CHANGED] `reports/report-draft-n26.md` still ABSENT from tree despite 4 cycles of KB assertion
 [CHANGED] flags.n26.com RBAC boundary tightened to default-deny: `/v1/sdk_exception` now `403|19B` (was 202), all GET config routes `403|19B` — premise dead
 [CHANGED] Three PARKED hypotheses unchanged (api.tech26.de BOLA, xs2a.tech26.de CBPII SSRF, pay.n26.com Stripe BOLA) — all AUTH_HELPED, blocked on coordinator credential/scope supply
-[PRIO] api.tech26.de,8.8,attack_surface=9,business_value=9,tech_exposure=8,gate_ease=2,cloud_surface=7,freshness=10
-[PRIO] xs2a.tech26.de,8.5,attack_surface=8,business_value=10,tech_exposure=9,gate_ease=2,cloud_surface=9,freshness=8
-[PRIO] pay.n26.com,8.0,attack_surface=7,business_value=10,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=5
+[PRIO] api.tech26.de,9.0,attack_surface=9,business_value=9,tech_exposure=8,gate_ease=2,cloud_surface=7,freshness=10
+[PRIO] xs2a.tech26.de,8.8,attack_surface=8,business_value=10,tech_exposure=9,gate_ease=2,cloud_surface=9,freshness=8
+[PRIO] pay.n26.com,8.2,attack_surface=7,business_value=10,tech_exposure=7,gate_ease=2,cloud_surface=8,freshness=6
 [PRIO] authentication-service.eks.core-production.keyless.technology,6.5,attack_surface=6,business_value=9,tech_exposure=8,gate_ease=1,cloud_surface=7,freshness=3
 [PRIO] engagementplatform.n26.com,5.8,attack_surface=5,business_value=8,tech_exposure=6,gate_ease=2,cloud_surface=6,freshness=4
 [PRIO] app.n26.com,5.5,attack_surface=6,business_value=9,tech_exposure=7,gate_ease=1,cloud_surface=5,freshness=4
-[PRIO] flags.n26.com,3.0,attack_surface=3,business_value=4,tech_exposure=5,gate_ease=3,cloud_surface=4,freshness=2
+[PRIO] flags.n26.com,2.5,attack_surface=2,business_value=4,tech_exposure=5,gate_ease=3,cloud_surface=4,freshness=1
 [PRIO] spc.n26.com,2.0,attack_surface=2,business_value=3,tech_exposure=3,gate_ease=1,cloud_surface=2,freshness=1
 [HYP] api.tech26.de BOLA Across 21 Gated Endpoints via GET-Scoped Wildcard Middleware
 class: IDOR
 asset: api.tech26.de/api/{accounts,statements,spaces,insights,transfers,referrals}/** + /api/{me,addresses,login}
 confidence: 92
-reasoning: Gate map frozen at 3 EXACT ∪ 6 PREFIX roots; fabricated `/api/accounts/1/zzqnotreal` → `401|211` byte-identical to live routes; HEAD → `404|0`; ID-independent prefix firewall proven across 3 hosts (api, beta-api, sapi); 21 endpoints confirmed gated (5 base + 16 nested); origin Tomcat/Spring Boot; ALB path-traversal block active; method-override headers inert
+reasoning: Gate map frozen at 3 EXACT ∪ 6 PREFIX roots; fabricated `/api/accounts/1/zzqnotreal` → `401|211` byte-identical to live routes; HEAD → `404|0`; ID-independent prefix firewall proven across 3 hosts (api, beta-api, sapi); 21 endpoints confirmed gated (5 base + 16 nested); origin Tomcat/Spring Boot; ALB path-traversal block active; method-override headers inert; surface actively mutating (3 new endpoints discovered 2026-10-10)
 evidence_needed: Valid Bearer token from paired-device grant for N26 test account to test cross-account access at `/api/accounts/{other_id}/{statements,cards,transactions,beneficiaries,limits,devices,approvals,transfers,cosmetics,tans,bookings}`
 verify_steps: 1) Obtain paired-device grant token; 2) GET /api/me → 200 confirm token validity; 3) GET /api/accounts/{own_id}/statements → 200; 4) GET /api/accounts/{other_id}/statements → 200 (BOLA) or 403; 5) Repeat for /api/accounts/{other_id}/{cards,transactions,beneficiaries,limits,devices,approvals,transfers,cosmetics,tans,bookings}; 6) Test /api/transfers, /api/referrals, /api/login, /api/spaces/{other_id}
 impact: Cross-account PII dump — statements, addresses, bookings, cards, transfers, approvals, beneficiaries, devices, limits, cosmetics, TANs (HIGH)
