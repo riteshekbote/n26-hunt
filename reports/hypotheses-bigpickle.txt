@@ -1,15 +1,4 @@
-## 2026-10-16 17:57:00 UTC [target] (model bigpickle)
-testability: AUTH_HELPED
-[HYP] Stripe-forwarded BOLA on pay.n26.com
-class: IDOR
-asset: pay.n26.com/v1/{payments,balance,charges,customers,invoices}
-confidence: 85
-reasoning: 23+ versioned routes return Stripe-shaped 401 with distinct no-key (`len=342`) and invalid-key (`len=132`) bodies, `WWW-Authenticate: Basic realm="Stripe"`, `ACAO: *`; OAuth/Connect routes 404 identically to direct Stripe, proving 1:1 passthrough with no N26 authorization layer; key discovery closed 3/3 corpora.
-evidence_needed: a coordinator-approved test-mode key accepted by this host, synthetic payment/customer/charge fixtures, and proof object ownership is enforced independently of the key.
-verify_steps: `GET /v1/payments?limit=3 HTTP/1.1` + `Host: pay.n26.com` + `Authorization: Bearer <approved-test-key>`; then `/v1/balance`, `/v1/charges/<fixture-id>`, `/v1/customers/<fixture-id>` with the same and a second approved key; do not enumerate live IDs.
-impact: Conditional cross-account payment, charge, customer and balance disclosure; CRITICAL, no anonymous exposure established.
-testability: AUTH_HELPED
-[PARKED] Missing mTLS / QWAC-to-token binding on xs2a.tech26.de: real transport gap (empty `certificate_authorities`), but no demonstrated app-layer impact and "SSL/TLS best practices" is an explicit out-of-scope class (`scope.yml:24`). Cannot lead a report.
+## 2026-10-16 20:43:31 UTC [target] (model bigpickle)
 [PARKED] `X-Sandbox-Transaction-Status` client-controlled payment-status override: exact high-value BUSLOGIC class on a money flow, but corpus-documented as sandbox-scoped and every status route is `401`-gated — no anonymous observable; needs the same sandbox identity as HYP 1.
 [PARKED] Cross-deployment token audience confusion ({api,beta-api,sapi}): shared middleware proven, but `iss`/`aud` binding only observable with a token; run inside the HYP 2 session.
 [PARKED] sonarqube-default-fra.tech26.de exposed CI SonarQube: resolves to a live `sonarqube-alb-ci-live` AWS ALB and was missed by the earlier label-pattern sweep, but every transport (443 + 80) is source-gated (rc=28, 000, 0B) from this vantage — no app-layer observable, nothing to evidence or report.
