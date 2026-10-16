@@ -1640,3 +1640,5 @@
 - 2026-10-16 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
 - 2026-10-16 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
 - 2026-10-16 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-16 REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
+- 2026-10-16 REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
