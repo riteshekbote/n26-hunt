@@ -12817,3 +12817,7 @@ testability: AUTH_HELPED
 [LEARN] REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
 [RISK] n26: 20 — Zero validated/reportable findings; all three FINAL hypotheses credential-gated. Passive surface is information-exhausted (repo confirms feeder dead, draft report absent). Only recoverable signal is a human-provisioned credential.
 ## 2026-10-16 23:19:30 UTC [target] (model bigpickle)
+## 2026-10-17 01:15:13 UTC [target] (model bigpickle)
+[FINAL] api.tech26.de BOLA (H1) / pay.n26.com Stripe-forwarded BOLA (H2) / xs2a.tech26.de `TPP-Redirect-URI` SSRF (H3) — all AUTH_HELPED, no anonymous result promotable.
+[NEXT] Blocked on coordinator-provisioned credentials; no in-scope anonymous action remains.
+[RISK] n26: ~30/100 — mature, WAF-hardened surface; sole live-by-design disclosure (flags.n26.com) is INFO.
