@@ -123401,3 +123401,1577 @@ Now emit structured blocks. Keep concise. This is the requested output format.</
 [RISK] n26: 20 — Zero validated/reportable findings (count 0, every entry HOLD/NO). All three FINAL hypotheses credential-gated. Fresh passive delta fully reconciled into the standing source-gated class: reachability facts, no testable surface. Triage feeder dead since 2026-09-24. Highest-leverage unblock is a coordinator-provisioned sandbox TPP credential.
 
 I've hit the stop condition: no anonymous surface remains to test, and all three FINAL hypotheses require credentials I cannot self-provision. Which will you authorize — credential provisioning, the `pisp.tech26.de` POST, or neither?
+===== ANALYST bigpickle 2026-10-17 13:29:05 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la; echo ---; ls art/ 2>/dev/null | head -20; echo ---; ls reports/ 2>/dev/null | head -20; echo ---; ls triage/ 2>/dev/null | tail -5
+total 1580
+drwxr-xr-x 12 runner runner   4096 Oct 17 13:11 .
+drwxr-xr-x  3 runner runner   4096 Oct 17 13:11 ..
+drwxr-xr-x  7 runner runner   4096 Oct 17 13:11 .git
+drwxr-xr-x  3 runner runner   4096 Oct 17 13:11 .github
+-rw-r--r--  1 runner runner   1844 Oct 17 13:11 README.md
+-rw-r--r--  1 runner runner     32 Oct 17 13:11 analyst-out.txt
+-rw-r--r--  1 runner runner 742875 Oct 17 13:11 analyst-prompt.txt
+-rw-r--r--  1 runner runner 739005 Oct 17 13:11 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Oct 17 13:11 inventory
+drwxr-xr-x  2 runner runner   4096 Oct 17 13:11 knowledge
+drwxr-xr-x  2 runner runner   4096 Oct 17 13:11 leads
+-rw-r--r--  1 runner runner  29866 Oct 17 13:11 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Oct 17 13:11 recon-notes
+drwxr-xr-x  2 runner runner   4096 Oct 17 13:11 reports
+drwxr-xr-x  2 runner runner   4096 Oct 17 13:11 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Oct 17 13:11 scope.yml
+drwxr-xr-x  2 runner runner   4096 Oct 17 13:11 scripts
+-rw-r--r--  1 runner runner     33 Oct 17 13:11 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Oct 17 13:11 state_laguna.json
+-rw-r--r--  1 runner runner     33 Oct 17 13:11 state_ling3.json
+-rw-r--r--  1 runner runner     33 Oct 17 13:11 state_longcat.json
+-rw-r--r--  1 runner runner     33 Oct 17 13:11 state_mimo.json
+-rw-r--r--  1 runner runner     33 Oct 17 13:11 state_nemotron3.json
+drwxr-xr-x  2 runner runner  16384 Oct 17 13:11 triage
+---
+---
+analyst-bigpickle.log
+analyst-laguna.log
+analyst-ling3.log
+analyst-longcat.log
+analyst-nemotron3.log
+hypotheses-bigpickle.txt
+hypotheses-laguna.txt
+hypotheses-ling3.txt
+hypotheses-longcat.txt
+hypotheses-nemotron3.txt
+hypotheses.md
+reposcan-findings.md
+valid-bugs.md
+---
+run-2026-10-16-22-11.md
+run-2026-10-17-00-34.md
+run-2026-10-17-04-58.md
+run-2026-10-17-09-10.md
+run-2026-10-17-13-01.md
+[0m
+[0m$ [0mcat art/lead_nemotron3.txt 2>/dev/null | head -80
+(no output)
+[0m
+## Objective
+- Act as senior bug-bounty ANALYST for N26 Bank AG program (report channel: bugs.olivermaicher.eu), running an 8-step hunt cycle (DELTA→PRIO→HYP→CRITIQUE→NEXT→LEARN→RISK) with passive-first, GET/HEAD/OPTIONS-only live probing, outputting structured blocks only.
+- Current state: `{"phase": "POC", "target": "api"}` — all three FINAL hypotheses are AUTH_HELPED; program is in long NO_DELTA / information-exhaustion mode.
+
+## Important Details
+- In-scope: all N26-owned infra/platforms/APIs/auth/systems/domains (scope.yml + inventory/n26.md). Report one finding channel: bugs.olivermaicher.eu.
+- OUT OF SCOPE (verbatim constraints): SSL/TLS best practice (scope.yml:24 — explicitly excludes mTLS finding from headline), descriptive errors/headers, username enumeration, rate-limit/brute-force policy, OPTIONS/TRACE, robots.txt, clickjacking w/o exploit, etc. Full list in prompt.
+- Probe rules: passive-first, ≤1 rps, GET/HEAD/OPTIONS only; no mutating/auth-bypass tests on live customer data; ~10 req/host/3min pacing on tech26.de edge (rate limiter, recovers ~45s); app.n26.com `x-ratelimit-limit: 60`.
+- Standing canon (learned over 30+ cycles):
+  - Identical-boundary re-probing suspended — zero signal; only new vectors are credentials or new corpora (vendor prose = best enumeration source; re-read corpus, don't trust memory).
+  - A control is a property of the request path/channel measured on, not shared edge/cert; re-prove controls on the host/channel where used.
+  - 404-on-GET proves absence only for documented-GET routes; presence-vs-value discriminator must be proven with controls; status code ≠ rule; bundle presence ≠ reachability; count ≠ finding.
+  - KB has severe duplicate-line rot (same entries re-appended 10-11..10-17); dedupe before treating KB delta as signal.
+- Key facts:
+  - api.tech26.de gate: GET-scoped wildcard middleware; gate map = 3 EXACT `{me,addresses,login}` ∪ 6 PREFIX `{accounts,statements,spaces,insights,transfers,referrals}`; all gated → `401|211 md5 d58528c924dad2fde9c30f81972e0548`; fabricated sibling same 401 (no existence oracle); HEAD/OPTIONS/POST → `404|0`; origin Tomcat/Spring Boot; ALB path-traversal block `403|118 awselb`. Identical on beta-api + sapi. aisp/pisp/xs2a are `istio-envoy`, no legacy family.
+  - xs2a.tech26.de: Berlin-Group live at `/v1/berlin-group/v1` (21 route classes), sandbox co-tenant `/sandbox/v1/berlin-group/v1/*`; mTLS optional (CertificateRequest empty CA list at TLS1.2; verify with `-msg` trace, `-tls1_3` formats differently); ELB `obnium-mtls-live-fra-328671153`; redirect filter = IP-literal(+localhost) matcher, request-scoped, userinfo bypass; TPP-Redirect-URI header reaches app layer; AS does no pre-auth discrimination of TPP-Redirect-* (4 legs identical `401|0 md5 d41d8cd9`); OAuth authorize 404/401 split = parameter presence (client_id+scope), not value.
+  - pay.n26.com: pure Stripe passthrough; no-key `401|342` vs fake-key `401|132`; key discovery closed 3/3 corpora (github 401, grep.app 429, sourcegraph 0).
+  - app.n26.com: no WAF on /graphql — app-layer Express deny, invariant `403|43561 md5 66b3c78f` across 6 transports; `/login?redirect=` open-redirect DISCHARGED via source (module 12273 guard); XS2A page allowlist in module 12668; login chunk `banking-features-auth-biometric-LoginPage.6fd49c7e.js` holds 13 auth ops.
+  - flags.n26.com: DISCHARGED — sdk_exception now `403|19B` default-deny; Statsig key `client-OulnFN…` unchanged across bundle rotation.
+  - New CT domains 10-17: `platform26.de` (36 names, all source-gated), `cd-tech26.de` (wildcard + artifactory ELB timeout); `n26.io`/`n26.app`/`n26.dev` etc. NOT N26-owned; N26 GitHub org (6 repos) clean.
+- Passive corpora status: certspotter HTTP 200 (tech26.de=40 / n26.com=85, matches 09-20 baseline); hackertarget hostsearch works; crt.sh 502; grep.app 429; github code-search 401 (but raw/Git Trees API works for n26/psd2-tpp-docs).
+- Triage feeder dead/degraded ~23+ runs (`err_*` refs, latest err_4421854e / err_7a811ab8); intake dead since 09-22/09-24; feeder = weather signal only, never a lead source.
+- `reports/report-draft-n26.md` repeatedly asserted in KB but ABSENT from tree (7+ cycles) — artifact claims false until observed by `ls`.
+
+## Work State
+### Completed
+- Prior cycles discharged: app.n26.com GraphQL transport class (all 6 CTs invariant), open-redirect via bundle source, DOM-XSS, spc.n26.com IDOR (GIF pixels), flags.n26.com FLAGSDUMP, xs2a sandbox credential-free mint (gated `401|0`), pisp `/api/encryption/key`, quarterly-report corpus branch (pure telemetry), N26 GitHub org scan, non-N26 domain ownership checks.
+- api.tech26.de gate map fully characterized (3 EXACT ∪ 6 PREFIX, startswith matcher, no existence oracle); method-override and admin/OIDC paths closed.
+- RISK recorded 20 (analyst target entry) / 30 (self entry); validated findings count = 0.
+
+### Active
+- Cycle output pending for 2026-10-17 (this prompt): latest recorded deltas = platform26.de / cd-tech26.de inventory (source-gated), GitHub org clean, report-draft absent.
+- Ranked hypotheses: [90] xs2a CBPII consent-flow SSRF via TPP-Redirect-URI (from art/lead_nemotron3.txt); [85] api.tech26.de BOLA (from art/lead_bigpickle.txt).
+
+### Blocked
+- All 3 FINAL hypotheses AUTH_HELPED: (1) api.tech26.de BOLA conf 92, (2) pay.n26.com Stripe BOLA conf 85, (3) xs2a.tech26.de SSRF via TPP-Redirect-URI conf 62 — need coordinator credentials.
+- Triage feeder dead (23+ errored runs); coordinator silent across 28+ NO_DELTA cycles; probe surface frozen since 2026-09-18 10:07 (new observables only from api.tech26.de dictionary sweep 10-10..10-12).
+
+## Next Move
+1. Emit the 8-step structured output for this cycle ([DELTA] or NO_DELTA, [PRIO], 3×[HYP], [PARKED]/[FINAL], one [NEXT], [LEARN], [RISK]) — do NOT re-probe identical boundaries.
+2. [NEXT] is expected to be HUMAN: coordinator provisions (a) one sandbox TPP credential (test QWAC + Bearer for xs2a.tech26.de — settles HYP 3, parked `X-Sandbox-Transaction-Status` override, sandbox→prod co-tenant isolation), (b) read-only api.tech26.de sandbox token, (c) Stripe test-mode key, (d) one-line approval for `pisp.tech26.de POST /oauth2/token`, (e) triage feeder repair, (f) create/confirm `reports/report-draft-n26.md`.
+
+## Relevant Files
+- `inventory/n26.md`: host inventory + dated NEW/CHANGED log (latest section `2026-10-17 09:42:30 UTC`).
+- `knowledge/` (KB seed shown inline): ACCEPTED/REJECTED LEARN entries; heavily duplicated — dedupe before use.
+- `triage/`: feeder `run-*.md` files only (194+, erroring); NO prober exists here (KB claim false).
+- `reports/`: run/log/hypothesis artifacts (`art/lead_bigpickle.txt`, `art/lead_nemotron3.txt`, `hypotheses-*.txt`); `reports/report-draft-n26.md` ABSENT (verify with ls before citing).
+- `scope.yml`: line 24 excludes "SSL/TLS best practices" — constrains mTLS finding to compliance-gap framing.
+- `probe-results.md`: last real data 2026-09-19 21:15:28; empty headers since 10-10 01:25.
+- `valid-bugs.md`: exists, count 0.
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+[0m$ [0mcat state_bigpickle.json; echo ---; ls reports/ | grep -i draft; echo "(no draft = absent)"; echo ---; ls triage/ | tail -8; echo ---; tail -5 triage/run-2026-10-17-13-01.md 2>/dev/null
+{"phase": "POC", "target": "api"}---
+(no draft = absent)
+---
+run-2026-10-16-11-53.md
+run-2026-10-16-16-17.md
+run-2026-10-16-19-36.md
+run-2026-10-16-22-11.md
+run-2026-10-17-00-34.md
+run-2026-10-17-04-58.md
+run-2026-10-17-09-10.md
+run-2026-10-17-13-01.md
+---
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_b78cd888"
+  }
+}
+[0m
+[0m$ [0mls inventory/ knowledge/ leads/ recon-notes/ 2>/dev/null; echo ---; wc -l inventory/n26.md knowledge/* 2>/dev/null | tail -20
+inventory/:
+n26.md
+
+knowledge/:
+index.md
+
+leads/:
+lead-bigpickle.md
+lead-laguna.md
+lead-ling3.md
+lead-longcat.md
+lead-mimo.md
+lead-nemotron3.md
+reposcan-n26-manual.md
+reposcan-n26.md
+
+recon-notes/:
+DEDICATED-DEEP.md
+---
+  2162 inventory/n26.md
+  1715 knowledge/index.md
+  3877 total
+[0m
+[0m$ [0mtail -60 leads/lead-bigpickle.md; echo ===NEMOTRON===; tail -60 leads/lead-nemotron3.md
+[PARKED] mTLS/QWAC-to-token binding gap (SSL/TLS best-practice, scope.yml:24 — cannot lead a report)
+[PARKED] X-Sandbox-Transaction-Status client-controlled payment-status override (sandbox-identity gated)
+[PARKED] cross-deployment token audience confusion {api,beta-api,sapi} (observable only with a token)
+[PARKED] pisp.tech26.de documented-POST ROPC `/oauth2/token` routed-or-retired question — needs one POST, outside the GET/HEAD/OPTIONS envelope; one-line coordinator approval
+[FINAL] 1. api.tech26.de BOLA (92); 2. pay.n26.com Stripe BOLA (85); 3. xs2a SSRF via TPP-Redirect-URI (62). All AUTH_HELPED; no anonymous result promoted.
+[NEXT] HUMAN: (a) provision ONE sandbox-registered TPP credential (test QWAC + Bearer for xs2a.tech26.de) — settles HYP 3, the parked status-override, and sandbox→prod co-tenant isolation; (b) read-only api.tech26.de sandbox token (HYP 1) and approved Stripe test-mode key (HYP 2); (c) one-line approval for the pisp.tech26.de `/oauth2/token` POST; (d) repair triage feeder / confirm reports/report-draft-n26.md (verified ABSENT). Do NOT authorize further identical-boundary re-probing.
+[LEARN] ACCEPTED OTHER @ new domain `platform26.de`: 36 CT names disclose N26's internal platform tenant structure (`platform26-{dev,live,staging}-eu`, `ops26-*`, `fin26-*`, `ci-dev-fra`, `atlantis.*`, `shared-services-live-fra`, `vpns.vpn-live-fra`) plus security-service leaves `opensearch.sec26-{archive,tooling}-*` and `safeaml-fpdr{,-sign}` (AML tooling) and four Backstage portals. Every resolved host is source-gated (AWS ELB 443/80 timeout) or Tailscale CGNAT (100.64/10) — new inventory, zero reachable surface.
+[LEARN] ACCEPTED OTHER @ new domain `cd-tech26.de`: only a `*.cd-tech26.de` wildcard cert; `artifactory.cd-tech26.de` -> `artifactory-live-external-…elb` (ELB name says "external") but 80/443/8081/8082 all timeout from this vantage — source-gated, no app-layer observable.
+[LEARN] REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n26.app a parking lander, n26.dev times out, the rest zero CT names. Closed out-of-scope with evidence.
+[LEARN] REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-token>` placeholder; `flowkit-ios` example flow JSON has no endpoints). The historical "TARGET_ORG not configured → skipping public-org deep scan" gap is now closed manually with no new signal.
+[LEARN] REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — run/log/hypothesis artifacts live in `reports/`, and `triage/` holds only feeder files. Artifact-existence claims stay false until observed.
+[RISK] n26: 30 — Zero validated/reportable findings (count 0). All three FINAL hypotheses stay AUTH_HELPED. This cycle replaced one zero-signal identical-boundary pass with a genuine new-surface pass (unscanned public repos + two new N26 domains), which recovered a large inventory delta (`platform26.de`) but no reachable surface — all new hosts are source-gated. The information-exhaustion conclusion holds for anonymous reachable surface; the only recoverable signal remains a human-provisioned credential or the one-POST approval.
+[LEARN] REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n26.app a parking lander, n26.dev times out, the rest zero CT names. Closed out-of-scope with evidence.
+[LEARN] REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-token>` placeholder; `flowkit-ios` example flow JSON has no endpoints). The historical "TARGET_ORG not configured → skipping public-org deep scan" gap is now closed manually with no new signal.
+[LEARN] REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — run/log/hypothesis artifacts live in `reports/`, and `triage/` holds only feeder files. Artifact-existence claims stay false until observed.
+[RISK] n26: 30 — Zero validated/reportable findings (count 0). All three FINAL hypotheses stay AUTH_HELPED. This cycle replaced one zero-signal identical-boundary pass with a genuine new-surface pass (unscanned public repos + two new N26 domains), which recovered a large inventory delta (`platform26.de`) but no reachable surface — all new hosts are source-gated. The information-exhaustion conclusion holds for anonymous reachable surface; the only recoverable signal remains a human-provisioned credential or the one-POST approval.
+## 2026-10-17 09:42:17 UTC [target] (model bigpickle)
+[LEARN] ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+[LEARN] ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+[RISK] n26: 20 — Zero validated/reportable findings (count 0, every entry HOLD/NO). All three FINAL hypotheses remain credential-gated (AUTH_HELPED); this cycle's fresh passive delta (8 CT FQDNs + 2 hostsearch names) resolved entirely into the standing source-gated class, adding reachability facts but no testable surface. Triage feeder dead since 2026-09-24 (118 errored run files). Highest-leverage unblock remains a coordinator-provisioned sandbox TPP credential.
+[NEXT] HUMAN: Have the program coordinator provision one sandbox-registered TPP credential — a test QWAC client certificate plus its Bearer token for `xs2a.tech26.de` — which in a single authorized session settles HYP 3 (consent-authorisation redirect SSRF with/without QWAC), the parked `X-Sandbox-Transaction-Status` override, and sandbox→production co-tenant isolation; separately request a read-only `api.tech26.de` sandbox token for HYP 1 and an approved Stripe test-mode key for HYP 2. Do not authorize further identical-boundary re-probing; this cycle's passive CT + hostsearch delta is fully reconciled (all new names source-gated or NXDOMAIN).
+[LEARN] REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+[LEARN] ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+[LEARN] ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+[RISK] n26: 20 — Zero validated/reportable findings (count 0, every entry HOLD/NO). All three FINAL hypotheses remain credential-gated (AUTH_HELPED); this cycle's fresh passive delta (8 CT FQDNs + 2 hostsearch names) resolved entirely into the standing source-gated class, adding reachability facts but no testable surface. Triage feeder dead since 2026-09-24 (118 errored run files). Highest-leverage unblock remains a coordinator-provisioned sandbox TPP credential.
+[PRIO] 1. api.tech26.de BOLA (92, AUTH_HELPED)  2. pay.n26.com Stripe BOLA (85, AUTH_HELPED)  3. xs2a.tech26.de TPP-Redirect-URI SSRF (62, AUTH_HELPED)
+[HYP] api.tech26.de BOLA — class IDOR — asset api.tech26.de/api/{me,addresses,accounts,statements,spaces,insights,transfers,referrals}/** — conf 92
+[HYP] pay.n26.com Stripe-forwarded BOLA — class IDOR — asset pay.n26.com/v1/{payments,balance,charges,customers,invoices} — conf 85
+[HYP] xs2a.tech26.de SSRF via TPP-Redirect-URI — class SSR F — asset xs2a.tech26.de redirect/consent flow — conf 62
+[PARKED] mTLS/QWAC-to-token binding gap (SSL/TLS class out of scope, scope.yml:24)
+[PARKED] X-Sandbox-Transaction-Status client-controlled payment-status override (sandbox-identity gated)
+[PARKED] cross-deployment token audience confusion {api,beta-api,sapi} (observable only with a token)
+[PARKED] sonarqube-default-fra.tech26.de live ALB, source-gated (no app-layer observable)
+[FINAL] 1. api.tech26.de BOLA (92, AUTH_HELPED); 2. pay.n26.com Stripe BOLA (85, AUTH_HELPED); 3. xs2a SSRF via TPP-Redirect-URI (62, AUTH_HELPED). No anonymous result promoted as a finding.
+[NEXT] HUMAN: Have the coordinator provision ONE sandbox-registered TPP credential (test QWAC + Bearer for xs2a.tech26.de) — settles HYP 3, the parked X-Sandbox-Transaction-Status override, and sandbox→prod co-tenant isolation in one authorized session; separately request a read-only api.tech26.de sandbox token (HYP 1) and an approved Stripe test-mode key (HYP 2). Do NOT authorize further identical-boundary re-probing. Also: repair the triage feeder and confirm/replace reports/report-draft-n26.md, which the KB claims exists but the tree lacks.
+[LEARN] REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+[LEARN] ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+[LEARN] ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+[RISK] n26: 20 — Zero validated/reportable findings (count 0). All three FINAL hypotheses remain credential-gated (AUTH_HELPED). Latest passive delta resolved entirely into the standing source-gated/known class: reachability facts, no testable surface. Highest-leverage unblock is a coordinator-provisioned sandbox TPP credential.
+testability: AUTH_HELPED
+[HYP] Stripe-forwarded BOLA on pay.n26.com
+class: IDOR
+asset: pay.n26.com/v1/{payments,balance,charges,customers,invoices}
+confidence: 85
+reasoning: 23+ versioned routes return Stripe-shaped 401 with distinct no-key (`len=342`) and invalid-key (`len=132`) bodies, `WWW-Authenticate: Basic realm="Stripe"`, `ACAO: *`; OAuth/Connect routes 404 identically to direct Stripe, proving 1:1 passthrough with no N26 authorization layer; key discovery closed 3/3 corpora.
+evidence_needed: a coordinator-approved test-mode key accepted by this host, synthetic payment/customer/charge fixtures, and proof object ownership is enforced independently of the key.
+[PRIO] 1. api.tech26.de BOLA (92, AUTH_HELPED) · 2. pay.n26.com Stripe BOLA (85, AUTH_HELPED) · 3. xs2a.tech26.de TPP-Redirect-URI SSRF (62, AUTH_HELPED)
+[HYP] api.tech26.de BOLA — class IDOR — asset api.tech26.de/api/{me,addresses,accounts,statements,spaces,insights,transfers,referrals}/** — conf 92 — evidence_needed: read-only sandbox token + two-tenant object-ownership proof.
+[HYP] pay.n26.com Stripe-forwarded BOLA — class IDOR — asset pay.n26.com/v1/{payments,balance,charges,customers,invoices} — conf 85 — evidence_needed: approved Stripe test-mode key + ownership-independent-of-key proof.
+[HYP] xs2a.tech26.de SSRF via TPP-Redirect-URI — class SSRF — asset xs2a.tech26.de redirect/consent flow — conf 62 — evidence_needed: sandbox TPP test QWAC + Bearer.
+[PARKED] mTLS/QWAC-to-token binding gap (SSL/TLS class out of scope, scope.yml:24)
+[PARKED] X-Sandbox-Transaction-Status client-controlled status override (sandbox-identity gated)
+[PARKED] cross-deployment token audience confusion {api,beta-api,sapi} (observable only with a token)
+[PARKED] sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs — resolve to live ELBs, all transport timeout (source-gated)
+[FINAL] 1. api.tech26.de BOLA (92); 2. pay.n26.com Stripe BOLA (85); 3. xs2a SSRF via TPP-Redirect-URI (62). All AUTH_HELPED. No anonymous result promoted. validated findings = 0.
+[NEXT] HUMAN: (a) provision ONE sandbox TPP credential — test QWAC + Bearer for xs2a.tech26.de — settles HYP 3 + parked X-Sandbox-Transaction-Status + sandbox→prod co-tenant isolation in one session; (b) read-only api.tech26.de sandbox token for HYP 1; (c) approved Stripe test-mode key for HYP 2; (d) one-line approval for `pisp.tech26.de POST /oauth2/token`; (e) repair triage feeder (still `err_378e8824`); (f) confirm/replace the KB-claimed-but-absent `reports/report-draft-n26.md`. Do NOT authorize further identical-boundary re-probing.
+[LEARN] REJECTED OTHER @ passive delta: certspotter HTTP 200 — tech26.de=40 / n26.com=85, identical to 2026-09-20 baseline; last cycle's 39/84 was transient cert rotation, now reverted. hackertarget 32 lines, net-new only {sredocs, statsig-ssh} (already inventoried, source-gated). 30th consecutive NO_DELTA.
+[LEARN] REJECTED OTHER @ self: the loop is out of information, not the target out of surface. On an unchanged surface, re-probing adds nothing — the only recoverable signal is a credential or a new corpus.
+[LEARN] REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; run/log artifacts live in `reports/`, `triage/` holds feeder files only; KB's `knowledge/run-*.md` / `triage/prober` references remain false.
+[RISK] n26: 20 — Zero validated/reportable findings (count 0, every entry HOLD/NO). All three FINAL hypotheses credential-gated. Fresh passive delta fully reconciled into the standing source-gated class: reachability facts, no testable surface. Triage feeder dead since 2026-09-24. Highest-leverage unblock is a coordinator-provisioned sandbox TPP credential.
+===NEMOTRON===
+[CHANGED] N26 public GitHub org (6 repos) shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is placeholder; `flowkit-ios` example flow JSON has no endpoints) — historical gap closed.
+[CHANGED] `reports/report-draft-n26.md` re-verified ABSENT from tree; KB references to `knowledge/run-*.md`/`triage/prober` incorrect — artifacts live in `reports/`, `triage/` holds only feeder files.
+[CHANGED] Probe surface frozen since 2026-09-18 10:07 UTC (19+ days); only repetitive prober runs on `app.n26.com/login?redirect=`.
+[CHANGED] Triage feeder degraded 21+ consecutive runs (latest `err_4421854e`); hypothesis intake dead.
+[CHANGED] No new CT leaves since 2026-09-20; certspotter endpoint discontinued (410 Gone); CT baseline stable tech26.de=40, n26.com=85.
+[CHANGED] `xs2a.tech26.de` edge redirect-target filter CORRECTED: IP-literal(+localhost) matcher, NOT `scheme://` substring matcher (blocked: dotted-hex `0x7f000001`, decimal `2130706433`, octal `0177.0.0.1`, `127.0.0.1.nip.io`; passes: `0x7f.1`, `0x7f.0.0.1`, `localtest.me`).
+[CHANGED] AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo (`http://user@169.254.169.254/`) confirmed reproducible on `xs2a.tech26.de`, `api.tech26.de`, `app.n26.com` — filter is request-scoped (path-embedded literals blocked), retracting "query-string-scoped".
+[CHANGED] `flags.n26.com` RBAC boundary tightened to default-deny (`/v1/sdk_exception` now 403|19B, all GET config 403|19B) — premise dead.
+[CHANGED] Three PARKED hypotheses unchanged (xs2a CBPII SSRF, api.tech26.de BOLA, pay.n26.com Stripe BOLA) — all AUTH_HELPED, blocked on coordinator credential/scope supply.
+[CHANGED] Four FINAL hypotheses PASSIVE-VERIFIED: xs2a mTLS optional (95), xs2a redirect_uri ALB blocklist query-scoped (90), api.tech26.de GET-scoped wildcard middleware (95), AWB userinfo SSRF bypass (85).
+[PRIO] xs2a.tech26.de/v1/berlin-group/v1, 9.7, attack_surface=10 business_value=10 tech_exposure=10 gate_ease=8 cloud_surface=10 freshness=8
+[PRIO] api.tech26.de/api, 9.3, attack_surface=9 business_value=10 tech_exposure=8 gate_ease=7 cloud_surface=9 freshness=9
+[PRIO] pay.n26.com/v1, 9.0, attack_surface=9 business_value=10 tech_exposure=7 gate_ease=6 cloud_surface=8 freshness=8
+[PRIO] app.n26.com/login, 8.2, attack_surface=8 business_value=9 tech_exposure=9 gate_ease=10 cloud_surface=7 freshness=6
+[PRIO] authentication-service.eks.core-production.keyless.technology, 7.8, attack_surface=8 business_value=10 tech_exposure=9 gate_ease=3 cloud_surface=10 freshness=5
+[PRIO] engagementplatform.n26.com/users, 7.5, attack_surface=7 business_value=8 tech_exposure=6 gate_ease=5 cloud_surface=6 freshness=7
+[PRIO] platform26.de (internal), 6.5, attack_surface=6 business_value=9 tech_exposure=7 gate_ease=1 cloud_surface=10 freshness=10
+[PRIO] aisp.tech26.de/api, 6.2, attack_surface=6 business_value=8 tech_exposure=7 gate_ease=3 cloud_surface=8 freshness=7
+[PRIO] pisp.tech26.de/api, 6.0, attack_surface=6 business_value=8 tech_exposure=7 gate_ease=3 cloud_surface=8 freshness=7
+[HYP] xs2a.tech26.de CBPII Consent Flow SSRF to Cloud Metadata via TPP-Redirect-URI Header
+class: SSRF
+asset: xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds/{consent_id}/authorisations
+confidence: 90
+reasoning: CBPII consent flow confirmed live at `/v1/berlin-group/v1/consents/confirmation-of-funds{,/{id},{id}/status,{id}/authorisations,/authorisations/{id}}` returning 401|0 with 8-11ms app-layer timing vs 1ms bogus 404; vendor corpus (`doc/sandbox.md`, `doc/decoupled/dedicated-cbpii.md`, `doc/redirect/dedicated-aisp.md`) documents production redirect flow via `TPP-Redirect-URI` header; ALB substring blocklist is query-string-scoped — `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/` bypasses ALB entirely (401 istio-envoy) while `?foo=https://127.0.0.1@evil.example/` → 403 awselb/2.0; AS performs zero pre-auth discrimination of `TPP-Redirect-*` headers — four legs (absent, `Preferred` only, `URI: not-a-url`, `URI: 169.254.169.254`) all return 401|0 md5 d41d8cd9; sandbox tier co-tenant on production host shows identical behavior
+evidence_needed: Valid CBPII consent ID + Bearer token to trigger authorisation endpoint with `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/iam/security-credentials/` header
+verify_steps: 1) Obtain valid CBPII consent via paired-device flow; 2) POST /v1/berlin-group/v1/consents/confirmation-of-funds/{consent_id}/authorisations with `TPP-Redirect-URI: http://169.254.169.254/latest/meta-data/iam/security-credentials/` header; 3) Observe 200/302 with metadata in response or Location header
+impact: Cloud metadata credential theft → AWS IAM role compromise → full production infrastructure access (CRITICAL)
+testability: AUTH_HELPED
+[HYP] api.tech26.de BOLA Across 21 Gated Endpoints via GET-Scoped Wildcard Middleware
+class: IDOR
+asset: api.tech26.de/api/{me,addresses,login,accounts/**,statements/**,spaces/**,insights/**,transfers/**,referrals/**}
+confidence: 85
+reasoning: Gate fully characterized as GET-scoped wildcard middleware on 6 PREFIX roots (`/api/accounts/**`, `/api/statements/**`, `/api/spaces/**`, `/api/insights/**`, `/api/transfers/**`, `/api/referrals/**`) plus 3 EXACT mounts (`/api/me`, `/api/addresses`, `/api/login`) — all return byte-identical 401|211 md5 d58528c924dad2fde9c30f81972e0548; HEAD → 404|0 proves gate is method-scoped; fabricated `/api/accounts/1/zzqnotreal` → 401|211 identical to live routes — no existence oracle; gate is left-anchored `startswith` matcher (PREFIX absorbs suffix, EXACT requires strict equality); identical gate map across api/beta-api/sapi.tech26.de (15 endpoints each); surface actively mutating (3 new endpoints discovered 2026-10-10: `/api/login`, `/api/transfers`, `/api/referrals`); origin Tomcat/Spring Boot; ALB path-traversal block active
+evidence_needed: Valid paired-device grant token for N26 test account to test cross-account access on `/api/accounts/{other_id}/{statements,cards,tans,approvals,transactions,transfer,beneficiaries,devices,limits,cosmetics,cards,bookings}` and `/api/statements/{year}`, `/api/accounts/{id}/statements?from&to`
+verify_steps: 1) Authenticate with valid paired-device token; 2) GET /api/accounts/1/statements → 200 (baseline); 3) GET /api/accounts/2/statements → 200 (BOLA) or 403; 4) Repeat across all 10 nested endpoints under `/api/accounts/{id}/` and `/api/statements/{year}`, `/api/accounts/{id}/statements?from&to`
+impact: Cross-account statement history, addresses PII, cards, bookings, transactions, TANs, approvals, beneficiaries, devices, limits, cosmetics exposure — core banking PII (CRITICAL)
+testability: AUTH_HELPED
+[HYP] pay.n26.com Stripe BOLA Across Payment/Charges/Balance Endpoints
+class: IDOR
+asset: pay.n26.com/v1/{payments,charges,balance,customers,payment_methods}
+confidence: 85
+reasoning: Live Stripe-forwarded payment API confirmed (23+ endpoints returning HTTP 401 with Stripe error format; `/v1/tokens` 404; root 204; `/v1` 403 CloudFront); boundary stable 11+ cycles (no-key len=342 vs fake-key len=132 "Invalid API Key provided: sk_live_****0000"); CORS-open (ACAO: *); WWW-Authenticate: Basic realm="Stripe"; web-bundle rotation grep clean across 11 chunks (no sk/pk/rk_live_, no pay.n26.com refs) — key is server/mobile-only; pure Stripe passthrough on N26 domain
+evidence_needed: N26-issued Stripe sk_live key (or valid Bearer from authenticated N26 session) to test cross-account payment data access
+verify_steps: 1) Authenticate with valid Stripe key; 2) GET /v1/payments?customer={own_customer_id} → 200; 3) GET /v1/payments?customer={other_customer_id} → 200 (BOLA) or 403; 4) Test /v1/charges, /v1/balance, /v1/customers, /v1/payment_methods similarly
+impact: Cross-customer payment history, charges, balance, payment methods exposure — core banking data (CRITICAL)
+testability: AUTH_HELPED
+[PARKED] xs2a.tech26.de CBPII Consent Flow SSRF to Cloud Metadata via TPP-Redirect-URI Header: Blocked on coordinator supplying CBPII consent + Bearer token; fully characterized passively.
+[PARKED] api.tech26.de BOLA Across 21 Gated Endpoints via GET-Scoped Wildcard Middleware: Blocked on coordinator supplying paired-device grant token for N26 test account; gate fully characterized; surface actively mutating (3 new endpoints discovered 2026-10-10).
+[PARKED] pay.n26.com Stripe BOLA Across Payment/Charges/Balance Endpoints: Blocked on coordinator supplying N26-issued Stripe sk_live; key discovery exhausted across 3 corpora (GitHub 401, grep.app 429, sourcegraph 0); pure Stripe passthrough confirmed.
+[FINAL] 1. xs2a.tech26.de mTLS regulatory violation (95) — PSD2/RTS Art.94(5), EBA RTS 2018/389; PASSIVE-VERIFIED
+[FINAL] 2. xs2a.tech26.de redirect_uri ALB blocklist query-scoped bypass (90) — header bypass to app layer; PASSIVE-VERIFIED
+[FINAL] 3. api.tech26.de GET-scoped wildcard middleware (95) — no existence oracle, ID-independent; PASSIVE-VERIFIED
+[FINAL] 4. AWB-wide userinfo SSRF bypass (85) — reproducible on xs2a/api/app; PASSIVE-VERIFIED
+[NEXT] HUMAN: Put one consolidated decision to the coordinator covering three bounded asks — (1) provision one N26 test account plus paired-device grant for api.tech26.de BOLA verification (21 endpoints, surface actively mutating); (2) provision one N26-issued Stripe sk_live for pay.n26.com payment API testing; (3) provision one CBPII consent + Bearer token for xs2a.tech26.de SSRF verification. All three hypotheses fully characterized passively and blocked only on credentials. Probe surface yielded first new api.tech26.de observables in 22 days (3 new gated endpoints); triage feeder degraded 21+ runs; no further passive signal possible without credentials.
+[LEARN] ACCEPTED OTHER @ new domain `platform26.de`: 36 CT names disclose N26's internal platform tenant structure (`platform26-{dev,live,staging}-eu`, `ops26-*`, `fin26-*`, `ci-dev-fra`, `atlantis.*`, `shared-services-live-fra`, `vpns.vpn-live-fra`) plus security-service leaves `opensearch.sec26-{archive,tooling}-*` and `safeaml-fpdr{,-sign}` (AML tooling) and four Backstage portals. Every resolved host is source-gated (AWS ELB 443/80 timeout) or Tailscale CGNAT (100.64/10) — new inventory, zero reachable surface.
+[LEARN] ACCEPTED OTHER @ new domain `cd-tech26.de`: only a `*.cd-tech26.de` wildcard cert; `artifactory.cd-tech26.de` -> `artifactory-live-external-…elb` (ELB name says "external") but 80/443/8081/8082 all timeout from this vantage — source-gated, no app-layer observable.
+[LEARN] REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n26.app a parking lander, n26.dev times out, the rest zero CT names. Closed out-of-scope with evidence.
+[LEARN] REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-token>` placeholder; `flowkit-ios` example flow JSON has no endpoints). The historical "TARGET_ORG not configured → skipping public-org deep scan" gap is now closed manually with no new signal.
+[LEARN] REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — run/log/hypothesis artifacts live in `reports/`, and `triage/` holds only feeder files. Artifact-existence claims stay false until observed.
+[RISK] N26 Bank AG: 96 — xs2a.tech26.de production Berlin-Group XS2A API mTLS enforcement optional with empty CA list (PSD2/RTS regulatory violation, HIGH/CRITICAL); xs2a.tech26.de CBPII consent flow SSRF via TPP-Redirect-URI header to cloud metadata (HIGH); xs2a.tech26.de OAuth2 authorization redirect_uri blocklist ALB IP-literal matcher with RFC 3986 userinfo bypass (HIGH); xs2a.tech26.de AWB internal-address SSRF filter bypass via RFC 3986 userinfo (HIGH); pay.n26.com/v1/* payment API with 401 auth boundary (core banking, CRITICAL if auth bypassed); authentication-service.eks.core-production.keyless.technology LIVE with custom routes (WebAuthn/keyless auth, HIGH); api.tech26.de legacy Bearer-gated surface ACTIVE and MUTATING with GET-scoped wildcard middleware returning identical 401 for live/fabricated sub-resources across THREE hosts (api|beta-api|sapi.tech26.de) — BOLA breadth proven (21 endpoints) but AUTH_HELPED; engagementplatform.n26.com 401 Braze boundary confirmed (PII risk if token leaked); GraphQL transport class closed anonymously (no POST bypass after 20+ cycles); spc.n26.com endpoints are tracking pixels not payment API; flags.n26.com RBAC boundary tightened to default-deny — premise dead.
+[0m
+[0m$ [0mtail -80 knowledge/index.md; echo ===INV===; tail -40 inventory/n26.md
+- 2026-10-16 REJECTED OTHER @ self: 27+ consecutive NO_DELTA cycles on an unchanged surface is the signal — the loop is out of information, not the target out of surface; the only recoverable signal now is a human-provisioned credential.
+- 2026-10-16 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-16 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-16 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-16 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-16 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-16 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-16 REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
+- 2026-10-16 REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
+- 2026-10-17 REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
+- 2026-10-17 REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
+- 2026-10-17 REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
+- 2026-10-17 REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
+- 2026-10-17 ACCEPTED OTHER @ new domain `platform26.de`: 36 CT names disclose N26's internal platform tenant structure (`platform26-{dev,live,staging}-eu`, `ops26-*`, `fin26-*`, `ci-dev-fra`, `atlantis.*`, `shared-services-live-fra`, `vpns.vpn-live-fra`) plus security-service leaves `opensearch.sec26-{archive,tooling}-*` and `safeaml-fpdr{,-sign}` (AML tooling) and four Backstage portals. Every resolved host is source-gated (AWS ELB 443/80 timeout) or Tailscale CGNAT (100.64/10) — new inventory, zero reachable surface.
+- 2026-10-17 ACCEPTED OTHER @ new domain `cd-tech26.de`: only a `*.cd-tech26.de` wildcard cert; `artifactory.cd-tech26.de` -> `artifactory-live-external-…elb` (ELB name says "external") but 80/443/8081/8082 all timeout from this vantage — source-gated, no app-layer observable.
+- 2026-10-17 REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n26.app a parking lander, n26.dev times out, the rest zero CT names. Closed out-of-scope with evidence.
+- 2026-10-17 REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-token>` placeholder; `flowkit-ios` example flow JSON has no endpoints). The historical "TARGET_ORG not configured → skipping public-org deep scan" gap is now closed manually with no new signal.
+- 2026-10-17 REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — run/log/hypothesis artifacts live in `reports/`, and `triage/` holds only feeder files. Artifact-existence claims stay false until observed.
+- 2026-10-17 REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n26.app a parking lander, n26.dev times out, the rest zero CT names. Closed out-of-scope with evidence.
+- 2026-10-17 REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-token>` placeholder; `flowkit-ios` example flow JSON has no endpoints). The historical "TARGET_ORG not configured → skipping public-org deep scan" gap is now closed manually with no new signal.
+- 2026-10-17 REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — run/log/hypothesis artifacts live in `reports/`, and `triage/` holds only feeder files. Artifact-existence claims stay false until observed.
+- 2026-10-17 REJECTED OTHER @ passive delta: certspotter HTTP 200 — tech26.de=40 / n26.com=85, identical to 2026-09-20 baseline; last cycle's 39/84 was transient cert rotation, now reverted. hackertarget 32 lines, net-new only {sredocs, statsig-ssh} (already inventoried, source-gated). 30th consecutive NO_DELTA.
+- 2026-10-17 REJECTED OTHER @ self: the loop is out of information, not the target out of surface. On an unchanged surface, re-probing adds nothing — the only recoverable signal is a credential or a new corpus.
+- 2026-10-17 REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; run/log artifacts live in `reports/`, `triage/` holds feeder files only; KB's `knowledge/run-*.md` / `triage/prober` references remain false.
+===INV===
+- NEW @ xs2a.tech26.de: `n26/psd2-tpp-docs` corpus contains a documented client-controlled state override, `X-Sandbox-Transaction-Status`, described as letting the client set payment status. Route is 401-ga
+- NEW none
+- CHANGED fpt.tech26.de still fixed-response 200 len=0 (not activated); 3ds-challenge still 403|118; xs2a CBPII + accounts 401|0, bogus 404|0 — oracle stable.
+- CHANGED api.tech26.de gate re-confirmed...
+- CHANGED CT wildcard SANs (`*.tech26.de`, `*.n26.com`) are **not** DNS wildcards — random labels (`zzqrandom9x7.tech26.de`, `.n26.com`) → NXDOMAIN; wildcard-cert expansion is not an enumeration path.
+- CHANGED 15 candidate internal-tooling names (`admin/internal/gitlab/jenkins/grafana/argocd/sonarqube/sentry/nexus/artifactory/api-{dev,staging,test}/int.tech26.de` + `.n26.com`) → NXDOMAIN; closes the "undisc
+- CHANGED `fpt.tech26.de` still fixed-response ALB `200 len=0 text/plain` (not activated); `3ds-challenge.n26.com` still source-gated `403|118`; `xs2a.tech26.de` oracle stable (`consents`/`confirmation-of-funds
+- NEW 8 previously-uncovered CT FQDNs on tech26.de (sonarqube-default-fra, epiedge, idealedge, taktileedge, mambuedge, number26.tz2-mambu, number26.tz2-mambu-sandbox-eu, n26uk.tz2-mambu-uk): all resolve to 
+- NEW hackertarget hostsearch delta: `sredocs.tech26.de` + `statsig-ssh.tech26.de` absent from CT and from inventory — both resolve (CloudFront / EC2), both HTTPS timeout (source-gated); `docs.n26.com` alre
+- CHANGED certspotter `/api/v1/issuances` responding HTTP 200 (inventory tail still records "410 discontinued"); unique names tech26.de=40 / n26.com=85 — zero drift vs 2026-09-20 baseline.
+- CHANGED `telemetry.sto.tech26.de` + `livepersonedge.tech26.de` → NXDOMAIN (cert-without-DNS); `telemetry.tech26.de` → `403|118 awselb/2.0` (ALB deny, closed).
+- CHANGED triage feeder: 118 run files contain UnknownError; last clean run `triage/run-2026-09-24-19-17.md`; latest `err_7a811ab8` (2026-10-16 06:20).
+- CHANGED `reports/report-draft-n26.md` still absent from tree (6th consecutive cycle) — KB claim remains false.
+
+## 2026-10-16 14:20:16 UTC
+
+## 2026-10-16 17:57:10 UTC
+
+## 2026-10-16 20:43:41 UTC
+
+## 2026-10-16 23:19:42 UTC
+
+## 2026-10-17 01:15:21 UTC
+
+## 2026-10-17 05:46:53 UTC
+
+## 2026-10-17 09:42:30 UTC
+- CHANGED New domain `platform26.de` discovered via CT (36 names) — discloses N26 internal platform tenant structure (`platform26-{dev,live,staging}-eu`, `ops26-*`, `fin26-*`, `ci-dev-fra`, `atlantis.*`, `share
+- CHANGED New domain `cd-tech26.de` — only `*.cd-tech26.de` wildcard cert; `artifactory.cd-tech26.de` → `artifactory-live-external-…elb` (80/443/8081/8082 timeout) — source-gated, no app-layer observable.
+- CHANGED `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech` confirmed NOT N26-owned (parking pages, timeouts, zero CT names) — closed out-of-scope.
+- CHANGED N26 public GitHub org (6 repos) shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is placeholder; `flowkit-ios` example flow JSON has no endpoints) — historical ga
+- CHANGED `reports/report-draft-n26.md` re-verified ABSENT from tree; KB references to `knowledge/run-*.md`/`triage/prober` incorrect — artifacts live in `reports/`, `triage/` holds only feeder files.
+- CHANGED Probe surface frozen since 2026-09-18 10:07 UTC (19+ days); only repetitive prober runs on `app.n26.com/login?redirect=`.
+- CHANGED Triage feeder degraded 21+ consecutive runs (latest `err_4421854e`); hypothesis intake dead.
+- CHANGED No new CT leaves since 2026-09-20; certspotter endpoint discontinued (410 Gone); CT baseline stable tech26.de=40, n26.com=85.
+- CHANGED `xs2a.tech26.de` edge redirect-target filter CORRECTED: IP-literal(+localhost) matcher, NOT `scheme://` substring matcher (blocked: dotted-hex `0x7f000001`, decimal `2130706433`, octal `0177.0.0.1`, `
+- CHANGED AWB-wide internal-address SSRF filter bypass via RFC 3986 userinfo (`http://user@169.254.169.254/`) confirmed reproducible on `xs2a.tech26.de`, `api.tech26.de`, `app.n26.com` — filter is request-scope
+- CHANGED `flags.n26.com` RBAC boundary tightened to default-deny (`/v1/sdk_exception` now 403|19B, all GET config 403|19B) — premise dead.
+- CHANGED Three PARKED hypotheses unchanged (xs2a CBPII SSRF, api.tech26.de BOLA, pay.n26.com Stripe BOLA) — all AUTH_HELPED, blocked on coordinator credential/scope supply.
+- CHANGED Four FINAL hypotheses PASSIVE-VERIFIED: xs2a mTLS optional (95), xs2a redirect_uri ALB blocklist query-scoped (90), api.tech26.de GET-scoped wildcard middleware (95), AWB userinfo SSRF bypass (85).
+[0m
+[0m$ [0mcurl -s --max-time 15 "https://api.certspotter.com/v1/issuances?domain=tech26.de&include_subdomains=true&expand=dns_names" | python3 -c "import json,sys; d=json.load(sys.stdin); names=set(); [names.update(x.get('dns_names',[])) for x in d]; print('\n'.join(sorted(names)))" 2>/dev/null | wc -l; echo "---"; curl -s --max-time 15 "https://api.certspotter.com/v1/issuances?domain=n26.com&include_subdomains=true&expand=dns_names" | python3 -c "import json,sys; d=json.load(sys.stdin); names=set(); [names.update(x.get('dns_names',[])) for x in d]; print('\n'.join(sorted(names)))" 2>/dev/null | wc -l
+40
+---
+85
+[0m
+[0m$ [0mcurl -s --max-time 20 "https://api.hackertarget.com/hostsearch/?q=tech26.de" | wc -l; echo "---"; curl -s --max-time 20 "https://api.hackertarget.com/hostsearch/?q=n26.com" | wc -l
+32
+---
+26
+[0m
+[0m$ [0mcurl -s --max-time 15 "https://api.certspotter.com/v1/issuances?domain=tech26.de&include_subdomains=true&expand=dns_names" | python3 -c "import json,sys; d=json.load(sys.stdin); names=set(); [names.update(x.get('dns_names',[])) for x in d]; print('\n'.join(sorted(names)))" > /tmp/opencode/cs-tech26.txt 2>/dev/null; curl -s --max-time 15 "https://api.certspotter.com/v1/issuances?domain=n26.com&include_subdomains=true&expand=dns_names" | python3 -c "import json,sys; d=json.load(sys.stdin); names=set(); [names.update(x.get('dns_names',[])) for x in d]; print('\n'.join(sorted(names)))" > /tmp/opencode/cs-n26.txt 2>/dev/null; curl -s --max-time 20 "https://api.hackertarget.com/hostsearch/?q=tech26.de" | cut -d, -f1 | sort -u > /tmp/opencode/ht-tech26.txt; curl -s --max-time 20 "https://api.hackertarget.com/hostsearch/?q=n26.com" | cut -d, -f1 | sort -u > /tmp/opencode/ht-n26.txt; cat /tmp/opencode/cs-tech26.txt /tmp/opencode/cs-n26.txt /tmp/opencode/ht-tech26.txt /tmp/opencode/ht-n26.txt | sort -u > /tmp/opencode/all-names.txt; wc -l /tmp/opencode/all-names.txt; echo "=== CS tech26 ==="; cat /tmp/opencode/cs-tech26.txt
+128 /tmp/opencode/all-names.txt
+=== CS tech26 ===
+*.atlantis.sto.tech26.de
+*.controlplane.sto.tech26.de
+*.sto.tech26.de
+*.tech26.de
+aigw.tech26.de
+aisp-staging.tech26.de
+aisp.tech26.de
+api.tech26.de
+backstage.platform26-live-eu.platform26.de
+backstage.tech26.de
+beta-api.tech26.de
+epiedge.tech26.de
+esign-staging.tech26.de
+fpadedge.tech26.de
+fpt.tech26.de
+ideal-request-signing.tech26.de
+idealedge.tech26.de
+livepersonedge.tech26.de
+mambuedge.tech26.de
+mcp-tools.fra.tech26.de
+message-templates-assets-staging.tech26.de
+message-templates-assets.tech26.de
+n26uk.tz2-mambu-preproduction-uk.tech26.de
+n26uk.tz2-mambu-sandbox-uk.tech26.de
+n26uk.tz2-mambu-uk.tech26.de
+number26.tz2-mambu-preproduction-eu.tech26.de
+number26.tz2-mambu-sandbox-eu.tech26.de
+number26.tz2-mambu.tech26.de
+phishing-report.tech26.de
+pisp-staging.tech26.de
+pisp.tech26.de
+rcs-demo.tech26.de
+sapi.tech26.de
+sonarqube-default-fra.tech26.de
+taktileedge.tech26.de
+tech26.de
+telemetry.sto.tech26.de
+telemetry.tech26.de
+xs2a-staging.tech26.de
+xs2a.tech26.de
+[0m
+[0m$ [0mcat /tmp/opencode/all-names.txt; echo "=== HT tech26 ==="; cat /tmp/opencode/ht-tech26.txt; echo "=== HT n26 ==="; cat /tmp/opencode/ht-n26.txt; echo "=== CS n26 ==="; cat /tmp/opencode/cs-n26.txt
+*.atlantis.sto.tech26.de
+*.controlplane.sto.tech26.de
+*.n26.com
+*.sto.tech26.de
+*.tech26.de
+3ds-challenge.n26.com
+aigw.tech26.de
+aisp-staging.tech26.de
+aisp.tech26.de
+api.tech26.de
+app.n26.com
+backstage.platform26-live-eu.platform26.de
+backstage.tech26.de
+beta-api.tech26.de
+clicks.accounts.n26.com
+clicks.emails.n26.com
+cookie.n26.com
+docs.n26.com
+engagementplatform.n26.com
+epiedge.tech26.de
+esign-staging.tech26.de
+flags.n26.com
+fpadedge.tech26.de
+fpt.tech26.de
+get.n26.com
+ideal-request-signing.tech26.de
+idealedge.tech26.de
+join.n26.com
+livepersonedge.tech26.de
+mag-de.n26.com
+mag-es.n26.com
+mag-fr.n26.com
+mag-it.n26.com
+mag.n26.com
+mambuedge.tech26.de
+mcp-tools.fra.tech26.de
+message-templates-assets-staging.tech26.de
+message-templates-assets.tech26.de
+my.n26.com
+n26.at
+n26.ch
+n26.cl
+n26.co.uk
+n26.co.za
+n26.com
+n26.de
+n26.design
+n26.es
+n26.eu
+n26.fr
+n26.gr
+n26.it
+n26.kr
+n26.li
+n26.me
+n26.nl
+n26.pt
+n26.rocks
+n26.se
+n26uk.tz2-mambu-preproduction-uk.tech26.de
+n26uk.tz2-mambu-sandbox-uk.tech26.de
+n26uk.tz2-mambu-uk.tech26.de
+next.n26.com
+number26.ch
+number26.de
+number26.eu
+number26.fr
+number26.it
+number26.nl
+number26.rocks
+number26.se
+number26.tz2-mambu-preproduction-eu.tech26.de
+number26.tz2-mambu-sandbox-eu.tech26.de
+number26.tz2-mambu.tech26.de
+number26.uk
+pay.n26.com
+phishing-report.tech26.de
+pisp-staging.tech26.de
+pisp.tech26.de
+rcs-demo.tech26.de
+rstats.n26.com
+sapi.tech26.de
+sonarqube-default-fra.tech26.de
+spc.n26.com
+sredocs.tech26.de
+static.app.n26.com
+static.get.n26.com
+static.n26.com
+static.support.n26.com
+statsig-ssh.tech26.de
+support.n26.com
+taktileedge.tech26.de
+tech26.de
+telemetry.sto.tech26.de
+telemetry.tech26.de
+tutorials.n26.com
+www.3ds-challenge.n26.com
+www.n26.at
+www.n26.ch
+www.n26.cl
+www.n26.co.uk
+www.n26.co.za
+www.n26.com
+www.n26.de
+www.n26.design
+www.n26.es
+www.n26.eu
+www.n26.fr
+www.n26.gr
+www.n26.it
+www.n26.kr
+www.n26.li
+www.n26.me
+www.n26.nl
+www.n26.pt
+www.n26.rocks
+www.n26.se
+www.number26.ch
+www.number26.de
+www.number26.eu
+www.number26.fr
+www.number26.it
+www.number26.nl
+www.number26.rocks
+www.number26.se
+www.number26.uk
+xs2a-staging.tech26.de
+xs2a.tech26.de
+=== HT tech26 ===
+aigw.tech26.de
+aisp-staging.tech26.de
+aisp.tech26.de
+api.tech26.de
+backstage.tech26.de
+beta-api.tech26.de
+epiedge.tech26.de
+esign-staging.tech26.de
+fpt.tech26.de
+idealedge.tech26.de
+livepersonedge.tech26.de
+mambuedge.tech26.de
+message-templates-assets-staging.tech26.de
+message-templates-assets.tech26.de
+n26uk.tz2-mambu-preproduction-uk.tech26.de
+n26uk.tz2-mambu-sandbox-uk.tech26.de
+n26uk.tz2-mambu-uk.tech26.de
+number26.tz2-mambu-preproduction-eu.tech26.de
+number26.tz2-mambu-sandbox-eu.tech26.de
+number26.tz2-mambu.tech26.de
+phishing-report.tech26.de
+pisp-staging.tech26.de
+pisp.tech26.de
+rcs-demo.tech26.de
+sapi.tech26.de
+sonarqube-default-fra.tech26.de
+sredocs.tech26.de
+statsig-ssh.tech26.de
+taktileedge.tech26.de
+telemetry.tech26.de
+xs2a-staging.tech26.de
+xs2a.tech26.de
+=== HT n26 ===
+3ds-challenge.n26.com
+app.n26.com
+clicks.accounts.n26.com
+clicks.emails.n26.com
+cookie.n26.com
+docs.n26.com
+engagementplatform.n26.com
+flags.n26.com
+get.n26.com
+join.n26.com
+mag-de.n26.com
+mag-es.n26.com
+mag-fr.n26.com
+mag-it.n26.com
+mag.n26.com
+my.n26.com
+next.n26.com
+pay.n26.com
+spc.n26.com
+static.app.n26.com
+static.n26.com
+static.support.n26.com
+support.n26.com
+tutorials.n26.com
+www.n26.com
+=== CS n26 ===
+*.n26.com
+3ds-challenge.n26.com
+app.n26.com
+clicks.accounts.n26.com
+clicks.emails.n26.com
+cookie.n26.com
+engagementplatform.n26.com
+flags.n26.com
+get.n26.com
+join.n26.com
+mag-de.n26.com
+mag-es.n26.com
+mag-fr.n26.com
+mag-it.n26.com
+mag.n26.com
+my.n26.com
+n26.at
+n26.ch
+n26.cl
+n26.co.uk
+n26.co.za
+n26.com
+n26.de
+n26.design
+n26.es
+n26.eu
+n26.fr
+n26.gr
+n26.it
+n26.kr
+n26.li
+n26.me
+n26.nl
+n26.pt
+n26.rocks
+n26.se
+next.n26.com
+number26.ch
+number26.de
+number26.eu
+number26.fr
+number26.it
+number26.nl
+number26.rocks
+number26.se
+number26.uk
+pay.n26.com
+rstats.n26.com
+spc.n26.com
+static.app.n26.com
+static.get.n26.com
+static.n26.com
+static.support.n26.com
+support.n26.com
+tutorials.n26.com
+www.3ds-challenge.n26.com
+www.n26.at
+www.n26.ch
+www.n26.cl
+www.n26.co.uk
+www.n26.co.za
+www.n26.com
+www.n26.de
+www.n26.design
+www.n26.es
+www.n26.eu
+www.n26.fr
+www.n26.gr
+www.n26.it
+www.n26.kr
+www.n26.li
+www.n26.me
+www.n26.nl
+www.n26.pt
+www.n26.rocks
+www.n26.se
+www.number26.ch
+www.number26.de
+www.number26.eu
+www.number26.fr
+www.number26.it
+www.number26.nl
+www.number26.rocks
+www.number26.se
+www.number26.uk
+[0m
+[0m$ [0mfor d in platform26.de cd-tech26.de sec26.de tech26.com n26.group n26.xyz n26.online; do echo "=== $d ==="; curl -s --max-time 12 "https://api.certspotter.com/v1/issuances?domain=$d&include_subdomains=true&expand=dns_names" | python3 -c "import json,sys
+try:
+    d=json.load(sys.stdin)
+    names=set()
+    [names.update(x.get('dns_names',[])) for x in d]
+    print(len(names), 'names')
+    for n in sorted(names): print(' ', n)
+except Exception as e:
+    print('ERR', e)" 2>/dev/null; done
+=== platform26.de ===
+36 names
+  *.atlantis.eks.platform26.de
+  *.atlantis.fk26.platform26.de
+  *.atlantis.master.platform26.de
+  *.atlantis.sto-eks.platform26.de
+  *.atlantis.sto-fk26.platform26.de
+  *.ci-dev-fra.platform26.de
+  *.fin26-live-fra.platform26.de
+  *.fin26-staging-fra.platform26.de
+  *.ops26-dev-fra.platform26.de
+  *.ops26-live-fra.platform26.de
+  *.ops26-staging-fra.platform26.de
+  *.platform26-dev-eu.platform26.de
+  *.platform26-live-eu.platform26.de
+  *.platform26-staging-eu.platform26.de
+  *.shared-services-live-fra.platform26.de
+  *.vpns.vpn-live-fra.platform26.de
+  backstage.dev-tech26.de
+  backstage.platform26-dev-eu.platform26.de
+  backstage.platform26-live-eu.platform26.de
+  backstage.platform26-staging-eu.platform26.de
+  backstage.tech26.de
+  fin26-live-fra.platform26.de
+  fin26-staging-fra.platform26.de
+  inbound-token-notifications.vpn-live-fra.platform26.de
+  mpe-notifications.vpn-live-fra.platform26.de
+  opensearch.sec26-archive-live-fra.platform26.de
+  opensearch.sec26-archive-staging-fra.platform26.de
+  opensearch.sec26-tooling-live-fra.platform26.de
+  opensearch.sec26-tooling-staging-fra.platform26.de
+  ops26-dev-fra.platform26.de
+  ops26-live-fra.platform26.de
+  ops26-staging-fra.platform26.de
+  safeaml-fpdr-sign.platform26.de
+  safeaml-fpdr.platform26.de
+  sonarqube.ci-dev-fra.platform26.de
+  sonarqube.ci-live-fra.platform26.de
+=== cd-tech26.de ===
+1 names
+  *.cd-tech26.de
+=== sec26.de ===
+0 names
+=== tech26.com ===
+2 names
+  tech26.com
+  www.tech26.com
+=== n26.group ===
+0 names
+=== n26.xyz ===
+3 names
+  *.n26.xyz
+  n26.xyz
+  www.n26.xyz
+=== n26.online ===
+ERR 'str' object has no attribute 'get'
+[0m
+[0m$ [0mcurl -s --max-time 15 -o /dev/null -w "%{http_code}" "https://crt.sh/?q=%25.tech26.de&output=json"; echo; curl -s --max-time 15 -o /dev/null -w "%{http_code}" "https://crt.sh/?q=%25.n26.com&output=json"; echo
+200
+200
+[0m
+crt.sh is back up (was 502 in prior cycles) and two new candidate domains appeared in the CT corpus. Pulling those.
+[0m$ [0mcurl -s --max-time 40 "https://crt.sh/?q=%25.tech26.de&output=json" | python3 -c "import json,sys
+d=json.load(sys.stdin)
+names=set()
+for x in d:
+    for n in x.get('name_value','').split('\n'):
+        n=n.strip().lstrip('*.')
+        if n: names.add(n)
+print(len(names),'unique tech26.de')
+open('/tmp/opencode/crt-tech26.txt','w').write('\n'.join(sorted(names)))" 2>/dev/null; echo ---; curl -s --max-time 40 "https://crt.sh/?q=%25.n26.com&output=json" | python3 -c "import json,sys
+d=json.load(sys.stdin)
+names=set()
+for x in d:
+    for n in x.get('name_value','').split('\n'):
+        n=n.strip().lstrip('*.')
+        if n: names.add(n)
+print(len(names),'unique n26.com')
+open('/tmp/opencode/crt-n26.txt','w').write('\n'.join(sorted(names)))" 2>/dev/null
+77 unique tech26.de
+---
+48 unique n26.com
+[0m
+[0m$ [0mecho "=== n26.xyz ==="; dig +short n26.xyz A; dig +short www.n26.xyz A; curl -sI --max-time 8 https://n26.xyz 2>&1 | head -12; echo "=== tech26.com ==="; dig +short tech26.com A; dig +short www.tech26.com A; curl -sI --max-time 8 https://tech26.com 2>&1 | head -12
+=== n26.xyz ===
+91.195.241.232
+91.195.241.232
+HTTP/2 301 
+content-type: text/html
+date: Sat, 17 Oct 2026 13:17:30 GMT
+location: https://sedo.com/search/details/?domain=n26.xyz&campaignId=329145&origin=sales_lander_15
+x-sedo-request-id: 809cf8dea6b8ab8a327ebb0bff22d885
+content-length: 166
+
+=== tech26.com ===
+3.33.130.190
+15.197.148.33
+tech26.com.
+3.33.130.190
+15.197.148.33
+[0m
+[0m$ [0mcurl -s --max-time 10 https://tech26.com | head -c 600; echo; echo "---whois---"; whois tech26.com 2>/dev/null | grep -iE "registrar|creation|registrant|org|name" | head -12
+---whois---
+[0m
+[0m$ [0mcomm -23 /tmp/opencode/crt-tech26.txt <(sort /tmp/opencode/cs-tech26.txt) | head -60; echo "===n26 new==="; comm -23 /tmp/opencode/crt-n26.txt <(sort /tmp/opencode/cs-n26.txt) | head -60
+atlantis.sto.tech26.de
+bapi.tech26.de
+consul-default-fra-001.tech26.de
+consul-default-fra-002.tech26.de
+consul-default-fra-003.tech26.de
+consul-default-fra.tech26.de
+controlplane.sto.tech26.de
+gophish-staging-fra.tech26.de
+healthrouter-default-fra.tech26.de
+healthrouter-live-fra.tech26.de
+healthrouter-live-fra.tech26.de.tech26.de
+helium-staging-fra.tech26.de
+jcmd-oldstaging-fra-001.tech26.de
+jcmd-oldstaging-fra-002.tech26.de
+jcmd-oldstaging-fra.tech26.de
+kibana-monitoring-lb-live-fra.tech26.de
+maxtest-staging-fra.tech26.de
+message-templates-assets-live.tech26.de
+monkey-staging-fra.tech26.de
+oneglobaledge-client.tech26.de
+oneglobaledge.tech26.de
+phising-report.tech26.de
+registry-default-fra.tech26.de
+registry-default-fra.tech26.de.tech26.de
+registrytest-default-fra.tech26.de
+s-dash26-api.tech26.de
+sredocs.tech26.de
+staging-api.tech26.de
+statsig-ssh.tech26.de
+sto.tech26.de
+tpp.tech26.de
+vault-default-fra.tech26.de
+vault-staging-fra-001.tech26.de
+vault-staging-fra-002.tech26.de
+vault-staging-fra-003.tech26.de
+vault-staging-fra.tech26.de
+vsaq-light-staging-fra.tech26.de
+vsaq-live-fra.tech26.de
+vsaq-staging-fra.tech26.de
+vsaq.tech26.de
+vsaqlight-staging-fra.tech26.de
+vsaqlight.tech26.de
+===n26 new===
+app--n26.com
+click.email.n26.com
+clicks-new.emails.n26.com
+help.n26.com
+mail.app--n26.com
+migration.n26.com
+pub.email.n26.com
+s.n26.com
+smy.n26.com
+staging-n26.com
+stutorials.n26.com
+tech.n26.com
+view.email.n26.com
+www.app--n26.com
+www.mag-de.n26.com
+www.mag-es.n26.com
+www.mag-fr.n26.com
+www.mag-it.n26.com
+www.mag.n26.com
+xyz.n26.com
+[0m
+crt.sh is back with a larger historical corpus — 37 net-new tech26.de names and 21 net-new n26.com names not in certspotter. Standing lesson: test exact CT names, never pattern-deduced. Resolving all of them.
+[0m$ [0mcomm -23 /tmp/opencode/crt-tech26.txt <(sort /tmp/opencode/cs-tech26.txt) > /tmp/opencode/new-tech26.txt; comm -23 /tmp/opencode/crt-n26.txt <(sort /tmp/opencode/cs-n26.txt) > /tmp/opencode/new-n26.txt; cat /tmp/opencode/new-tech26.txt /tmp/opencode/new-n26.txt | while read h; do [ -z "$h" ] && continue; a=$(dig +short +time=3 +tries=1 "$h" A 2>/dev/null | grep -E '^[0-9]' | paste -sd, -); echo "$h -> ${a:-NXDOMAIN/NORESOLVE}"; done
+atlantis.sto.tech26.de -> NXDOMAIN/NORESOLVE
+bapi.tech26.de -> NXDOMAIN/NORESOLVE
+consul-default-fra-001.tech26.de -> NXDOMAIN/NORESOLVE
+consul-default-fra-002.tech26.de -> NXDOMAIN/NORESOLVE
+consul-default-fra-003.tech26.de -> NXDOMAIN/NORESOLVE
+consul-default-fra.tech26.de -> NXDOMAIN/NORESOLVE
+controlplane.sto.tech26.de -> NXDOMAIN/NORESOLVE
+gophish-staging-fra.tech26.de -> NXDOMAIN/NORESOLVE
+healthrouter-default-fra.tech26.de -> NXDOMAIN/NORESOLVE
+healthrouter-live-fra.tech26.de -> NXDOMAIN/NORESOLVE
+healthrouter-live-fra.tech26.de.tech26.de -> NXDOMAIN/NORESOLVE
+helium-staging-fra.tech26.de -> NXDOMAIN/NORESOLVE
+jcmd-oldstaging-fra-001.tech26.de -> NXDOMAIN/NORESOLVE
+jcmd-oldstaging-fra-002.tech26.de -> NXDOMAIN/NORESOLVE
+jcmd-oldstaging-fra.tech26.de -> NXDOMAIN/NORESOLVE
+kibana-monitoring-lb-live-fra.tech26.de -> NXDOMAIN/NORESOLVE
+maxtest-staging-fra.tech26.de -> NXDOMAIN/NORESOLVE
+message-templates-assets-live.tech26.de -> NXDOMAIN/NORESOLVE
+monkey-staging-fra.tech26.de -> NXDOMAIN/NORESOLVE
+oneglobaledge-client.tech26.de -> NXDOMAIN/NORESOLVE
+oneglobaledge.tech26.de -> 18.157.247.13,3.66.60.186,3.124.135.101
+phising-report.tech26.de -> NXDOMAIN/NORESOLVE
+registry-default-fra.tech26.de -> NXDOMAIN/NORESOLVE
+registry-default-fra.tech26.de.tech26.de -> NXDOMAIN/NORESOLVE
+registrytest-default-fra.tech26.de -> NXDOMAIN/NORESOLVE
+s-dash26-api.tech26.de -> NXDOMAIN/NORESOLVE
+sredocs.tech26.de -> 63.184.174.117,3.73.5.97,18.158.114.65
+staging-api.tech26.de -> NXDOMAIN/NORESOLVE
+statsig-ssh.tech26.de -> 3.69.87.198
+sto.tech26.de -> NXDOMAIN/NORESOLVE
+tpp.tech26.de -> NXDOMAIN/NORESOLVE
+vault-default-fra.tech26.de -> NXDOMAIN/NORESOLVE
+vault-staging-fra-001.tech26.de -> NXDOMAIN/NORESOLVE
+vault-staging-fra-002.tech26.de -> NXDOMAIN/NORESOLVE
+vault-staging-fra-003.tech26.de -> NXDOMAIN/NORESOLVE
+vault-staging-fra.tech26.de -> NXDOMAIN/NORESOLVE
+vsaq-light-staging-fra.tech26.de -> NXDOMAIN/NORESOLVE
+vsaq-live-fra.tech26.de -> NXDOMAIN/NORESOLVE
+vsaq-staging-fra.tech26.de -> NXDOMAIN/NORESOLVE
+vsaq.tech26.de -> NXDOMAIN/NORESOLVE
+vsaqlight-staging-fra.tech26.de -> NXDOMAIN/NORESOLVE
+vsaqlight.tech26.de -> NXDOMAIN/NORESOLVE
+app--n26.com -> NXDOMAIN/NORESOLVE
+click.email.n26.com -> NXDOMAIN/NORESOLVE
+clicks-new.emails.n26.com -> NXDOMAIN/NORESOLVE
+help.n26.com -> NXDOMAIN/NORESOLVE
+mail.app--n26.com -> NXDOMAIN/NORESOLVE
+migration.n26.com -> NXDOMAIN/NORESOLVE
+pub.email.n26.com -> NXDOMAIN/NORESOLVE
+s.n26.com -> NXDOMAIN/NORESOLVE
+smy.n26.com -> NXDOMAIN/NORESOLVE
+staging-n26.com -> 65.8.20.34,65.8.20.4,65.8.20.111,65.8.20.89
+stutorials.n26.com -> NXDOMAIN/NORESOLVE
+tech.n26.com -> NXDOMAIN/NORESOLVE
+view.email.n26.com -> NXDOMAIN/NORESOLVE
+www.app--n26.com -> NXDOMAIN/NORESOLVE
+www.mag-de.n26.com -> NXDOMAIN/NORESOLVE
+www.mag-es.n26.com -> NXDOMAIN/NORESOLVE
+www.mag-fr.n26.com -> NXDOMAIN/NORESOLVE
+www.mag-it.n26.com -> NXDOMAIN/NORESOLVE
+www.mag.n26.com -> NXDOMAIN/NORESOLVE
+xyz.n26.com -> NXDOMAIN/NORESOLVE
+[0m
+[0m$ [0mgrep -iE "oneglobaledge|staging-n26|s-dash|bapi|tpp\.tech26" inventory/n26.md knowledge/index.md 2>/dev/null | head -20; echo "(end grep)"
+inventory/n26.md:- NEW @ candidate-diff method: my first two "undocumented in corpus" lists were artifacts of literal `grep` against a KB that records hosts in brace-expansion form (`{fpadedge,mambuedge,oneglobaledge,taktil
+knowledge/index.md:- 2026-09-11 REJECTED MISCONFIG @ {fpadedge,mambuedge,oneglobaledge,taktileedge,epiedge,sredocs,telemetry}*.tech26.de: 10–15s connect-stall (source-restricted SG / egress filter) — not anonymously reachable; HUMAN_ONLY.
+knowledge/index.md:- 2026-09-24 REJECTED MISCONFIG @ {idealedge,livepersonedge}.tech26.de: both resolve live eu-central-1 ELB (idealedge-live-fra / livepersonedge-live-fra, N26 app uses LivePerson chat per CSP) and connect-stall 12s on 443 — identical source-gated SG class to 09-11 {fpadedge,mambuedge,oneglobaledge,taktileedge,epiedge,sredocs,telemetry} set; zero anonymous reachability; names now individually classified, corpus fully reconciled.
+knowledge/index.md:- 2026-09-25 REJECTED MISCONFIG @ {idealedge,livepersonedge}.tech26.de: both resolve live eu-central-1 ELB (idealedge-live-fra / livepersonedge-live-fra, N26 app uses LivePerson chat per CSP) and connect-stall 12s on 443 — identical source-gated SG class to 09-11 {fpadedge,mambuedge,oneglobaledge,taktileedge,epiedge,sredocs,telemetry} set; zero anonymous reachability; names now individually classified, corpus fully reconciled
+(end grep)
+[0m
+Two resolvers not in the known set: `oneglobaledge.tech26.de` (AWS) and `staging-n26.com` (AWS). Checking inventory and probing.
+[0m$ [0mfor h in oneglobaledge.tech26.de staging-n26.com; do echo "=== $h ==="; curl -sI --max-time 10 "https://$h/" 2>&1 | head -20; echo "--- GET ---"; curl -s --max-time 10 -o /tmp/opencode/body-$h -w "%{http_code}|%{size_download}|%{content_type}|%{redirect_url}|%{remote_ip}" "https://$h/"; echo; head -c 300 /tmp/opencode/body-$h 2>/dev/null; echo; done
+=== oneglobaledge.tech26.de ===
+--- GET ---
+000|0|||
+
+=== staging-n26.com ===
+HTTP/2 403 
+server: CloudFront
+date: Sat, 17 Oct 2026 13:18:40 GMT
+content-type: text/html
+content-length: 919
+x-cache: Error from cloudfront
+via: 1.1 5ab57c15647f8e2c6dc938f16e26fbf8.cloudfront.net (CloudFront)
+x-amz-cf-pop: PHX50-P2
+x-amz-cf-id: eQjUNM0zviwU5z-1OYpHzEvY69_baH4B3lBXevaWZkv5BXvDSIYpOQ==
+
+--- GET ---
+403|919|text/html||65.8.20.34
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<TITLE>ERROR: The request could not be satisfied</TITLE>
+</HEAD><BODY>
+<H1>403 ERROR</H1>
+<H2>The request could
+[0m
+[0m$ [0mgrep -c "staging-n26" inventory/n26.md knowledge/index.md 2>/dev/null; echo "---"; for p in / /index.html /app /login /api /health /robots.txt /sitemap.xml; do printf "%-16s " "$p"; curl -s --max-time 8 -o /tmp/opencode/b -w "%{http_code}|%{size_download}" "https://staging-n26.com$p"; printf " "; head -c 80 /tmp/opencode/b | tr '\n' ' '; echo; done
+inventory/n26.md:0
+knowledge/index.md:0
+---
+/                403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.or
+/index.html      403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.or
+/app             403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.or
+/login           403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.or
+/api             403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.or
+/health          403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.or
+/robots.txt      403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.or
+/sitemap.xml     403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.or
+[0m
+[0m$ [0mecho "=== ALB/ELB names via CNAME chain ==="; dig +short staging-n26.com CNAME; dig +short staging-n26.com NS; echo "=== HTTP port ==="; curl -s --max-time 8 -o /dev/null -w "%{http_code}|%{size_download}|%{redirect_url}" http://staging-n26.com/; echo; echo "=== TLS cert ==="; echo | openssl s_client -connect staging-n26.com:443 -servername staging-n26.com 2>/dev/null | openssl x509 -noout -subject -issuer -dates -ext subjectAltName 2>/dev/null
+=== ALB/ELB names via CNAME chain ===
+ns-618.awsdns-13.net.
+ns-383.awsdns-47.com.
+ns-1758.awsdns-27.co.uk.
+ns-1312.awsdns-36.org.
+=== HTTP port ===
+301|167|https://staging-n26.com/
+=== TLS cert ===
+subject=CN = staging-n26.com
+issuer=C = US, O = Amazon, CN = Amazon RSA 2048 M04
+notBefore=Jul 28 00:00:00 2026 GMT
+notAfter=Feb 10 23:59:59 2027 GMT
+X509v3 Subject Alternative Name: 
+    DNS:staging-n26.com, DNS:www.staging-number26.eu, DNS:www.staging-number26.de, DNS:staging-number26.de, DNS:next.staging-n26.com, DNS:get.staging-n26.com, DNS:www.staging-n26.com, DNS:staging-number26.eu
+[0m
+[0m$ [0mcat /tmp/opencode/b; echo; echo "=== full headers ==="; curl -sI --max-time 8 https://staging-n26.com/ | cat
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<TITLE>ERROR: The request could not be satisfied</TITLE>
+</HEAD><BODY>
+<H1>403 ERROR</H1>
+<H2>The request could not be satisfied.</H2>
+<HR noshade size="1px">
+Request blocked.
+We can't connect to the server for this app or website at this time. There might be too much traffic or a configuration error. Try again later, or contact the app or website owner.
+<BR clear="all">
+If you provide content to customers through CloudFront, you can find steps to troubleshoot and help prevent this error by reviewing the CloudFront documentation.
+<BR clear="all">
+<HR noshade size="1px">
+<PRE>
+Generated by cloudfront (CloudFront)
+Request ID: HigWlIySvH994Qs-LAOEQj6D7FG3QefYUU4FdQRcefmNasIg7tAuqw==
+</PRE>
+<ADDRESS>
+</ADDRESS>
+</BODY></HTML>
+=== full headers ===
+HTTP/2 403 
+server: CloudFront
+date: Sat, 17 Oct 2026 13:19:13 GMT
+content-type: text/html
+content-length: 919
+x-cache: Error from cloudfront
+via: 1.1 6bfb1833062fb090100ec2406acfab4c.cloudfront.net (CloudFront)
+x-amz-cf-pop: PHX50-P2
+x-amz-cf-id: m7Uvex_DbXggFw424vSfBT99zS72TA1UX-my70q8jmzhl8g5vvHn4g==
+[0m
+`staging-n26.com` is a genuinely new host — not in inventory, live CloudFront, cert with 8 SANs including `staging-number26.{de,eu}` and `next/get.staging-n26.com`. Digging deeper.
+[0m$ [0mfor h in next.staging-n26.com get.staging-n26.com www.staging-n26.com staging-number26.de www.staging-number26.de staging-number26.eu www.staging-number26.eu; do printf "%-32s " "$h"; ip=$(dig +short +time=3 "$h" A | grep -E '^[0-9]' | paste -sd, -); if [ -z "$ip" ]; then echo "NXDOMAIN"; else code=$(curl -s --max-time 8 -o /tmp/opencode/hb -w "%{http_code}|%{size_download}" "https://$h/"); printf "%s %s " "$ip" "$code"; head -c 60 /tmp/opencode/hb | tr '\n' ' '; echo; fi; done
+next.staging-n26.com             65.8.20.4,65.8.20.34,65.8.20.89,65.8.20.111 403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//E
+get.staging-n26.com              65.8.20.4,65.8.20.111,65.8.20.34,65.8.20.89 403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//E
+www.staging-n26.com              65.8.20.34,65.8.20.89,65.8.20.4,65.8.20.111 403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//E
+staging-number26.de              65.8.20.34,65.8.20.4,65.8.20.111,65.8.20.89 403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//E
+www.staging-number26.de          65.8.20.4,65.8.20.34,65.8.20.89,65.8.20.111 403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//E
+staging-number26.eu              65.8.20.4,65.8.20.34,65.8.20.111,65.8.20.89 403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//E
+www.staging-number26.eu          65.8.20.34,65.8.20.4,65.8.20.89,65.8.20.111 403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//E
+[0m
+[0m$ [0mfor m in HEAD OPTIONS; do printf "%-8s " $m; curl -s --max-time 8 -X $m -o /dev/null -w "%{http_code}|%{size_download}" https://staging-n26.com/; echo; done; echo "=== vary UA ==="; curl -s --max-time 8 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" -o /tmp/opencode/ua -w "%{http_code}|%{size_download}" https://staging-n26.com/; echo; head -c 120 /tmp/opencode/ua; echo; echo "=== accept-language de ==="; curl -s --max-time 8 -H "Accept-Language: de-DE,de;q=0.9" -o /dev/null -w "%{http_code}|%{size_download}" https://staging-n26.com/; echo; echo "=== X-Forwarded-For EU ==="; curl -s --max-time 8 -H "X-Forwarded-For: 85.214.132.117" -o /dev/null -w "%{http_code}|%{size_download}" https://staging-n26.com/; echo
+HEAD     403|0
+OPTIONS  403|919
+=== vary UA ===
+403|919
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD><META
+=== accept-language de ===
+403|919
+=== X-Forwarded-For EU ===
+403|919
+[0m
+[0m$ [0mwhois staging-n26.com 2>/dev/null | grep -iE "registrar:|creation date|registrant|org|name:|nsec" | head -15; echo "=== staging-number26.de ==="; whois staging-number26.de 2>/dev/null | grep -iE "registrar|status|created|holder|name" | head -15
+=== staging-number26.de ===
+[0m
+All 8 SANs hit the same CloudFront edge with identical `403|919 "Request blocked."` — distribution-level block before origin. Testing whether it's geo-restriction vs WAF vs path-specific.
+[0m$ [0mfor p in /assets/ /static/ /_next/ /api/health /favicon.ico /.well-known/security.txt /index.htm /home /de /en; do printf "%-28s " "$p"; curl -s --max-time 6 -o /tmp/opencode/pb -w "%{http_code}|%{size_download}" "https://staging-n26.com$p"; printf " "; head -c 40 /tmp/opencode/pb | tr '\n' ' '; echo; done; echo "=== via header / cf-ray ==="; curl -sI --max-time 6 https://staging-n26.com/ | grep -iE "via|cf-ray|x-amz|x-cache|server"
+/assets/                     403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 
+/static/                     403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 
+/_next/                      403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 
+/api/health                  403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 
+/favicon.ico                 403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 
+/.well-known/security.txt    403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 
+/index.htm                   403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 
+/home                        403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 
+/de                          403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 
+/en                          403|919 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 
+=== via header / cf-ray ===
+server: CloudFront
+x-cache: Error from cloudfront
+via: 1.1 327f096e9672227dba0db315044c3d8c.cloudfront.net (CloudFront)
+x-amz-cf-pop: PHX50-P2
+x-amz-cf-id: 6Wy2sNWzG8fzz8I_2rQeXEVvl6Z5JC3x2XklLKxqVvV9bRBMviOZNg==
+[0m
+[0m$ [0mecho "=== staging app subdomain guesses from SAN next/get ==="; for h in app.staging-n26.com api.staging-n26.com my.staging-n26.com auth.staging-n26.com login.staging-n26.com static.staging-n26.com flags.staging-n26.com spc.staging-n26.com pay.staging-n26.com support.staging-n26.com docs.staging-n26.com engagementplatform.staging-n26.com; do r=$(dig +short +time=2 +tries=1 "$h" A 2>/dev/null | grep -E '^[0-9]' | head -1); if [ -n "$r" ]; then echo "$h -> $r"; fi; done; echo "(done)"
+=== staging app subdomain guesses from SAN next/get ===
+app.staging-n26.com -> 18.158.175.172
+my.staging-n26.com -> 18.157.200.178
+static.staging-n26.com -> 65.8.20.127
+spc.staging-n26.com -> 52.57.106.63
+support.staging-n26.com -> 18.196.77.230
+docs.staging-n26.com -> 65.8.20.58
+(done)
+[0m
+Six staging subdomains resolve. Probing each.
+[0m$ [0mfor h in app.staging-n26.com my.staging-n26.com static.staging-n26.com spc.staging-n26.com support.staging-n26.com docs.staging-n26.com; do echo "=== $h ==="; curl -sI --max-time 8 "https://$h/" 2>&1 | head -14; echo "--- GET body head ---"; curl -s --max-time 8 -o /tmp/opencode/sb -w "%{http_code}|%{size_download}|%{content_type}" "https://$h/"; echo; head -c 200 /tmp/opencode/sb | tr '\n' ' '; echo; echo; done
+=== app.staging-n26.com ===
+HTTP/2 403 
+server: awselb/2.0
+date: Sat, 17 Oct 2026 13:20:50 GMT
+content-type: text/html
+content-length: 118
+
+--- GET body head ---
+403|118|text/html
+<html>
+ <head><title>403 Forbidden</title></head>
+ <body>
+ <center><h1>403 Forbidden</h1></center>
+ </body>
+ </html>
+ 
+
+=== my.staging-n26.com ===
+HTTP/2 403 
+server: awselb/2.0
+date: Sat, 17 Oct 2026 13:20:51 GMT
+content-type: text/html
+content-length: 118
+
+--- GET body head ---
+403|118|text/html
+<html>
+ <head><title>403 Forbidden</title></head>
+ <body>
+ <center><h1>403 Forbidden</h1></center>
+ </body>
+ </html>
+ 
+
+=== static.staging-n26.com ===
+HTTP/2 403 
+server: CloudFront
+date: Sat, 17 Oct 2026 13:20:51 GMT
+content-type: text/html
+content-length: 919
+x-cache: Error from cloudfront
+via: 1.1 ee30ad75b0d5067a56c4e84f3f168abe.cloudfront.net (CloudFront)
+x-amz-cf-pop: PHX50-P2
+x-amz-cf-id: GzNIZjyjUn4pgQ3Y3ZrLs5XxIwNyEiUeQG1oqvF7aOp89Z095H5FHQ==
+x-xss-protection: 1; mode=block
+x-frame-options: SAMEORIGIN
+referrer-policy: strict-origin-when-cross-origin
+x-content-type-options: nosniff
+strict-transport-security: max-age=31536000
+--- GET body head ---
+403|919|text/html
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1"> <TITLE>ERROR
+
+=== spc.staging-n26.com ===
+HTTP/2 404 
+date: Sat, 17 Oct 2026 13:20:52 GMT
+content-type: text/plain; charset=UTF-8
+content-length: 13
+server: envoy
+x-envoy-upstream-service-time: 23
+
+--- GET body head ---
+404|13|text/plain; charset=UTF-8
+404 not found
+
+=== support.staging-n26.com ===
+--- GET body head ---
+000|0|
+404 not found
+
+=== docs.staging-n26.com ===
+HTTP/2 403 
+content-type: application/xml
+server: AmazonS3
+date: Sat, 17 Oct 2026 13:21:08 GMT
+x-cache: Error from cloudfront
+via: 1.1 7b7ed180a68f72f1dd6bcc5c75fd0210.cloudfront.net (CloudFront)
+x-amz-cf-pop: PHX50-P2
+x-amz-cf-id: mGPIGn7Ko_k7UA93DpQiuA0tGuPnPkJwx81cw2cJ8_UktO6UCbIrDg==
+x-xss-protection: 1; mode=block
+x-frame-options: SAMEORIGIN
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: default-src 'none'; object-src 'self'; img-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'
+x-content-type-options: nosniff
+strict-transport-security: max-age=31536000; includeSubDomains
+--- GET body head ---
+403|111|application/xml
+<?xml version="1.0" encoding="UTF-8"?> <Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>
+[0m
+`spc.staging-n26.com` is an envoy service responding at app layer (404|13) — not source-gated. Probing its routes.
+[0m$ [0mecho "=== cert ==="; echo | openssl s_client -connect spc.staging-n26.com:443 -servername spc.staging-n26.com 2>/dev/null | openssl x509 -noout -subject -issuer -dates -ext subjectAltName 2>/dev/null; echo "=== compare spc.n26.com ==="; curl -s --max-time 6 -o /tmp/opencode/sp2 -w "%{http_code}|%{size_download}" https://spc.n26.com/; echo; head -c 60 /tmp/opencode/sp2; echo; echo | openssl s_client -connect spc.n26.com:443 -servername spc.n26.com 2>/dev/null | openssl x509 -noout -subject -ext subjectAltName 2>/dev/null
+=== cert ===
+subject=CN = spc.staging-n26.com
+issuer=C = US, O = Amazon, CN = Amazon RSA 2048 M01
+notBefore=Feb 10 00:00:00 2026 GMT
+notAfter=Mar 11 23:59:59 2027 GMT
+X509v3 Subject Alternative Name: 
+    DNS:spc.staging-n26.com
+=== compare spc.n26.com ===
+404|13
+404 not found
+subject=CN = spc.n26.com
+X509v3 Subject Alternative Name: 
+    DNS:spc.n26.com
+[0m
+[0m$ [0mfor p in / /health /healthz /ready /status /metrics /v1 /v2 /api /api/v1 /config /debug /info /version /ping /track /pixel /collect /events /log /logs; do printf "%-14s " "$p"; curl -s --max-time 6 -o /tmp/opencode/sp -w "%{http_code}|%{size_download}" "https://spc.staging-n26.com$p"; printf " "; head -c 60 /tmp/opencode/sp | tr '\n' ' '; echo; done
+/              404|13 404 not found
+/health        200|2 OK
+/healthz       404|13 404 not found
+/ready         404|13 404 not found
+/status        404|13 404 not found
+/metrics       404|13 404 not found
+/v1            404|13 404 not found
+/v2            404|13 404 not found
+/api           404|13 404 not found
+/api/v1        200|43 GIF89a  �  ���   !�    ,       D ;
+/config        404|13 404 not found
+/debug         404|13 404 not found
+/info          404|13 404 not found
+/version       404|13 404 not found
+/ping          404|13 404 not found
+/track         404|13 404 not found
+/pixel         404|13 404 not found
+/collect       404|13 404 not found
+/events        404|13 404 not found
+/log           404|13 404 not found
+/logs          404|13 404 not found
+[0m
+[0m$ [0mfor p in /api/v1/track /api/v1/pixel /api/v1/collect /api/v1/event /api/v1/events /api/v1/log /api/v1/beacon /api/v1/imp /api/v1/pageview /api/v2 /api/v1/health; do printf "%-22s " "$p"; curl -s --max-time 6 -o /tmp/opencode/sp3 -w "%{http_code}|%{size_download}|%{content_type}" "https://spc.staging-n26.com$p"; printf " "; head -c 50 /tmp/opencode/sp3 | tr '\n' ' '; echo; done; echo "=== query params on /api/v1 ==="; curl -s --max-time 6 -o /tmp/opencode/sp4 -w "%{http_code}|%{size_download}" "https://spc.staging-n26.com/api/v1?event=test"; echo; head -c 60 /tmp/opencode/sp4; echo; echo "=== full pixel dump /api/v1 ==="; xxd /tmp/opencode/sp | head -5; echo "=== health body ==="; curl -s --max-time 6 https://spc.staging-n26.com/health | xxd | head -3
+/api/v1/track          404|13|text/plain; charset=UTF-8 404 not found
+/api/v1/pixel          404|13|text/plain; charset=UTF-8 404 not found
+/api/v1/collect        404|13|text/plain; charset=UTF-8 404 not found
+/api/v1/event          404|13|text/plain; charset=UTF-8 404 not found
+/api/v1/events         404|13|text/plain; charset=UTF-8 404 not found
+/api/v1/log            404|13|text/plain; charset=UTF-8 404 not found
+/api/v1/beacon         404|13|text/plain; charset=UTF-8 404 not found
+/api/v1/imp            404|13|text/plain; charset=UTF-8 404 not found
+/api/v1/pageview       404|13|text/plain; charset=UTF-8 404 not found
+/api/v2                200|43|image/gif GIF89a  �  ���   !�    ,       D ;
+/api/v1/health         404|13|text/plain; charset=UTF-8 404 not found
+=== query params on /api/v1 ===
+200|43
+GIF89a  �  ���   !�    ,       D ;
+=== full pixel dump /api/v1 ===
+00000000: 3430 3420 6e6f 7420 666f 756e 64         404 not found
+=== health body ===
+00000000: 4f4b                                     OK
+[0m
+`spc.staging-n26.com` is the tracking-pixel twin of prod (GIF + `/health` OK) — closed, same class. Checking remaining staging surfaces and whether the CloudFront block is path-specific.
+[0m$ [0mecho "=== docs.staging bucket probe ==="; for p in /index.html /robots.txt /sitemap.xml /assets/ /static/ /img/ /images/; do printf "%-14s " "$p"; curl -s --max-time 6 -o /tmp/opencode/db -w "%{http_code}|%{size_download}" "https://docs.staging-n26.com$p"; printf " "; head -c 80 /tmp/opencode/db | tr '\n' ' '; echo; done; echo "=== spc staging POST-like params ==="; curl -s --max-time 6 -o /tmp/opencode/sp5 -w "%{http_code}|%{size_download}" "https://spc.staging-n26.com/api/v1?d=test&e=view&r=https://example.com"; echo; xxd /tmp/opencode/sp5 | head -4
+=== docs.staging bucket probe ===
+/index.html    403|111 <?xml version="1.0" encoding="UTF-8"?> <Error><Code>AccessDenied</Code><Message>
+/robots.txt    403|111 <?xml version="1.0" encoding="UTF-8"?> <Error><Code>AccessDenied</Code><Message>
+/sitemap.xml   403|111 <?xml version="1.0" encoding="UTF-8"?> <Error><Code>AccessDenied</Code><Message>
+/assets/       403|111 <?xml version="1.0" encoding="UTF-8"?> <Error><Code>AccessDenied</Code><Message>
+/static/       403|111 <?xml version="1.0" encoding="UTF-8"?> <Error><Code>AccessDenied</Code><Message>
+/img/          403|111 <?xml version="1.0" encoding="UTF-8"?> <Error><Code>AccessDenied</Code><Message>
+/images/       403|111 <?xml version="1.0" encoding="UTF-8"?> <Error><Code>AccessDenied</Code><Message>
+=== spc staging POST-like params ===
+200|43
+00000000: 4749 4638 3961 0100 0100 f000 00ff ffff  GIF89a..........
+00000010: 0000 0021 f904 0100 0000 002c 0000 0000  ...!.......,....
+00000020: 0100 0100 0002 0244 0100 3b              .......D..;
+[0m
+[0m$ [0mfor d in platform26.de cd-tech26.de; do echo "=== crt.sh $d ==="; curl -s --max-time 30 "https://crt.sh/?q=%25.$d&output=json" | python3 -c "import json,sys
+try:
+    d=json.load(sys.stdin)
+    names=set()
+    for x in d:
+        for n in x.get('name_value','').split('\n'):
+            n=n.strip().lstrip('*.')
+            if n: names.add(n)
+    print(len(names))
+    for n in sorted(names): print(' ',n)
+except Exception as e: print('ERR',e)"; done
+=== crt.sh platform26.de ===
+72
+  aml26-dev-fra.platform26.de
+  aml26-develop-fra.platform26.de
+  aml26-live-fra.platform26.de
+  aml26-staging-fra.platform26.de
+  aml26-test-fra.platform26.de
+  argocd-public.cd-dev-fra.platform26.de
+  argocd-public.cd.cd-dev-fra.platform26.de
+  argocd-public.cd.cd-live-fra.platform26.de
+  atlantis.cc26.cc26-terraform-test-eu.platform26.de
+  atlantis.dev.platform26.de
+  atlantis.eks.platform26.de
+  atlantis.fk26.cc26-terraform-test-eu.platform26.de
+  atlantis.fk26.platform26.de
+  atlantis.fk26.sandbox.platform26.de
+  atlantis.fortknox26.sandbox.platform26.de
+  atlantis.ftlq.cc26-terraform-test-eu.platform26.de
+  atlantis.master.platform26.de
+  atlantis.pend.cc26-terraform-test-eu.platform26.de
+  atlantis.platform26.de
+  atlantis.prue.sandbox.platform26.de
+  atlantis.qrou.cc26-terraform-test-eu.platform26.de
+  atlantis.sandbox.platform26.de
+  atlantis.sto-eks.platform26.de
+  atlantis.sto-fk26.platform26.de
+  atlantis.t.sandbox.platform26.de
+  atlantis.terratest.sandbox.platform26.de
+  atlantis.test.sandbox.platform26.de
+  atlantis.vtiy.cc26-terraform-test-eu.platform26.de
+  atlantis.wghp.cc26-terraform-test-eu.platform26.de
+  automationsuite.ops26-dev-fra.platform26.de
+  backstage.platform26-dev-eu.platform26.de
+  backstage.platform26-live-eu.platform26.de
+  backstage.platform26-staging-eu.platform26.de
+  cd-dev-fra.platform26.de
+  cd.cd-dev-fra.platform26.de
+  cd.cd-live-fra.platform26.de
+  ci-dev-fra.platform26.de
+  ci-sandbox-fra.platform26.de
+  collab26-live-fra.platform26.de
+  collab26-staging-fra.platform26.de
+  control-plane.atlantis.platform26.de
+  fin26-dev-fra.platform26.de
+  fin26-live-fra.platform26.de
+  fin26-staging-fra.platform26.de
+  gsdd.atlantis.platform26.de
+  inbound-token-notifications.vpn-live-fra.platform26.de
+  kibana.sec26-tooling-live-fra.platform26.de
+  kibana.sec26-tooling-staging-fra.platform26.de
+  kowl.sec26-archive-live-fra.platform26.de
+  kowl.sec26-archive-staging-fra.platform26.de
+  mpe-notifications.vpn-live-fra.platform26.de
+  opensearch.sec26-archive-live-fra.platform26.de
+  opensearch.sec26-archive-staging-fra.platform26.de
+  opensearch.sec26-tooling-live-fra.platform26.de
+  opensearch.sec26-tooling-staging-fra.platform26.de
+  ops26-dev-fra.platform26.de
+  ops26-live-fra.platform26.de
+  ops26-staging-fra.platform26.de
+  platform26-dev-eu.platform26.de
+  platform26-live-eu.platform26.de
+  platform26-staging-eu.platform26.de
+  ravpn.noc-tooling-live-fra.platform26.de
+  safeaml-fpdr-sign.platform26.de
+  safeaml-fpdr.platform26.de
+  sandbox.platform26.de
+  shared-services-live-fra.platform26.de
+  sonarqube-sandbox-instance.ci-sandbox-fra.platform26.de
+  sonarqube.ci-dev-fra.platform26.de
+  sonarqube.ci-live-fra.platform26.de
+  vpn-live-fra.platform26.de
+  vpns.vpn-live-fra.platform26.de
+  webhook-service.ci-sandbox-fra.platform26.de
+=== crt.sh cd-tech26.de ===
+1
+  cd-tech26.de
+[0m
+[0m$ [0mcurl -s --max-time 30 "https://crt.sh/?q=%25.platform26.de&output=json" | python3 -c "import json,sys
+d=json.load(sys.stdin)
+names=set()
+for x in d:
+    for n in x.get('name_value','').split('\n'):
+        n=n.strip().lstrip('*.')
+        if n: names.add(n)
+open('/tmp/opencode/crt-p26.txt','w').write('\n'.join(sorted(names)))" 2>/dev/null; curl -s --max-time 12 "https://api.certspotter.com/v1/issuances?domain=platform26.de&include_subdomains=true&expand=dns_names" | python3 -c "import json,sys
+d=json.load(sys.stdin)
+names=set()
+[names.update(x.get('dns_names',[])) for x in d]
+print('\n'.join(sorted(n.lstrip('*.') for n in names)))" > /tmp/opencode/cs-p26.txt 2>/dev/null; comm -23 /tmp/opencode/crt-p26.txt <(sort /tmp/opencode/cs-p26.txt) > /tmp/opencode/new-p26.txt; wc -l /tmp/opencode/new-p26.txt; cat /tmp/opencode/new-p26.txt
+43 /tmp/opencode/new-p26.txt
+aml26-dev-fra.platform26.de
+aml26-develop-fra.platform26.de
+aml26-live-fra.platform26.de
+aml26-staging-fra.platform26.de
+aml26-test-fra.platform26.de
+argocd-public.cd-dev-fra.platform26.de
+argocd-public.cd.cd-dev-fra.platform26.de
+argocd-public.cd.cd-live-fra.platform26.de
+atlantis.cc26.cc26-terraform-test-eu.platform26.de
+atlantis.dev.platform26.de
+atlantis.fk26.cc26-terraform-test-eu.platform26.de
+atlantis.fk26.sandbox.platform26.de
+atlantis.fortknox26.sandbox.platform26.de
+atlantis.ftlq.cc26-terraform-test-eu.platform26.de
+atlantis.pend.cc26-terraform-test-eu.platform26.de
+atlantis.platform26.de
+atlantis.prue.sandbox.platform26.de
+atlantis.qrou.cc26-terraform-test-eu.platform26.de
+atlantis.sandbox.platform26.de
+atlantis.t.sandbox.platform26.de
+atlantis.terratest.sandbox.platform26.de
+atlantis.test.sandbox.platform26.de
+atlantis.vtiy.cc26-terraform-test-eu.platform26.de
+atlantis.wghp.cc26-terraform-test-eu.platform26.de
+automationsuite.ops26-dev-fra.platform26.de
+cd-dev-fra.platform26.de
+cd.cd-dev-fra.platform26.de
+cd.cd-live-fra.platform26.de
+ci-sandbox-fra.platform26.de
+collab26-live-fra.platform26.de
+collab26-staging-fra.platform26.de
+control-plane.atlantis.platform26.de
+fin26-dev-fra.platform26.de
+gsdd.atlantis.platform26.de
+kibana.sec26-tooling-live-fra.platform26.de
+kibana.sec26-tooling-staging-fra.platform26.de
+kowl.sec26-archive-live-fra.platform26.de
+kowl.sec26-archive-staging-fra.platform26.de
+ravpn.noc-tooling-live-fra.platform26.de
+sandbox.platform26.de
+sonarqube-sandbox-instance.ci-sandbox-fra.platform26.de
+vpn-live-fra.platform26.de
+webhook-service.ci-sandbox-fra.platform26.de
+[0m
+43 net-new platform26.de CT names. Resolving all exact FQDNs (standing lesson: test exact CT names).
+[0m$ [0mcat /tmp/opencode/new-p26.txt | while read h; do [ -z "$h" ] && continue; a=$(dig +short +time=2 +tries=1 "$h" A 2>/dev/null | grep -E '^[0-9.]' | paste -sd, -); echo "$h -> ${a:-NXDOMAIN}"; done
+aml26-dev-fra.platform26.de -> NXDOMAIN
+aml26-develop-fra.platform26.de -> NXDOMAIN
+aml26-live-fra.platform26.de -> NXDOMAIN
+aml26-staging-fra.platform26.de -> NXDOMAIN
+aml26-test-fra.platform26.de -> NXDOMAIN
+argocd-public.cd-dev-fra.platform26.de -> NXDOMAIN
+argocd-public.cd.cd-dev-fra.platform26.de -> 3.74.29.160,63.184.187.23,18.193.107.13
+argocd-public.cd.cd-live-fra.platform26.de -> 63.182.115.12,63.188.22.217,52.29.173.129
+atlantis.cc26.cc26-terraform-test-eu.platform26.de -> NXDOMAIN
+atlantis.dev.platform26.de -> NXDOMAIN
+atlantis.fk26.cc26-terraform-test-eu.platform26.de -> NXDOMAIN
+atlantis.fk26.sandbox.platform26.de -> NXDOMAIN
+atlantis.fortknox26.sandbox.platform26.de -> NXDOMAIN
+atlantis.ftlq.cc26-terraform-test-eu.platform26.de -> NXDOMAIN
+atlantis.pend.cc26-terraform-test-eu.platform26.de -> NXDOMAIN
+atlantis.platform26.de -> NXDOMAIN
+atlantis.prue.sandbox.platform26.de -> NXDOMAIN
+atlantis.qrou.cc26-terraform-test-eu.platform26.de -> NXDOMAIN
+atlantis.sandbox.platform26.de -> NXDOMAIN
+atlantis.t.sandbox.platform26.de -> NXDOMAIN
+atlantis.terratest.sandbox.platform26.de -> NXDOMAIN
+atlantis.test.sandbox.platform26.de -> NXDOMAIN
+atlantis.vtiy.cc26-terraform-test-eu.platform26.de -> NXDOMAIN
+atlantis.wghp.cc26-terraform-test-eu.platform26.de -> NXDOMAIN
+automationsuite.ops26-dev-fra.platform26.de -> NXDOMAIN
+cd-dev-fra.platform26.de -> NXDOMAIN
+cd.cd-dev-fra.platform26.de -> NXDOMAIN
+cd.cd-live-fra.platform26.de -> NXDOMAIN
+ci-sandbox-fra.platform26.de -> NXDOMAIN
+collab26-live-fra.platform26.de -> NXDOMAIN
+collab26-staging-fra.platform26.de -> NXDOMAIN
+control-plane.atlantis.platform26.de -> NXDOMAIN
+fin26-dev-fra.platform26.de -> NXDOMAIN
+gsdd.atlantis.platform26.de -> NXDOMAIN
+kibana.sec26-tooling-live-fra.platform26.de -> NXDOMAIN
+kibana.sec26-tooling-staging-fra.platform26.de -> NXDOMAIN
+kowl.sec26-archive-live-fra.platform26.de -> NXDOMAIN
+kowl.sec26-archive-staging-fra.platform26.de -> NXDOMAIN
+ravpn.noc-tooling-live-fra.platform26.de -> NXDOMAIN
+sandbox.platform26.de -> NXDOMAIN
+sonarqube-sandbox-instance.ci-sandbox-fra.platform26.de -> NXDOMAIN
+vpn-live-fra.platform26.de -> NXDOMAIN
+webhook-service.ci-sandbox-fra.platform26.de -> NXDOMAIN
+[0m
+Two ArgoCD-public hosts resolve on platform26.de. Probing.
+[0m$ [0mfor h in argocd-public.cd.cd-dev-fra.platform26.de argocd-public.cd.cd-live-fra.platform26.de; do echo "=== $h ==="; timeout 12 curl -sI --max-time 10 "https://$h/" 2>&1 | head -16; echo "--- GET ---"; timeout 12 curl -s --max-time 10 -o /tmp/opencode/argo -w "%{http_code}|%{size_download}|%{content_type}|%{remote_ip}" "https://$h/"; echo; head -c 300 /tmp/opencode/argo 2>/dev/null | tr '\n' ' '; echo; echo; done
+=== argocd-public.cd.cd-dev-fra.platform26.de ===
+--- GET ---
+000|0||
+
+
+=== argocd-public.cd.cd-live-fra.platform26.de ===
+--- GET ---
+000|0||
+[0m
+Both ArgoCD hosts time out (source-gated, same class as the rest of platform26.de). Trying port 80 and then wrapping up.
+[0m$ [0mfor h in argocd-public.cd.cd-dev-fra.platform26.de argocd-public.cd.cd-live-fra.platform26.de; do printf "%-50s " "$h:80"; timeout 8 curl -s --max-time 6 -o /dev/null -w "%{http_code}|%{size_download}|%{remote_ip}" "http://$h/"; echo; done; echo "=== remaining new n26.com / tech26.de spot checks ==="; for h in oneglobaledge-client.tech26.de phising-report.tech26.de message-templates-assets-live.tech26.de; do printf "%-45s " "$h"; a=$(dig +short +time=2 +tries=1 "$h" A 2>/dev/null | grep -E '^[0-9.]' | head -1); echo "${a:-NXDOMAIN}"; done
+argocd-public.cd.cd-dev-fra.platform26.de:80       000|0|
+argocd-public.cd.cd-live-fra.platform26.de:80      000|0|
+=== remaining new n26.com / tech26.de spot checks ===
+oneglobaledge-client.tech26.de                NXDOMAIN
+phising-report.tech26.de                      NXDOMAIN
+message-templates-assets-live.tech26.de       NXDOMAIN
+[0m
+[0m$ [0mcat >> inventory/n26.md << 'EOF'
+
+## 2026-10-17 13:22:00 UTC
+- NEW @ `staging-n26.com` (via crt.sh revival, was 502 for 20+ cycles): live CloudFront distribution, cert Amazon RSA 2048 M04 issued 2026-07-28 (notAfter 2027-02-10), SANs = {staging-n26.com, www.staging-n26.com, next.staging-n26.com, get.staging-n26.com, staging-number26.de, www.staging-number26.de, staging-number26.eu, www.staging-number26.eu}. All 8 names → 65.8.20.{4,34,89,111}, all return identical CloudFront `403|919 Request blocked.` on every path probed (/, /app, /login, /api, /health, /robots.txt, /assets/, /_next/, /de, /en) — distribution-level block (geo/WAF), no app-layer observable. HTTP 80 → 301 HTTPS.
+- NEW @ staging subdomains (DNS-guess from SAN next/get, all resolve): `app.staging-n26.com` 18.158.175.172 → awselb/2.0 `403|118` (source-gated ALB class, same as 3ds-challenge.n26.com); `my.staging-n26.com` 18.157.200.178 → awselb/2.0 `403|118`; `static.staging-n26.com` 65.8.20.127 → CloudFront `403|919` + security headers (HSTS, XFO SAMEORIGIN, nosniff, referrer-policy); `spc.staging-n26.com` 52.57.106.63 → envoy `404|13` on root, `/health` `200|2 OK`, `/api/v1` + `/api/v2` `200|43 GIF89a` 1×1 transparent pixel (byte-identical to prod spc.n26.com tracking-pixel class — CLOSED, not payment API); `support.staging-n26.com` 18.196.77.230 → connect timeout (source-gated); `docs.staging-n26.com` 65.8.20.58 → CloudFront→S3 `403|111 AccessDenied` on all paths (bucket exists, listing denied).
+- NEW @ `argocd-public.cd.cd-dev-fra.platform26.de` (3.74.29.160,63.184.187.23,18.193.107.13) + `argocd-public.cd.cd-live-fra.platform26.de` (63.182.115.12,63.188.22.217,52.29.173.129) via crt.sh — resolve live AWS ELB, 443/80 both timeout (source-gated, same class as rest of platform26.de).
+- CHANGED crt.sh `/` endpoint revived (HTTP 200 after ~20 cycles of 502): historical corpus yields 37 net-new tech26.de FQDNs (34 NXDOMAIN; {oneglobaledge,sredocs,statsig-ssh} already inventoried source-gated), 21 net-new n26.com FQDNs (20 NXDOMAIN; staging-n26.com = the NEW find above), 43 net-new platform26.de FQDNs (41 NXDOMAIN; 2 ArgoCD hosts source-gated). Exact-CT-name testing per 10-16 lesson; zero pattern-derived testing.
+- CHANGED certspotter stable: tech26.de=40 / n26.com=85 (zero drift vs 09-20 baseline). hackertarget 32+26 lines, fully reconciled.
+- CHANGED `n26.xyz` → Sedo parking (91.195.241.232, 301 → sedo.com), NOT N26-owned. `tech26.com` → 3.33.130.190/15.197.148.33 (GoDaddy/AWS parking IPs), empty body, not N26-operated. Closed.
+EOF
+echo "inventory updated"
+inventory updated
+[0m
+[0m$ [0mcat >> knowledge/index.md << 'EOF'
+- 2026-10-17 ACCEPTED OTHER @ crt.sh revival: endpoint recovered from ~20 cycles of 502 (HTTP 200) and the historical corpus was materially larger than certspotter — 101 net-new exact CT FQDNs across tech26.de/n26.com/platform26.de. Method lesson confirmed: the revival of a previously-dead corpus is itself a delta signal; worth re-trying dead passive sources each cycle rather than caching their dead state.
+- 2026-10-17 ACCEPTED OTHER @ new domain `staging-n26.com`: entire staging web family previously un-inventoried — 8 cert SANs + 6 subdomains. All surfaces dispositioned: CloudFront distribution-level `403|919 Request blocked.` (geo/WAF, no app-layer observable), awselb `403|118` source-gated, S3 AccessDenied, envoy tracking-pixel (identical to prod spc.n26.com closed class). First new reachable-looking domain family since platform26.de; zero testable surface recovered.
+- 2026-10-17 REJECTED OTHER @ `n26.xyz`/`tech26.com`: Sedo/GoDaddy parking, NOT N26-owned — closed with HTTP-level evidence.
+- 2026-10-17 REJECTED MISCONFIG @ `argocd-public.cd.cd-{dev,live}-fra.platform26.de`: resolve live AWS ELB but 443/80 timeout — source-gated, same class as standing platform26.de inventory.
+- 2026-10-17 REJECTED OTHER @ self: crt.sh revival + staging-n26.com discovery is a genuine inventory delta but not a security delta — every new host dispositioned into standing classes (source-gated / CDN-block / closed pixel / NXDOMAIN). 31st consecutive cycle with zero testable anonymous surface; all three FINAL hypotheses remain AUTH_HELPED.
+EOF
+echo "kb updated"
+kb updated
+[0m
+crt.sh revival fully reconciled. Recording the delta and emitting cycle output.
+[0m$ [0mcat >> leads/lead-bigpickle.md << 'EOF'
+
+## 2026-10-17 13:22:00 UTC [target] (model bigpickle)
+[DELTA] crt.sh revived (HTTP 200 after ~20 cycles of 502) — historical corpus materially larger than certspotter: 101 net-new exact CT FQDNs across tech26.de/n26.com/platform26.de. One genuinely new reachable-looking family recovered: `staging-n26.com` (8-cert-SAN CloudFront distribution issued 2026-07-28, plus 6 resolving subdomains app|my|static|spc|support|docs.staging-n26.com) and 2 new resolvers on platform26.de (`argocd-public.cd.cd-{dev,live}-fra`). All dispositioned: staging CloudFront = distribution-level 403|919 Request blocked on every path (geo/WAF, zero app-layer observable); app/my = awselb 403|118 source-gated; spc.staging = envoy 404 + /api/v1|/v2 1×1 GIF pixel byte-identical to prod closed class; docs.staging = S3 AccessDenied; support.staging = connect timeout; argocd-public = ELB timeout both 443/80. Remaining 96 net-new names NXDOMAIN. `n26.xyz` Sedo parking, `tech26.com` GoDaddy parking — not N26-owned. Zero new testable surface.
+[PRIO] 1. api.tech26.de BOLA (92, AUTH_HELPED)  2. pay.n26.com Stripe BOLA (85, AUTH_HELPED)  3. xs2a.tech26.de TPP-Redirect-URI SSRF (62, AUTH_HELPED)
+[HYP] api.tech26.de BOLA — class IDOR — asset api.tech26.de/api/{me,addresses,accounts,statements,spaces,insights,transfers,referrals}/** — conf 92 — evidence_needed: read-only sandbox token + two-tenant object-ownership proof.
+[HYP] pay.n26.com Stripe-forwarded BOLA — class IDOR — asset pay.n26.com/v1/{payments,balance,charges,customers,invoices} — conf 85 — evidence_needed: approved Stripe test-mode key + ownership-independent-of-key proof.
+[HYP] xs2a.tech26.de SSRF via TPP-Redirect-URI — class SSRF — asset xs2a.tech26.de redirect/consent flow — conf 62 — evidence_needed: sandbox TPP test QWAC + Bearer.
+[PARKED] mTLS/QWAC-to-token binding gap (SSL/TLS class out of scope, scope.yml:24)
+[PARKED] X-Sandbox-Transaction-Status client-controlled payment-status override (sandbox-identity gated)
+[PARKED] cross-deployment token audience confusion {api,beta-api,sapi} (observable only with a token)
+[PARKED] pisp.tech26.de POST /oauth2/token routed-or-retired question (needs one POST, outside GET/HEAD/OPTIONS envelope; one-line coordinator approval)
+[PARKED] staging-n26.com CloudFront distribution-level block — potentially geo-restriction (vantage is PHX50-P2 US POP; N26 staging likely EU-locked). If coordinator can confirm from EU vantage or relax WAF, re-open; otherwise closed from this vantage.
+[FINAL] 1. api.tech26.de BOLA (92); 2. pay.n26.com Stripe BOLA (85); 3. xs2a SSRF via TPP-Redirect-URI (62). All AUTH_HELPED. No anonymous result promoted. validated findings = 0.
+[NEXT] HUMAN: (a) provision ONE sandbox-registered TPP credential — test QWAC + Bearer for xs2a.tech26.de — settles HYP 3, the parked X-Sandbox-Transaction-Status override, and sandbox→prod co-tenant isolation in one authorized session; (b) read-only api.tech26.de sandbox token for HYP 1; (c) approved Stripe test-mode key for HYP 2; (d) one-line approval for `pisp.tech26.de POST /oauth2/token`; (e) repair triage feeder (latest `err_b78cd888`, dead since 2026-09-24); (f) confirm/replace the KB-claimed-but-absent `reports/report-draft-n26.md`; (g) NEW — if coordinator has an EU vantage, curl -sI https://staging-n26.com/ from there would confirm/deny geo-restriction on the newly-discovered staging CloudFront (closed from PHX vantage). Do NOT authorize further identical-boundary re-probing.
+[LEARN] ACCEPTED OTHER @ crt.sh revival: endpoint recovered from ~20 cycles of 502 (HTTP 200) and the historical corpus was materially larger than certspotter (101 net-new exact CT FQDNs vs 0). Method: re-try dead passive sources each cycle rather than caching their dead state — a revived corpus is itself a delta signal.
+[LEARN] ACCEPTED OTHER @ new domain `staging-n26.com`: entire staging web family previously un-inventoried (8 cert SANs + 6 subdomains). First new reachable-looking domain family since platform26.de. All surfaces dispositioned into standing classes; zero testable surface. Inventory materially improved.
+[LEARN] REJECTED OTHER @ `n26.xyz`/`tech26.com`: Sedo/GoDaddy parking, NOT N26-owned — closed with HTTP-level evidence.
+[LEARN] REJECTED MISCONFIG @ `argocd-public.cd.cd-{dev,live}-fra.platform26.de`: resolve live AWS ELB but 443/80 both timeout — source-gated, same class as standing platform26.de inventory.
+[LEARN] REJECTED OTHER @ self: 31st consecutive cycle with zero testable anonymous surface. crt.sh revival + staging-n26.com is a genuine inventory delta but not a security delta — every new host dispositioned into standing classes. The information-exhaustion conclusion for anonymous reachable surface holds; the only recoverable signal remains a human-provisioned credential or the one-POST approval.
+[RISK] n26: 30 — Zero validated/reportable findings (count 0). All three FINAL hypotheses remain AUTH_HELPED. This cycle's delta was real (crt.sh revival → 101 net-new CT names → one new staging domain family fully characterized) but security-neutral: every new host landed in a standing closed class (source-gated / CDN-level block / tracking-pixel / NXDOMAIN / out-of-scope parking). Probe surface still frozen since 2026-09-18 10:07; triage feeder dead since 2026-09-24. Highest-leverage unblock remains a coordinator-provisioned sandbox TPP credential.
+EOF
+echo "lead updated"; wc -l leads/lead-bigpickle.md
+lead updated
+13157 leads/lead-bigpickle.md
+[0m
+[DELTA] crt.sh revived (HTTP 200 after ~20 cycles of 502) — historical corpus materially larger than certspotter: **101 net-new exact CT FQDNs** across tech26.de/n26.com/platform26.de. One genuinely new reachable-looking family recovered: **`staging-n26.com`** (8-SAN CloudFront cert issued 2026-07-28 + 6 resolving subdomains: app|my|static|spc|support|docs.staging-n26.com) and 2 new resolvers on platform26.de (`argocd-public.cd.cd-{dev,live}-fra`). All dispositioned: staging CF = distribution-level `403|919 Request blocked` every path (geo/WAF, zero app-layer observable); app/my = awselb `403|118` source-gated; spc.staging = envoy 404 + `/api/v1|/v2` 1×1 GIF pixel byte-identical to prod closed class; docs.staging = S3 AccessDenied; support.staging = connect timeout; argocd-public = ELB timeout 443/80. Remaining 96 net-new names NXDOMAIN. `n26.xyz` Sedo parking, `tech26.com` GoDaddy parking — not N26-owned. Zero new testable surface.
+
+[PRIO] 1. api.tech26.de BOLA (92, AUTH_HELPED)  2. pay.n26.com Stripe BOLA (85, AUTH_HELPED)  3. xs2a.tech26.de TPP-Redirect-URI SSRF (62, AUTH_HELPED)
+
+[HYP] api.tech26.de BOLA — class IDOR — asset api.tech26.de/api/{me,addresses,accounts,statements,spaces,insights,transfers,referrals}/** — conf 92 — evidence_needed: read-only sandbox token + two-tenant object-ownership proof.
+
+[HYP] pay.n26.com Stripe-forwarded BOLA — class IDOR — asset pay.n26.com/v1/{payments,balance,charges,customers,invoices} — conf 85 — evidence_needed: approved Stripe test-mode key + ownership-independent-of-key proof.
+
+[HYP] xs2a.tech26.de SSRF via TPP-Redirect-URI — class SSRF — asset xs2a.tech26.de redirect/consent flow — conf 62 — evidence_needed: sandbox TPP test QWAC + Bearer.
+
+[PARKED] mTLS/QWAC-to-token binding gap (SSL/TLS class out of scope, scope.yml:24)
+[PARKED] X-Sandbox-Transaction-Status client-controlled payment-status override (sandbox-identity gated)
+[PARKED] cross-deployment token audience confusion {api,beta-api,sapi} (observable only with a token)
+[PARKED] pisp.tech26.de POST /oauth2/token routed-or-retired question (needs one POST, outside GET/HEAD/OPTIONS envelope; one-line coordinator approval)
+[PARKED] staging-n26.com CloudFront distribution-level block — potentially geo-restriction (vantage is PHX50-P2 US POP; N26 staging likely EU-locked). If coordinator can confirm from EU vantage or relax WAF, re-open; otherwise closed from this vantage.
+
+[FINAL] 1. api.tech26.de BOLA (92); 2. pay.n26.com Stripe BOLA (85); 3. xs2a SSRF via TPP-Redirect-URI (62). All AUTH_HELPED. No anonymous result promoted. validated findings = 0.
+
+[NEXT] HUMAN: (a) provision ONE sandbox-registered TPP credential — test QWAC + Bearer for xs2a.tech26.de — settles HYP 3, the parked X-Sandbox-Transaction-Status override, and sandbox→prod co-tenant isolation in one authorized session; (b) read-only api.tech26.de sandbox token for HYP 1; (c) approved Stripe test-mode key for HYP 2; (d) one-line approval for `pisp.tech26.de POST /oauth2/token`; (e) repair triage feeder (latest `err_b78cd888`, dead since 2026-09-24); (f) confirm/replace the KB-claimed-but-absent `reports/report-draft-n26.md`; (g) NEW — if coordinator has an EU vantage, `curl -sI https://staging-n26.com/` from there would confirm/deny geo-restriction on the newly-discovered staging CloudFront (closed from PHX vantage). Do NOT authorize further identical-boundary re-probing.
+
+[LEARN] ACCEPTED OTHER @ crt.sh revival: endpoint recovered from ~20 cycles of 502 (HTTP 200) and the historical corpus was materially larger than certspotter (101 net-new exact CT FQDNs vs 0). Method: re-try dead passive sources each cycle rather than caching their dead state — a revived corpus is itself a delta signal.
+
+[LEARN] ACCEPTED OTHER @ new domain `staging-n26.com`: entire staging web family previously un-inventoried (8 cert SANs + 6 subdomains). First new reachable-looking domain family since platform26.de. All surfaces dispositioned into standing classes; zero testable surface. Inventory materially improved.
+
+[LEARN] REJECTED OTHER @ `n26.xyz`/`tech26.com`: Sedo/GoDaddy parking, NOT N26-owned — closed with HTTP-level evidence.
+
+[LEARN] REJECTED MISCONFIG @ `argocd-public.cd.cd-{dev,live}-fra.platform26.de`: resolve live AWS ELB but 443/80 both timeout — source-gated, same class as standing platform26.de inventory.
+
+[LEARN] REJECTED OTHER @ self: 31st consecutive cycle with zero testable anonymous surface. crt.sh revival + staging-n26.com is a genuine inventory delta but not a security delta — every new host dispositioned into standing classes. The information-exhaustion conclusion for anonymous reachable surface holds; the only recoverable signal remains a human-provisioned credential or the one-POST approval.
+
+[RISK] n26: 30 — Zero validated/reportable findings (count 0). All three FINAL hypotheses remain AUTH_HELPED. This cycle's delta was real (crt.sh revival → 101 net-new CT names → one new staging domain family fully characterized) but security-neutral: every new host landed in a standing closed class (source-gated / CDN-level block / tracking-pixel / NXDOMAIN / out-of-scope parking). Probe surface still frozen since 2026-09-18 10:07; triage feeder dead since 2026-09-24. Highest-leverage unblock remains a coordinator-provisioned sandbox TPP credential.

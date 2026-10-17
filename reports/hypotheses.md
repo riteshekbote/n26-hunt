@@ -7394,3 +7394,5 @@
 - LEARN: REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n2
 - LEARN: REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-t
 - LEARN: REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — ru
+
+## RANKED HYPOTHESES 2026-10-17 13:29:05 UTC
