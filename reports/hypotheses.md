@@ -7396,3 +7396,12 @@
 - LEARN: REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — ru
 
 ## RANKED HYPOTHESES 2026-10-17 13:29:05 UTC
+
+## RANKED HYPOTHESES 2026-10-17 16:31:20 UTC
+- [90] xs2a.tech26.de/v1/berlin-group/v1/consents/confirmation-of-funds/{consent_id}/authorisations: xs2a.tech26.de CBPII Consent Flow SSRF to Cloud Metadata via TPP-Redirect-URI Header (from art/lead_nemotron3.txt)
+- NEXT(hypotheses-nemotron3.txt): HUMAN: Put one consolidated decision to the coordinator covering three bounded asks — (1) provision one N26 test account plus paired-device grant for api.tech26
+- LEARN: ACCEPTED OTHER @ new domain `platform26.de`: 36 CT names disclose N26's internal platform tenant structure (`platform26-{dev,live,staging}-eu`, `ops26-*`, `fin2
+- LEARN: ACCEPTED OTHER @ new domain `cd-tech26.de`: only a `*.cd-tech26.de` wildcard cert; `artifactory.cd-tech26.de` -> `artifactory-live-external-…elb` (ELB name says
+- LEARN: REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n2
+- LEARN: REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-t
+- LEARN: REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — ru
