@@ -7300,3 +7300,75 @@
 
 ## RANKED HYPOTHESES 2026-10-17 01:15:21 UTC
 - NEXT(hypotheses-bigpickle.txt): Blocked on coordinator-provisioned credentials; no in-scope anonymous action remains.
+
+## RANKED HYPOTHESES 2026-10-17 05:46:53 UTC
+- [85] pay.n26.com/v1/{payments,balance,charges,customers,invoices}: api.tech26.de BOLA — class IDOR — asset api.tech26.de/api/{me,addresses,accounts,statements,spaces,insights,transfers,referrals}/** — conf 92 (from art/lead_bigpickle.txt)
+- NEXT(hypotheses-bigpickle.txt): HUMAN: Have the program coordinator provision one sandbox-registered TPP credential — a test QWAC client certificate plus its Bearer token for `xs2a.tech26.de` 
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surfa
+- LEARN: ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- LEARN: ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surfa
+- LEARN: ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- LEARN: ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- LEARN: REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.
+- LEARN: REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until obse
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surfa
+- LEARN: ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- LEARN: ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- LEARN: REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.
+- LEARN: REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until obse
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surfa
+- LEARN: ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- LEARN: ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surfa
+- LEARN: ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- LEARN: ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- LEARN: REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.
+- LEARN: REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until obse
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving
+- LEARN: ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the 
+- LEARN: ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their comb
+- LEARN: REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surfa
+- LEARN: ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- LEARN: ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- LEARN: REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.
+- LEARN: REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until obse
+- LEARN: ACCEPTED OTHER @ new domain `platform26.de`: 36 CT names disclose N26's internal platform tenant structure (`platform26-{dev,live,staging}-eu`, `ops26-*`, `fin2
+- LEARN: ACCEPTED OTHER @ new domain `cd-tech26.de`: only a `*.cd-tech26.de` wildcard cert; `artifactory.cd-tech26.de` -> `artifactory-live-external-…elb` (ELB name says
+- LEARN: REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n2
+- LEARN: REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-t
+- LEARN: REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — ru
+- LEARN: REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n2
+- LEARN: REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-t
+- LEARN: REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — ru
