@@ -122836,3 +122836,568 @@ The state target is "api". Let me append a new section.</think>
 - **Provision credentials** to unblock the three AUTH_HELPED FINAL hypotheses: a sandbox TPP credential (test QWAC + Bearer for `xs2a.tech26.de`), a read-only `api.tech26.de` sandbox token, and an approved Stripe test-mode key for `pay.n26.com`.
 
 Which do you want to authorize?
+===== ANALYST bigpickle 2026-10-17 09:42:30 UTC =====
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mls -la && echo "---REPORTS---" && ls reports/ 2>/dev/null || echo "reports/ MISSING" && echo "---TRIAGE---" && ls triage/ 2>/dev/null | tail -5 && echo "---KNOWLEDGE---" && ls knowledge/ 2>/dev/null | head -20 && echo "---VALIDBUGS---" && cat valid-bugs.md 2>/dev/null | head -5 && echo "---STATE---" && cat state_bigpickle.json 2>/dev/null
+total 1572
+drwxr-xr-x 12 runner runner   4096 Oct 17 09:39 .
+drwxr-xr-x  3 runner runner   4096 Oct 17 09:39 ..
+drwxr-xr-x  7 runner runner   4096 Oct 17 09:39 .git
+drwxr-xr-x  3 runner runner   4096 Oct 17 09:39 .github
+-rw-r--r--  1 runner runner   1844 Oct 17 09:39 README.md
+-rw-r--r--  1 runner runner     32 Oct 17 09:39 analyst-out.txt
+-rw-r--r--  1 runner runner 738101 Oct 17 09:39 analyst-prompt.txt
+-rw-r--r--  1 runner runner 734231 Oct 17 09:39 ctx.txt
+drwxr-xr-x  2 runner runner   4096 Oct 17 09:39 inventory
+drwxr-xr-x  2 runner runner   4096 Oct 17 09:39 knowledge
+drwxr-xr-x  2 runner runner   4096 Oct 17 09:39 leads
+-rw-r--r--  1 runner runner  29837 Oct 17 09:39 probe-results.md
+drwxr-xr-x  2 runner runner   4096 Oct 17 09:39 recon-notes
+drwxr-xr-x  2 runner runner   4096 Oct 17 09:39 reports
+drwxr-xr-x  2 runner runner   4096 Oct 17 09:39 reposcan-raw
+-rw-r--r--  1 runner runner   3283 Oct 17 09:39 scope.yml
+drwxr-xr-x  2 runner runner   4096 Oct 17 09:39 scripts
+-rw-r--r--  1 runner runner     33 Oct 17 09:39 state_bigpickle.json
+-rw-r--r--  1 runner runner     33 Oct 17 09:39 state_laguna.json
+-rw-r--r--  1 runner runner     33 Oct 17 09:39 state_ling3.json
+-rw-r--r--  1 runner runner     33 Oct 17 09:39 state_longcat.json
+-rw-r--r--  1 runner runner     33 Oct 17 09:39 state_mimo.json
+-rw-r--r--  1 runner runner     33 Oct 17 09:39 state_nemotron3.json
+drwxr-xr-x  2 runner runner  16384 Oct 17 09:39 triage
+---REPORTS---
+analyst-bigpickle.log
+analyst-laguna.log
+analyst-ling3.log
+analyst-longcat.log
+analyst-nemotron3.log
+hypotheses-bigpickle.txt
+hypotheses-laguna.txt
+hypotheses-ling3.txt
+hypotheses-longcat.txt
+hypotheses-nemotron3.txt
+hypotheses.md
+reposcan-findings.md
+valid-bugs.md
+---TRIAGE---
+run-2026-10-16-19-36.md
+run-2026-10-16-22-11.md
+run-2026-10-17-00-34.md
+run-2026-10-17-04-58.md
+run-2026-10-17-09-10.md
+---KNOWLEDGE---
+index.md
+---VALIDBUGS---
+---STATE---
+{"phase": "POC", "target": "api"}
+[0m
+I'll start by verifying the actual repository state and running a passive delta check — per standing canon, artifact-existence claims must be verified against the tree, and identical-boundary re-probing is suspended.
+## Objective
+- Act as a senior bug-bounty ANALYST for the N26 Bank AG program, running the 7-step analysis loop (DELTA → PRIORITIZE → HYPOTHESES → SELF-CRITIQUE → NEXT → LEARNING → RISK) over the knowledge base and inventory.
+- Produce only structured blocks ([PRIO]/[HYP]/[PARKED]/[FINAL]/[NEXT]/[LEARN]/[RISK]) with facts strictly separated from hypotheses.
+
+## Important Details
+- State: `{"phase": "POC", "target": "api"}`; report channel bugs.olivermaicher.eu.
+- In-scope: only N26-owned infra (scope.yml + inventory/n26.md). Out-of-scope REJECTED classes include SSL/TLS best practice, DoS, descriptive headers, username enumeration, etc.
+- Probe rules: passive-first, ≤1 rps, GET/HEAD/OPTIONS only for live probes, no mutating/auth-bypass tests on customer data.
+- Standing canon: identical-boundary re-probing suspended (~29+ NO_DELTA cycles); controls are properties of the request path/channel measured on; status code ≠ rule; bundle presence ≠ reachability; count ≠ finding; vendor corpus prose (not route lists) is the only productive enumeration source; verify artifact existence against tree before claiming it.
+- Key surfaces characterized: api.tech26.de GET-scoped wildcard gate (3 EXACT `{me,addresses,login}` ∪ 6 PREFIX `{accounts,statements,spaces,insights,transfers,referrals}`, all `401|211 md5 d58528c924dad2fde9c30f81972e0548`; HEAD→`404|0`); beta-api + sapi mirror it; xs2a.tech26.de Berlin-Group 21 classes + CBPII subtree + sandbox co-tenant, ALB redirect-target filter is IP-literal(+localhost) matcher and query-string-scoped (`TPP-Redirect-URI` header bypasses), mTLS optional (empty-CA CertificateRequest, both TLS1.2/1.3, no app-layer effect); pay.n26.com pure Stripe passthrough (`401|342` vs `132`), key-discovery closed 3/3 corpora.
+- Three FINAL hypotheses all AUTH_HELPED: api.tech26.de BOLA (92), pay.n26.com Stripe BOLA (85), xs2a.tech26.de SSRF via TPP-Redirect-URI (62). Zero validated reportable findings (`valid-bugs.md` count 0).
+- Passive corpora status: certspotter `/api/v1/issuances` HTTP 200 (tech26.de=40 / n26.com=85 names, zero drift); hackertarget hostsearch usable; crt.sh 502, grep.app 429, github code-search 401, sourcegraph 0.
+- `n26/psd2-tpp-docs` corpus re-fetchable via GitHub Git Trees API + `raw.githubusercontent.com/main`.
+- Known false-lead traps: `reports/report-draft-n26.md` absent from tree (6+ cycles of false KB claims); `triage/prober` doesn't exist; `knowledge/run-*.md` wrong path (artifacts in `reports/`); KB heavily duplicated across 10-11..10-17.
+
+## Work State
+### Completed
+- Gate topology on `{api,beta-api,sapi}.tech26.de` fully characterized (matcher semantics, method gating, header parsing, path normalization all closed).
+- xs2a.tech26.de mTLS finding scoped and downgraded to "no-impact compliance gap" (every app-layer leg 401s); ALB filter scoped (channel = query string; predicate = IP-literal/localhost).
+- OAuth redirect_uri OATH retraction recorded; `funds-confirmations` 404 explicitly NOT evidence of absence (documented POST).
+- Sandbox credential-free token-mint REJECTED (`/sandbox/oauth2/authorize` → `401|0`, client_id is eIDAS-QWAC-derived, sandbox.md:167).
+- New-domain sweeps closed: `platform26.de` (36 names, all source-gated), `cd-tech26.de`, `n26.io`/`n26.app`/`n26.dev` (not N26-owned), N26 public GitHub org (6 repos, no secrets), 15 internal-tooling labels NXDOMAIN, CT wildcard SANs are not DNS wildcards, sonarqube-default-fra + 7 CT FQDNs source-gated.
+- flags.n26.com FLAGSDUMP discharged (RBAC default-deny `403|19B`); app.n26.com GraphQL/redirect/XSS/IDOR lines all closed with source-level evidence.
+
+### Active
+- Latest cycle: CT/passive delta (certspotter + hackertarget) yielded zero reachable surface; new hackertarget names `sredocs.tech26.de`, `statsig-ssh.tech26.de` resolve but HTTPS timeout (source-gated).
+- KB contains heavy duplicate-line repetition; treat KB "delta" as signal only after dedupe.
+
+### Blocked
+- All three FINAL hypotheses are AUTH_HELPED — need coordinator-provisioned credentials.
+- Triage feeder dead/errored (118 run files with `UnknownError`; last clean run `triage/run-2026-09-24-19-17.md`; latest refs `err_7a811ab8`, `err_4421854e`) — intake is pipeline weather, never a lead source.
+- `reports/report-draft-n26.md` absent from tree despite repeated KB assertions.
+
+## Next Move
+1. [NEXT] HUMAN: provision one sandbox-registered TPP credential (test QWAC + Bearer for xs2a.tech26.de), a read-only api.tech26.de sandbox token, and an approved Stripe test-mode key; plus one-line approval for `pisp.tech26.de` `POST /oauth2/token`; repair triage feeder and create/confirm `reports/report-draft-n26.md`. Do NOT authorize further identical-boundary re-probing.
+2. If a probe cycle is required instead: single low-rate daily passive delta (certspotter `/api/v1/issuances` + `api.hackertarget.com/hostsearch`), diffing against brace-expanded KB baseline — no live re-probing of unchanged 401/403/404 boundaries.
+
+## Relevant Files
+- `inventory/n26.md`: host inventory with timestamped NEW/CHANGED log entries.
+- `knowledge/index.md` (KB seed): ACCEPTED/REJECTED/CORRECTION entries; heavily duplicated — expand brace patterns before diffing.
+- `reports/`: run/log/hypothesis artifacts (not `knowledge/` or `triage/`).
+- `triage/`: feeder run files only (`run-*.md`, `.gitkeep`); no prober exists.
+- `reports/report-draft-n26.md`: claimed by KB but ABSENT from tree — verify before use.
+- `valid-bugs.md`: exists, count 0.
+- `n26/psd2-tpp-docs` (public repo, `doc/sandbox.md`, `doc/decoupled/dedicated-cbpii.md`, `doc/redirect/dedicated-*.md`, `doc/assets/postman/`): vendor corpus for route mapping and control semantics.
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+Continuing the loop. Verifying latest triage run for drift, inventory delta, and passive surface delta.
+[0m$ [0mcat triage/run-2026-10-17-09-10.md | head -30; echo "---"; tail -20 inventory/n26.md; echo "---KB-tail---"; tail -60 knowledge/index.md; echo "---hypo---"; cat reports/hypotheses-bigpickle.txt 2>/dev/null | head -30
+===== TRIAGE 2026-10-17 09:10:54 UTC =====
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_378e8824"
+  }
+}
+---
+- CHANGED 15 candidate internal-tooling names (`admin/internal/gitlab/jenkins/grafana/argocd/sonarqube/sentry/nexus/artifactory/api-{dev,staging,test}/int.tech26.de` + `.n26.com`) → NXDOMAIN; closes the "undisc
+- CHANGED `fpt.tech26.de` still fixed-response ALB `200 len=0 text/plain` (not activated); `3ds-challenge.n26.com` still source-gated `403|118`; `xs2a.tech26.de` oracle stable (`consents`/`confirmation-of-funds
+- NEW 8 previously-uncovered CT FQDNs on tech26.de (sonarqube-default-fra, epiedge, idealedge, taktileedge, mambuedge, number26.tz2-mambu, number26.tz2-mambu-sandbox-eu, n26uk.tz2-mambu-uk): all resolve to 
+- NEW hackertarget hostsearch delta: `sredocs.tech26.de` + `statsig-ssh.tech26.de` absent from CT and from inventory — both resolve (CloudFront / EC2), both HTTPS timeout (source-gated); `docs.n26.com` alre
+- CHANGED certspotter `/api/v1/issuances` responding HTTP 200 (inventory tail still records "410 discontinued"); unique names tech26.de=40 / n26.com=85 — zero drift vs 2026-09-20 baseline.
+- CHANGED `telemetry.sto.tech26.de` + `livepersonedge.tech26.de` → NXDOMAIN (cert-without-DNS); `telemetry.tech26.de` → `403|118 awselb/2.0` (ALB deny, closed).
+- CHANGED triage feeder: 118 run files contain UnknownError; last clean run `triage/run-2026-09-24-19-17.md`; latest `err_7a811ab8` (2026-10-16 06:20).
+- CHANGED `reports/report-draft-n26.md` still absent from tree (6th consecutive cycle) — KB claim remains false.
+
+## 2026-10-16 14:20:16 UTC
+
+## 2026-10-16 17:57:10 UTC
+
+## 2026-10-16 20:43:41 UTC
+
+## 2026-10-16 23:19:42 UTC
+
+## 2026-10-17 01:15:21 UTC
+
+## 2026-10-17 05:46:53 UTC
+---KB-tail---
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
+- 2026-10-17 REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
+- 2026-10-17 REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
+- 2026-10-17 REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+- 2026-10-17 ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+- 2026-10-17 ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+- 2026-10-17 REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+- 2026-10-17 ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+- 2026-10-17 ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+- 2026-10-17 REJECTED OTHER @ passive delta: certspotter HTTP 200, tech26.de 40→39 / n26.com 85→84 — the corpus SHRANK (cert rotation), zero new names; mcp-tools.fra.tech26.de still NXDOMAIN against authoritative NS, aigw.tech26.de unchanged RFC1918 INFO, controlplane.sto.tech26.de NXDOMAIN. 29th consecutive NO_DELTA.
+- 2026-10-17 REJECTED OTHER @ self: re-confirmed reports/report-draft-n26.md absent while valid-bugs.md exists with count 0 — artifact-existence claims stay false until observed.
+- 2026-10-17 ACCEPTED OTHER @ new domain `platform26.de`: 36 CT names disclose N26's internal platform tenant structure (`platform26-{dev,live,staging}-eu`, `ops26-*`, `fin26-*`, `ci-dev-fra`, `atlantis.*`, `shared-services-live-fra`, `vpns.vpn-live-fra`) plus security-service leaves `opensearch.sec26-{archive,tooling}-*` and `safeaml-fpdr{,-sign}` (AML tooling) and four Backstage portals. Every resolved host is source-gated (AWS ELB 443/80 timeout) or Tailscale CGNAT (100.64/10) — new inventory, zero reachable surface.
+- 2026-10-17 ACCEPTED OTHER @ new domain `cd-tech26.de`: only a `*.cd-tech26.de` wildcard cert; `artifactory.cd-tech26.de` -> `artifactory-live-external-…elb` (ELB name says "external") but 80/443/8081/8082 all timeout from this vantage — source-gated, no app-layer observable.
+- 2026-10-17 REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n26.app a parking lander, n26.dev times out, the rest zero CT names. Closed out-of-scope with evidence.
+- 2026-10-17 REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-token>` placeholder; `flowkit-ios` example flow JSON has no endpoints). The historical "TARGET_ORG not configured → skipping public-org deep scan" gap is now closed manually with no new signal.
+- 2026-10-17 REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — run/log/hypothesis artifacts live in `reports/`, and `triage/` holds only feeder files. Artifact-existence claims stay false until observed.
+- 2026-10-17 REJECTED OTHER @ `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech`: NOT N26-owned — n26.io is a domain-investor parking page ("Search Engines and Such"), n26.app a parking lander, n26.dev times out, the rest zero CT names. Closed out-of-scope with evidence.
+- 2026-10-17 REJECTED OTHER @ N26 public GitHub org: all 6 public repos shallow-cloned and grepped — no hardcoded secrets, no unmapped hosts (`bob` slackToken is a `<slack-token>` placeholder; `flowkit-ios` example flow JSON has no endpoints). The historical "TARGET_ORG not configured → skipping public-org deep scan" gap is now closed manually with no new signal.
+- 2026-10-17 REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; and the KB's repeated reference to `knowledge/run-*.md` / `triage/prober` is wrong — run/log/hypothesis artifacts live in `reports/`, and `triage/` holds only feeder files. Artifact-existence claims stay false until observed.
+---hypo---
+## 2026-10-17 05:46:43 UTC [target] (model bigpickle)
+[LEARN] ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+[LEARN] ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+[RISK] n26: 20 — Zero validated/reportable findings (count 0, every entry HOLD/NO). All three FINAL hypotheses remain credential-gated (AUTH_HELPED); this cycle's fresh passive delta (8 CT FQDNs + 2 hostsearch names) resolved entirely into the standing source-gated class, adding reachability facts but no testable surface. Triage feeder dead since 2026-09-24 (118 errored run files). Highest-leverage unblock remains a coordinator-provisioned sandbox TPP credential.
+[NEXT] HUMAN: Have the program coordinator provision one sandbox-registered TPP credential — a test QWAC client certificate plus its Bearer token for `xs2a.tech26.de` — which in a single authorized session settles HYP 3 (consent-authorisation redirect SSRF with/without QWAC), the parked `X-Sandbox-Transaction-Status` override, and sandbox→production co-tenant isolation; separately request a read-only `api.tech26.de` sandbox token for HYP 1 and an approved Stripe test-mode key for HYP 2. Do not authorize further identical-boundary re-probing; this cycle's passive CT + hostsearch delta is fully reconciled (all new names source-gated or NXDOMAIN).
+[LEARN] REJECTED MISCONFIG @ sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs: all resolve to live AWS ELBs but every transport times out (source-gated) — resolving name ≠ reachable service; no evidence path exists from this vantage.
+[LEARN] ACCEPTED OTHER @ CT enumeration: the "internal-tooling NXDOMAIN closed" conclusion was over-broad — it tested derived labels (`sonarqube.tech26.de`), while the CT FQDN (`sonarqube-default-fra.tech26.de`) exists and resolves; always test exact CT names, never pattern-deduced ones.
+[LEARN] ACCEPTED OTHER @ passive corpora: certspotter back to HTTP 200 (prior "410 discontinued" entries stale) and hackertarget hostsearch both usable — but their combined delta this cycle yielded only source-gated/NXDOMAIN hosts, confirming the surface is information-exhausted rather than corpus-limited.
+[RISK] n26: 20 — Zero validated/reportable findings (count 0, every entry HOLD/NO). All three FINAL hypotheses remain credential-gated (AUTH_HELPED); this cycle's fresh passive delta (8 CT FQDNs + 2 hostsearch names) resolved entirely into the standing source-gated class, adding reachability facts but no testable surface. Triage feeder dead since 2026-09-24 (118 errored run files). Highest-leverage unblock remains a coordinator-provisioned sandbox TPP credential.
+[PRIO] 1. api.tech26.de BOLA (92, AUTH_HELPED)  2. pay.n26.com Stripe BOLA (85, AUTH_HELPED)  3. xs2a.tech26.de TPP-Redirect-URI SSRF (62, AUTH_HELPED)
+[HYP] api.tech26.de BOLA — class IDOR — asset api.tech26.de/api/{me,addresses,accounts,statements,spaces,insights,transfers,referrals}/** — conf 92
+[HYP] pay.n26.com Stripe-forwarded BOLA — class IDOR — asset pay.n26.com/v1/{payments,balance,charges,customers,invoices} — conf 85
+[HYP] xs2a.tech26.de SSRF via TPP-Redirect-URI — class SSR F — asset xs2a.tech26.de redirect/consent flow — conf 62
+[PARKED] mTLS/QWAC-to-token binding gap (SSL/TLS class out of scope, scope.yml:24)
+[PARKED] X-Sandbox-Transaction-Status client-controlled payment-status override (sandbox-identity gated)
+[PARKED] cross-deployment token audience confusion {api,beta-api,sapi} (observable only with a token)
+[PARKED] sonarqube-default-fra.tech26.de live ALB, source-gated (no app-layer observable)
+[FINAL] 1. api.tech26.de BOLA (92, AUTH_HELPED); 2. pay.n26.com Stripe BOLA (85, AUTH_HELPED); 3. xs2a SSRF via TPP-Redirect-URI (62, AUTH_HELPED). No anonymous result promoted as a finding.
+[NEXT] HUMAN: Have the coordinator provision ONE sandbox-registered TPP credential (test QWAC + Bearer for xs2a.tech26.de) — settles HYP 3, the parked X-Sandbox-Transaction-Status override, and sandbox→prod co-tenant isolation in one authorized session; separately request a read-only api.tech26.de sandbox token (HYP 1) and an approved Stripe test-mode key (HYP 2). Do NOT authorize further identical-boundary re-probing. Also: repair the triage feeder and confirm/replace reports/report-draft-n26.md, which the KB claims exists but the tree lacks.
+[LEARN] REJECTED OTHER @ self: 28 consecutive NO_DELTA cycles on an unchanged surface is itself the signal — the loop is out of information, not the target out of surface.
+[LEARN] ACCEPTED OTHER @ method: literal grep-diff over-reports; expand brace patterns before diffing.
+[LEARN] ACCEPTED OTHER @ triage feeder: intake now doubly dead — errored AND no longer producing run files.
+[RISK] n26: 20 — Zero validated/reportable findings (count 0). All three FINAL hypotheses remain credential-gated (AUTH_HELPED). Latest passive delta resolved entirely into the standing source-gated/known class: reachability facts, no testable surface. Highest-leverage unblock is a coordinator-provisioned sandbox TPP credential.
+testability: AUTH_HELPED
+[HYP] Stripe-forwarded BOLA on pay.n26.com
+class: IDOR
+asset: pay.n26.com/v1/{payments,balance,charges,customers,invoices}
+confidence: 85
+reasoning: 23+ versioned routes return Stripe-shaped 401 with distinct no-key (`len=342`) and invalid-key (`len=132`) bodies, `WWW-Authenticate: Basic realm="Stripe"`, `ACAO: *`; OAuth/Connect routes 404 identically to direct Stripe, proving 1:1 passthrough with no N26 authorization layer; key discovery closed 3/3 corpora.
+evidence_needed: a coordinator-approved test-mode key accepted by this host, synthetic payment/customer/charge fixtures, and proof object ownership is enforced independently of the key.
+[0m
+KB state verified. Now running the permitted passive delta — certspotter + hackertarget — the only probe channel still open.
+[0m$ [0mcurl -s -m 20 "https://api.certspotter.com/v1/issuances?domain=tech26.de&include_subdomains=true&expand=dns_names" -o /tmp/cs-tech26.json -w "certspotter-tech26:%{http_code}\n"; curl -s -m 20 "https://api.certspotter.com/v1/issuances?domain=n26.com&include_subdomains=true&expand=dns_names" -o /tmp/cs-n26.json -w "certspotter-n26:%{http_code}\n"
+certspotter-tech26:200
+certspotter-n26:200
+[0m
+[0m$ [0mpython3 -c "
+import json
+for f,d in [('/tmp/cs-tech26.json','tech26.de'),('/tmp/cs-n26.json','n26.com')]:
+    names=set()
+    for iss in json.load(open(f)):
+        for n in iss.get('dns_names',[]): names.add(n.rstrip('.').lower())
+    print(d, len(names))
+    for n in sorted(names): print(' ',n)
+" 2>&1 | head -140
+tech26.de 40
+  *.atlantis.sto.tech26.de
+  *.controlplane.sto.tech26.de
+  *.sto.tech26.de
+  *.tech26.de
+  aigw.tech26.de
+  aisp-staging.tech26.de
+  aisp.tech26.de
+  api.tech26.de
+  backstage.platform26-live-eu.platform26.de
+  backstage.tech26.de
+  beta-api.tech26.de
+  epiedge.tech26.de
+  esign-staging.tech26.de
+  fpadedge.tech26.de
+  fpt.tech26.de
+  ideal-request-signing.tech26.de
+  idealedge.tech26.de
+  livepersonedge.tech26.de
+  mambuedge.tech26.de
+  mcp-tools.fra.tech26.de
+  message-templates-assets-staging.tech26.de
+  message-templates-assets.tech26.de
+  n26uk.tz2-mambu-preproduction-uk.tech26.de
+  n26uk.tz2-mambu-sandbox-uk.tech26.de
+  n26uk.tz2-mambu-uk.tech26.de
+  number26.tz2-mambu-preproduction-eu.tech26.de
+  number26.tz2-mambu-sandbox-eu.tech26.de
+  number26.tz2-mambu.tech26.de
+  phishing-report.tech26.de
+  pisp-staging.tech26.de
+  pisp.tech26.de
+  rcs-demo.tech26.de
+  sapi.tech26.de
+  sonarqube-default-fra.tech26.de
+  taktileedge.tech26.de
+  tech26.de
+  telemetry.sto.tech26.de
+  telemetry.tech26.de
+  xs2a-staging.tech26.de
+  xs2a.tech26.de
+n26.com 85
+  *.n26.com
+  3ds-challenge.n26.com
+  app.n26.com
+  clicks.accounts.n26.com
+  clicks.emails.n26.com
+  cookie.n26.com
+  engagementplatform.n26.com
+  flags.n26.com
+  get.n26.com
+  join.n26.com
+  mag-de.n26.com
+  mag-es.n26.com
+  mag-fr.n26.com
+  mag-it.n26.com
+  mag.n26.com
+  my.n26.com
+  n26.at
+  n26.ch
+  n26.cl
+  n26.co.uk
+  n26.co.za
+  n26.com
+  n26.de
+  n26.design
+  n26.es
+  n26.eu
+  n26.fr
+  n26.gr
+  n26.it
+  n26.kr
+  n26.li
+  n26.me
+  n26.nl
+  n26.pt
+  n26.rocks
+  n26.se
+  next.n26.com
+  number26.ch
+  number26.de
+  number26.eu
+  number26.fr
+  number26.it
+  number26.nl
+  number26.rocks
+  number26.se
+  number26.uk
+  pay.n26.com
+  rstats.n26.com
+  spc.n26.com
+  static.app.n26.com
+  static.get.n26.com
+  static.n26.com
+  static.support.n26.com
+  support.n26.com
+  tutorials.n26.com
+  www.3ds-challenge.n26.com
+  www.n26.at
+  www.n26.ch
+  www.n26.cl
+  www.n26.co.uk
+  www.n26.co.za
+  www.n26.com
+  www.n26.de
+  www.n26.design
+  www.n26.es
+  www.n26.eu
+  www.n26.fr
+  www.n26.gr
+  www.n26.it
+  www.n26.kr
+  www.n26.li
+  www.n26.me
+  www.n26.nl
+  www.n26.pt
+  www.n26.rocks
+  www.n26.se
+  www.number26.ch
+  www.number26.de
+  www.number26.eu
+  www.number26.fr
+  www.number26.it
+  www.number26.nl
+  www.number26.rocks
+  www.number26.se
+  www.number26.uk
+[0m
+Counts: tech26.de=40, n26.com=85 — same as the 2026-09-20 baseline (not the shrunk 39/84 from last cycle). Zero drift. Same names. So NO_DELTA confirmed again — 30th consecutive.
+
+Let me also check hackertarget quickly for completeness.
+
+Everything reconciles to known inventory. No new reachable surface. I'll produce the structured blocks. The cycle has no new information; the correct move per KB is to stop re-probing and escalate the credential ask.
+
+Let me update inventory/state? The prompt says produce structured blocks. I should also record the cycle artifact? Standing behavior is to write run/log. But the task is the analyst loop. I'll add a KB/inventory note? Actually per the role, I output structured blocks and the analyze loop. But repository has artifacts; the harness likely captures analyst-out.txt. Let me check what analyst-out.txt contains and how previous cycles were recorded.
+
+Given the KB says artifacts live in reports/ and triage feeder is dead, I think I should just record a brief cycle note. But the user asked "what did we do so far / continue". The right action: complete the delta, conclude NO_DELTA, and output the structured blocks. I'll append the delta finding to inventory and KB? That's the established practice evidenced by the timestamped entries.
+
+Let me check state and how runs are appended — inventory tail shows format. I'll do minimal: append inventory log line + KB entry. But careful about duplication (KB already has tons of duplicates). Better to keep it minimal and not add noise. Actually the KB is heavily duplicated — adding more duplicates is bad. I'll write a single concise cycle log to reports/ per convention.
+
+Let me check the most recent report log filename format.</think>Zero drift: tech26.de=40, n26.com=85 — identical to the 2026-09-20 baseline. Confirming hackertarget and checking the report-log convention.
+[0m$ [0mcurl -s -m 20 "https://api.hackertarget.com/hostsearch/?q=tech26.de" -o /tmp/ht-tech26.txt -w "hackertarget:%{http_code}\n"; python3 -c "
+import json
+base=set(n.strip().lower() for n in open('/tmp/ht-tech26.txt') if n.strip())
+ct=set()
+for iss in json.load(open('/tmp/cs-tech26.json')):
+    for n in iss.get('dns_names',[]): ct.add(n.rstrip('.').lower())
+new=sorted(x for x in base if x.split(',')[0] not in ct and not x.startswith('error'))
+print('hostsearch lines:',len(base)); 
+for n in sorted(base)[:40]: print(' ',n)
+"; echo "---reports recent---"; ls -t reports/ | head -8
+hackertarget:200
+hostsearch lines: 32
+  aigw.tech26.de,10.255.4.112
+  aisp-staging.tech26.de,18.192.92.141
+  aisp.tech26.de,63.182.238.33
+  api.tech26.de,3.122.184.120
+  backstage.tech26.de,3.122.211.67
+  beta-api.tech26.de,63.176.194.125
+  epiedge.tech26.de,3.120.50.113
+  esign-staging.tech26.de,13.33.67.74
+  fpt.tech26.de,3.64.35.107
+  idealedge.tech26.de,3.69.184.189
+  livepersonedge.tech26.de,18.159.151.48
+  mambuedge.tech26.de,18.197.209.174
+  message-templates-assets-staging.tech26.de,3.168.102.69
+  message-templates-assets.tech26.de,52.85.31.26
+  n26uk.tz2-mambu-preproduction-uk.tech26.de,3.70.165.25
+  n26uk.tz2-mambu-sandbox-uk.tech26.de,3.70.165.25
+  n26uk.tz2-mambu-uk.tech26.de,3.76.172.243
+  number26.tz2-mambu-preproduction-eu.tech26.de,3.70.165.25
+  number26.tz2-mambu-sandbox-eu.tech26.de,3.70.165.25
+  number26.tz2-mambu.tech26.de,18.197.209.174
+  phishing-report.tech26.de,3.122.203.81
+  pisp-staging.tech26.de,18.192.92.141
+  pisp.tech26.de,63.182.238.33
+  rcs-demo.tech26.de,3.168.122.106
+  sapi.tech26.de,63.177.145.219
+  sonarqube-default-fra.tech26.de,63.188.254.103
+  sredocs.tech26.de,52.28.50.233
+  statsig-ssh.tech26.de,3.69.87.198
+  taktileedge.tech26.de,63.178.89.22
+  telemetry.tech26.de,18.192.74.10
+  xs2a-staging.tech26.de,63.182.10.8
+  xs2a.tech26.de,63.182.238.33
+---reports recent---
+hypotheses.md
+reposcan-findings.md
+valid-bugs.md
+analyst-nemotron3.log
+hypotheses-bigpickle.txt
+hypotheses-laguna.txt
+hypotheses-ling3.txt
+hypotheses-longcat.txt
+[0m
+Hostsearch delta: `sredocs.tech26.de` (52.28.50.233) and `statsig-ssh.tech26.de` (3.69.87.198) are the two "new" names from last cycle — already recorded in inventory. Everything else matches. No new names this cycle.
+
+Note: hostsearch has no IP for `fpadedge.tech26.de`, `ideal-request-signing`, `mcp-tools.fra`, etc. — but those are known anyway.
+
+So: 30th consecutive NO_DELTA. No new reachable surface.
+
+Now I need to produce the structured output blocks. Let me write the cycle log to reports/ by convention. The reports folder has analyst-bigpickle.log and hypotheses-bigpickle.txt. I'll append a cycle entry to analyst-bigpickle.log and hypotheses-bigpickle.txt. Also update inventory with timestamped entry.
+
+Let me check the format of analyst-bigpickle.log and inventory top.</think>Hostsearch yields only the two already-recorded names (`sredocs`, `statsig-ssh`) — no new delta. 30th consecutive NO_DELTA. Recording the cycle artifact per convention.
+[0m$ [0mecho "=== analyst-bigpickle.log tail ==="; tail -15 reports/analyst-bigpickle.log; echo; echo "=== inventory head ==="; head -20 inventory/n26.md; echo; echo "=== readme ==="; sed -n '1,40p' README.md
+=== analyst-bigpickle.log tail ===
+
+1. **New domain `platform26.de`** — 36 CT names, never enumerated. Discloses N26's internal platform tenant map: `platform26-{dev,live,staging}-eu`, `ops26-*`, `fin26-*`, `ci-dev-fra`, `atlantis.*`, plus security leaves `opensearch.sec26-{archive,tooling}-*` and `safeaml-fpdr{,-sign}` (AML tooling) and four Backstage portals. **All resolved hosts source-gated** (AWS ELB 443/80 timeout); two VPN leaves resolve to Tailscale CGNAT (100.64/10).
+2. **New domain `cd-tech26.de`** — `artifactory.cd-tech26.de` → `artifactory-live-external-…elb`; all ports timeout. Source-gated.
+3. **Closed out-of-scope with evidence:** `n26.io`/`n26.app`/`n26.dev`/`number26.io`/`n26.tech` are parked/squatter domains, not N26.
+4. **Closed the org-public-repo gap:** all 6 public N26 repos shallow-cloned and grepped — no secrets, no unmapped hosts (the historical `TARGET_ORG not configured` skip is now covered manually).
+5. Corrected stale KB claims: `reports/report-draft-n26.md` is absent; run/log artifacts live in `reports/`, not `knowledge/`.
+
+**No promotable finding; risk unchanged (~30/100, count 0).** KB + inventory updated.
+
+**The real blocker is human** — I can't proceed on anonymous surface because it's genuinely information-exhausted (all new hosts source-gated). Decision needed from you:
+
+- **Approve the one-line POST** to `pisp.tech26.de/oauth2/token` (routed-vs-retired question; currently parked on the GET/HEAD/OPTIONS envelope).
+- **Provision credentials** to unblock the three AUTH_HELPED FINAL hypotheses: a sandbox TPP credential (test QWAC + Bearer for `xs2a.tech26.de`), a read-only `api.tech26.de` sandbox token, and an approved Stripe test-mode key for `pay.n26.com`.
+
+Which do you want to authorize?
+
+=== inventory head ===
+# N26 Bank AG inventory (discovery seed 2026-09-02)
+# NOTE: hosts below are discovery candidates from passive DNS/CT; confirm in-scope vs program scope before active testing.
+app.n26.com
+my.n26.com
+n26.com
+support.n26.com
+www.n26.com
+
+## PASSIVE RECON 2026-09-02 (read-only, non-intrusive)
+
+> Recon observations only. These are NOT confirmed vulnerabilities; ownership/in-scope of each host must be confirmed against the program scope before any active testing. Hosts resolve + serve HTTP — investigation requires scoped authorization.
+
+**Probed:** 5 hosts | **Live HTTP:** 0
+
+| Host | Status | Server/Tech |
+|---|---|---|
+
+## 2026-09-02 21:37:48 UTC
+
+## 2026-09-02 23:32:55 UTC
+
+=== readme ===
+# n26-hunt
+
+24/7 deep multi-model bug-hunting automation for **N26 Bank AG** (Oliver Maicher bug-bounty hub).
+
+Scope: All company-owned infrastructure, online banking platforms, mobile applications, APIs, customer portals, authentication systems, internal banking services, websites, and domains operated by N26 Bank AG and its subsidiaries
+(full exclusion + rules list in `scope.yml`)
+
+Pipeline (all workflows run every 20 minutes):
+
+- **Deep Hunt** (`hunt.yml`): analyst hunts the discovered inventory + hypotheses, emits structured
+  leads, chains primitives, self-critiques. Models: mimo.
+- **Triager** (`triage.yml`): second-model 7-Question Gate validation + live passive probe; keeps
+  running count in `reports/valid-bugs.md`.
+- **Reposcan** (`reposcan.yml`): deep source scan of any public GitHub org (if configured).
+- **Sync Issues** (`sync-issues.yml`): mirrors leads to GitHub issues.
+
+Testing discipline: rate-limited (1 rps), no DoS/account-lockout, writes only on non-prod/test
+assets, no exposure of customer/employee/financial/auth data, secrets committed only as hashes.
+
+> IMPORTANT: the pipeline produces CANDIDATE leads. A reportable, validated finding requires
+> human triage + proof against the program's gate. No finding is fabricated; scanner output alone
+> is never accepted. Active testing is gated behind the in-scope hosts in `inventory/n26.md` and
+> must stay within the program's published scope.
+
+Artifacts:
+
+| Artifact | Purpose |
+|---|---|
+| `leads/` | Candidate findings (UNVALIDATED) |
+| `triage/` | Validation verdicts |
+| `reports/valid-bugs.md` | Validated findings + running count |
+| `scope.yml` | Program scope and exclusions (edit to adjust) |
+
+Program description: German digital bank providing retail banking, payments, savings, investments, and financial services through mobile and web platforms
+[0m
+I have a full picture. This is the analyst loop output. The proper thing is to append a concise cycle log and inventory entry, then emit the structured blocks. Let me append a timestamped entry to inventory and a cycle log to reports/analyst-bigpickle.log.
+
+Actually, I should be careful about not adding duplicate noise to knowledge/index.md. I'll do a concise inventory entry and report log entry.
+
+Let me append. Use the exact timestamp for this cycle. Today's date Oct 17 2026. Use current UTC.
+
+Let me write the cycle log to reports/analyst-bigpickle.log and a concise inventory entry.</think>
+[0m$ [0mTS=$(date -u '+%Y-%m-%d %H:%M:%S UTC'); echo "$TS" >> inventory/n26.md; echo "- NO_DELTA 30th consecutive: certspotter (tech26.de=40 / n26.com=85, identical to 2026-09-20 baseline; note last cycle's 39/84 was transient rotation) + hackertarget hostsearch (32 lines, only sredocs.tech26.de + statsig-ssh.tech26.de beyond CT — both already in inventory, both HTTPS timeout/source-gated). Zero new names, zero reachable surface. Triage feeder still UnknownError (err_378e8824). reports/report-draft-n26.md still absent. No promotable finding; valid-bugs count 0." >> inventory/n26.md
+cat >> reports/analyst-bigpickle.log <<'EOF'
+
+## 2026-10-17 2026 cycle (model bigpickle) — 30th consecutive NO_DELTA
+Passive delta only (permitted channel): certspotter /v1/issuances HTTP 200 both domains; tech26.de=40, n26.com=85 — exactly the 2026-09-20 baseline, zero new/removed names (last cycle's 39/84 was a transient cert-rotation artifact). hackertarget hostsearch HTTP 200, 32 lines; net-new vs CT = {sredocs.tech26.de, statsig-ssh.tech26.de} — both already recorded 2026-10-17, both HTTPS timeout (source-gated). No live re-probing of unchanged boundaries. Triage feeder still errored (err_378e8824). reports/report-draft-n26.md re-verified ABSENT; valid-bugs.md count 0.
+No promotable finding; risk unchanged. All three FINAL hypotheses remain AUTH_HELPED. Stop condition met: no anonymous surface left to test.
+EOF
+echo "recorded"; tail -3 inventory/n26.md
+recorded
+## 2026-10-17 05:46:53 UTC
+2026-10-17 09:42:04 UTC
+- NO_DELTA 30th consecutive: certspotter (tech26.de=40 / n26.com=85, identical to 2026-09-20 baseline; note last cycle's 39/84 was transient rotation) + hackertarget hostsearch (32 lines, only sredocs.tech26.de + statsig-ssh.tech26.de beyond CT — both already in inventory, both HTTPS timeout/source-gated). Zero new names, zero reachable surface. Triage feeder still UnknownError (err_378e8824). reports/report-draft-n26.md still absent. No promotable finding; valid-bugs count 0.
+[0m
+Now emit structured blocks. Keep concise. This is the requested output format.</think>Cycle complete and recorded. Structured output:
+
+[PRIO] 1. api.tech26.de BOLA (92, AUTH_HELPED) · 2. pay.n26.com Stripe BOLA (85, AUTH_HELPED) · 3. xs2a.tech26.de TPP-Redirect-URI SSRF (62, AUTH_HELPED)
+
+[HYP] api.tech26.de BOLA — class IDOR — asset api.tech26.de/api/{me,addresses,accounts,statements,spaces,insights,transfers,referrals}/** — conf 92 — evidence_needed: read-only sandbox token + two-tenant object-ownership proof.
+[HYP] pay.n26.com Stripe-forwarded BOLA — class IDOR — asset pay.n26.com/v1/{payments,balance,charges,customers,invoices} — conf 85 — evidence_needed: approved Stripe test-mode key + ownership-independent-of-key proof.
+[HYP] xs2a.tech26.de SSRF via TPP-Redirect-URI — class SSRF — asset xs2a.tech26.de redirect/consent flow — conf 62 — evidence_needed: sandbox TPP test QWAC + Bearer.
+
+[PARKED] mTLS/QWAC-to-token binding gap (SSL/TLS class out of scope, scope.yml:24)
+[PARKED] X-Sandbox-Transaction-Status client-controlled status override (sandbox-identity gated)
+[PARKED] cross-deployment token audience confusion {api,beta-api,sapi} (observable only with a token)
+[PARKED] sonarqube-default-fra.tech26.de + 7 sibling CT FQDNs — resolve to live ELBs, all transport timeout (source-gated)
+
+[FINAL] 1. api.tech26.de BOLA (92); 2. pay.n26.com Stripe BOLA (85); 3. xs2a SSRF via TPP-Redirect-URI (62). All AUTH_HELPED. No anonymous result promoted. validated findings = 0.
+
+[NEXT] HUMAN: (a) provision ONE sandbox TPP credential — test QWAC + Bearer for xs2a.tech26.de — settles HYP 3 + parked X-Sandbox-Transaction-Status + sandbox→prod co-tenant isolation in one session; (b) read-only api.tech26.de sandbox token for HYP 1; (c) approved Stripe test-mode key for HYP 2; (d) one-line approval for `pisp.tech26.de POST /oauth2/token`; (e) repair triage feeder (still `err_378e8824`); (f) confirm/replace the KB-claimed-but-absent `reports/report-draft-n26.md`. Do NOT authorize further identical-boundary re-probing.
+
+[LEARN] REJECTED OTHER @ passive delta: certspotter HTTP 200 — tech26.de=40 / n26.com=85, identical to 2026-09-20 baseline; last cycle's 39/84 was transient cert rotation, now reverted. hackertarget 32 lines, net-new only {sredocs, statsig-ssh} (already inventoried, source-gated). 30th consecutive NO_DELTA.
+[LEARN] REJECTED OTHER @ self: the loop is out of information, not the target out of surface. On an unchanged surface, re-probing adds nothing — the only recoverable signal is a credential or a new corpus.
+[LEARN] REJECTED OTHER @ self: `reports/report-draft-n26.md` re-verified ABSENT; run/log artifacts live in `reports/`, `triage/` holds feeder files only; KB's `knowledge/run-*.md` / `triage/prober` references remain false.
+
+[RISK] n26: 20 — Zero validated/reportable findings (count 0, every entry HOLD/NO). All three FINAL hypotheses credential-gated. Fresh passive delta fully reconciled into the standing source-gated class: reachability facts, no testable surface. Triage feeder dead since 2026-09-24. Highest-leverage unblock is a coordinator-provisioned sandbox TPP credential.
+
+I've hit the stop condition: no anonymous surface remains to test, and all three FINAL hypotheses require credentials I cannot self-provision. Which will you authorize — credential provisioning, the `pisp.tech26.de` POST, or neither?
